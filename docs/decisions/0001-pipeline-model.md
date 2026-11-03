@@ -47,6 +47,7 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - Eight threads in one process reached about 4x one thread, eight independent processes about 6x. The gap is partly the tail (49 row groups over 8 threads is 7 rounds, at best 87% efficiency); the rest is not explained.
 
 - **Protocol prototype** (`bench/results/20261103-operator-trait-prototype.md`; std only, no Arrow, x86-64 only): a scheduler with parking and wakers plus a source/operator/sink protocol expressed all four hard cases and passed tests for each: `LIMIT` exact across 8 tasks, with the scan stopping after 8-10 of 10,000 morsels; a hash join equal to a reference, including 400 matches per probe row; an exchange consumer scheduled first on **one** worker thread without deadlock, and an 864-query stress; an aggregate spilling 50,000 entries within a 200-group budget (80 groups in the largest merged partition), result equal to a reference. Cancellation and an error in one task stop the rest. Nine deliberate breakages of the scheduler and operators were each caught by a test.
+- **Corrected comparison on ARM64** (`bench/results/20261104-arm64-run2-benchmarks.md`; one quiet `c4a-highcpu-8` Spot VM, Neoverse V2, 8 vCPU; same method, 25 rounds, three batch sizes, 1 to 8 threads): push/pull median paired ratio 0.978-1.012 in all 12 cells, the pull-against-pull control 0.997-1.010, quartiles about ±1%. At 256-row batches the ratio is 0.999-1.001. One cell shows push 2.2% faster and does not repeat elsewhere.
 - **ARM64 test run** (`bench/results/20261104-arm64-run1-operator-protocol.md`; one `n4a-highcpu-8` Spot VM, Neoverse N3, 8 vCPU): the whole protocol suite, including the deterministic shutdown test, passed in 6 of 6 repetitions, with no failure, panic or hang. One machine and six repetitions is modest evidence for a weaker memory model.
 - That prototype also found a real scheduler bug (a lost shutdown notification) that 10 of 10 idle-machine runs missed and that hung most runs under CPU contention; fixed, and covered by a deterministic test.
 - Protocol cost on one-row batches: about 190 ns per batch without blocking, 630-800 ns per batch through a capacity-1 exchange where nearly every batch parks and wakes a task. About 2-10% of the work in an 8K-row batch if a kernel costs about 1 ns per row (an estimate, not measured).
@@ -60,15 +61,15 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - A query-level memory budget: the prototype's is per task (a query holds up to tasks x budget), and its merge step is bounded by partition size, which skew would break.
 - A network or object-storage exchange fed by async tasks.
 - Work stealing: the prototype uses one FIFO queue under one lock.
-- ARM64 **performance** (pull versus push, kernels; see `portability.md`, section 7). The prototype's *tests* did run on ARM64 (see Evidence).
-- Pull versus push on **ARM64**, with **cheaper kernels** or a **fused single-loop pipeline** (where dispatch would be a larger share), with **static dispatch**, and on **branching pipelines**. The corrected comparison covers one linear chain with Arrow kernels that allocate per batch, on x86-64.
+- ARM64 performance of anything other than the pull-versus-push ratio (see `portability.md`, section 7). The prototype's tests and the pull-versus-push comparison did run on ARM64 (see Evidence).
+- Pull versus push with **cheaper kernels** or a **fused single-loop pipeline** (where dispatch would be a larger share), with **static dispatch**, and on **branching pipelines**. The corrected comparison covers one linear chain with Arrow kernels that allocate per batch, on x86-64.
 
 ## Confidence
 
 - **Decision: medium.** It rests on requirements and design reasoning that match `vision.md` and common practice, not on the spike.
 - **The protocol can express join, `LIMIT`, blocking exchange and spill: medium-high.** Shown in a prototype with deliberate-breakage checks, on x86-64 and (tests only) ARM64, and without Arrow.
-- **"Push costs little" (dispatch overhead on x86-64, linear chain): medium-high.** The corrected comparison finds no difference beyond about ±3-5% at any batch size or thread count, down to 256-row batches. Not shown for ARM64, cheaper kernels or branching pipelines.
-- Would change if: the prototype's protocol proves unable to carry Arrow batches with selection vectors and fused operators; or the same comparison on ARM64 shows a clear cost for push.
+- **"Push costs little" (dispatch overhead on x86-64 and ARM64, linear chain, Arrow kernels): high.** On ARM64 the quiet machine resolves differences of about 1%, and finds none. The corrected comparison finds no difference beyond about ±3-5% at any batch size or thread count, down to 256-row batches. Not shown for ARM64, cheaper kernels or branching pipelines.
+- Would change if: the prototype's protocol proves unable to carry Arrow batches with selection vectors and fused operators; or the same comparison with much cheaper kernels, static dispatch or branching pipelines shows a clear cost for push.
 
 ## Consequences
 
@@ -87,10 +88,12 @@ Hybrid: push-based inside a node, stream-based between fragments.
 
 - **Before acceptance:**
   1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. ARM64 tests: done (`bench/results/20261104-arm64-run1-operator-protocol.md`). Remaining from it: rebuild it on Arrow batches with selection vectors and a fused operator.
-  2. ~~Re-run pull versus push correctly~~ done for x86-64: `bench/results/20261104-pull-vs-push-corrected.md`. Remaining: the same run on ARM64 (`spikes/pipeline-model`, mode `pullpush`).
+  2. ~~Re-run pull versus push correctly~~ done for x86-64: `bench/results/20261104-pull-vs-push-corrected.md`. Also done for ARM64: `bench/results/20261104-arm64-run2-benchmarks.md`. Open check 2 is closed.
 - At the window function slice (slice 8), the first real test of partitioned parallel windows with spill.
 
 ## Revision notes
+
+- 2026-11-04, pull versus push on ARM64 (quiet Neoverse-V2 Spot VM): no difference beyond about 1% in any of 12 cells; "push costs little" raised to high for dispatch overhead on a linear chain with Arrow kernels on both architectures; open check 2 closed. Limits that remain: cheaper kernels, static dispatch, branching pipelines.
 
 - 2026-11-04, ARM64 run of the operator-protocol suite: 6 of 6 repetitions passed on a Neoverse-N3 Spot VM; the "run its tests on ARM64" part of open check 1 is done. Pull versus push on ARM64 remains.
 

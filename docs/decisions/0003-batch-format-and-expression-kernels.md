@@ -56,14 +56,14 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 
 **Not covered:**
 
-- ARM64: nothing was run. By source inspection arrow-rs kernels have no architecture-specific code and no NEON path (they rely on LLVM autovectorization), so there is no fast path to lose, and no measurement of what LLVM produces there. The `parquet` crate has none either.
+- ARM64: the kernel benchmark ran once, on one quiet Neoverse-V2 VM (`bench/results/20261104-arm64-run2-benchmarks.md`); nothing else (selection-aware kernels, real data) did. By source inspection arrow-rs kernels have no architecture-specific code and no NEON path (they rely on LLVM autovectorization), so there is no fast path to lose, and no measurement of what LLVM produces there. The `parquet` crate has none either.
 - Real column data, multiple threads, strings, comparisons, filters, casts, joins, expressions wider than two operations, and kernels that take a selection vector. The own loops are lower bounds.
 
 ## Confidence
 
 - **Arrow's strict and lenient behaviour: high.** Measured on the version in use.
 - **Selection-aware errors as a requirement: medium-high.** Standard SQL, argued from how arrow computes.
-- **Own arithmetic and aggregate kernels: medium.** The reason is semantics first and a measured 1.6-1.8x second; the speed figure is a micro-benchmark without selection vectors or real data.
+- **Own arithmetic and aggregate kernels: medium.** The reason is semantics first and a measured speed gain second: owning the primitive kernels is 1.6-1.8x faster than arrow's two checked kernels on x86-64 and 1.4-1.5x on ARM64 (right at the 1.5x rule), and fusing adds 1.5-1.7x (x86-64) or 1.8-1.9x (ARM64). The speed figures are micro-benchmarks without selection vectors or real data.
 - **Reuse arrow-rs for everything else: medium.** No evidence either way; it follows the reuse rule.
 - **The lint and `overflow-checks`: medium-high.** Tried on a scratch crate and confirmed for every function ban and for the arithmetic and cast lints. Open: how noisy `arithmetic_side_effects` is on real kernel code, and lenient arrow entry points not on the list.
 - **Selection vector design, `Decimal64`, client-edge widening: low.** Reasoned only.
@@ -82,7 +82,7 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 ## Revisit when
 
 - **Before acceptance:**
-  1. Run the kernel benchmark on ARM64.
+  1. ~~Run the kernel benchmark on ARM64~~ done: `bench/results/20261104-arm64-run2-benchmarks.md`; conclusions hold with smaller margins.
   2. Run the lints on a real kernel crate (the scratch trial is done); judge the noise of `arithmetic_side_effects`.
   3. Write the guarded-expression tests (`WHERE x <> 0 AND 1 / x > 1`, `CASE`) and the selection-aware error behaviour of own and wrapped kernels.
   4. ~~Write the decimal rules~~ done: `docs/decimal-rules.md`, with the queries in `check/queries/decimal*` (they report `UNSUPPORTED` until the engine exists).
@@ -91,6 +91,8 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 - When arrow-rs releases a new major version, or when a profile of a benchmark query puts an arrow-rs kernel at the top of the self-time list.
 
 ## Revision notes
+
+- 2026-11-04, kernel benchmark on ARM64 (Neoverse V2): semantics identical; the case for owning arithmetic kernels holds, but the speed margin over arrow's two checked kernels is 1.4-1.5x there (x86-64: 1.6-1.8x), at the 1.5x threshold, so the justification rests mainly on semantics (selection-aware errors); fusing helps more on ARM64; arrow's Decimal128 outlier is an x86-64 effect (1.1x slower than Decimal64 on ARM64, 2.0-2.4x on x86-64); the branch-free NULL requirement matters on x86-64 (a per-row branch was 1.1-1.4x worse than arrow) and not on ARM64. Open check 1 closed.
 
 - 2026-11-03, decimal rules: written as `docs/decimal-rules.md` after an independent review; multiplication follows DuckDB's width-class cap instead of exact `p1 + p2`, because the exact rule would have made the whole Q1 expression chain `Decimal128`; the earlier remark that arrow's `Decimal64` cap is unusual was wrong (DuckDB caps the same way).
 - 2026-11-03, lint trial: the `disallowed-methods` bans, the arithmetic and cast lints and `overflow-checks` were tried on a scratch crate and work as listed, except that `CastOptions::default()` cannot be banned, so both cast functions are banned instead and casts go through one wrapper. Lint confidence raised from low to medium-high.

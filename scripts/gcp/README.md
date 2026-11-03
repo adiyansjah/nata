@@ -61,7 +61,5 @@ times, pull-versus-push, v2), `all`. Edit `job.sh` to change them.
   chain; moving zones; a failing job; the VM-hour budget; `kill` and Ctrl-C; cleanup leaving other runs' resources
   alone; no call to the real `gcloud`. `test/test-steps.sh` tests the step runner against SIGTERM and SIGKILL.
 - **Checked offline against the real `gcloud` help text:** every flag the script passes exists.
-- **Not verified against real Google Cloud:** Spot quota (`PREEMPTIBLE_CPUS` is 0 and there is no per-family
-  entry for C4A or N4A in the project; creation would fail harmlessly), actual stock-outs, that the VM boots and
-  mounts the data disk as `vm-startup.sh` assumes, how long the jobs really take, and whether Hyperdisk's default
-  IOPS and throughput stay within the free baseline. The first real run is the first test of those.
+- **Verified on real Google Cloud** by two runs (`bench/results/20261104-arm64-run1-operator-protocol.md`, `20261104-arm64-run2-benchmarks.md`): Spot creation of N4A and C4A VMs despite `PREEMPTIBLE_CPUS = 0`, Hyperdisk boot and data disks, the startup script mounting the data disk, SSH with the throwaway key, upload, resume markers, state copy-back, and label-based cleanup. Jobs took 3 and 6 minutes.
+- **Not yet exercised on real Google Cloud:** an actual preemption (none happened), the machine fallback chain, moving zones, `kill` mid-run, and whether Hyperdisk's default IOPS and throughput stay within the free baseline (the cost bound includes an allowance for that).
