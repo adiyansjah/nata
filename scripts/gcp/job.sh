@@ -40,6 +40,18 @@ case "$JOB" in
     done
     run pullpush bash -c 'cd "$SRC" && "$WORK/target-pm/release/spike-pipeline-model" data/tpch-sf1/lineitem.parquet pullpush 25 > "$RESULTS/pullpush.txt"'
     run v2 bash -c 'cd "$SRC" && "$WORK/target-pm/release/spike-pipeline-model" data/tpch-sf1/lineitem.parquet v2 > "$RESULTS/v2.txt"' ;;&
+  genops)
+    run gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run build-genops bash -c 'cd "$SRC/spikes/generic-ops" && RUSTFLAGS= CARGO_TARGET_DIR="$WORK/target-go" cargo build --release'
+    run genops-unit-tests bash -c 'cd "$SRC/spikes/generic-ops" && RUSTFLAGS= CARGO_TARGET_DIR="$WORK/target-go" cargo test --release > "$RESULTS/genops-unit-tests.txt" 2>&1'
+    # Correctness first: a failing check stops the job before any timing is recorded.
+    run genops-check bash -c 'cd "$SRC" && "$WORK/target-go/release/spike-generic-ops" check data/tpch-sf1/lineitem.parquet > "$RESULTS/genops-check.txt"'
+    run genops-nullcheck bash -c 'cd "$SRC" && "$WORK/target-go/release/spike-generic-ops" nullcheck data/tpch-sf1/lineitem.parquet > "$RESULTS/genops-nullcheck.txt"'
+    # Benchmarks are single steps: if one is interrupted it restarts from the beginning, on one boot.
+    for m in bench membench nullbench; do
+      run "genops-$m" bash -c 'cd "$SRC" && "$WORK/target-go/release/spike-generic-ops" '"$m"' data/tpch-sf1/lineitem.parquet 25 > "$RESULTS/genops-'"$m"'.txt"'
+    done
+    run genops-duckdb bash -c 'cd "$SRC" && spikes/generic-ops/duckdb-time.sh data/tpch-sf1/lineitem.parquet > "$RESULTS/genops-duckdb.txt"' ;;
   ci|bench|all) ;;
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

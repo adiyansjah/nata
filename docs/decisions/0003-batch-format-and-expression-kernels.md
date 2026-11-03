@@ -52,12 +52,21 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 - In the Parquet spike: decoding the two string columns took 80-85 ms as plain strings and 13-14 ms as dictionary arrays; converting `i128` decimals to `f64` cost about 70 ms of a 100 ms project step; exact integer sums matched DuckDB digit for digit; filtering by copying cost about 40 ms, and about 21 ms once the strings were dictionaries.
 - Strictness lints (`bench/results/20261103-lint-check.md`; arrow 60.1, clippy 1.99.1): function-level bans work, including through re-exports; `arithmetic_side_effects`, `cast_possible_truncation` and `cast_possible_wrap` flag plain `+`, `*` and truncating `as`; `overflow-checks = true` makes release `i32::MAX + 1` panic, while the Cargo default wraps silently. `CastOptions::default()` and a literal `safe: true` cannot be flagged, which is why both cast functions are banned instead.
 
+Generic-operator experiment (`bench/results/20261104-generic-ops-x86.md`; x86-64 only, shared 8-vCPU VM; TPC-H SF1 `lineitem`, two query shapes, no joins; results identical to DuckDB and, with synthetic NULLs, to a scalar reference):
+
+- Cost of generality against a hand-fused loop over the same batches, interleaved, 25 rounds, 1-8 threads. End to end (Parquet decode included): Q1 1.06-1.12x, Q6 0.89-0.94x (generic faster). Engine only (decoded batches in memory): Q1 1.20-1.51x, Q6 0.67-0.82x. Control arms (generic against generic) 1.00-1.07.
+- The first version was 2.1x on Q1 engine-only. A profile put 71% in the aggregation sink; computing group id, count and the three sums in one pass instead of five cut it to 1.47x. The selection vector and the primitive kernels were not the expensive part.
+- Against DuckDB (in-process timer, min of 15, not interleaved with ours): generic Q1 end to end 0.79-0.94 of DuckDB's time, Q6 0.81-1.15 (slower at 1-2 threads, faster at 4-8). DuckDB's number includes parsing and planning; treat as comparable, not a ranking. (A first DuckDB timing had dropped the fastest run instead of the first; corrected in the results file.)
+- **ARM64 (Neoverse-N3, `bench/results/20261104-generic-ops-arm64.md`): the gap is larger on the unselective query.** Q1 1.20-1.29x end to end and 1.5-2.0x engine-only; Q6 0.85x end to end (faster than fused). The NULL penalty is 2.1-2.7x. The reason for the larger Q1 gap is unknown (not profiled). In-process DuckDB on the same VM took longer than the generic engine in every cell (0.64-0.87 of its time), not interleaved.
+- **NULL handling costs 1.8-2.5x of the engine-only time at 10% NULLs** in four columns, with three validity representations tried (bit test, bytes expanded per batch, hybrid on selection density); none got below about 1.8x.
+- Kernel tests: 10 unit tests; a mutation run on the final code of 15 breakages found one test gap (subtraction overflow masking), now closed.
+
 **Reasoned:** selection-aware error semantics (a SQL requirement, but the interaction with arrow kernels is argued from how they compute, not measured); the selection-vector design and its compaction cost; `Decimal64` for precision up to 18 (the kernel micro-benchmark shows `i64` storage is faster than `i128`, but end to end the reader returning `Decimal64` made no difference beyond noise, because Parquet decode dominated); client-edge widening (Postgres wire `NUMERIC` and Arrow Flight SQL client support for `Decimal64` was not checked); the 5% and 1.5x thresholds; and that `clippy` `disallowed-methods` can express every ban in decision 6.
 
 **Not covered:**
 
 - ARM64: the kernel benchmark ran once, on one quiet Neoverse-V2 VM (`bench/results/20261104-arm64-run2-benchmarks.md`); nothing else (selection-aware kernels, real data) did. By source inspection arrow-rs kernels have no architecture-specific code and no NEON path (they rely on LLVM autovectorization), so there is no fast path to lose, and no measurement of what LLVM produces there. The `parquet` crate has none either.
-- Real column data, multiple threads, strings, comparisons, filters, casts, joins, expressions wider than two operations, and kernels that take a selection vector. The own loops are lower bounds.
+- ARM64 for the generic-operator experiment on the V2 core (only N3 was run), and a profile of why Q1 is further from the fused loop there. Joins, general group-by (the experiment grouped on at most 32 dictionary codes), plain strings, casts, expressions wider than two operations, real (not synthetic) NULL distributions, buffer pooling and spill. The micro-benchmark loops are lower bounds; the experiment's fused baseline had no NULL handling.
 
 ## Confidence
 
@@ -66,8 +75,11 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 - **Own arithmetic and aggregate kernels: medium.** The reason is semantics first and a measured speed gain second: owning the primitive kernels is 1.6-1.8x faster than arrow's two checked kernels on x86-64 and 1.4-1.5x on ARM64 (right at the 1.5x rule), and fusing adds 1.5-1.7x (x86-64) or 1.8-1.9x (ARM64). The speed figures are micro-benchmarks without selection vectors or real data.
 - **Reuse arrow-rs for everything else: medium.** No evidence either way; it follows the reuse rule.
 - **The lint and `overflow-checks`: medium-high.** Tried on a scratch crate and confirmed for every function ban and for the arithmetic and cast lints. Open: how noisy `arithmetic_side_effects` is on real kernel code, and lenient arrow entry points not on the list.
-- **Selection vector design, `Decimal64`, client-edge widening: low.** Reasoned only.
-- Would change if: own kernels with selection and NULL handling lose their 1.5x on real data or on ARM64; the generic-operator experiment shows the cost of generality outweighs the gains; or a newer arrow-rs ships selection-aware or faster checked kernels.
+- **Selection vector design: medium.** Built and measured on two queries on x86-64: correct against DuckDB and a scalar reference, and it let the selective query beat the hand-fused loop. Not measured on ARM64, with joins, or with a general group-by.
+- **Cost of generality (end to end 1.06-1.12x on an unselective query on x86-64, 1.20-1.29x on ARM64 N3, faster on a selective one on both): medium.** One data set, two queries, a simple group-by. It shrinks to 1.2-1.5x engine-only, so it grows if decode gets faster.
+- **NULL handling cost (1.8-2.5x of engine time at 10% NULLs): medium, and the largest known cost.** Measured, but no representation tried removes it; the word-wise bitmap approach is untried.
+- **`Decimal64`, client-edge widening: low.** Reasoned only.
+- Would change if: own kernels with selection and NULL handling lose their 1.5x on real data or on ARM64; the generic-operator experiment on ARM64 or with joins shows the cost of generality outweighs the gains (on x86-64 and ARM64 N3 it does not so far); or a newer arrow-rs ships selection-aware or faster checked kernels.
 
 ## Consequences
 
@@ -78,19 +90,25 @@ This is open question 3 of `feature-map.md` ("where kernels come from").
 - Parquet scans must be able to hand back dictionary arrays and the narrowest decimal type, which may need our own page decoding later (the `parquet` crate expands dictionaries for some types).
 - When dictionary-aware operators arrive (T2) they need a cap on the product of key cardinalities, with a hash fallback above it.
 - Sums stay exact: `i128` accumulators for decimals, overflow is an error.
+- Aggregation is written as one pass per group-key set that updates count and all sums together, not one pass per aggregate (a third of generic Q1 time in the experiment).
+- NULL handling needs its own design work before it can be called done: it roughly doubles engine time at 10% NULLs. Candidates: word-wise bitmap operations, specialising on NULL-free batches (already done: kernels have a no-NULL path), or computing under a validity mask and deferring the check.
 
 ## Revisit when
 
 - **Before acceptance:**
   1. ~~Run the kernel benchmark on ARM64~~ done: `bench/results/20261104-arm64-run2-benchmarks.md`; conclusions hold with smaller margins.
   2. Run the lints on a real kernel crate (the scratch trial is done); judge the noise of `arithmetic_side_effects`.
-  3. Write the guarded-expression tests (`WHERE x <> 0 AND 1 / x > 1`, `CASE`) and the selection-aware error behaviour of own and wrapped kernels.
+  3. Write the guarded-expression tests (`WHERE x <> 0 AND 1 / x > 1`, `CASE`) and the selection-aware error behaviour of own and wrapped kernels. Partly done for own kernels in the experiment (unselected and NULL overflow, guard filter); wrapped arrow kernels and `CASE` remain.
   4. ~~Write the decimal rules~~ done: `docs/decimal-rules.md`, with the queries in `check/queries/decimal*` (they report `UNSUPPORTED` until the engine exists).
-  5. Run the generic-operator experiment: TPC-H Q1 plus a selective query (Q6) through generic filter, project and aggregate operators with selection vectors, NULL handling and a general hash aggregate. The gap to the hand-fused spike is the cost of generality, which this ADR has not measured.
+  5. ~~Run the generic-operator experiment~~ done on x86-64 and ARM64 (N3): `bench/results/20261104-generic-ops-x86.md`, `bench/results/20261104-generic-ops-arm64.md`. Remaining: explain the larger ARM64 Q1 gap (profile); a general group-by and a join; a cheaper NULL path.
   6. Re-review the evidence.
 - When arrow-rs releases a new major version, or when a profile of a benchmark query puts an arrow-rs kernel at the top of the self-time list.
 
 ## Revision notes
+
+- 2026-11-04, generic-operator experiment on ARM64 (Neoverse-N3, about $0.01): same direction, larger Q1 gap (1.20-1.29x end to end, 1.5-2.0x engine-only; Q6 0.85x), NULL penalty 2.1-2.7x, cause of the Q1 gap not investigated. Open check 5 done on both architectures.
+
+- 2026-11-04, generic-operator experiment (x86-64): the cost of generality is 1.06-1.12x end to end on Q1 and Q6 is faster than the hand-fused loop; 1.2-1.5x engine-only on Q1. Aggregation structure mattered more than kernel design. NULL handling is the largest measured cost (1.8-2.5x at 10% NULLs). Selection vector design raised from low to medium. Open check 5 done for x86-64. Mutation check on the final kernels found and closed one test gap.
 
 - 2026-11-04, kernel benchmark on ARM64 (Neoverse V2): semantics identical; the case for owning arithmetic kernels holds, but the speed margin over arrow's two checked kernels is 1.4-1.5x there (x86-64: 1.6-1.8x), at the 1.5x threshold, so the justification rests mainly on semantics (selection-aware errors); fusing helps more on ARM64; arrow's Decimal128 outlier is an x86-64 effect (1.1x slower than Decimal64 on ARM64, 2.0-2.4x on x86-64); the branch-free NULL requirement matters on x86-64 (a per-row branch was 1.1-1.4x worse than arrow) and not on ARM64. Open check 1 closed.
 

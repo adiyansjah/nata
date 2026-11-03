@@ -1,0 +1,20 @@
+# THROWAWAY SPIKE for ADR 0003 (open check 5): what does generality cost? A generic operator pipeline
+# (Arrow batches + selection vector, checked NULL-aware selection-aware kernels) against hand-fused loops
+# on TPC-H Q1 and Q6. Not part of the main workspace. Delete once ADR 0003 is accepted.
+[package]
+name = "spike-generic-ops"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = "60"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"

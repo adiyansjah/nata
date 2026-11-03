@@ -87,11 +87,13 @@ Hybrid: push-based inside a node, stream-based between fragments.
 ## Revisit when
 
 - **Before acceptance:**
-  1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. ARM64 tests: done (`bench/results/20261104-arm64-run1-operator-protocol.md`). Remaining from it: rebuild it on Arrow batches with selection vectors and a fused operator.
+  1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. ARM64 tests: done (`bench/results/20261104-arm64-run1-operator-protocol.md`). Remaining from it: rebuild the scheduler prototype itself on Arrow batches with selection vectors (the generic-operator experiment, `bench/results/20261104-generic-ops-x86.md`, ran Arrow batches with selection vectors through separate filter, project and aggregate stages on a simple morsel loop, not on the protocol prototype); a fused operator.
   2. ~~Re-run pull versus push correctly~~ done for x86-64: `bench/results/20261104-pull-vs-push-corrected.md`. Also done for ARM64: `bench/results/20261104-arm64-run2-benchmarks.md`. Open check 2 is closed.
 - At the window function slice (slice 8), the first real test of partitioned parallel windows with spill.
 
 ## Revision notes
+
+- 2026-11-04, generic-operator experiment (x86-64): operators over Arrow batches with a selection vector, as separate stages with a morsel-per-row-group loop, cost 1.06-1.12x a hand-fused loop end to end on Q1 and are faster on Q6. This does not test the operator protocol or the scheduler, which stay as in the earlier prototype; it supports the unfused operator-per-stage shape of the pipeline model. x86-64 only here; the ARM64 run (`bench/results/20261104-generic-ops-arm64.md`) showed the same direction with a larger unselective-query gap (1.20-1.29x).
 
 - 2026-11-04, pull versus push on ARM64 (quiet Neoverse-V2 Spot VM): no difference beyond about 1% in any of 12 cells; "push costs little" raised to high for dispatch overhead on a linear chain with Arrow kernels on both architectures; open check 2 closed. Limits that remain: cheaper kernels, static dispatch, branching pipelines.
 

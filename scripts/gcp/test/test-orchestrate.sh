@@ -28,6 +28,8 @@ new_world plan
 orch plan --job ci > "$T/plan.out" 2>&1; rc=$?
 check "plan exits 0 and prints the worst-case cost" "[ $rc -eq 0 ] && grep -q 'Worst-case cost' $T/plan.out"
 check "plan calls nothing" "[ ! -e $F/calls.log ]"
+orch plan --job genops > "$T/plan2.out" 2>&1; rc=$?
+check "the genops job is a known job" "[ $rc -eq 0 ] && grep -q 'job: genops' $T/plan2.out && [ ! -e $F/calls.log ]"
 new_world noapproval
 orch run --job ci > "$T/o" 2>&1; rc=$?
 check "a real run without --approved-usd is refused" "[ $rc -eq 2 ] && grep -q 'approved-usd' $T/o && [ ! -e $F/calls.log ]"

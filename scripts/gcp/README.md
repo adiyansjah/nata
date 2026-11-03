@@ -52,7 +52,7 @@ scripts/gcp/orchestrate.sh cleanup --run-id <id>                          # dele
 ```
 
 Jobs: `ci` (workspace tests and the operator-protocol tests six times), `bench` (SF1 data, kernel benchmark three
-times, pull-versus-push, v2), `all`. Edit `job.sh` to change them.
+times, pull-versus-push, v2), `genops` (the generic-operator experiment: unit tests, correctness checks, benchmarks, DuckDB timings), `all`. Edit `job.sh` to change them.
 
 ## What has been verified, and what has not
 
@@ -62,4 +62,5 @@ times, pull-versus-push, v2), `all`. Edit `job.sh` to change them.
   alone; no call to the real `gcloud`. `test/test-steps.sh` tests the step runner against SIGTERM and SIGKILL.
 - **Checked offline against the real `gcloud` help text:** every flag the script passes exists.
 - **Verified on real Google Cloud** by two runs (`bench/results/20261104-arm64-run1-operator-protocol.md`, `20261104-arm64-run2-benchmarks.md`): Spot creation of N4A and C4A VMs despite `PREEMPTIBLE_CPUS = 0`, Hyperdisk boot and data disks, the startup script mounting the data disk, SSH with the throwaway key, upload, resume markers, state copy-back, and label-based cleanup. Jobs took 3 and 6 minutes.
-- **Not yet exercised on real Google Cloud:** an actual preemption (none happened), the machine fallback chain, moving zones, `kill` mid-run, and whether Hyperdisk's default IOPS and throughput stay within the free baseline (the cost bound includes an allowance for that).
+- **Preemption recovery verified** by a deliberate loss of the VM mid-job (`bench/results/20261104-arm64-run3-preemption-test.md`): a new VM on the same data disk resumed the job, with the interrupted step run again and nothing else repeated.
+- **Not yet exercised on real Google Cloud:** the 30-second notice path (the hard loss tested gave no warning), the machine fallback chain, moving zones, `kill` mid-run, and whether Hyperdisk's default IOPS and throughput stay within the free baseline (the cost bound includes an allowance for that).
