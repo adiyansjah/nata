@@ -1,0 +1,11 @@
+# Spike-only stand-in for the `snap` crate, patched in via [patch.crates-io]
+# so the `parquet` crate's Snappy decoder can be swapped without forking it.
+[package]
+name = "snap"
+version = "1.1.99"
+edition = "2021"
+publish = false
+
+[dependencies]
+snap_orig = { path = "../vendor/snap-orig" }
+snappy_src = "0.2"

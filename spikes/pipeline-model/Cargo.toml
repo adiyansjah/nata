@@ -1,0 +1,24 @@
+# THROWAWAY SPIKE for ADR 0001. Not part of the main workspace.
+# Delete once the ADR is accepted and the result is recorded in bench/results/.
+[package]
+name = "spike-pipeline-model"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "*"
+parquet = "*"
+bytes = "1"
+snap = "1"
+
+[patch.crates-io]
+snap = { path = "shim-snap" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+debug = "line-tables-only"
+codegen-units = 1

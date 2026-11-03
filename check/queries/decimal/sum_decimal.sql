@@ -1,0 +1,1 @@
+SELECT sum(a) AS s FROM (VALUES (1.10::DECIMAL(15,2)), (2.20::DECIMAL(15,2)), (NULL)) t(a)

@@ -1,0 +1,2 @@
+-- expect-error
+SELECT CAST(123456::DECIMAL(10,0) AS DECIMAL(5,0)) AS v

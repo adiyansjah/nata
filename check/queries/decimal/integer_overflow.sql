@@ -1,0 +1,2 @@
+-- expect-error
+SELECT 2147483647::INTEGER + 1::INTEGER AS v

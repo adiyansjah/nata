@@ -1,0 +1,107 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels the older run, so minutes are not spent on stale commits.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # x86-64 and ARM64 are both first-class (docs/portability.md).
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record the runner
+        run: |
+          uname -srm
+          nproc
+          lscpu | grep -E 'Model name|Architecture|^CPU\(s\)|L2|L3' || true
+      - name: Install toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+
+  protocol:
+    # The operator-protocol prototype (spikes/operator-trait): scheduler, wakers, exchange, spill,
+    # and the deterministic shutdown-race test. ARM64's weaker memory ordering is the reason to
+    # run it on both architectures. Correctness only; shared runners give no usable timings.
+    name: operator protocol (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    env:
+      RUSTFLAGS: ""
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record the runner
+        run: |
+          uname -srm
+          nproc
+          lscpu | grep -E 'Model name|Architecture|^CPU\(s\)' || true
+      - name: Install toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: spikes/operator-trait
+      - name: Tests
+        working-directory: spikes/operator-trait
+        run: cargo test --release
+      - name: Tests again, 5 more times (a hang or a race can be one run in a hundred)
+        working-directory: spikes/operator-trait
+        run: for i in 1 2 3 4 5; do cargo test --release || exit 1; done
+
+  differential:
+    # Runs nata-check against DuckDB. Allowed to fail until the engine can
+    # answer queries; remove continue-on-error when slice 4 lands.
+    name: differential (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Install DuckDB (the build for this CPU)
+        run: |
+          case "$(uname -m)" in
+            x86_64) asset=duckdb-cli-linux-amd64.tar.gz ;;
+            aarch64) asset=duckdb-cli-linux-arm64.tar.gz ;;
+            *) echo "unsupported CPU $(uname -m)"; exit 1 ;;
+          esac
+          mkdir -p "$RUNNER_TEMP/duckdb" && cd "$RUNNER_TEMP/duckdb"
+          gh release download v2.0.0 --repo duckdb/duckdb -p "$asset"
+          tar -xzf "$asset"
+          echo "$PWD" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: duckdb --version
+      - run: scripts/gen-tpch.sh 0.01 data/tpch-sf0.01
+      - run: cargo build --workspace
+      - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/smoke
+      - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/decimal
+      - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/decimal-differences

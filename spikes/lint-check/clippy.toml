@@ -1,0 +1,9 @@
+disallowed-methods = [
+  { path = "arrow_arith::numeric::add_wrapping", reason = "wraps silently; use add" },
+  { path = "arrow_arith::numeric::sub_wrapping", reason = "wraps silently; use sub" },
+  { path = "arrow_arith::numeric::mul_wrapping", reason = "wraps silently; use mul" },
+  { path = "arrow_arith::aggregate::sum", reason = "wraps silently; use sum_checked" },
+  { path = "arrow_cast::cast::cast", reason = "default CastOptions return NULL on failure" },
+  { path = "arrow_cast::cast::cast_with_options", reason = "use the strict_cast wrapper" },
+  { path = "arrow_cast::cast::CastOptions::default", reason = "default is safe = true (NULL on failure)" },
+]

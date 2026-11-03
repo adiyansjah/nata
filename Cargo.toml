@@ -1,0 +1,23 @@
+[workspace]
+resolver = "3"
+members = ["crates/nata", "crates/nata-bench", "crates/nata-check"]
+exclude = ["spikes"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.99"
+
+[workspace.dependencies]
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "warn"
+dbg_macro = "deny"

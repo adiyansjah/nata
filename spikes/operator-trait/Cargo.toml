@@ -1,0 +1,10 @@
+# THROWAWAY SPIKE for ADR 0001 (open check 1): does the operator protocol survive the hard cases?
+# std only, on purpose: it tests control flow (blocked, wakers, early finish, dependencies, spill),
+# not kernels. Not part of the main workspace. Delete once ADR 0001 is accepted.
+[package]
+name = "spike-operator-trait"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]

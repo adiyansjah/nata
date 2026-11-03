@@ -1,0 +1,119 @@
+# Way of working
+
+Principle: **small and complete beats broad and lacking.** Every capability that lands is finished: it works, it is tested, it is measured, it is documented, and it fails clearly outside its limits.
+
+## 1. Vertical slices
+
+Build one thin capability end to end before starting the next. A slice goes through the whole stack:
+
+`parse -> plan -> optimize -> execute -> result over the wire`
+
+Example slice: "`SELECT ... WINDOW row_number() OVER (PARTITION BY ... ORDER BY ...)` over Parquet." Not "all window functions". Not "the parser, then later the executor".
+
+Order slices by what the internal data team needs next (window functions, multi-table joins, Iceberg scans), not by what is interesting to build.
+
+## 2. Definition of done (every slice)
+
+A slice is not done until all of these hold:
+
+1. **Correct.** Results match DuckDB on a differential test suite (same query, same data, compared output), including NULLs, empty inputs and ties.
+2. **Tested at the edges.** Empty tables, one row, all-NULL columns, duplicates, data larger than memory (spill path). Concurrent code (schedulers, channels, wakers, shutdown) is also tested under CPU contention and with injected delays that widen race windows: a scheduler bug passed 10 of 10 runs on an idle machine and hung in most runs under load (`bench/results/20261103-operator-trait-prototype.md`).
+3. **Measured.** A benchmark exists and its result is recorded in `bench/results/`. Any speed claim states what limits the number and what was run (warm or cold cache, data size, hardware). Do not report a number you have not explained. How measurements are made: section 6.
+4. **Explainable.** `EXPLAIN` and `EXPLAIN ANALYZE` show the new operators.
+5. **Documented.** The supported-SQL page lists exactly what works, with an example.
+6. **Fails loudly.** Anything not supported returns a clear `not supported yet: <what>` error. Never a wrong result, never a silent fallback, never a panic.
+7. **Clean.** `cargo fmt`, `cargo clippy -- -D warnings` and all tests pass in CI.
+
+## 3. No stubs on main
+
+- Nothing half-built merges. Unfinished work stays on a branch or behind a clear unsupported error.
+- No `todo!()` or `unimplemented!()` reachable from user SQL.
+- The supported-SQL page is the contract. If it is not listed, it is not supported.
+
+## 4. Small, complete tools
+
+Each binary or crate does one job and does it fully:
+
+| Tool | Job | Complete means |
+|---|---|---|
+| `nata` | run a node / CLI client | start, query, stop, with sensible defaults and no config file |
+| `nata-bench` | reproducible benchmarks | one command, prints results and the hardware/config used |
+| `nata-check` | differential correctness | runs a query set against Nata and DuckDB and reports mismatches |
+
+Add a new tool only when an existing one cannot do the job. Prefer deleting over adding.
+
+## 5. Correctness before speed
+
+Order within a slice: make it right, prove it right, then make it fast. A fast wrong result is worse than a slow right one. Optimizations land with a benchmark showing the gain and a test showing no change in results. Performance work must hold on both x86-64 and ARM64: see [portability.md](portability.md).
+
+## 6. Decisions rest on evidence and record why
+
+A decision that cannot be explained cannot be revisited. Every architecture or build-versus-reuse choice is written in `docs/decisions/NNNN-title.md` (template: `decisions/0000-template.md`). About one page; link the detail instead of copying it.
+
+### What an ADR contains
+
+1. **Context.** The forces and requirements, linked to the docs they come from.
+2. **Decision.** What we will do.
+3. **Why.** The reasons for this choice in plain sentences, not only the choice.
+4. **Alternatives considered.** At least two real ones (including "reuse the existing crate" or "do nothing" where they apply), and why each lost.
+5. **Evidence**, in three parts:
+   - *Measured*: link to `bench/results/`, with what limits the number.
+   - *Reasoned*: arguments that no measurement supports.
+   - *Not covered*: what the evidence cannot show.
+6. **Confidence.** High, medium or low for the decision, and separately for each measured claim; and what finding would change it.
+7. **Consequences** and **Revisit when.**
+
+### Rules
+
+- **Label every claim as measured or reasoned.** Reasoned is allowed. Presenting it as measured is not.
+- **Weak evidence is called weak.** "We found no cost" is not "there is no cost".
+- **Build versus reuse needs a bake-off**: a small benchmark of the existing crate against the custom attempt.
+- **Status.** An agent or a human proposes; a human accepts. An accepted ADR is not edited in place: append a dated amendment, or supersede it with a new ADR. A proposed ADR is updated when new evidence arrives, and says what changed.
+- **Independent check before acceptance.** Someone who did not produce the evidence reads it and tries to break it (a human, or a second agent given the data and asked to critique, not to confirm). Their findings are checked against the code before they are acted on (section 8).
+- **Spikes are throwaway.** Spike code lives in `spikes/`, results in `bench/results/`. Delete the code once the ADR is accepted; keep the results.
+- **Both architectures.** Evidence for a performance-sensitive decision is recorded on x86-64 and ARM64, or the ADR says which one is unmeasured (see [portability.md](portability.md), section 7).
+
+### How measurements are made
+
+A measurement is evidence only if it follows these.
+
+1. **Check the result before timing it.** Compare the output with the reference engine. A fast wrong answer is not a data point.
+2. **Compare variants in the same session, alternating.** Run A, B, A, B. Never time all of A and then all of B, and never compare a number from another day or session: shared machines drift by 10-30%.
+3. **Repeat, and report the noise.** Give min and median, and the run-to-run noise you saw. A difference smaller than the noise is not a result.
+4. **Time competitors the same way as our own code.** In-process against in-process, same threads, same cache state. Say what startup, planning and metadata loading each side includes.
+5. **Explain a number before reporting it.** Profile (`perf`) or change one thing at a time to find the cause. A guess is labelled a guess.
+6. **Keep the limits next to the result.** Data size, warm or cold cache, hardware, and what is excluded.
+7. **Correct mistakes in the open.** When a claim turns out wrong, add a dated *Correction* to the results file or ADR that says what was wrong and what is right. Do not silently overwrite it.
+
+## 7. Rhythm
+
+- Work in slices of days, not months. Each ends with something runnable.
+- At the end of each slice: run the benchmark, update the supported-SQL page, note what is still open.
+- Weekly: run the internal data team's real queries and record which pass, fail, or are slower than their current engine.
+
+## 8. Roles (humans and agents)
+
+- Claude Code plans and implements multi-file changes and runs the tooling. It may draft ADRs, run spikes and critique evidence; a human accepts an ADR (section 6).
+- Codex reviews independently before merging a large slice (`/codex:review`).
+- No agent commits, pushes or opens PRs unless asked.
+- Review findings are checked against the code before they are acted on.
+
+### Cloud spend (GCP)
+
+Cloud resources cost real money, so an agent never creates, starts or resizes one on its own. Before any GCP run (for example an ARM64 or x86-64 test or benchmark on a Spot VM):
+
+1. **Ask first.** Say what needs to run on GCP and why it cannot run locally or in CI.
+2. **Show the cost before running.** Give an estimate with: machine type and architecture, region, Spot or on-demand, vCPUs and memory, expected run time, disk size, and any egress or static IP. State the total in dollars and say it is an estimate. Prices come from the current Google Cloud pricing page or calculator, with the source and date. If a price could not be confirmed, say so.
+3. **Wait for a clear yes.** Do not start anything until the human confirms. A yes covers that run only, not later ones.
+4. **Keep it small and stop it.** Use the smallest machine that answers the question. Delete or stop the VM when the run ends, and report what was created and what was removed. Never leave a VM or disk running unnoticed.
+5. **Record it.** Note the machine type, region and date next to the result in `bench/results/`, so the cost and the hardware are known (see section 6, measurements).
+
+## 9. Non-goals (to stay small)
+
+Until the internal team is running real queries on Nata:
+
+- No UI.
+- No write path (INSERT/UPDATE/MERGE).
+- No Trino compatibility.
+- No second table format.
+- No managed cloud service.

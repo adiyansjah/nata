@@ -1,0 +1,1 @@
+SELECT a, b FROM (VALUES (4.0::DECIMAL(5,1), 0::DECIMAL(5,0)), (6.0::DECIMAL(5,1), 2::DECIMAL(5,0))) t(a, b) WHERE b <> 0 AND a / b > 1 ORDER BY a

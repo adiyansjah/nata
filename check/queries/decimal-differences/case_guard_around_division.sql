@@ -1,0 +1,2 @@
+-- tolerance: 1e-7
+SELECT b, CASE WHEN b = 0 THEN NULL ELSE 10.0::DECIMAL(5,1) / b END AS q FROM (VALUES (0::DECIMAL(5,0)), (3::DECIMAL(5,0))) t(b) ORDER BY b
