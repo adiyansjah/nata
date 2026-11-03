@@ -47,6 +47,7 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - Eight threads in one process reached about 4x one thread, eight independent processes about 6x. The gap is partly the tail (49 row groups over 8 threads is 7 rounds, at best 87% efficiency); the rest is not explained.
 
 - **Protocol prototype** (`bench/results/20261103-operator-trait-prototype.md`; std only, no Arrow, x86-64 only): a scheduler with parking and wakers plus a source/operator/sink protocol expressed all four hard cases and passed tests for each: `LIMIT` exact across 8 tasks, with the scan stopping after 8-10 of 10,000 morsels; a hash join equal to a reference, including 400 matches per probe row; an exchange consumer scheduled first on **one** worker thread without deadlock, and an 864-query stress; an aggregate spilling 50,000 entries within a 200-group budget (80 groups in the largest merged partition), result equal to a reference. Cancellation and an error in one task stop the rest. Nine deliberate breakages of the scheduler and operators were each caught by a test.
+- **ARM64 test run** (`bench/results/20261104-arm64-run1-operator-protocol.md`; one `n4a-highcpu-8` Spot VM, Neoverse N3, 8 vCPU): the whole protocol suite, including the deterministic shutdown test, passed in 6 of 6 repetitions, with no failure, panic or hang. One machine and six repetitions is modest evidence for a weaker memory model.
 - That prototype also found a real scheduler bug (a lost shutdown notification) that 10 of 10 idle-machine runs missed and that hung most runs under CPU contention; fixed, and covered by a deterministic test.
 - Protocol cost on one-row batches: about 190 ns per batch without blocking, 630-800 ns per batch through a capacity-1 exchange where nearly every batch parks and wakes a task. About 2-10% of the work in an 8K-row batch if a kernel costs about 1 ns per row (an estimate, not measured).
 
@@ -59,13 +60,13 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - A query-level memory budget: the prototype's is per task (a query holds up to tasks x budget), and its merge step is bounded by partition size, which skew would break.
 - A network or object-storage exchange fed by async tasks.
 - Work stealing: the prototype uses one FIFO queue under one lock.
-- ARM64 (see `portability.md`, section 7).
+- ARM64 **performance** (pull versus push, kernels; see `portability.md`, section 7). The prototype's *tests* did run on ARM64 (see Evidence).
 - Pull versus push on **ARM64**, with **cheaper kernels** or a **fused single-loop pipeline** (where dispatch would be a larger share), with **static dispatch**, and on **branching pipelines**. The corrected comparison covers one linear chain with Arrow kernels that allocate per batch, on x86-64.
 
 ## Confidence
 
 - **Decision: medium.** It rests on requirements and design reasoning that match `vision.md` and common practice, not on the spike.
-- **The protocol can express join, `LIMIT`, blocking exchange and spill: medium-high.** Shown in a prototype with deliberate-breakage checks, on x86-64 and without Arrow.
+- **The protocol can express join, `LIMIT`, blocking exchange and spill: medium-high.** Shown in a prototype with deliberate-breakage checks, on x86-64 and (tests only) ARM64, and without Arrow.
 - **"Push costs little" (dispatch overhead on x86-64, linear chain): medium-high.** The corrected comparison finds no difference beyond about ±3-5% at any batch size or thread count, down to 256-row batches. Not shown for ARM64, cheaper kernels or branching pipelines.
 - Would change if: the prototype's protocol proves unable to carry Arrow batches with selection vectors and fused operators; or the same comparison on ARM64 shows a clear cost for push.
 
@@ -85,11 +86,13 @@ Hybrid: push-based inside a node, stream-based between fragments.
 ## Revisit when
 
 - **Before acceptance:**
-  1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. Remaining from it: run its tests on ARM64, and rebuild it on Arrow batches with selection vectors and a fused operator.
+  1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. ARM64 tests: done (`bench/results/20261104-arm64-run1-operator-protocol.md`). Remaining from it: rebuild it on Arrow batches with selection vectors and a fused operator.
   2. ~~Re-run pull versus push correctly~~ done for x86-64: `bench/results/20261104-pull-vs-push-corrected.md`. Remaining: the same run on ARM64 (`spikes/pipeline-model`, mode `pullpush`).
 - At the window function slice (slice 8), the first real test of partitioned parallel windows with spill.
 
 ## Revision notes
+
+- 2026-11-04, ARM64 run of the operator-protocol suite: 6 of 6 repetitions passed on a Neoverse-N3 Spot VM; the "run its tests on ARM64" part of open check 1 is done. Pull versus push on ARM64 remains.
 
 - 2026-11-04, corrected pull-versus-push comparison (x86-64): no difference detectable beyond about ±3-5% at any batch size or thread count, so the earlier 10-20% gap is withdrawn as unexplained and probably run-order drift; "push costs little" raised from low to medium-high for x86-64; open check 2 reduced to the ARM64 run.
 

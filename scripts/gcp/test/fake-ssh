@@ -1,0 +1,18 @@
+#!/bin/bash
+# A fake `ssh` for testing orchestrate.sh. The last two arguments are user@host and the remote command.
+set -u
+: "${FAKE:?}"
+cmd="${*: -1}"; host="${*: -2:1}"; ip="${host#*@}"
+echo "ssh $ip: $cmd" >> "$FAKE/calls.log"
+idx="${ip##*.}"
+vm=""
+for v in "$FAKE"/vms/*/; do [ -d "$v" ] && [ "$(cat "$v/idx")" = "$idx" ] && vm=$v; done
+[ -n "$vm" ] || { echo "ssh: connect to host $ip port 22: Connection refused" >&2; exit 255; }
+d="$FAKE/disks/$(cat "$vm/disk")"
+case "$cmd" in
+  *mountpoint*) exit 0 ;;
+  *"test -f /mnt/work/START"*) [ -f "$d/START" ]; exit $? ;;
+  *"tar -xzf -"*) cat > /dev/null; echo "upload" >> "$FAKE/uploads.log"; touch "$d/START"; exit 0 ;;
+  *"tar -czf -"*) mkdir -p "$d/state" "$d/results" "$d/logs"; tar -czf - -C "$d" state results logs; exit 0 ;;
+esac
+echo "FAKE ssh: unhandled command: $cmd" >&2; exit 99

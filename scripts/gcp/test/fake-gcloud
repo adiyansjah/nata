@@ -1,0 +1,76 @@
+#!/bin/bash
+# A fake `gcloud` for testing orchestrate.sh: it keeps "resources" as files under $FAKE and simulates a Spot VM
+# that makes progress while polled and can vanish (preemption). It refuses calls that miss the safety flags.
+set -u
+: "${FAKE:?}"
+mkdir -p "$FAKE/disks" "$FAKE/vms"
+echo "$*" >> "$FAKE/calls.log"
+all="$*"
+arg() { local k=$1; shift; while [ $# -gt 0 ]; do [ "$1" = "$k" ] && { echo "${2:-}"; return; }; shift; done; }
+has() { [[ "$all" == *"$1"* ]]; }
+in_list() { local x=$1 l; for l in $2; do [ "$l" = "$x" ] && return 0; done; return 1; }
+
+case "$1 $2 $3" in
+  "config get-value project") echo fake-project; exit 0 ;;
+  "compute project-info describe") echo "${FAKE_OSLOGIN:-}"; exit 0 ;;
+esac
+
+zone=$(arg --zone "$@")
+case "$1 $2 $3" in
+  "compute disks create")
+    name=$4
+    in_list "$zone" "${FAKE_FAIL_DISK_ZONES:-}" && { echo "ERROR: disk create failed in $zone" >&2; exit 1; }
+    mkdir -p "$FAKE/disks/$name"; echo "$zone $(arg --labels "$@")" > "$FAKE/disks/$name.meta"; exit 0 ;;
+  "compute disks delete")
+    name=$4
+    for v in "$FAKE"/vms/*/; do [ -d "$v" ] && [ "$(cat "$v/disk")" = "$name" ] && { echo "ERROR: disk in use by $(basename "$v")" >&2; exit 1; }; done
+    rm -rf "$FAKE/disks/$name" "$FAKE/disks/$name.meta"; exit 0 ;;
+  "compute disks list")
+    label=$(echo "$all" | sed -n 's/.*labels.nata-run=\([^ ]*\).*/\1/p')
+    for m in "$FAKE"/disks/*.meta; do [ -f "$m" ] || continue
+      grep -q "nata-run=$label" "$m" && printf '%s\t%s\n' "$(basename "$m" .meta)" "$(cut -d' ' -f1 "$m")"
+    done; exit 0 ;;
+  "compute instances create")
+    name=$4; machine=$(arg --machine-type "$@"); disk=$(arg --disk "$@" | sed -n 's/^name=\([^,]*\),.*/\1/p')
+    for need in "--provisioning-model SPOT" "--instance-termination-action DELETE" "--max-run-duration" "--no-service-account" "--no-scopes" "auto-delete=no" "nata-run=" "startup-script=" "block-project-ssh-keys=TRUE"; do
+      has "$need" || { echo "FAKE: instance create without required flag: $need" >&2; exit 2; }
+    done
+    [ -d "$FAKE/disks/$disk" ] || { echo "ERROR: disk $disk not found" >&2; exit 1; }
+    in_list "$machine" "${FAKE_FAIL_MACHINES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED for $machine" >&2; exit 1; }
+    in_list "$zone" "${FAKE_FAIL_VM_ZONES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED in $zone" >&2; exit 1; }
+    [ "${FAKE_CREATE_ALWAYS_FAIL:-0}" = 1 ] && { echo "ERROR: quota exceeded" >&2; exit 1; }
+    n=$(( $(cat "$FAKE/incarnation" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$FAKE/incarnation"
+    mkdir -p "$FAKE/vms/$name"; echo "$zone" > "$FAKE/vms/$name/zone"; echo "$disk" > "$FAKE/vms/$name/disk"
+    echo "$machine" > "$FAKE/vms/$name/machine"; echo "$n" > "$FAKE/vms/$name/idx"; echo 0 > "$FAKE/vms/$name/polls"
+    echo "$(arg --labels "$@")" > "$FAKE/vms/$name/labels"; exit 0 ;;
+  "compute instances delete")
+    rm -rf "$FAKE/vms/$4"; exit 0 ;;
+  "compute instances list")
+    label=$(echo "$all" | sed -n 's/.*labels.nata-run=\([^ ]*\).*/\1/p')
+    for v in "$FAKE"/vms/*/; do [ -d "$v" ] || continue
+      grep -q "nata-run=$label" "$v/labels" && printf '%s\t%s\n' "$(basename "$v")" "$(cat "$v/zone")"
+    done; exit 0 ;;
+  "compute instances describe")
+    name=$4; v="$FAKE/vms/$name"
+    [ -d "$v" ] || { echo "ERROR: The resource '$name' was not found" >&2; exit 1; }
+    idx=$(cat "$v/idx")
+    if has natIP; then echo "10.0.0.$idx"; exit 0; fi
+    polls=$(( $(cat "$v/polls") + 1 )); echo "$polls" > "$v/polls"
+    limit=$(echo "${FAKE_PREEMPT_AFTER:-}" | awk -v i="$idx" '{ print $i + 0 }')
+    if [ "$limit" -gt 0 ] && [ "$polls" -ge "$limit" ]; then rm -rf "$v"; echo "ERROR: not found (preempted)" >&2; exit 1; fi
+    # The job makes progress only once the orchestrator has delivered the source (START).
+    d="$FAKE/disks/$(cat "$v/disk")"
+    if [ -f "$d/START" ]; then
+      mkdir -p "$d/state"
+      done_n=$(ls "$d/state" | grep -c '^step-.*\.done$')
+      for _ in $(seq 1 "${FAKE_STEPS_PER_POLL:-2}"); do
+        [ -f "$d/state/job.finished" ] || [ -f "$d/state/job.failed" ] && break
+        done_n=$((done_n + 1))
+        if [ "${FAKE_JOB_FAILS_AT_STEP:-0}" = "$done_n" ]; then echo fail > "$d/state/job.failed"; break; fi
+        touch "$d/state/step-$done_n.done"
+        [ "$done_n" -ge "${FAKE_STEPS_TOTAL:-6}" ] && { touch "$d/state/job.finished"; break; }
+      done
+    fi
+    echo RUNNING; exit 0 ;;
+esac
+echo "FAKE gcloud: unhandled call: $*" >&2; exit 99
