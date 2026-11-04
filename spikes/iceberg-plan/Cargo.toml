@@ -1,0 +1,35 @@
+# THROWAWAY SPIKE for verification-plan items 25 (what we write, others read, and the reverse) and 26 (planning an Iceberg scan is correct and fast):
+# Iceberg v2 types, partition transforms (checked against the spec's own vectors), manifests and manifest lists, a table writer with real Parquet files
+# and metrics, an inclusive-projection scan planner with position and equality deletes, and a reader. Not part of the main workspace.
+# Delete once the table-format ADR is accepted.
+[package]
+name = "spike-iceberg-plan"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+name = "iceplan"
+path = "src/lib.rs"
+
+[dependencies]
+arrow = "60"
+parquet = { version = "60", features = ["arrow"] }
+apache-avro = { version = "0.21", features = ["snappy", "zstandard"] }
+serde_json = "1"
+rayon = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+overflow-checks = true
+
+[profile.mutate]
+inherits = "release"
+lto = "off"
+codegen-units = 16
+debug = false
