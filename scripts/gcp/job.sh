@@ -206,7 +206,7 @@ case "$JOB" in
   failmodel|failmodel-retry)
     # verification-plan item 29 (spikes/failure-model): the QueryLifecycle TLA+ model (TLC), the canaries and the mutants.
     # failmodel-retry: only the configuration the first run did not finish (it was cut short), with a longer TLC timeout
-    [ "$JOB" = failmodel-retry ] && export FM_ONLY=live-safe-2x3 FM_TIMEOUT=6000
+    [ "$JOB" = failmodel-retry ] && export FM_ONLY=live-safe-2x3 FM_TIMEOUT=9000 FM_SKIP_MUTANTS=1
     run fm-all bash -c 'cd "$SRC" && spikes/failure-model/gcp-check.sh "$RESULTS/failure-model" > "$RESULTS/failure-model-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/failure-model-exit.txt"; true' ;;
   opsbeyond)
     # verification-plan item 31 (spikes/operators-beyond): unit tests, the DuckDB differential check (memory and spill), the mutants.

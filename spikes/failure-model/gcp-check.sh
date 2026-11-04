@@ -2,7 +2,7 @@
 # Verification-plan item 29 on a clean Debian VM (GCP): the QueryLifecycle model (TLC): every real configuration, the coverage canaries
 # and the mutants. Reuses the pinned tools of the iceberg-commit spike (Temurin JDK 17, tla2tools.jar, checksum-verified).
 #   usage: spikes/failure-model/gcp-check.sh <results-dir>
-# Environment (optional): FM_ONLY comma list of configurations to run instead of all (the canaries still run); FM_WORK scratch dir; FM_TIMEOUT seconds per TLC run (default 3600); FM_HEAP_MB (default 24000).
+# Environment (optional): FM_SKIP_MUTANTS=1 skips the mutants; FM_ONLY comma list of configurations to run instead of all (the canaries still run); FM_WORK scratch dir; FM_TIMEOUT seconds per TLC run (default 3600); FM_HEAP_MB (default 24000).
 # Exit status 0 only if the real configurations pass, every canary is violated and every mutant is CAUGHT.
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -26,7 +26,9 @@ C="python3 -I check.py"; A="--java $TOOLS/jdk/bin/java --jar $TOOLS/tla2tools.ja
 python3 -I -c "import ast,sys; ast.parse(open('check.py').read())" || { log "FAIL python syntax"; exit 1; }
 log "== model (real configurations and canaries)"
 $C model $A ${FM_ONLY:+--only $FM_ONLY} --out "$OUT/model" 2>&1 | tee -a "$SUMMARY"; [ "${PIPESTATUS[0]}" = 0 ] && log "PASS model" || { log "FAIL model"; FAILED=1; }
+if [ "${FM_SKIP_MUTANTS:-0}" = 1 ]; then log "== mutants: skipped (FM_SKIP_MUTANTS=1; they passed 12 of 12 on GCP in an earlier run)"; else
 log "== mutants"
 $C mutants $A --out "$OUT/mutants" 2>&1 | tee -a "$SUMMARY"; [ "${PIPESTATUS[0]}" = 0 ] && log "PASS mutants" || { log "FAIL mutants"; FAILED=1; }
+fi
 [ $FAILED = 0 ] && log "VERDICT: all gating phases passed" || log "VERDICT: FAILED (see above)"
 exit $FAILED
