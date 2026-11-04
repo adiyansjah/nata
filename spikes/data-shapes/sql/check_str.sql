@@ -5,7 +5,7 @@ UNION ALL SELECT 's_hi_length', min(length(s_hi)), 20, 20 FROM f
 UNION ALL SELECT 's_long_min_length', min(length(s_long)), 100, 500 FROM f
 UNION ALL SELECT 's_long_max_length', max(length(s_long)), 450, 500 FROM f
 UNION ALL SELECT 's_long_distinct', count(DISTINCT s_long), 0.6 * @ML@ * (1 - exp(-@M@ / @ML@::DOUBLE)), @ML@ FROM f
-UNION ALL SELECT 's_empty_share_empty', avg((s_empty = '')::INT), 0.40 - 4 * sqrt(0.24 / count(*)), 0.40 + 4 * sqrt(0.24 / count(*)) FROM f
+UNION ALL SELECT 's_empty_share_empty', sum((s_empty = '')::INT) / count(*)::DOUBLE, 0.40 - 4 * sqrt(0.24 / count(*)), 0.40 + 4 * sqrt(0.24 / count(*)) FROM f
 UNION ALL SELECT 's_empty_share_null', avg((s_empty IS NULL)::INT), 0.03 - 4 * sqrt(0.03 / count(*)), 0.03 + 4 * sqrt(0.03 / count(*)) FROM f
 UNION ALL SELECT 's_utf8_share_non_ascii (every row)', avg((strlen(s_utf8) > length(s_utf8))::INT), 1, 1 FROM f
 UNION ALL SELECT 's_utf8_share_with_combining_acute', avg(contains(s_utf8, chr(769))::INT), 0.08, 0.20 FROM f

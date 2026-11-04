@@ -9,7 +9,7 @@ cp "$HERE/job.sh" "$T/job.sh"
 cat > "$T/lib.sh" <<'LIB'
 : "${WORK:?}"; RESULTS="$WORK/results"; mkdir -p "$RESULTS"
 now() { date -u +%H:%M:%S; }; boot_id() { echo stubboot0; }
-step() { echo "STEP $1"; return 0; }
+step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; return 0; }
 fail_job() { echo "FAILJOB $1"; }
 finish_job() { echo "FINISHED"; }
 LIB
@@ -33,5 +33,7 @@ has h-mutate "$h" && ok "hashops alone still runs the mutation step" || bad "has
 n=$(steps nullpath); has np-all "$n" && ! has h-build "$n" && ok "nullpath alone runs only its own steps" || bad "nullpath alone: $(echo "$n" | grep STEP | tr '\n' ' ')"
 p=$(steps perf); has p-timing "$p" && ! has np-all "$p" && ok "perf alone runs only its own steps" || bad "perf alone"
 a=$(steps armcheck); has ac-all "$a" && ! has np-all "$a" && ok "armcheck runs only its own steps" || bad "armcheck"
+r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=nullmut data-shapes$' && ok "armcheck-retry runs only nullmut and data-shapes" || bad "armcheck-retry tasks: $(echo "$r" | grep ARMTASKS)"
+echo "$a" | grep -q '^ARMTASKS=<all>$' && ok "armcheck runs all tasks" || bad "armcheck tasks: $(echo "$a" | grep ARMTASKS)"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

@@ -206,7 +206,11 @@ def main():
         assert os.path.realpath(target) != real, "the mutation run must not share the project's target directory"
         if not os.path.isdir(os.path.join(target, "release")):
             os.makedirs(target, exist_ok=True)
-            shutil.copytree(os.path.join(HERE, "target", "release"), os.path.join(target, "release"), symlinks=True)
+            seed = os.path.join(HERE, "target", "release")
+            # Seeding with compiled dependencies only saves time. On a clean machine nothing has been built in the real
+            # tree yet (found on the first GCP run): then the dependencies are simply built in the mutation target.
+            if os.path.isdir(seed):
+                shutil.copytree(seed, os.path.join(target, "release"), symlinks=True)
         env = dict(os.environ, CARGO_BUILD_JOBS="2", CARGO_TARGET_DIR=target)
         only_test = os.environ.get("MUTATE_TEST", "")  # run just the unit tests whose name contains this (to show a given test kills a mutant)
         stages = [("unit tests", f"cargo test --release -q --no-fail-fast {only_test} 2>&1")]

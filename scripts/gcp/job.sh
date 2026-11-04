@@ -183,11 +183,14 @@ case "$JOB" in
     run np-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;&
 
-  armcheck)
+  armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
     # data-shape checks, concurrently on one 16-vCPU machine. Not gating: the summary lists PASS/FAIL per task.
     run ac-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    # armcheck-retry: only the two tasks that failed on their first run because of script defects (null-path mutation seed, a
+    # data-shape check), with the fixes; ARMCHECK_TASKS is read by armcheck.sh
+    [ "$JOB" = armcheck-retry ] && export ARMCHECK_TASKS="nullmut data-shapes"
     run ac-all bash -c 'cd "$SRC" && scripts/gcp/armcheck.sh "$RESULTS/armcheck" > "$RESULTS/armcheck-summary.txt" 2>&1; true' ;;
   kani-mut-crate)
     # The mutation check of the Kani proofs of the REAL crate (spikes/kani-nata-kernels/mutate_kani.py): each deliberate
@@ -219,7 +222,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|kani-mut-crate) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac
