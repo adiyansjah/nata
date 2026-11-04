@@ -1,6 +1,6 @@
 # Loom model of the `stop_depth` early-finish protocol (arrow-pipeline spike)
 
-Date: 2026-11-04. Status: **model and mutants written and compile-checked; NOT RUN.** Every number below that says "to be filled" comes from the GCP run (rule: all runs happen on GCP; this box only compile-checks).
+Date: 2026-11-04. Status: **model and mutants written; RUN ON GCP on 2026-11-04 (see the section at the end): 16 of 16 loom models pass, 13 of 13 mutants are caught.** The text below was written before the run; the columns marked 'to be filled' are in the raw output at the end. Every number below that says "to be filled" comes from the GCP run (rule: all runs happen on GCP; this box only compile-checks).
 
 Question: does the early finish of ADR 0001 (LIMIT through a per-stage `stop_depth`, `Source::finish` closing the exchange, `wake_pipeline` on stop) keep its promises under **every** thread interleaving within stated bounds? Until now `spikes/arrow-pipeline` had differential tests against DuckDB and a property test (1,500 random LIMIT cases) for it, but no model checking (`20261104-arrow-pipeline.md`). This is the formal half of the evidence rule (`docs/way-of-working.md`, sections 5, 6 and 8); a check counts only because it is shown to fail on mutants.
 
@@ -118,3 +118,75 @@ GCP results: to be filled.
 - Not modelled: two tasks of one pipeline finishing at *different* depths at the same time (`stop_depth` is the maximum; needs a LIMIT and a closing exchange sink in one pipeline); several LIMITs in one pipeline; one exchange with several consumer pipelines (the exchange is work-sharing, one consumer pipeline); `SinkResult::Finished` other than from a closed exchange; errors from `combine` / `finalize`; the Arrow batch itself (the stand-in has a selection vector but no columns).
 - Everything is `SeqCst`; loom does not model weaker orderings or the hardware memory model of ARM64. Spurious condvar wake-ups are not modelled.
 - The mutants predicted "caught by" are predictions. The F1 port changed the exchange the differential tests ran against; those tests were not re-run (compile-checked only).
+
+
+## GCP results (2026-11-04, run `nata-1104-165412-3ddd`, `n4a-highcpu-16` Spot, Neoverse-N3, 16 vCPU)
+
+The task ran inside the `armcheck` bundle, concurrently with other tasks (load average 15-32), which does not matter for a model checker. Raw output of `gcp-check-loom.sh`, unedited:
+
+```
+== loom model of the stop_depth early-finish protocol (spikes/arrow-pipeline/loom-model)
+date (UTC): 2026-11-04T09:59:41Z
+host: Linux 6.1.0-54-cloud-arm64 aarch64, 16 vCPUs, 31.3 GiB
+rustc: rustc 1.99.1 (58cf8f9c3 2026-10-13)   cargo: cargo 1.99.1 (5f94df478 2026-08-27)   python3: Python 3.11.2   toolchain: 1.99.1
+source revision: unknown (+ uncommitted changes)
+LOOM_MAX_PREEMPTIONS: unset (per-test bound from tests/loom_stop.rs, printed per test below)   per-test timeout 3000s   mutant shards: 6
+load average at start: 15.83 8.45 3.37
+
+== 1 build (RUSTFLAGS=--cfg nata_loom)
+  build OK
+
+== 2 mutant edits apply exactly once (no cargo)
+  all 13 edits apply exactly once
+
+== 3 loom models on the UNMUTATED sources = the control (16 tests, one process each)
+test                                                                     rc   executions     bound     wall
+s1_one_task_limit_drops_upstream_pending_and_stops_source                0    81             Some(3)   0.1s 
+s1b_two_tasks_shared_limit_count_exact                                   0    5228           Some(2)   0.8s 
+s2_sibling_stop_keeps_rows_the_limit_admitted                            0    111238         Some(3)   13.2s 
+s2_sibling_stop_keeps_rows_the_limit_admitted_one_worker                 0    206            Some(3)   0.1s 
+s3_stop_depth_with_stages_on_both_sides_of_the_limit                     0    111238         Some(3)   12.2s 
+s4_stop_of_one_pipeline_does_not_stop_the_other                          0    41940          Some(3)   4.5s 
+s4_stop_of_one_pipeline_does_not_stop_the_other_b_queued_first           0    36049          Some(3)   3.2s 
+s5_task_parked_on_a_quiet_source_is_woken_by_the_stop                    0    103134         Some(3)   9.9s 
+s5_task_parked_on_a_quiet_source_is_woken_by_the_stop_one_worker         0    274            Some(3)   0.1s 
+x1_consumer_limit_stops_the_producer_consumer_queued_first               0    87406          Some(3)   11.4s 
+x1_consumer_limit_stops_the_producer_producer_queued_first               0    65475          Some(3)   5.8s 
+x2_shared_exchange_is_closed_only_by_the_last_consumer                   0    16097          Some(2)   2.2s 
+x3_stop_crosses_two_exchanges                                            0    7786           Some(2)   1.4s 
+x3_stop_crosses_two_exchanges_one_worker                                 0    853            Some(3)   0.2s 
+x4_cancel_racing_with_the_early_close                                    0    343279         Some(3)   34.0s 
+x5_cancel_three_pipelines_one_worker                                     0    24793          Some(3)   1.7s 
+  loom models: 16 passed, 0 failed, of 16
+
+== 4 the same tests on std threads (stress loop, LS_STRESS=200 runs each)
+  std stress: 16 passed, 0 failed
+
+== 5 two driver invocations in a row both pass their baseline (and the check can fail)
+  reuse check passed: the second baseline did not see the first mutant
+  reuse check can fail: with copy2 the second baseline reused the first mutant's binary and FAILED, as expected
+
+== 6 mutants (13, on private copies, 6 parallel shard(s); each shard's baseline = the unmutated copy passing the tests that judge its mutants)
+  CAUGHT   stop_depth_replaced_by_pipeline_wide_flag  [s2_sibling_stop_keeps_rows_the_limit_admitted_one_worker: assertion `left == right` failed: wrong number of rows (want min(limit, available) = 1): []]  (4s)
+  CAUGHT   stop_flag_shared_by_all_pipelines  [s4_stop_of_one_pipeline_does_not_stop_the_other: assertion `left == right` failed: pipeline B stopped by A's LIMIT, or lost rows: []]  (3s)
+  CAUGHT   stop_not_propagated_upstream_source_finish_never_called  [x1_consumer_limit_stops_the_producer_producer_queued_first: deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Blocked(Locat]  (3s)
+  CAUGHT   stop_not_propagated_upstream_last_consumer_never_closes  [x1_consumer_limit_stops_the_producer_producer_queued_first: deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Blocked(Locat]  (2s)
+  CAUGHT   limit_off_by_one_finishes_one_row_early  [s1_one_task_limit_drops_upstream_pending_and_stops_source: assertion `left == right` failed: wrong number of rows (want min(limit, available) = 2): [0]]  (3s)
+  CAUGHT   limit_admits_one_row_too_many  [s1_one_task_limit_drops_upstream_pending_and_stops_source: assertion `left == right` failed: wrong number of rows (want min(limit, available) = 2): [0, 1, 2]]  (3s)
+  CAUGHT   first_consumer_closes_the_shared_exchange  [x2_shared_exchange_is_closed_only_by_the_last_consumer: assertion `left == right` failed: a producer was told Finished while 1 consumer task(s) of the exchange are st]  (4s)
+  CAUGHT   wake_dropped_when_stopping  [s5_task_parked_on_a_quiet_source_is_woken_by_the_stop: deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Blocked(Locat]  (3s)
+  CAUGHT   pending_input_not_dropped_when_an_operator_finishes  [s1_one_task_limit_drops_upstream_pending_and_stops_source: an upstream stage ran again in the task whose LIMIT had already finished (pending input not dropped)]  (3s)
+  CAUGHT   stale_consumer_wakers_kept_when_the_exchange_closes  [x4_cancel_racing_with_the_early_close: Arc leaked.]  (8s)
+  CAUGHT   shutdown_does_not_release_the_tasks  [s1_one_task_limit_drops_upstream_pending_and_stops_source: Arc leaked.]  (4s)
+  CAUGHT   stop_wakes_by_enqueueing_directly_task_runs_twice  [s1_one_task_limit_drops_upstream_pending_and_stops_source: task started from a state other than Queued]  (3s)
+  CAUGHT   cancel_does_not_wake_the_parked_tasks  [x4_cancel_racing_with_the_early_close: deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Blocked(Locat]  (9s)
+  mutants: 13 CAUGHT, 0 SURVIVED, 0 INVALID, of 13; shard problems: 0
+
+== 7 the real sources are unchanged
+  byte-identical before and after (11 files hashed)
+
+load average at end: 32.50 21.81 10.30
+RESULT: PASS (models 16/16, std 16/16, mutants 13/13 CAUGHT, control OK, reuse checks OK, sources unchanged)
+```
+
+Reading it: the control (unmutated sources) passes all 16 loom models; the same 16 tests pass on std threads (200 runs each); all 13 mutants are caught, each by the test its property needs (a deadlock for the missing wake, a wrong row count for the off-by-one, an `Arc leaked` for the stale wakers and the shutdown leak); the reuse check passes and its demonstration with the old copy method FAILS as intended; the real sources are byte-identical before and after. Not modelled (as stated above): two tasks finishing at different depths in one pipeline, several LIMITs in one pipeline, and weaker memory orderings.

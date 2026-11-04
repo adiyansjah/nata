@@ -125,3 +125,160 @@ Expected total for the full `run.sh`: to be filled by the GCP run (the earlier s
 ## Limits
 
 Bounds: rows <= 4 (grouped sums <= 3 rows, 2 groups, `div_exact` <= 2 rows); column slices at least `rows` long; selections for arithmetic, sums and `filter_range` sorted, unique and < rows; `split_ne` / `filter_ne` / `merge_branches` index sequences of length <= 4 with entries < rows (an index >= rows is an out-of-bounds panic and is excluded by assumption, as the engine's contract); two parts in `merge_branches`; `i128` sums cannot overflow below 2^64 rows (argument, not proof). Not proved: the 64-bit division primitive (until the GCP run), the text of the overflow error, anything about the arrow wrappers (`arrow_path.rs`, `strict_cast.rs`), threading, performance. The 22 mutants are a sample of possible breakages, not all of them; mutants of `arrow_path.rs` are out of scope of these proofs. The local timings were taken under load 8-17 and vary by 2-4x with the load.
+
+
+## GCP results (2026-11-04)
+
+### Proofs of the real crate: run `nata-1104-145324` (`n4a-highmem-8` Spot, 64 GB, Debian 13 arm64; Kani 0.68, CBMC 6.11), 3 harnesses at a time, cap 900 s each, then retries at 3600 s
+
+**99 SUCCESSFUL, 1 SUCCESSFUL but COVER GAP, 5 TIMEOUT after 900s of 105 harnesses in phase 1.** Nothing failed and nothing was killed. The 5 that timed out at 900 s are the heavy division proofs with the real 64-bit divide (`div_exact` rows 1-2, `div_const_left_exact` rows 1-2) and the 32-bit `checked_div` primitive. In phase 2 the two `div_const_left_exact` proofs ALSO timed out at 3600 s; the other three retries were cut off when the run's 2.5 h budget ended (no result). **So 5 harnesses are NOT proved.** The 8-, 16- and 64-bit `checked_div` primitive proofs ARE proved (the 64-bit one in 882 s, 2 of 2 covers), and the logic proofs of `div` and `div_const_left` with the primitive replaced by a stand-in are proved up to 4 rows; the composition argument (stand-in logic + exact primitive) is a reasoned argument, not a checked one, and the exact primitive is proved at 8, 16 and 64 bits but NOT at 32 bits. One `SUCCESSFUL but COVER GAP` result is `group_sums_masked_matches_the_spec_rows1` (0 of 1 covers: one row cannot reach the case; rows 2-3 of the same family have all covers satisfied). Per family, the largest-row harness has all covers satisfied for every family except the two heavy `*_exact` families (which timed out) and the `filter_range` variants with no selection or an empty selection (by design: 1 of 2).
+
+Phase 2 (3600 s cap, 2 at a time):
+
+```
+div_const_left_exact_matches_the_spec_rows1: TIMEOUT after 3600s | verification ? | wall 3600s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+div_const_left_exact_matches_the_spec_rows2: TIMEOUT after 3600s | verification ? | wall 3600s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+```
+
+Phase 1, all 105 lines (peak RSS is that of the largest process the harness measured):
+
+```
+case_guarded_division_matches_the_spec_rows0: SUCCESSFUL | verification 2.8774915s | wall 6s | ** 0 of 1250 failed (41 unreachable)| covers satisfied: 0 of 3 (3 unreachable) | failing checks: 0 | peak RSS of the largest process 337 MB
+case_guarded_division_matches_the_spec_rows1: SUCCESSFUL | verification 222.03403s | wall 225s | ** 0 of 1251 failed (6 unreachable)| covers satisfied: 2 of 3 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 12647 MB
+case_guarded_division_matches_the_spec_rows2: SUCCESSFUL | verification 268.75653s | wall 272s | ** 0 of 1251 failed (6 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 13494 MB
+case_guarded_division_matches_the_spec_rows3: SUCCESSFUL | verification 348.21008s | wall 351s | ** 0 of 1251 failed (6 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 17061 MB
+case_guarded_division_matches_the_spec_rows4: SUCCESSFUL | verification 480.6136s | wall 483s | ** 0 of 1251 failed (6 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 22683 MB
+characterisation_of_truncating_division_i16: SUCCESSFUL | verification 166.02853s | wall 166s | ** 0 of 8 failed| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 174 MB
+characterisation_of_truncating_division_i8: SUCCESSFUL | verification 4.2970257s | wall 5s | ** 0 of 8 failed| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 175 MB
+div_const_left_exact_matches_the_spec_rows0: SUCCESSFUL | verification 1.0417397s | wall 3s | ** 0 of 964 failed (32 unreachable)| covers satisfied: 0 of 5 (5 unreachable) | failing checks: 0 | peak RSS of the largest process 326 MB
+div_const_left_exact_matches_the_spec_rows1: TIMEOUT after 900s | verification ? | wall 900s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+div_const_left_exact_matches_the_spec_rows2: TIMEOUT after 900s | verification ? | wall 900s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+div_const_left_logic_matches_the_spec_rows0: SUCCESSFUL | verification 1.0432652s | wall 4s | ** 0 of 968 failed (33 unreachable)| covers satisfied: 0 of 5 (5 unreachable) | failing checks: 0 | peak RSS of the largest process 325 MB
+div_const_left_logic_matches_the_spec_rows1: SUCCESSFUL | verification 6.4343133s | wall 9s | ** 0 of 969 failed (8 unreachable)| covers satisfied: 4 of 5 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 342 MB
+div_const_left_logic_matches_the_spec_rows2: SUCCESSFUL | verification 8.739407s | wall 11s | ** 0 of 969 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 430 MB
+div_const_left_logic_matches_the_spec_rows3: SUCCESSFUL | verification 11.005862s | wall 13s | ** 0 of 969 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 551 MB
+div_const_left_logic_matches_the_spec_rows4: SUCCESSFUL | verification 14.272651s | wall 17s | ** 0 of 969 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 692 MB
+div_exact_matches_the_spec_rows0: SUCCESSFUL | verification 1.025074s | wall 4s | ** 0 of 994 failed (36 unreachable)| covers satisfied: 0 of 5 (5 unreachable) | failing checks: 0 | peak RSS of the largest process 325 MB
+div_exact_matches_the_spec_rows1: TIMEOUT after 900s | verification ? | wall 900s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+div_exact_matches_the_spec_rows2: TIMEOUT after 900s | verification ? | wall 900s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+div_logic_matches_the_spec_rows0: SUCCESSFUL | verification 1.2328116s | wall 4s | ** 0 of 998 failed (37 unreachable)| covers satisfied: 0 of 5 (5 unreachable) | failing checks: 0 | peak RSS of the largest process 328 MB
+div_logic_matches_the_spec_rows1: SUCCESSFUL | verification 7.940538s | wall 10s | ** 0 of 999 failed (8 unreachable)| covers satisfied: 4 of 5 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 381 MB
+div_logic_matches_the_spec_rows2: SUCCESSFUL | verification 11.708952s | wall 15s | ** 0 of 999 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 474 MB
+div_logic_matches_the_spec_rows3: SUCCESSFUL | verification 14.439407s | wall 17s | ** 0 of 999 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 602 MB
+div_logic_matches_the_spec_rows4: SUCCESSFUL | verification 18.35573s | wall 21s | ** 0 of 999 failed (8 unreachable)| covers satisfied: 5 of 5 | failing checks: 0 | peak RSS of the largest process 744 MB
+div_zero_message_text: SUCCESSFUL | verification 1.0392749s | wall 3s | ** 0 of 1019 failed (14 unreachable)| covers satisfied: none | failing checks: 0 | peak RSS of the largest process 214 MB
+each_visits_the_selection_in_order_rows0: SUCCESSFUL | verification 0.58352876s | wall 2s | ** 0 of 186 failed (3 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 269 MB
+each_visits_the_selection_in_order_rows1: SUCCESSFUL | verification 0.61076975s | wall 2s | ** 0 of 186 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 270 MB
+each_visits_the_selection_in_order_rows2: SUCCESSFUL | verification 0.60907054s | wall 2s | ** 0 of 186 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 269 MB
+each_visits_the_selection_in_order_rows3: SUCCESSFUL | verification 0.6289183s | wall 3s | ** 0 of 186 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 269 MB
+each_visits_the_selection_in_order_rows4: SUCCESSFUL | verification 0.6362378s | wall 2s | ** 0 of 186 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 269 MB
+filter_ne_matches_the_spec_rows0: SUCCESSFUL | verification 1.6652977s | wall 4s | ** 0 of 579 failed (20 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 304 MB
+filter_ne_matches_the_spec_rows1: SUCCESSFUL | verification 45.079773s | wall 47s | ** 0 of 579 failed (5 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 2877 MB
+filter_ne_matches_the_spec_rows2: SUCCESSFUL | verification 55.004852s | wall 57s | ** 0 of 579 failed (5 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 3163 MB
+filter_ne_matches_the_spec_rows3: SUCCESSFUL | verification 66.93439s | wall 69s | ** 0 of 579 failed (5 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 3727 MB
+filter_ne_matches_the_spec_rows4: SUCCESSFUL | verification 97.70223s | wall 100s | ** 0 of 579 failed (5 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 4657 MB
+filter_range_i32_rows4_none: SUCCESSFUL | verification 2.4904497s | wall 5s | ** 0 of 815 failed (12 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 313 MB
+filter_range_i32_rows4_s0: SUCCESSFUL | verification 0.5313988s | wall 3s | ** 0 of 814 failed (30 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i32_rows4_s1: SUCCESSFUL | verification 1.9996963s | wall 4s | ** 0 of 815 failed (11 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i32_rows4_s2: SUCCESSFUL | verification 2.7780137s | wall 5s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i32_rows4_s3: SUCCESSFUL | verification 3.1541228s | wall 5s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 313 MB
+filter_range_i32_rows4_s4: SUCCESSFUL | verification 4.846197s | wall 7s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows0_none: SUCCESSFUL | verification 0.4454535s | wall 3s | ** 0 of 814 failed (29 unreachable)| covers satisfied: 0 of 2 (2 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows0_s0: SUCCESSFUL | verification 0.49422905s | wall 3s | ** 0 of 814 failed (31 unreachable)| covers satisfied: 0 of 2 (2 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows1_none: SUCCESSFUL | verification 1.6069915s | wall 3s | ** 0 of 815 failed (12 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows1_s0: SUCCESSFUL | verification 0.5286096s | wall 3s | ** 0 of 814 failed (30 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows1_s1: SUCCESSFUL | verification 1.8390992s | wall 4s | ** 0 of 815 failed (11 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows2_none: SUCCESSFUL | verification 1.9306998s | wall 4s | ** 0 of 815 failed (12 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows2_s0: SUCCESSFUL | verification 0.53358895s | wall 3s | ** 0 of 814 failed (30 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 313 MB
+filter_range_i64_rows2_s1: SUCCESSFUL | verification 2.022066s | wall 5s | ** 0 of 815 failed (11 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows2_s2: SUCCESSFUL | verification 3.030053s | wall 5s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows3_none: SUCCESSFUL | verification 2.6126895s | wall 5s | ** 0 of 815 failed (12 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows3_s0: SUCCESSFUL | verification 0.5278006s | wall 2s | ** 0 of 814 failed (30 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows3_s1: SUCCESSFUL | verification 2.2146258s | wall 5s | ** 0 of 815 failed (11 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows3_s2: SUCCESSFUL | verification 2.8892245s | wall 5s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows3_s3: SUCCESSFUL | verification 3.3084574s | wall 6s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows4_none: SUCCESSFUL | verification 4.18506s | wall 6s | ** 0 of 815 failed (12 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows4_s0: SUCCESSFUL | verification 0.5404241s | wall 3s | ** 0 of 814 failed (30 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 313 MB
+filter_range_i64_rows4_s1: SUCCESSFUL | verification 2.1887903s | wall 4s | ** 0 of 815 failed (11 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows4_s2: SUCCESSFUL | verification 3.4302046s | wall 6s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+filter_range_i64_rows4_s3: SUCCESSFUL | verification 5.029427s | wall 8s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 313 MB
+filter_range_i64_rows4_s4: SUCCESSFUL | verification 4.206257s | wall 6s | ** 0 of 815 failed (9 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 312 MB
+group_sums_dense_matches_the_spec_rows0: SUCCESSFUL | verification 0.9729536s | wall 2s | ** 0 of 531 failed (33 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 291 MB
+group_sums_dense_matches_the_spec_rows1: SUCCESSFUL | verification 7.652804s | wall 9s | ** 0 of 532 failed (8 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 291 MB
+group_sums_dense_matches_the_spec_rows2: SUCCESSFUL | verification 18.64191s | wall 20s | ** 0 of 532 failed (6 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 295 MB
+group_sums_dense_matches_the_spec_rows3: SUCCESSFUL | verification 55.54084s | wall 58s | ** 0 of 532 failed (6 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 354 MB
+group_sums_masked_matches_the_spec_rows0: SUCCESSFUL | verification 3.2695458s | wall 6s | ** 0 of 1030 failed (56 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 329 MB
+group_sums_masked_matches_the_spec_rows1: SUCCESSFUL but COVER GAP (1 unsatisfiable) | verification 40.68775s | wall 43s | ** 0 of 1031 failed (9 unreachable)| covers satisfied: 0 of 1 | failing checks: 0 | peak RSS of the largest process 884 MB
+group_sums_masked_matches_the_spec_rows2: SUCCESSFUL | verification 156.1747s | wall 158s | ** 0 of 1031 failed (9 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 953 MB
+group_sums_masked_matches_the_spec_rows3: SUCCESSFUL | verification 375.40396s | wall 378s | ** 0 of 1031 failed (9 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 965 MB
+merge_branches_matches_the_spec_rows0: SUCCESSFUL | verification 1.2654397s | wall 4s | ** 0 of 892 failed (24 unreachable)| covers satisfied: 0 of 2 (2 unreachable) | failing checks: 0 | peak RSS of the largest process 327 MB
+merge_branches_matches_the_spec_rows1: SUCCESSFUL | verification 7.9998894s | wall 10s | ** 0 of 893 failed (7 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 327 MB
+merge_branches_matches_the_spec_rows2: SUCCESSFUL | verification 14.630605s | wall 18s | ** 0 of 893 failed (7 unreachable)| covers satisfied: 1 of 2 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 354 MB
+merge_branches_matches_the_spec_rows3: SUCCESSFUL | verification 18.473587s | wall 21s | ** 0 of 893 failed (7 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 433 MB
+merge_branches_matches_the_spec_rows4: SUCCESSFUL | verification 21.505505s | wall 24s | ** 0 of 893 failed (7 unreachable)| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 504 MB
+mul_logic_matches_the_spec_rows0: SUCCESSFUL | verification 1.1447695s | wall 3s | ** 0 of 962 failed (33 unreachable)| covers satisfied: 0 of 3 (3 unreachable) | failing checks: 0 | peak RSS of the largest process 322 MB
+mul_logic_matches_the_spec_rows1: SUCCESSFUL | verification 7.9789433s | wall 11s | ** 0 of 963 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 398 MB
+mul_logic_matches_the_spec_rows2: SUCCESSFUL | verification 10.977578s | wall 13s | ** 0 of 963 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 451 MB
+mul_logic_matches_the_spec_rows3: SUCCESSFUL | verification 13.794185s | wall 17s | ** 0 of 963 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 440 MB
+mul_logic_matches_the_spec_rows4: SUCCESSFUL | verification 18.123209s | wall 21s | ** 0 of 963 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 485 MB
+primitive_checked_div_i16_is_exact: SUCCESSFUL | verification 44.58819s | wall 45s | ** 0 of 12 failed| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 149 MB
+primitive_checked_div_i32_is_exact: TIMEOUT after 900s | verification ? | wall 900s || covers satisfied: none | failing checks: 0 | peak RSS of the largest process 12 MB
+primitive_checked_div_i64_is_exact: SUCCESSFUL | verification 881.51447s | wall 882s | ** 0 of 9 failed| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 179 MB
+primitive_checked_div_i8_is_exact: SUCCESSFUL | verification 0.17778213s | wall 1s | ** 0 of 12 failed| covers satisfied: 2 of 2 | failing checks: 0 | peak RSS of the largest process 149 MB
+primitive_overflowing_mul_i16_is_exact: SUCCESSFUL | verification 2.577116s | wall 3s | ** 0 of 3 failed| covers satisfied: none | failing checks: 0 | peak RSS of the largest process 148 MB
+primitive_overflowing_mul_i64_is_exact: SUCCESSFUL | verification 19.96977s | wall 21s | ** 0 of 3 failed| covers satisfied: none | failing checks: 0 | peak RSS of the largest process 206 MB
+primitive_overflowing_sub_i64_is_exact: SUCCESSFUL | verification 0.057887048s | wall 1s | ** 0 of 3 failed| covers satisfied: none | failing checks: 0 | peak RSS of the largest process 147 MB
+split_ne_partitions_the_selection_rows0: SUCCESSFUL | verification 1.8886644s | wall 4s | ** 0 of 756 failed (25 unreachable)| covers satisfied: 0 of 3 (3 unreachable) | failing checks: 0 | peak RSS of the largest process 310 MB
+split_ne_partitions_the_selection_rows1: SUCCESSFUL | verification 146.39507s | wall 148s | ** 0 of 757 failed (5 unreachable)| covers satisfied: 1 of 3 (2 unreachable) | failing checks: 0 | peak RSS of the largest process 9006 MB
+split_ne_partitions_the_selection_rows2: SUCCESSFUL | verification 207.90292s | wall 210s | ** 0 of 757 failed (5 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 10013 MB
+split_ne_partitions_the_selection_rows3: SUCCESSFUL | verification 276.7236s | wall 279s | ** 0 of 757 failed (5 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 13378 MB
+split_ne_partitions_the_selection_rows4: SUCCESSFUL | verification 408.2639s | wall 411s | ** 0 of 757 failed (5 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 16811 MB
+sub_const_left_exact_matches_the_spec_rows0: SUCCESSFUL | verification 1.0293462s | wall 4s | ** 0 of 927 failed (28 unreachable)| covers satisfied: 0 of 3 (3 unreachable) | failing checks: 0 | peak RSS of the largest process 323 MB
+sub_const_left_exact_matches_the_spec_rows1: SUCCESSFUL | verification 8.193528s | wall 11s | ** 0 of 928 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 342 MB
+sub_const_left_exact_matches_the_spec_rows2: SUCCESSFUL | verification 12.929036s | wall 16s | ** 0 of 928 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 360 MB
+sub_const_left_exact_matches_the_spec_rows3: SUCCESSFUL | verification 19.476585s | wall 22s | ** 0 of 928 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 383 MB
+sub_const_left_exact_matches_the_spec_rows4: SUCCESSFUL | verification 28.65551s | wall 31s | ** 0 of 928 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 425 MB
+sub_const_left_logic_matches_the_spec_rows0: SUCCESSFUL | verification 0.98726183s | wall 3s | ** 0 of 934 failed (30 unreachable)| covers satisfied: 0 of 3 (3 unreachable) | failing checks: 0 | peak RSS of the largest process 322 MB
+sub_const_left_logic_matches_the_spec_rows1: SUCCESSFUL | verification 6.1635504s | wall 9s | ** 0 of 935 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 349 MB
+sub_const_left_logic_matches_the_spec_rows2: SUCCESSFUL | verification 8.707592s | wall 11s | ** 0 of 935 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 399 MB
+sub_const_left_logic_matches_the_spec_rows3: SUCCESSFUL | verification 10.090686s | wall 13s | ** 0 of 935 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 387 MB
+sub_const_left_logic_matches_the_spec_rows4: SUCCESSFUL | verification 13.127962s | wall 16s | ** 0 of 935 failed (7 unreachable)| covers satisfied: 3 of 3 | failing checks: 0 | peak RSS of the largest process 422 MB
+sum_matches_the_spec_rows0: SUCCESSFUL | verification 0.46085542s | wall 2s | ** 0 of 413 failed (19 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 278 MB
+sum_matches_the_spec_rows1: SUCCESSFUL | verification 3.4151018s | wall 4s | ** 0 of 414 failed (1 unreachable)| covers satisfied: 0 of 1 (1 unreachable) | failing checks: 0 | peak RSS of the largest process 277 MB
+sum_matches_the_spec_rows2: SUCCESSFUL | verification 8.272694s | wall 10s | ** 0 of 414 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 305 MB
+sum_matches_the_spec_rows3: SUCCESSFUL | verification 22.552828s | wall 24s | ** 0 of 414 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 323 MB
+sum_matches_the_spec_rows4: SUCCESSFUL | verification 43.74215s | wall 46s | ** 0 of 414 failed (1 unreachable)| covers satisfied: 1 of 1 | failing checks: 0 | peak RSS of the largest process 356 MB
+```
+
+### Mutation check of the crate proofs: run `nata-1104-165416-359c` (`n4a-highmem-8` Spot, 17 minutes, $0.043)
+
+**18 of 18 in-scope mutants CAUGHT, 0 survived, 0 invalid;** 4 skipped because they mutate `src/arrow_path.rs`, which these proofs do not include (the wrapper is covered by the crate's own differential tests, not by Kani). Output of `mutate_kani.py --rows 4 --cap 900 --heavy`:
+
+```
+               total        used        free      shared  buff/cache   available
+Mem:              62           1          58           0           2          61
+baseline (unmutated copy, merge_branches_matches_the_spec_rows1): SUCCESSFUL
+CAUGHT   | div: error flags ignore the selection (every row is checked) | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: zero-divisor flag not masked by validity | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: overflow flag not masked by validity | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: validity ignores the divisor (zero-in-NULL-divisor raises) | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: zero check dropped | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: MIN / -1 check dropped | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: output validity always true | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div: rounds toward minus infinity instead of zero | by div_exact_matches_the_spec_rows2 | div_exact_matches_the_spec_rows2=FAILED
+CAUGHT   | div: overflow reported ahead of zero | by div_logic_matches_the_spec_rows4 | div_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div_const_left: zero flag not masked by validity | by div_const_left_logic_matches_the_spec_rows4 | div_const_left_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div_const_left: ignores the selection | by div_const_left_logic_matches_the_spec_rows4 | div_const_left_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | div_const_left: operands swapped | by div_const_left_logic_matches_the_spec_rows4 | div_const_left_logic_matches_the_spec_rows4=FAILED
+CAUGHT   | guard split_ne: a NULL comparison counts as TRUE | by filter_ne_matches_the_spec_rows4 | filter_ne_matches_the_spec_rows4=FAILED
+CAUGHT   | guard split_ne: NULL comparisons vanish from the ELSE branch | by split_ne_partitions_the_selection_rows4 | filter_ne_matches_the_spec_rows4=SUCCESSFUL; split_ne_partitions_the_selection_rows4=FAILED
+CAUGHT   | guard split_ne: ignores the incoming selection | by filter_ne_matches_the_spec_rows4 | filter_ne_matches_the_spec_rows4=FAILED
+CAUGHT   | guard split_ne: tests `==` instead of `<>` | by filter_ne_matches_the_spec_rows4 | filter_ne_matches_the_spec_rows4=FAILED
+CAUGHT   | merge_branches: branch NULLs become valid | by merge_branches_matches_the_spec_rows4 | merge_branches_matches_the_spec_rows4=FAILED
+CAUGHT   | merge_branches: later branch does not overwrite | by merge_branches_matches_the_spec_rows4 | merge_branches_matches_the_spec_rows4=FAILED
+SKIPPED  | arrow wrapper: compaction skipped (take over all rows) | mutates src/arrow_path.rs, not included in these proofs
+SKIPPED  | arrow wrapper: selection not folded (every row kept) | mutates src/arrow_path.rs, not included in these proofs
+SKIPPED  | arrow wrapper: selection dropped from the null-buffer union | mutates src/arrow_path.rs, not included in these proofs
+SKIPPED  | arrow wrapper: validity bytes inverted | mutates src/arrow_path.rs, not included in these proofs
+SUMMARY: caught 18 of 18 in scope; survived 0; invalid 0; skipped (out of scope) 4
+```

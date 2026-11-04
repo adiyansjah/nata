@@ -232,3 +232,43 @@ The tests' default bound (3, or 2) applies when `LOOM_MAX_PREEMPTIONS` is unset;
 
 - **F1 (real, found by loom, confirmed by a std test, FIXED in the copy):** a cancelled query left a stale consumer waker in the channel, and the waker -> task -> scheduler -> pipeline -> channel cycle kept the query's state alive (memory leak, not a lost wake-up). The fix is 5 lines in `close_consumers` (take and drop the stored consumer wakers when the channel closes); `leak.rs::f2` went from 0/20 to 20/20, loom `f1` passes, and the mutant that removes the fix is caught by three tests. The fix has NOT been applied to `spikes/operator-trait/src/ops.rs` (out of scope); that is a decision for whoever owns the prototype.
 - No lost wake-up, deadlock, bound violation, loss, duplication or reordering found in the exchange within the bounds above. The exchange's wake protocol (store the waker and re-check under one lock; wake all waiters after a push, pop, `producer_done` and close) is what the models say it is, and removing any piece of it makes a model fail (mutants 1-6 locally; 1-16 per the GCP report; 8, 9, 12, 15, 17 again locally with the new models).
+
+
+## GCP run of the whole suite on the fixed exchange (2026-11-04, run `nata-1104-165412-3ddd`, `n4a-highcpu-16` Spot, Neoverse-N3)
+
+All 31 loom models, bound 3 (smaller where noted), one test per process, inside the `armcheck` bundle (so concurrent with other tasks; loom is deterministic, execution counts do not depend on load). **31 of 31 `rc=0`; 2,429,545 loom executions in total.** The three models that had not been re-run since the F1 fix (`c1`, `c2`, `d2`) are in this list and pass. Raw output:
+
+```
+  Executable tests/loom_exchange.rs (/tmp/nata-exl-target/release/deps/loom_exchange-24373f6a8f7a436f)
+a1_producer_blocked_on_full_consumer_queued_first                      rc=0  115770 executions, preemption bound Some(3)  wall=13.5s
+a1_producer_blocked_on_full_producer_queued_first                      rc=0  89263 executions, preemption bound Some(3)  wall=8.4s
+a2_consumer_blocked_on_empty_consumer_queued_first                     rc=0  57797 executions, preemption bound Some(3)  wall=5.2s
+a2_consumer_blocked_on_empty_producer_queued_first                     rc=0  44012 executions, preemption bound Some(3)  wall=3.9s
+a3_one_worker_consumer_queued_first                                    rc=0  242 executions, preemption bound Some(3)  wall=0.1s
+a3_one_worker_producer_queued_first                                    rc=0  233 executions, preemption bound Some(3)  wall=0.1s
+b1_producer_finishes_while_consumer_blocked_consumer_queued_first      rc=0  51944 executions, preemption bound Some(3)  wall=4.6s
+b1_producer_finishes_while_consumer_blocked_producer_queued_first      rc=0  39899 executions, preemption bound Some(3)  wall=3.1s
+b2_consumer_limit_closes_blocked_producer_consumer_queued_first        rc=0  87406 executions, preemption bound Some(3)  wall=9.7s
+b2_consumer_limit_closes_blocked_producer_one_worker                   rc=0  215 executions, preemption bound Some(3)  wall=0.1s
+b2_consumer_limit_closes_blocked_producer_producer_queued_first        rc=0  65475 executions, preemption bound Some(3)  wall=5.0s
+b3_two_producers_blocked_when_consumer_closes                          rc=0  9811 executions, preemption bound Some(2)  wall=1.6s
+c1_cancel_during_full_empty_handshakes                                 rc=0  462737 executions, preemption bound Some(3)  wall=45.0s
+c2_cancel_during_early_close                                           rc=0  343279 executions, preemption bound Some(3)  wall=28.0s
+c3_cancel_while_producer_finishes_and_consumer_blocked                 rc=0  161602 executions, preemption bound Some(3)  wall=10.7s
+c4_cancel_producer_blocked_forever_on_full_exchange                    rc=0  165256 executions, preemption bound Some(3)  wall=18.3s
+c5_cancel_one_worker                                                   rc=0  8623 executions, preemption bound Some(3)  wall=0.7s
+d1_bound_one_producer                                                  rc=0  229531 executions, preemption bound Some(3)  wall=19.9s
+d2_bound_two_producers                                                 rc=0  260145 executions, preemption bound Some(3)  wall=19.4s
+e1_order_one_producer                                                  rc=0  163149 executions, preemption bound Some(3)  wall=15.3s
+e2_order_per_producer_with_two_producers                               rc=0  13720 executions, preemption bound Some(2)  wall=1.9s
+e3_two_consumers_each_item_once                                        rc=0  7182 executions, preemption bound Some(2)  wall=1.2s
+e4_items_queued_at_producer_done_are_delivered                         rc=0  48356 executions, preemption bound Some(3)  wall=4.1s
+f1_cancel_leaves_no_waker_in_channel                                   rc=0  3879 executions, preemption bound Some(3)  wall=0.7s
+x1_fifo_order_with_capacity_3                                          rc=0  1 executions, preemption bound None  wall=0.2s
+x2_capacity_is_exact                                                   rc=0  1 executions, preemption bound None  wall=0.2s
+x3_close_wakes_every_blocked_producer                                  rc=0  1 executions, preemption bound None  wall=0.2s
+x4_push_and_producer_done_wake_every_blocked_consumer                  rc=0  1 executions, preemption bound None  wall=0.2s
+x5_race_blocked_producer_vs_consumer_close                             rc=0  7 executions, preemption bound Some(4)  wall=0.2s
+x6_race_blocked_consumer_vs_push                                       rc=0  7 executions, preemption bound Some(4)  wall=0.1s
+x7_pop_wakes_every_blocked_producer                                    rc=0  1 executions, preemption bound None  wall=0.1s
+```

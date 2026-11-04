@@ -153,3 +153,55 @@ One run on the shared local VM, **sanity only, load average 8-10** (other agents
 - The properties use `i64`-based decimals and one synthetic schema (3 data columns + id); real Parquet is covered by Q1/Q6 and one LIMIT scan only. NULL distributions are synthetic.
 - The scheduler change is checked by the properties and mutants above, not by the loom model; the loom suite of `operator-trait` was not re-run on it.
 - The exchange is in-process only; the compaction copy is unmeasured.
+
+
+## ARM64 and regression after the loom edits (2026-11-04, run `nata-1104-165412-3ddd`, `n4a-highcpu-16` Spot, Neoverse-N3)
+
+The loom work changed real sources of this spike (the scheduler's `sync` module and cfg name, `exchange.rs` with the F1 waker fix, `LIMIT` moved to `limit.rs`). The task `arrow-regress` of the `armcheck` bundle reran the whole correctness set on a clean ARM64 VM: build with overflow-checks on, every test with one test thread, Q1 and Q6 against DuckDB digit for digit at every thread and task count, `check`, `nullcheck`, the long stress (3,000 repetitions with 4 extra busy threads) and 10,000 random LIMIT cases. **Exit status 0; every step passed in 4 minutes.** This is also the first ARM64 run of the DuckDB differential of this spike (it ran only on x86-64 before). Selected lines of its output (unedited):
+
+```
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.07s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.31s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.61s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.41s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+ok    q1 threads=1 tasks=1 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q1 threads=1 tasks=2 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q1 threads=4 tasks=4 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q1 threads=4 tasks=8 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q1 threads=8 tasks=8 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q1 threads=8 tasks=16 identical to DuckDB (A,F,37734107.00,56586554400.73,53758257134.8700,1478493)
+ok    q6 threads=1 tasks=1 identical to DuckDB (123141078.2283)
+ok    q6 threads=1 tasks=2 identical to DuckDB (123141078.2283)
+ok    q6 threads=4 tasks=4 identical to DuckDB (123141078.2283)
+ok    q6 threads=4 tasks=8 identical to DuckDB (123141078.2283)
+ok    q6 threads=8 tasks=8 identical to DuckDB (123141078.2283)
+ok    q6 threads=8 tasks=16 identical to DuckDB (123141078.2283)
+ok   q1 threads=1 tasks=1 equals the generic-ops engine and every other configuration
+ok   q1 threads=1 tasks=2 equals the generic-ops engine and every other configuration
+ok   q1 threads=4 tasks=1 equals the generic-ops engine and every other configuration
+ok   q1 threads=4 tasks=4 equals the generic-ops engine and every other configuration
+ok   q1 threads=4 tasks=8 equals the generic-ops engine and every other configuration
+ok   q1 threads=8 tasks=1 equals the generic-ops engine and every other configuration
+ok   q1 threads=8 tasks=8 equals the generic-ops engine and every other configuration
+ok   q1 threads=8 tasks=16 equals the generic-ops engine and every other configuration
+ok   q6 threads=1 tasks=1 equals the generic-ops engine and every other configuration
+ok   q6 threads=1 tasks=2 equals the generic-ops engine and every other configuration
+ok   q6 threads=4 tasks=1 equals the generic-ops engine and every other configuration
+ok   q6 threads=4 tasks=4 equals the generic-ops engine and every other configuration
+ok   q6 threads=4 tasks=8 equals the generic-ops engine and every other configuration
+ok   q6 threads=8 tasks=1 equals the generic-ops engine and every other configuration
+ok   q6 threads=8 tasks=8 equals the generic-ops engine and every other configuration
+ok   q6 threads=8 tasks=16 equals the generic-ops engine and every other configuration
+ok   q1 with  10% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine (A,F,30562382.00,45863741224.30,39216554837.9827,1330579)
+ok   q1 with  50% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine (A,F,9425048.00,14160972149.05,6717961314.9740,739875)
+ok   q1 with 100% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine ()
+ok   q6 with  10% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine (80665435.4451)
+ok   q6 with  50% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine (7707116.0923)
+ok   q6 with 100% NULLs: protocol at 1, 4, 8 threads == scalar reference == generic-ops engine (NULL)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 119.25s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.20s
+```

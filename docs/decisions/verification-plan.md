@@ -9,7 +9,7 @@ Written 2026-11-04. Every item is a test, proof or measurement (way-of-working.m
 | 1 | The scheduler never loses a shutdown or wake, never runs a task twice, never hangs on cancel | loom model, checked to fail on the old bug and on wake-protocol mutants | local | Gate | **done within bounds** (`bench/results/20261104-loom-scheduler.md`); exchange and early finish not modelled |
 | 2 | The protocol scheduler runs Arrow batches with selection vectors and returns DuckDB's results | differential test | local | Gate | **done on x86-64** (`bench/results/20261104-arrow-pipeline.md`); found and fixed the stop-depth bug; loom re-run and speed pending |
 | 3 | `LIMIT` and early finish stay correct for random plans | property test against a simple reference | local | Gate | **done** (1,500 random cases, 33 of 33 mutants caught) |
-| 4 | Exchange backpressure stays bounded | loom or property test | local | Later | **done within bounds** (`bench/results/20261104-exchange-loom.md`), found a cancel leak (fix pending) |
+| 4 | Exchange backpressure stays bounded | loom or property test | local | Later | **done within bounds** (`bench/results/20261104-exchange-loom.md`): found a cancel leak (fixed); 31 of 31 models and 16 of 16 mutants on ARM64; the `stop_depth` early finish is also modelled (16 of 16 models, 13 of 13 mutants, `bench/results/20261104-stop-depth-loom.md`) |
 | 5 | Push cost with much cheaper kernels, static dispatch, branching pipelines | paired benchmark with a control arm | local, ARM64 about $0.01 | Later | not started |
 
 ## ADR 0002: async runtime and threading
