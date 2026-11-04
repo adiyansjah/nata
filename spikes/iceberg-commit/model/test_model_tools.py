@@ -77,8 +77,8 @@ class Tools(unittest.TestCase):
     def test_classify(self):
         self.assertEqual(tlc_runner.classify("Error: Invariant I2_NoLostUpdate is violated.\n5 states generated, 4 distinct states found", 12)[:2],
                          ("VIOLATED", "I2_NoLostUpdate"))
-        self.assertEqual(tlc_runner.classify("Model checking completed. No error has occurred.\n9 states generated, 7 distinct states found, 0 states left", 0)[0], "PASS")
-        self.assertEqual(tlc_runner.classify("Model checking completed. No error has occurred.", 1)[0], "ERROR")   # exit status must agree
+        self.assertEqual(tlc_runner.classify("Model checking completed. No error has been found.\n9 states generated, 7 distinct states found, 0 states left", 0)[0], "PASS")
+        self.assertEqual(tlc_runner.classify("Model checking completed. No error has been found.", 1)[0], "ERROR")   # exit status must agree
         self.assertEqual(tlc_runner.classify("Error: Evaluation error: bad", 150)[0], "ERROR")
         self.assertEqual(tlc_runner.classify("", 0)[0], "ERROR")
 

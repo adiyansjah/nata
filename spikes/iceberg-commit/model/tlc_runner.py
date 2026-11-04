@@ -2,7 +2,7 @@
 """Run TLC on one configuration and classify the outcome. Shared by run_model.py and mutate_model.py.
 
 Outcomes (Result.status):
-  PASS       "Model checking completed. No error has occurred."
+  PASS       "Model checking completed. No error has been found."
   VIOLATED   an invariant or temporal property is violated (Result.what names it)
   ERROR      anything else (parse error, evaluation error, out of memory, crash): never counts as evidence
   TIMEOUT    the time limit was reached before TLC finished: never counts as evidence
@@ -20,7 +20,7 @@ class Result:
     out: str = ""           # path of the TLC output file
 
 RE_INV = re.compile(r"Error: Invariant (\S+) is violated")
-RE_PROP = re.compile(r"Error: Temporal propert(?:y|ies) (?:\S+ )?(?:were|was|is) violated")
+RE_PROP = re.compile(r"Error: (?:Temporal propert(?:y|ies)|Action propert(?:y|ies)) (?:\S+ )?(?:were|was|is) violated")
 RE_STATES = re.compile(r"(\d+) states generated, (\d+) distinct states found")
 RE_ERR = re.compile(r"^(Error: .*|.*Exception.*|.*OutOfMemory.*)$", re.M)
 
@@ -33,7 +33,7 @@ def classify(text, rc):
         return "VIOLATED", m.group(1), gen, dist
     if RE_PROP.search(text):
         return "VIOLATED", "temporal property", gen, dist
-    if "Model checking completed. No error has occurred." in text and rc == 0:
+    if "Model checking completed. No error has been found." in text and rc == 0:
         return "PASS", "", gen, dist
     m = RE_ERR.search(text)
     return "ERROR", (m.group(1)[:200] if m else f"exit status {rc}, no recognised TLC output"), gen, dist
