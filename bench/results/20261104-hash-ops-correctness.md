@@ -350,3 +350,44 @@ arms. Durations below are what this loaded machine took, as a guide; **GCP durat
   run on the NULL-free TPC-H data.
 - Everything ran on x86-64. ARM64 is for the GCP run.
 - No speed conclusion is drawn anywhere in this file.
+
+
+## The DuckDB-diff layer and the nullcheck layer shown to fail on a known-bad engine (2026-11-04)
+
+GCP run `nata-1104-172548-4307` (2026-11-04, `n4a-highcpu-16` Spot, Neoverse-N3, 16 vCPU, Debian 12 arm64; task of the `armcheck-retry` job, run concurrently with four other tasks, so no timing here is evidence).
+
+Closes the limit stated in section 3 (no mutant had reached `nullcheck` or the DuckDB diff). `mutate.py --matrix` with one layer at a time:
+
+- Layer `duckdb` (the 7-query diff against DuckDB at 1, 4 and 8 threads): **2 of 2 caught** - `fan-out: only the first match of a chain is emitted` (caught in 218 s) and `merge loses the last thread's partial table` (145 s). Baseline passed all layers in 404 s.
+- Layer `nullcheck` (10/50/100% NULLs against a scalar reference): **2 of 2 caught** - `NULL group dropped from the output` (172 s) and `SUM adds the values of NULL rows` (132 s). Baseline passed all layers in 314 s.
+
+Both runs byte-compared the real sources before and after: unchanged. So both layers can fail, and the earlier 30 of 30 result (all caught by the test layer) is not the only line of defence.
+
+Raw output:
+
+```
+data: /mnt/work/src/data/tpch-sf1; 2 mutants; layers: ['duckdb']; matrix=True
+baseline passes all layers (404s)
+CAUGHT   fan-out: only the first match of a chain is emitted  [duckdb]  (218s)
+CAUGHT   merge loses the last thread's partial table  [duckdb]  (145s)
+
+| # | breakage | result | caught by |
+|---:|---|---|---|
+| 1 | fan-out: only the first match of a chain is emitted | CAUGHT | duckdb |
+| 2 | merge loses the last thread's partial table | CAUGHT | duckdb |
+
+caught 2 of 2; survived 0; invalid 0
+real sources unchanged (byte-compared before and after)
+data: /mnt/work/src/data/tpch-sf1; 2 mutants; layers: ['nullcheck']; matrix=True
+baseline passes all layers (314s)
+CAUGHT   NULL group dropped from the output  [nullcheck]  (172s)
+CAUGHT   SUM adds the values of NULL rows  [nullcheck]  (132s)
+
+| # | breakage | result | caught by |
+|---:|---|---|---|
+| 1 | NULL group dropped from the output | CAUGHT | nullcheck |
+| 2 | SUM adds the values of NULL rows | CAUGHT | nullcheck |
+
+caught 2 of 2; survived 0; invalid 0
+real sources unchanged (byte-compared before and after)
+```

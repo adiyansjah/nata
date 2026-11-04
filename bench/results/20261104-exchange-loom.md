@@ -272,3 +272,38 @@ x5_race_blocked_producer_vs_consumer_close                             rc=0  7 e
 x6_race_blocked_consumer_vs_push                                       rc=0  7 executions, preemption bound Some(4)  wall=0.1s
 x7_pop_wakes_every_blocked_producer                                    rc=0  1 executions, preemption bound None  wall=0.1s
 ```
+
+
+## GCP run of all 17 mutants and the control (2026-11-04)
+
+GCP run `nata-1104-172548-4307` (2026-11-04, `n4a-highcpu-16` Spot, Neoverse-N3, 16 vCPU, Debian 12 arm64; task of the `armcheck-retry` job, run concurrently with four other tasks, so no timing here is evidence).
+
+**17 of 17 mutants CAUGHT and the unmutated control passes (`CONTROL_OK`).** Each item runs the whole 31-model loom suite plus the leak tests on a private copy, 6 at a time. The mutants that break a wake-up are caught by a DEADLOCK: the test hangs and the 900 s timeout fires (those items took 1,014-1,046 s); the others fail fast (94 s for `producer_done_does_not_wake_consumer`). The previous GCP run covered mutants 1-16 over the earlier 23 models; this one covers all 17 over the 31 models.
+
+```
+spike exchange-loom: 17 mutants + the unmutated control
+queue: 18 items, 6 workers, output in /mnt/work/armcheck-work/exloom-mutants
+[10:44:09] worker 4: exchange-loom / push_does_not_wake_consumer -> CAUGHT (1014 s)
+[10:44:29] worker 3: exchange-loom / pop_does_not_wake_producer -> CAUGHT (1034 s)
+[10:44:34] worker 2: exchange-loom / push_blocked_without_storing_waker -> CAUGHT (1039 s)
+[10:44:41] worker 6: exchange-loom / pop_store_waker_without_recheck -> CAUGHT (1046 s)
+[10:45:43] worker 4: exchange-loom / producer_done_does_not_wake_consumer -> CAUGHT (94 s)
+[10:58:46] worker 5: exchange-loom / push_store_waker_without_recheck -> CAUGHT (1891 s)
+[10:58:58] worker 1: exchange-loom / pop_blocked_without_storing_waker -> CAUGHT (1903 s)
+[11:00:12] worker 5: exchange-loom / push_ignores_closed_channel -> CAUGHT (86 s)
+[11:00:38] worker 1: exchange-loom / capacity_off_by_one -> CAUGHT (100 s)
+[11:01:34] worker 2: exchange-loom / waker_kept_after_close -> CAUGHT (1020 s)
+[11:01:38] worker 5: exchange-loom / pop_checks_finished_before_queue -> CAUGHT (86 s)
+[11:02:26] worker 3: exchange-loom / close_consumers_does_not_wake_producers -> CAUGHT (1077 s)
+[11:02:28] worker 4: exchange-loom / consumer_finish_never_closes -> CAUGHT (1005 s)
+[11:02:56] worker 5: exchange-loom / sched_task_end_skips_source_finish -> CAUGHT (78 s)
+[11:03:03] worker 6: exchange-loom / wake_all_wakes_only_the_first -> CAUGHT (1102 s)
+[11:04:04] worker 2: exchange-loom / push_to_front_reorders -> CAUGHT (150 s)
+[11:04:57] worker 3: exchange-loom / none -> CONTROL_OK (151 s)
+[11:17:04] worker 1: exchange-loom / producer_done_drops_queued_items -> CAUGHT (986 s)
+
+=== summary (18 items)
+17 exchange-loom CAUGHT
+1 exchange-loom CONTROL_OK
+ALL CAUGHT, all controls pass
+```

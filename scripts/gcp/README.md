@@ -64,3 +64,24 @@ times, pull-versus-push, v2), `cpack` (three jobs in one VM: `crates` = object_s
 - **Verified on real Google Cloud** by two runs (`bench/results/20261104-arm64-run1-operator-protocol.md`, `20261104-arm64-run2-benchmarks.md`): Spot creation of N4A and C4A VMs despite `PREEMPTIBLE_CPUS = 0`, Hyperdisk boot and data disks, the startup script mounting the data disk, SSH with the throwaway key, upload, resume markers, state copy-back, and label-based cleanup. Jobs took 3 and 6 minutes.
 - **Preemption recovery verified** by a deliberate loss of the VM mid-job (`bench/results/20261104-arm64-run3-preemption-test.md`): a new VM on the same data disk resumed the job, with the interrupted step run again and nothing else repeated.
 - **Not yet exercised on real Google Cloud:** the 30-second notice path (the hard loss tested gave no warning), the machine fallback chain, moving zones, `kill` mid-run, and whether Hyperdisk's default IOPS and throughput stay within the free baseline (the cost bound includes an allowance for that).
+
+## When the machine that runs the orchestrator goes down (found 2026-11-04)
+
+`orchestrate.sh run` is an ordinary process on the machine that started it. If that machine reboots or its session is
+restarted, the orchestrator dies with it, and nothing pulls results or deletes the VM and data disk. The job itself keeps
+going on the VM (it is started by the VM's startup script and writes its own step markers), and the VM's own
+`--max-run-duration` deletes the VM at the limit, but the labelled DATA DISK stays and keeps billing until someone deletes it.
+What to do, in this order (all of it was done by hand once, for the run `nata-1104-172548-4307`):
+
+1. Look: `gcloud compute instances list` and `gcloud compute disks list` (every resource carries the label `nata-run=<id>`).
+2. Is the job done? ssh to the VM with the run's key (`bench/gcp-runs/<id>/key`, user `nata`) and read
+   `/mnt/work/state/job.finished` or `job.failed` and the step markers.
+3. PULL BEFORE YOU DELETE: `ssh ... 'cd /mnt/work && tar -czf - state results logs' | tar -xzf - -C bench/gcp-runs/<id>/final`.
+   Never delete first: the data disk is the only copy.
+4. Delete: `scripts/gcp/orchestrate.sh cleanup --run-id <id>`; then list again to prove nothing is left.
+5. Write the cost down by hand: the report is only produced by the orchestrator (VM seconds x the rate in `prices.env`).
+
+Two related defects found the same day and fixed: the orchestrator pulls `state`, `results` and `logs` every two minutes, so
+a job must NEVER put large files under `$RESULTS` (a 3.7 GB results directory made the pull time out, the orchestrator called a
+healthy VM `stuck` and recreated it); and the run id now carries a random suffix because runs started in the same second
+shared one directory and one label. Open improvement: a `recover --run-id <id>` subcommand that does steps 1-4 itself.

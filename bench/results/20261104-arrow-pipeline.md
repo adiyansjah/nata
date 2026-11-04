@@ -205,3 +205,52 @@ ok   q6 with 100% NULLs: protocol at 1, 4, 8 threads == scalar reference == gene
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 119.25s
 test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.20s
 ```
+
+
+## GCP mutation check after the loom edits (2026-11-04)
+
+GCP run `nata-1104-172548-4307` (2026-11-04, `n4a-highcpu-16` Spot, Neoverse-N3, 16 vCPU, Debian 12 arm64; task of the `armcheck-retry` job, run concurrently with four other tasks, so no timing here is evidence).
+
+**33 of 33 mutants CAUGHT, all controls pass**, on the sources as changed by the loom work (scheduler `sync` module and cfg name, `exchange.rs` with the F1 waker fix, `LIMIT` moved to `limit.rs` with the three LIMIT anchors of `scripts/mutate.py` updated). Before, 32 of 33 were caught on GCP and the 33rd in the agent's own run; now all 33 are caught on one machine. Output of `par-mutants.sh --only arrow-pipeline`:
+
+```
+spike arrow-pipeline: 33 mutants (each run checks its own baseline)
+queue: 33 items, 6 workers, output in /mnt/work/armcheck-work/arrow-mutants
+[10:31:23] worker 3: arrow-pipeline / off-by-one in LIMIT (Finished one row early) -> CAUGHT (248 s)
+[10:31:26] worker 5: arrow-pipeline / LIMIT counter is not atomic (store instead of compare-exchange) -> CAUGHT (251 s)
+[10:31:40] worker 1: arrow-pipeline / filter(date) ignores the incoming selection -> CAUGHT (265 s)
+[10:32:01] worker 2: arrow-pipeline / filter(decimal) ignores the incoming selection -> CAUGHT (286 s)
+[10:32:03] worker 6: arrow-pipeline / early finish by an operator not propagated (task keeps reading the source) -> CAUGHT (288 s)
+[10:33:03] worker 4: arrow-pipeline / LIMIT counts physical rows before the selection -> CAUGHT (348 s)
+[10:35:46] worker 3: arrow-pipeline / early finish by the sink not propagated -> CAUGHT (263 s)
+[10:36:15] worker 5: arrow-pipeline / stop flag never published to the other tasks (sideways) -> CAUGHT (289 s)
+[10:36:24] worker 2: arrow-pipeline / cancel does not wake parked tasks -> CAUGHT (263 s)
+[10:36:34] worker 6: arrow-pipeline / wake that arrives while the task runs is forgotten -> CAUGHT (271 s)
+[10:36:49] worker 1: arrow-pipeline / wake lost on early finish (parked tasks not woken) -> CAUGHT (309 s)
+[10:37:15] worker 4: arrow-pipeline / Source::finish() never called -> CAUGHT (252 s)
+[10:39:34] worker 3: arrow-pipeline / sideways stop drops batches already admitted by LIMIT (the bug found by this spike) -> CAUGHT (228 s)
+[10:39:40] worker 2: arrow-pipeline / collect combine keeps only the first batch of each task -> CAUGHT (196 s)
+[10:39:46] worker 5: arrow-pipeline / sink combine overwrites instead of merging (loses other tasks' partial state) -> CAUGHT (211 s)
+[10:39:59] worker 6: arrow-pipeline / Q6 sink loses the non-NULL count -> CAUGHT (205 s)
+[10:40:08] worker 1: arrow-pipeline / LIMIT sink keeps the whole batch instead of cutting it -> CAUGHT (199 s)
+[10:40:31] worker 4: arrow-pipeline / blocked sink consumes its input -> CAUGHT (196 s)
+[10:42:49] worker 3: arrow-pipeline / NULL handling in the sum: NULL values are added -> CAUGHT (195 s)
+[10:43:00] worker 2: arrow-pipeline / filter keeps NULL rows (dense/masked path) -> CAUGHT (200 s)
+[10:43:33] worker 5: arrow-pipeline / filter lower bound off by one -> CAUGHT (227 s)
+[10:43:44] worker 6: arrow-pipeline / masked grouped sums miscount NULLs -> CAUGHT (225 s)
+[10:43:54] worker 1: arrow-pipeline / grouped count wrong (dense path) -> CAUGHT (226 s)
+[10:44:19] worker 4: arrow-pipeline / project ignores the selection (errors raised for removed rows) -> CAUGHT (228 s)
+[10:46:59] worker 3: arrow-pipeline / with_sel drops the computed columns -> CAUGHT (250 s)
+[10:47:14] worker 5: arrow-pipeline / parquet scan skips the last row group -> CAUGHT (221 s)
+[10:47:46] worker 2: arrow-pipeline / Batch::len ignores the selection -> CAUGHT (286 s)
+[10:48:06] worker 6: arrow-pipeline / memory scan skips the last morsel -> CAUGHT (262 s)
+[10:48:15] worker 1: arrow-pipeline / exchange producer does not compact (selection vector crosses the exchange) -> CAUGHT (261 s)
+[10:48:28] worker 4: arrow-pipeline / exchange consumer never closes the channel (early finish does not cross) -> CAUGHT (249 s)
+[10:50:29] worker 3: arrow-pipeline / exchange pop does not wake blocked producers -> CAUGHT (210 s)
+[10:50:54] worker 2: arrow-pipeline / source claims counter not incremented (early-finish counter blind) -> CAUGHT (188 s)
+[10:52:40] worker 5: arrow-pipeline / overflow-checks switched off in the profile -> CAUGHT (326 s)
+
+=== summary (33 items)
+33 arrow-pipeline CAUGHT
+ALL CAUGHT, all controls pass
+```
