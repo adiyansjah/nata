@@ -1,0 +1,39 @@
+# THROWAWAY SPIKE for ADR 0001 (verification-plan item 5): does the cost of the PUSH PROTOCOL (virtual call per operator
+# per batch, the OpResult state handling, the scheduler) become visible when kernels are MUCH cheaper than Arrow kernels,
+# with static dispatch, and on a branching pipeline (producer -> exchange -> 2 consumers)?
+# The protocol, the scheduler and the exchange are NOT copied: src/lib.rs includes spikes/operator-trait/src/*.rs with
+# #[path], so this crate always measures the current operator-trait code. std only. Not part of the main workspace.
+# Delete once ADR 0001 is accepted.
+[package]
+name = "spike-push-cost"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+name = "spike_push_cost"
+path = "src/lib.rs"
+
+# The scheduler (included from operator-trait) still contains the cfg! switches of its loom validation
+# (bench/results/20261104-loom-scheduler.md). They are declared so the included file stays byte-for-byte the same;
+# never enabled here.
+[features]
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# ADR 0003 decision 6: integer overflow is an error in release builds too. The kernels use explicit wrapping
+# arithmetic, so this only affects counters and index arithmetic; it is on so the numbers describe the engine's build.
+overflow-checks = true
