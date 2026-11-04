@@ -28,22 +28,35 @@ and evaluates the filter row by row in Kleene logic. A row matches if it matches
 
 ## Status (2026-11-04)
 
-Dev box, within the owner's local limit. **All of it passes; nothing has run on a clean VM yet** (job `icebergplan`).
+Dev box first (all pass), then **clean VMs on GCP, ARM64 (`n4a-highcpu-8`) and x86-64 (`c3d-highcpu-8`), job `icebergplan`, 2026-11-04**: build, the cargo tests, interop in
+both directions, the truncate-overflow report and the benchmark ran identically on both; the **mutation phase FAILED to start on both for a harness reason** (rustup had no
+toolchain for the copies outside the repo; fixed in `gcp-check.sh`) and is being rerun alone (job `icebergplan-mut`); the 22 of 22 below were measured on the dev box.
 
 | Check | Result |
 |---|---|
-| Spec Appendix B hash vectors (int, long, decimal, date, time, timestamp, timestamptz, string, uuid, binary, boolean, float, double incl. -0.0), truncate and time-transform examples, dates before 1970 | all pass |
-| Inclusive projection is sound for every transform (400k random value/literal/operator cases, both sides of the epoch) | pass |
-| Planner soundness: 60 random tables, 2,400 random filters; about half of all file plans pruned; 1,959 of 2,400 filters pruned at least one file | pass |
-| Mutants of the transforms and planner | **22 of 22 caught** (two were caught only after a gap was closed, below) |
-| Ours -> others: 40 random tables, rows read by DuckDB's `iceberg_scan` equal ours; 480 random filters, DuckDB's counts equal ours | **40 of 40; 480 of 480** |
-| Ours -> others: pyiceberg | full-scan rows equal ours on 13 tables; 27 tables have equality deletes, which pyiceberg 0.12.0 does not support; its filter counts equal ours except where its own semantics differ (below) |
-| Others -> ours: 35 tables built by pyiceberg (every transform, appends, spec and schema evolution, deletes by rewrite), 5 refused by pyiceberg's own validation: rows read by our reader equal pyiceberg's and DuckDB's | **35 of 35** |
-| Others -> ours: 420 random filters through our planner and reader equal DuckDB's counts | **420 of 420** |
-| Our transforms recompute the partition values that pyiceberg (iceberg-rust underneath) wrote, for every row of every file | **4,192 checks, 0 mismatches** (earlier run: 8,125) |
-| Planning, local and noisy (8 threads, shared box): 1,000,000 files in 200 manifests, partition-selective filter (one week) | 0.21 s, 198 of 200 manifests skipped, 167 MB |
-| same, filter on a column without partitioning (`id = x`): reads every manifest | 4.2 s, 1.26 GB |
-| same, a filter that prunes nothing, returning 1,000,000 file tasks | 6.2 s, 4.1 GB |
+| Spec Appendix B hash vectors (int, long, decimal, date, time, timestamp, timestamptz, string, uuid, binary, boolean, float, double incl. -0.0), truncate and time-transform examples, dates before 1970 | all pass (dev box, ARM64, x86-64) |
+| Inclusive projection is sound for every transform (400k random value/literal/operator cases, both sides of the epoch) | pass (all three) |
+| Planner soundness: 60 random tables, 2,400 random filters; about half of all file plans pruned; 1,959 of 2,400 filters pruned at least one file | pass (all three) |
+| Mutants of the transforms and planner | **22 of 22 caught on the dev box** (two were caught only after a gap was closed, below); on GCP: pending |
+| Ours -> others, 80 random tables per machine: rows read by DuckDB's `iceberg_scan` equal ours, DuckDB's counts equal ours on every filter; pyiceberg equal where it can read (it cannot read equality deletes) | **PASS on ARM64 and x86-64** (dev box earlier: 40 of 40 tables, 480 of 480 filters) |
+| Others -> ours, tables built by pyiceberg (every transform, appends, spec and schema evolution, deletes by rewrite): our rows equal pyiceberg's and DuckDB's; our planner and reader's filter counts equal DuckDB's; our transforms recompute every partition value pyiceberg (iceberg-rust) wrote | **PASS on ARM64 and x86-64** (dev box earlier: 35 of 35 tables, 420 of 420 filters, 4,192 partition checks, 0 mismatches) |
+| `truncate_overflow.py` on `truncate[10]` with extreme values | identical on both machines: `k < 0` returns 3 of 5 rows in DuckDB and pyiceberg; pyiceberg also loses the `k = MIN` row |
+
+### Planning cost on clean VMs (8 vCPU, minimum of 3 runs, one process per query)
+
+1,000,000 files in 200 manifests of 10,000 entries (plus a delete manifest each), 8 threads unless stated.
+
+| Layout and filter | ARM64 | x86-64 | Peak RSS |
+|---|---|---|---|
+| clustered by day, one day and one bucket (partition filter) | 0.20 s (2 of 200 manifests read) | 0.38 s | 170 MB |
+| clustered, one week | 0.20 s | 0.38 s | 340 MB |
+| clustered, `id = x` (no partition column; every manifest read), 1 thread / 8 threads | 14.2 s / 3.1 s | 18.5 s / 6.0 s | 325 MB / 1.28 GB |
+| **scattered** (every manifest holds every day), one day and one bucket, 1 thread / 8 threads | 14.7 s / 3.1 s | 19.7 s / 6.5 s | 166 MB / 1.28 GB |
+| a filter that prunes nothing, returns 1,000,000 file tasks, 1 thread / 8 threads | 14.8 s / 3.0 s | 19.0 s / 5.0 s | 3.2 GB / 4.1 GB |
+| 100,000 files, clustered, partition filter / `id = x` (1 / 8 threads) | 0.19 s / 1.5 s / 1.0 s | 0.32 s / 2.4 s / 1.7 s | 163 MB / 173 MB / 1.27 GB |
+
+About 14 microseconds per manifest entry on one ARM64 thread (18 on x86-64), 3 on eight threads. Parallelism over manifests scales 4.6x on ARM64 and 3.1x on x86-64
+(`c3d` has 4 cores, 8 threads); with only 20 manifests (100,000 files) it hardly helps. These are minimums on otherwise idle VMs, not a comparison with another planner.
 
 ## Findings
 
@@ -63,10 +76,10 @@ Dev box, within the owner's local limit. **All of it passes; nothing has run on 
    unknown. We count these as known differences, not as disagreements; DuckDB (SQL semantics) is the gate for filter counts.
 5. A defect found by pyiceberg: a manifest-list entry for a delete manifest must have `content = 1`, not the file content (2 for equality deletes). Our reader never looks at that field,
    so only the other engine could see it.
-6. **Planning cost is dominated by Avro decoding and its memory**, not by the evaluators: about 4 microseconds per entry with 8 threads, about 22 with one, and roughly 12 KB of
-   heap per entry while a manifest is being decoded (apache-avro builds a generic value tree), so 8 manifests in flight cost over a gigabyte. A hand-written decoder straight into compact
+6. **Planning cost is dominated by Avro decoding and its memory**, not by the evaluators: 14 to 18 microseconds per entry on one thread (table above), and roughly 15 KB of
+   heap per entry while a manifest is being decoded (apache-avro builds a generic value tree), so 8 manifests in flight cost 1.3 GB and 1,000,000 returned tasks 3 to 4 GB. A hand-written decoder straight into compact
    entries, and streaming tasks out, are the obvious next steps; not done here.
-7. Partition pruning needs the manifests CLUSTERED by partition (summaries skip whole manifests); with files scattered over all days every manifest must be read.
+7. Partition pruning needs the manifests CLUSTERED by partition: the same one-day filter takes 0.2 s on a clustered 1M-file table and 14.7 s (3.1 s on 8 threads) when the files are scattered over all days, because the manifest summaries then skip nothing. A writer must keep manifests clustered (and compaction must rewrite them so).
 
 ## Gaps the tests found in the tests (closed)
 
@@ -79,4 +92,4 @@ Format version 3 (deletion vectors, row lineage, new types), nested types (struc
 sources, decimal precision above 38; the REST catalog (this spike uses table directories); name mapping for files without field ids; multiple snapshots / time travel / branches;
 strict projection and residuals; pruning of delete files by their own metrics; manifests with unknown transforms; the `iceberg-rust` crate as a planner to compare against (a bake-off is
 the missing build-versus-reuse evidence); Spark and the Java library as references (not available here). pyiceberg and DuckDB are the only independent readers, and
-pyiceberg cannot read equality deletes. The benchmark so far is from a shared dev box; the clean-VM numbers are pending.
+pyiceberg cannot read equality deletes. 
