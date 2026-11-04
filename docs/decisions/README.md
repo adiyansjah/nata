@@ -8,6 +8,7 @@ One file per architecture decision, `NNNN-title.md`, copied from `0000-template.
 | [0002](0002-async-runtime-and-threading.md) | Async runtime and threading | proposed |
 | [0003](0003-batch-format-and-expression-kernels.md) | Batch format and expression kernels | proposed |
 | [0004](0004-distributed-execution-and-failure-model.md) | Distributed execution and its failure model (draft) | proposed |
+| [0005](0005-table-format-and-catalog.md) | Table format and catalog, Iceberg first (draft) | proposed |
 
 Before a proposed ADR is accepted (see `way-of-working.md`, section 6):
 
