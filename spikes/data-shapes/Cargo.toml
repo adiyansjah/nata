@@ -1,0 +1,55 @@
+# THROWAWAY SPIKE (verification-plan item 20): do the hash-ops and generic-ops results hold on other data?
+# Skewed keys, string-heavy columns and many NULLs, generated with DuckDB SQL and compared with DuckDB.
+# Reuses the engines of spikes/hash-ops (as a path dependency: the library crate `hash_ops`) and
+# spikes/generic-ops (its source files, included with #[path]); nothing is copied. Own workspace.
+# Delete once ADR 0003 is accepted.
+[package]
+name = "spike-data-shapes"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "shapes"
+path = "src/bin/shapes.rs"
+
+[[bin]]
+name = "gshapes"
+path = "src/bin/gshapes.rs"
+
+[dependencies]
+# The engines under test.
+hash-ops = { package = "spike-hash-ops", path = "../hash-ops" }
+arrow = "60"
+parquet = "60"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# Same configuration as spikes/hash-ops (ADR 0003 decision 6): overflow is an error in OUR code ...
+overflow-checks = true
+
+# ... and not in the dependencies (arrow panics on legal input otherwise; see
+# bench/results/20261104-hash-ops-correctness.md section 6). The hash-ops engine is a dependency of this
+# package, so it needs its own line: a named override beats the "*" one.
+[profile.release.package."*"]
+overflow-checks = false
+[profile.release.package.spike-hash-ops]
+overflow-checks = true
+
+[profile.test.package."*"]
+overflow-checks = false
+[profile.test.package.spike-hash-ops]
+overflow-checks = true
+
+[profile.dev.package."*"]
+overflow-checks = false
+[profile.dev.package.spike-hash-ops]
+overflow-checks = true
+
+[profile.test]
+opt-level = 1
