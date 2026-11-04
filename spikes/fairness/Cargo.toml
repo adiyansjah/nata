@@ -1,0 +1,25 @@
+# THROWAWAY SPIKE for ADR 0002 open check (2): fairness. A CPU pool full of CPU-heavy tasks starves a
+# small task because the scheduler has no time slicing (bench/results/20261104-async-bridge.md).
+# src/{api,batch,chan,sched,sync}.rs are copies of spikes/async-bridge/src (itself a snapshot of the
+# operator-trait scheduler); see SNAPSHOT.md for the differences. Not part of the main workspace.
+[package]
+name = "spike-fairness"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+# The model checker is only built with RUSTFLAGS="--cfg nata_loom".
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[features]
+default = ["invariants"]
+# Extra run-time checks in the scheduler (a task is never run twice at once).
+invariants = []
+# Test hook: NATA_SLICE_MORSELS=n sets the default slice (see sched.rs `default_slice`).
+slice-env = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
