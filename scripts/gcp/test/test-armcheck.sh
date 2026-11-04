@@ -21,6 +21,7 @@ grep -q "^nullmut *PASS" "$T/d.txt" && ! grep -q "exloom-suite" "$T/d.txt" && ok
 unset ARMCHECK_FAKE
 REPO=$(cd "$(dirname "$K")/../.." && pwd)
 SRC=$REPO DATA=/nonexistent ARMCHECK_PRINT=1 "$K" "$T/p" > "$T/print.txt" 2>&1
+! grep -q "$T/p/work" "$T/print.txt" && ok "no task writes its work files under the results directory (the orchestrator would pull them)" || bad "a task uses a work directory under the results directory"
 n=$(grep -c '^TASK ' "$T/print.txt"); [ "$n" = 8 ] && ok "eight task commands are printed" || bad "printed $n task lines"
 while IFS= read -r line; do
   name=${line#TASK }; name=${name%%:*}; cmd=${line#*: }

@@ -188,9 +188,11 @@ case "$JOB" in
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
     # data-shape checks, concurrently on one 16-vCPU machine. Not gating: the summary lists PASS/FAIL per task.
     run ac-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
-    # armcheck-retry: only the two tasks that failed on their first run because of script defects (null-path mutation seed, a
-    # data-shape check), with the fixes; ARMCHECK_TASKS is read by armcheck.sh
-    [ "$JOB" = armcheck-retry ] && export ARMCHECK_TASKS="nullmut data-shapes"
+    # armcheck-retry: only the five tasks that did not finish on the first run (arrow-regress, exloom-suite and stop-depth passed). Two
+    # failed on script defects (null-path mutation seed, a data-shape check), three were lost when the orchestrator recreated the VM
+    # because the results directory had grown to 3.7 GB; ARMCHECK_TASKS is read by armcheck.sh
+    [ "$JOB" = armcheck-retry ] && export ARMCHECK_TASKS="exloom-mutants hash-layers nullmut data-shapes arrow-mutants"
+    export ARMCHECK_WORK="$WORK/armcheck-work"   # private copies and generated data stay out of the results directory (the orchestrator pulls it)
     run ac-all bash -c 'cd "$SRC" && scripts/gcp/armcheck.sh "$RESULTS/armcheck" > "$RESULTS/armcheck-summary.txt" 2>&1; true' ;;
   kani-mut-crate)
     # The mutation check of the Kani proofs of the REAL crate (spikes/kani-nata-kernels/mutate_kani.py): each deliberate

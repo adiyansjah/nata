@@ -23,6 +23,11 @@ ALL="arrow-regress exloom-suite exloom-mutants hash-layers nullmut stop-depth da
 FIRST="arrow-regress"
 TASKS=${ARMCHECK_TASKS:-$ALL}
 WORKERS=${WORKERS:-6}
+# Private copies, build directories and generated data go HERE, never under the results directory: the orchestrator pulls
+# state/results/logs every two minutes over ssh, and a 3.7 GB results directory made the pull time out, so the orchestrator
+# called the healthy VM "stuck" and recreated it (found 2026-11-04). Only small result files are copied back into $out.
+WORKDIR=${ARMCHECK_WORK:-${TMPDIR:-/tmp}/armcheck-work-$$}
+mkdir -p "$WORKDIR"
 export RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN:-$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$SRC/rust-toolchain.toml" 2>/dev/null)}
 
 task_cmd() { # prints the shell command of a task, or nothing if it cannot run here
@@ -34,11 +39,11 @@ task_cmd() { # prints the shell command of a task, or nothing if it cannot run h
   fi
   case "$t" in
     exloom-suite)   echo "cd $SRC/spikes/exchange-loom && CARGO_BUILD_JOBS=2 ./run_loom.sh" ;;
-    exloom-mutants) echo "cd $SRC && DATA=$DATA WORKERS=$WORKERS scripts/gcp/par-mutants.sh --only exchange-loom --out $out/work-exloom-mutants" ;;
+    exloom-mutants) echo "cd $SRC && DATA=$DATA WORKERS=$WORKERS scripts/gcp/par-mutants.sh --only exchange-loom --out $WORKDIR/exloom-mutants; rc=\$?; mkdir -p $out/exloom-mutants && cp -r $WORKDIR/exloom-mutants/results.tsv $WORKDIR/exloom-mutants/logs $out/exloom-mutants/ 2>/dev/null; exit \$rc" ;;
     hash-layers)
       echo "cd $SRC/spikes/hash-ops && export HASH_OPS_DATA=$DATA CARGO_BUILD_JOBS=2 && \
-        HASH_OPS_MUT_ROOT=$out/work-hl-1 HASH_OPS_TMP=$out/work-hl-1-tmp python3 -I mutate.py --matrix --layer duckdb 'fan-out: only the first match of a chain is emitted' \"merge loses the last thread's partial table\" && \
-        HASH_OPS_MUT_ROOT=$out/work-hl-2 HASH_OPS_TMP=$out/work-hl-2-tmp python3 -I mutate.py --matrix --layer nullcheck 'SUM adds the values of NULL rows' 'NULL group dropped from the output'" ;;
+        HASH_OPS_MUT_ROOT=$WORKDIR/hl-1 HASH_OPS_TMP=$WORKDIR/hl-1-tmp python3 -I mutate.py --matrix --layer duckdb 'fan-out: only the first match of a chain is emitted' \"merge loses the last thread's partial table\" && \
+        HASH_OPS_MUT_ROOT=$WORKDIR/hl-2 HASH_OPS_TMP=$WORKDIR/hl-2-tmp python3 -I mutate.py --matrix --layer nullcheck 'SUM adds the values of NULL rows' 'NULL group dropped from the output'" ;;
     nullmut)        echo "cd $SRC/spikes/null-path && HEAVY= CARGO_BUILD_JOBS=2 python3 -I mutate.py $DATA/lineitem.parquet" ;;
     stop-depth)     [ -f "$SRC/spikes/arrow-pipeline/gcp-check-loom.sh" ] && echo "cd $SRC/spikes/arrow-pipeline && ./gcp-check-loom.sh $out/stop-depth-summary.txt" ;;
     arrow-regress)
@@ -47,8 +52,8 @@ task_cmd() { # prints the shell command of a task, or nothing if it cannot run h
         target/release/spike-arrow-pipeline check $DATA/lineitem.parquet && target/release/spike-arrow-pipeline nullcheck $DATA/lineitem.parquet && \
         STRESS_REPS=3000 STRESS_EXTRA_BUSY=4 WATCHDOG_SECS=60 cargo test --release --test stress -- --nocapture --test-threads=1 && \
         LIMIT_CASES=10000 cargo test --release --test limit -- --nocapture --test-threads=1" ;;
-    arrow-mutants)  echo "cd $SRC && DATA=$DATA WORKERS=$WORKERS scripts/gcp/par-mutants.sh --only arrow-pipeline --out $out/work-arrow-mutants" ;;
-    data-shapes)    [ -f "$SRC/spikes/data-shapes/gcp-check.sh" ] && echo "cd $SRC/spikes/data-shapes && ./gcp-check.sh $out/data-shapes $out/work-data-shapes" ;;
+    arrow-mutants)  echo "cd $SRC && DATA=$DATA WORKERS=$WORKERS scripts/gcp/par-mutants.sh --only arrow-pipeline --out $WORKDIR/arrow-mutants; rc=\$?; mkdir -p $out/arrow-mutants && cp -r $WORKDIR/arrow-mutants/results.tsv $WORKDIR/arrow-mutants/logs $out/arrow-mutants/ 2>/dev/null; exit \$rc" ;;
+    data-shapes)    [ -f "$SRC/spikes/data-shapes/gcp-check.sh" ] && echo "cd $SRC/spikes/data-shapes && ./gcp-check.sh $out/data-shapes $WORKDIR/data-shapes" ;;
   esac
 }
 if [ "${ARMCHECK_PRINT:-}" = 1 ]; then   # test aid: print the command of every task and stop

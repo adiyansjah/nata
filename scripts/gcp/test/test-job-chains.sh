@@ -33,7 +33,7 @@ has h-mutate "$h" && ok "hashops alone still runs the mutation step" || bad "has
 n=$(steps nullpath); has np-all "$n" && ! has h-build "$n" && ok "nullpath alone runs only its own steps" || bad "nullpath alone: $(echo "$n" | grep STEP | tr '\n' ' ')"
 p=$(steps perf); has p-timing "$p" && ! has np-all "$p" && ok "perf alone runs only its own steps" || bad "perf alone"
 a=$(steps armcheck); has ac-all "$a" && ! has np-all "$a" && ok "armcheck runs only its own steps" || bad "armcheck"
-r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=nullmut data-shapes$' && ok "armcheck-retry runs only nullmut and data-shapes" || bad "armcheck-retry tasks: $(echo "$r" | grep ARMTASKS)"
+r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=exloom-mutants hash-layers nullmut data-shapes arrow-mutants$' && ok "armcheck-retry runs only the five tasks that did not finish" || bad "armcheck-retry tasks: $(echo "$r" | grep ARMTASKS)"
 echo "$a" | grep -q '^ARMTASKS=<all>$' && ok "armcheck runs all tasks" || bad "armcheck tasks: $(echo "$a" | grep ARMTASKS)"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }
