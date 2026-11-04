@@ -8,15 +8,35 @@ then `cargo clippy` runs on it. The first line of a fixture says what must happe
     // expect: pass            (clippy must exit 0 with no warnings: a control)
 A fixture passes the check only if clippy fails WITH the named lint (a compile error or another lint does
 not count). Then the real kernel crate must pass clippy with -D warnings. Exit status is non-zero on any
-mismatch. Needs the arrow crates in the cargo registry cache (it builds offline).
+mismatch. Needs the arrow crates (downloaded on first use; set NATA_OFFLINE=1 to forbid network access and use the registry cache only).
 Usage: run.py [fixture-name ...]   (from anywhere)
 """
 import json, os, re, shutil, subprocess, sys, tempfile
+
+def _pinned_toolchain():
+    """The fixtures run cargo in scratch directories OUTSIDE the repository, where rustup does not see the repo's
+    rust-toolchain.toml; on a machine without a default toolchain that fails ('no default is configured'). Pin the
+    repo's channel explicitly. Found by the first clean-machine run on GCP."""
+    if os.environ.get("RUSTUP_TOOLCHAIN"):
+        return os.environ["RUSTUP_TOOLCHAIN"]
+    here = os.path.dirname(os.path.abspath(__file__))
+    d = here
+    for _ in range(6):
+        f = os.path.join(d, "rust-toolchain.toml")
+        if os.path.exists(f):
+            m = re.search(r'channel\s*=\s*"([^"]+)"', open(f).read())
+            if m:
+                return m.group(1)
+        d = os.path.dirname(d)
+    return None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CRATE = os.path.dirname(HERE)
 ROOT = os.path.abspath(os.path.join(CRATE, "..", ".."))
 TARGET = os.path.join(ROOT, "target", "lint-fixtures")
+# Offline only when asked for (NATA_OFFLINE=1): a fresh machine has not downloaded the crates the fixtures need,
+# and `--offline` then fails to resolve them (found by the second clean-machine run on GCP).
+OFFLINE = ["--offline"] if os.environ.get("NATA_OFFLINE") else []
 
 
 def lints_table():
@@ -41,7 +61,8 @@ def scratch(workdir, src, with_config=True):
 
 def clippy(workdir):
     env = dict(os.environ, CARGO_TARGET_DIR=TARGET)
-    r = subprocess.run(["cargo", "clippy", "--offline", "--message-format=json", "--", "-A", "unused"], cwd=workdir, capture_output=True, text=True, env=env)
+    if _pinned_toolchain(): env['RUSTUP_TOOLCHAIN'] = _pinned_toolchain()
+    r = subprocess.run(["cargo", "clippy", *OFFLINE, "--message-format=json", "--", "-A", "unused"], cwd=workdir, capture_output=True, text=True, env=env)
     diags = []
     for line in r.stdout.splitlines():
         try:
@@ -90,7 +111,7 @@ def main():
         ok = rc == 0 and not any(d[0] == "clippy::disallowed_methods" for d in diags)
         bad += not ok
         print(f"{'ok  ' if ok else 'FAIL'} {'sanity: ban/add_wrapping WITHOUT clippy.toml is not flagged':<40} {'clean' if ok else diags}")
-        r = subprocess.run(["cargo", "clippy", "-p", "nata-kernels", "--all-targets", "--offline", "--", "-D", "warnings"], cwd=ROOT, capture_output=True, text=True)
+        r = subprocess.run(["cargo", "clippy", "-p", "nata-kernels", "--all-targets", *OFFLINE, "--", "-D", "warnings"], cwd=ROOT, capture_output=True, text=True)
         ok = r.returncode == 0 and "warning" not in r.stderr.replace("generated", "")
         bad += not ok
         print(f"{'ok  ' if ok else 'FAIL'} {'real crate: cargo clippy -p nata-kernels --all-targets -D warnings':<40} {'clean' if ok else r.stderr[-300:]}")

@@ -3,12 +3,31 @@
 per-package profile entry reaches code that other crates call. Builds scratch crates (offline, no dependencies).
 Usage: overflow_checks.py   (from anywhere; exit status non-zero if an expectation fails)
 """
-import os, subprocess, sys, tempfile, textwrap
+import os, re, subprocess, sys, tempfile, textwrap
+
+def _pinned_toolchain():
+    """The fixtures run cargo in scratch directories OUTSIDE the repository, where rustup does not see the repo's
+    rust-toolchain.toml; on a machine without a default toolchain that fails ('no default is configured'). Pin the
+    repo's channel explicitly. Found by the first clean-machine run on GCP."""
+    if os.environ.get("RUSTUP_TOOLCHAIN"):
+        return os.environ["RUSTUP_TOOLCHAIN"]
+    here = os.path.dirname(os.path.abspath(__file__))
+    d = here
+    for _ in range(6):
+        f = os.path.join(d, "rust-toolchain.toml")
+        if os.path.exists(f):
+            m = re.search(r'channel\s*=\s*"([^"]+)"', open(f).read())
+            if m:
+                return m.group(1)
+        d = os.path.dirname(d)
+    return None
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 TARGET = os.path.join(ROOT, "target", "lint-fixtures-overflow")
 ENV = dict(os.environ, CARGO_TARGET_DIR=TARGET)
+OFFLINE = ["--offline"] if os.environ.get("NATA_OFFLINE") else []
+if _pinned_toolchain(): ENV['RUSTUP_TOOLCHAIN'] = _pinned_toolchain()
 
 # op: (with overflow-checks, without)
 EXPECT = {
@@ -67,7 +86,7 @@ def main():
                 """)
             os.makedirs(os.path.join(d, "src"))
             open(os.path.join(d, "src", "main.rs"), "w").write(open(os.path.join(HERE, "overflow", "probe.rs")).read())
-            b = run(["cargo", "build", "--release", "--offline", "-q"], d)
+            b = run(["cargo", "build", "--release", *OFFLINE, "-q"], d)
             assert b.returncode == 0, b.stderr
             for op, expect in EXPECT.items():
                 got = outcome(run([os.path.join(TARGET, "release", "probe"), op], d))
@@ -110,7 +129,7 @@ def main():
                     });
                 }
                 """)
-            b = run(["cargo", "build", "--release", "--offline", "-q"], d)
+            b = run(["cargo", "build", "--release", *OFFLINE, "-q"], d)
             assert b.returncode == 0, b.stderr
             exe = os.path.join(TARGET, "release", "app")
             for op, w in want.items():
