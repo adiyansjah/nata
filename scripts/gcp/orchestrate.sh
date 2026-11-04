@@ -256,7 +256,7 @@ do_run() {
   local bound; bound=$(bound_usd)
   [ -n "$APPROVED_USD" ] || die "a real run needs --approved-usd (at least \$$bound, the worst case for this plan); try '$0 plan' first"
   le "$bound" "$APPROVED_USD" || die "the worst case is \$$bound but only \$$APPROVED_USD was approved; nothing was called"
-  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|failmodel|failmodel-retry|opsbeyond) ;; *) die "unknown job $JOB" ;; esac
+  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|failmodel|failmodel-retry|opsbeyond|sqlfuzz) ;; *) die "unknown job $JOB" ;; esac
   [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
   [ -n "$PROJECT" ] || die "no project: pass --project or set one with gcloud"
   mkdir -p "$OUT"; : > "$OUT/gcloud.log"

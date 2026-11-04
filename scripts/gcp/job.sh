@@ -212,6 +212,9 @@ case "$JOB" in
     # verification-plan item 31 (spikes/operators-beyond): unit tests, the DuckDB differential check (memory and spill), the mutants.
     run ob-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run ob-all bash -c 'cd "$SRC/spikes/operators-beyond" && ./gcp-check.sh "$RESULTS/operators-beyond" "$SRC/data/tpch-sf1" > "$RESULTS/operators-beyond-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/operators-beyond-exit.txt"; true' ;;
+  sqlfuzz)
+    # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
+    run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
   armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
