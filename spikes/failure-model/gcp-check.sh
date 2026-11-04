@@ -19,6 +19,8 @@ if [ ! -x "$TOOLS/jdk/bin/java" ]; then
 fi
 fetch_verified "$TLA_URL" "$TLA_SHA256" "$TOOLS/tla2tools.jar" || { log "FAIL tools: tla2tools.jar"; exit 1; }
 log "tools ok: $("$TOOLS/jdk/bin/java" -version 2>&1 | head -1); host $(uname -m), $(nproc) vCPU, $(awk '/MemTotal/{printf "%d MiB",$2/1024}' /proc/meminfo)"
+# TLC writes its state graph (many GB for the liveness runs) under FM_TMP: keep it on the data disk, not the 20 GB boot disk (found by the retry run)
+export FM_TMP=$WORKBASE/tmp; mkdir -p "$FM_TMP"
 cd "$HERE/model" || exit 1
 C="python3 -I check.py"; A="--java $TOOLS/jdk/bin/java --jar $TOOLS/tla2tools.jar --workers $(nproc) --timeout ${FM_TIMEOUT:-3600} --heap-mb ${FM_HEAP_MB:-24000}"
 python3 -I -c "import ast,sys; ast.parse(open('check.py').read())" || { log "FAIL python syntax"; exit 1; }

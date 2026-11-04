@@ -33,8 +33,15 @@ which is not committed): the run was **cut short**, see below.
 | `safe-1x3`, `live-safe-1x3` | PASS | 6,299,337 | 18 s, 413 s |
 | `safe-2x2`, `live-safe-2x2` (2 tasks, 2 workers, one crash, one wrong suspicion, one lost message, one coordinator crash) | PASS | 11,882,257 | 35 s, 727 s |
 | `safe-2x3` (2 tasks, 3 workers) | PASS | 61,509,559 | 201 s |
-| `live-safe-2x3` | **NOT FINISHED**: killed after about 30 minutes, still enumerating (30.3 M states found at the last log line) | | |
-| the 6 canaries and the 12 mutants on GCP | **NOT RUN** (they come after the configurations; the mutants and canaries did pass on the dev box) | | |
+| `live-safe-2x3` | **NO VERDICT**: first run killed (session interrupted) after 30 minutes; retry ran out of disk at 54.2 M states after 48 minutes | | |
+| the 12 mutants on GCP | all 12 CAUGHT (retry run) | | |
+| the 6 canaries on GCP | **no result** (disk full); all 6 triggered on the dev box | | |
+
+Retry run `failmodel-retry-arm64` (same machine, `FM_ONLY=live-safe-2x3`, 50 minutes, VM cost $0.165): `live-safe-2x3` ended with **an infrastructure
+error, not a verdict**: "No space left on device" after 54,185,733 of about 61.5 M states, because TLC's state graph went to `/tmp` on the 20 GB
+boot disk (the six canaries then failed for the same reason). The **12 mutants all ran on GCP and all 12 were CAUGHT** (the same table as on the
+dev box). `gcp-check.sh` now keeps TLC's scratch files on the 30 GB data disk (`FM_TMP`); whether 30 GB is enough for the 3-worker liveness
+graph is unknown.
 
 So the final spec holds its safety properties for 2 tasks with 2 and 3 workers and its liveness properties for 2 tasks with 2 workers;
 liveness for 3 workers is unchecked. The run was cut short because the orchestrator was a child of the interactive session, which was

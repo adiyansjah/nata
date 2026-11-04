@@ -45,7 +45,7 @@ def main():
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
     if a.cmd == "list":
         print("\n".join(M)); return 0
-    work = tempfile.mkdtemp(prefix="qlc-"); fails = 0
+    work = tempfile.mkdtemp(prefix="qlc-", dir=os.environ.get("FM_TMP") or None); fails = 0
     def run(cfg, tag):
         return tlc_runner.run_tlc(a.java, a.jar, work, f"cfg/{cfg}.cfg", os.path.join(a.out, f"{tag}-{cfg}.txt"), a.workers, a.timeout, a.heap_mb)
     spec_hash = sha(os.path.join(HERE, "QueryLifecycle.tla"))
