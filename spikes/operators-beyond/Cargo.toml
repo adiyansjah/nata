@@ -1,0 +1,38 @@
+# THROWAWAY SPIKE for verification-plan item 31: does the operator protocol (ADR 0001) carry sort and top-N with spill,
+# outer / semi / anti joins, window functions, TPC-H Q18 and Q21? The protocol and scheduler are the UNCHANGED snapshot in src/proto.
+# Not part of the main workspace (own [workspace] table, own target dir). Delete once ADR 0001 is accepted.
+[package]
+name = "spike-operators-beyond"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = "60"
+
+[features]
+# Present only because the scheduler snapshot still contains these switches (never enabled here).
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)', 'cfg(nata_loom)'] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+overflow-checks = true
+
+[profile.mutate]
+inherits = "release"
+lto = "off"
+codegen-units = 16
+debug = false
