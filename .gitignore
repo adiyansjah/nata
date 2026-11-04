@@ -5,3 +5,14 @@
 /spikes/*/target
 /spikes/*/snappy-bench/bench-*
 /bench/gcp-runs/
+/spikes/decimal-verify/.venv
+/spikes/decimal-clients/.venv
+/spikes/decimal-clients/.venv-pg
+# build and tool output of every spike and crate (nested workspaces have their own target directories)
+/spikes/**/target
+/crates/**/target
+__pycache__/
+*.pyc
+/spikes/*/out-*
+/spikes/*/.venv*
+.venv/
