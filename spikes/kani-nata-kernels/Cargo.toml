@@ -1,0 +1,17 @@
+# Kani proofs for the REAL crates/nata-kernels/src/kernels.rs (included by #[path], never copied).
+# THROWAWAY with the spike. Only the one arrow type that kernels.rs names (arrow_buffer::NullBuffer) is replaced by
+# a stub (./arrow-stub). Results: bench/results/20261104-kani-nata-kernels.md.
+[package]
+name = "kani-nata-kernels"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+# kernels.rs says `use arrow_buffer::NullBuffer;`, so the stub is renamed to that crate name.
+arrow_buffer = { path = "arrow-stub", package = "arrow-stub" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
