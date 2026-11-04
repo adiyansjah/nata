@@ -179,6 +179,17 @@ case "$JOB" in
     # density table and the stage timings. The mutation check is skipped: it ran locally and is not timing-sensitive.
     run np-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;
+  armcheck)
+    # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
+    # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
+    # data-shape checks, concurrently on one 16-vCPU machine. Not gating: the summary lists PASS/FAIL per task.
+    run ac-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run ac-all bash -c 'cd "$SRC" && scripts/gcp/armcheck.sh "$RESULTS/armcheck" > "$RESULTS/armcheck-summary.txt" 2>&1; true' ;;
+  kani-mut-crate)
+    # The mutation check of the Kani proofs of the REAL crate (spikes/kani-nata-kernels/mutate_kani.py): each deliberate
+    # breakage of kernels.rs is applied to a temp copy and the relevant harnesses run, cheapest first, until one fails.
+    run k-install bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); echo "toolchain: $RUSTUP_TOOLCHAIN"; command -v cargo-kani >/dev/null || { cargo install --locked kani-verifier && cargo kani setup; }; cargo kani --version'
+    run kmc bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); cd "$SRC/spikes/kani-nata-kernels" && { free -g | head -2; python3 -I mutate_kani.py --rows 4 --cap 900 --heavy; true; } > "$RESULTS/kani-mut-crate.txt" 2>&1' ;;
   perf)
     # ADR 0003 item 19: why is Q1 further from the hand-fused loop on ARM64? perf record (software cpu-clock, a VM may
     # not expose hardware counters) of the generic engine and of the fused baseline, one thread, batches in memory, Q1 and Q6.
@@ -191,7 +202,7 @@ case "$JOB" in
       run "p-record-$q-$arm" bash -c 'cd "$SRC" && B=spikes/generic-ops/target/release/spike-generic-ops && a=""; [ '"$arm"' = fused ] && a=fused; perf record -e cpu-clock -F 999 -g -o "$WORK/perf-'"$q-$arm"'.data" -- $B loop data/tpch-sf1/lineitem.parquet 60 '"$q"' $a > /dev/null 2> "$RESULTS/perf-record-'"$q-$arm"'.err"; perf report -i "$WORK/perf-'"$q-$arm"'.data" --stdio --no-children --percent-limit 1.5 -g none 2>/dev/null | grep -v "^#" | grep -v "^$" | head -40 > "$RESULTS/perf-report-'"$q-$arm"'.txt"; perf stat -e task-clock,context-switches,page-faults -- $B loop data/tpch-sf1/lineitem.parquet 10 '"$q"' $a > /dev/null 2> "$RESULTS/perf-stat-'"$q-$arm"'.txt"; true'
     done; done ;;
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|nullpath) ;;   # the blocks above end with ;;& so that cpack runs all three
+  crates|fairness-bench|bridge|cpack|hashtests|nullpath|armcheck|kani-mut-crate) ;;   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac
 finish_job
