@@ -215,6 +215,9 @@ case "$JOB" in
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
+  parquetwrite)
+    # verification-plan item 30 (spikes/parquet-write): tests, every writer configuration verified and read back by DuckDB, DuckDB as writer, known-bad statistics.
+    run pw-all bash -c 'cd "$SRC/spikes/parquet-write" && PQW_WORK="$WORK/pqw-work" ./gcp-check.sh "$RESULTS/parquet-write" > "$RESULTS/parquet-write-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/parquet-write-exit.txt"; true' ;;
   armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the

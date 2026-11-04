@@ -1,0 +1,30 @@
+# THROWAWAY SPIKE for verification-plan item 30: are the Parquet files we write correct? Round trip with other readers, SOUND column
+# statistics (including string truncation, NaN, -0.0, unsigned, decimals), page indexes, sort order, field ids, bloom filters, file sizing.
+# Not part of the main workspace (own [workspace] table, own target dir). Delete once the write-path ADR is accepted.
+[package]
+name = "spike-parquet-write"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = { version = "60", features = ["arrow"] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+overflow-checks = true
+
+[profile.mutate]
+inherits = "release"
+lto = "off"
+codegen-units = 16
+debug = false
