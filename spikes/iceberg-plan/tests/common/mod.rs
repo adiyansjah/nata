@@ -34,14 +34,17 @@ const STRS: &[&str] = &["", "a", "ab", "abc", "abcdefghijklmnopqrstuvwxyz", "abc
                         "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀", "日本語日本語日本語日本語日本語日本語", "Zebra", "apple", "apples", "\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}\u{10FFFF}"];
 const DOUBLES: &[f64] = &[f64::NAN, -0.0, 0.0, f64::INFINITY, f64::NEG_INFINITY, 1.5, -1.5, 100.25, -100.25, 1e300, -1e300, 0.1, 3.0];
 
+thread_local! { pub static NAN_FREE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
+
 pub fn rand_value(ty: &Type, r: &mut Rng) -> Option<Value> {
     if r.chance(12) { return None; }
     Some(match ty {
         Type::Boolean => Value::Bool(r.chance(50)),
-        Type::Int => Value::Int(if r.chance(10) { *r.pick(&[i32::MIN, i32::MAX, 0, -1, 1]) } else { r.below(61) as i32 - 30 }),
-        Type::Long => Value::Long(if r.chance(10) { *r.pick(&[i64::MIN, i64::MAX, 0, -1, 1]) } else { r.below(2001) as i64 - 1000 }),
+        // NAN_FREE doubles as the "portable" switch of the interop checks: no NaN, and no integers within a width of the type's extremes (where the spec's truncate overflows)
+        Type::Int => Value::Int(if r.chance(10) { *r.pick(if NAN_FREE.with(|c| c.get()) { &[0, -1, 1, 100, -100][..] } else { &[i32::MIN, i32::MAX, 0, -1, 1][..] }) } else { r.below(61) as i32 - 30 }),
+        Type::Long => Value::Long(if r.chance(10) { *r.pick(if NAN_FREE.with(|c| c.get()) { &[0, -1, 1, 100, -100][..] } else { &[i64::MIN, i64::MAX, 0, -1, 1][..] }) } else { r.below(2001) as i64 - 1000 }),
         Type::Float => Value::Float(*r.pick(DOUBLES) as f32),
-        Type::Double => Value::Double(if r.chance(50) { *r.pick(DOUBLES) } else { (r.below(2000) as f64 - 1000.0) / 8.0 }),
+        Type::Double => { let nf = NAN_FREE.with(|c| c.get()); Value::Double(if r.chance(50) { let mut d = *r.pick(DOUBLES); while nf && !d.is_finite() { d = *r.pick(DOUBLES); } d } else { (r.below(2000) as f64 - 1000.0) / 8.0 }) }
         Type::Decimal(..) => Value::Decimal(r.below(40001) as i128 - 20000),
         Type::Date => Value::Date(if r.chance(10) { *r.pick(&[0, -1, 1, 19000, -25000]) } else { r.below(60000) as i32 - 30000 }),
         Type::Timestamp | Type::TimestampTz => Value::Ts(if r.chance(20) { *r.pick(&[0, -1, 1, MICROS_PER_HOUR, -MICROS_PER_HOUR, MICROS_PER_DAY, -MICROS_PER_DAY, 1_600_000_000_000_000]) } else { (r.below(4000) as i64 - 2000) * MICROS_PER_HOUR + r.below(MICROS_PER_HOUR as u64) as i64 }),
@@ -90,23 +93,20 @@ pub fn rand_spec_fields(schema: &Schema, r: &mut Rng) -> Vec<(String, Transform)
     r.pick(&options).clone()
 }
 
-pub fn spec_from(t: &Table, fields: &[(String, Transform)]) -> Spec {
-    let schema = t.meta.current_schema();
+pub fn spec_from(schema: &Schema, fields: &[(String, Transform)]) -> Spec {
     Spec { id: 0, fields: fields.iter().enumerate().map(|(i, (c, tr))| PartField { source_id: schema.by_name(c).unwrap().id, field_id: 1000 + i as i32, name: format!("{c}_{}", tr.name().replace(['[', ']'], "")), transform: tr.clone() }).collect() }
 }
 
 /// Build a random table. Returns it with a log of what was done.
-pub fn random_table(seed: u64, tag: &str) -> (Table, Vec<String>) {
+pub fn random_table(seed: u64, tag: &str) -> (Table, Vec<String>) { random_table_in(seed, &tmp(tag)) }
+
+pub fn random_table_in(seed: u64, dir: &std::path::Path) -> (Table, Vec<String>) {
     let mut r = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
     let schema = base_schema();
     let mut log = vec![];
     let fields = rand_spec_fields(&schema, &mut r);
-    let mut t = Table::create(&tmp(tag), schema.clone(), Spec::unpartitioned(0), seed);
-    if !fields.is_empty() { let _ = &fields; }
-    // create with the spec directly: rebuild the table with the chosen spec
-    let spec = { let mut s = spec_from(&t, &fields); s.id = 0; s };
-    let mut t2 = Table::create(&tmp(&format!("{tag}b")), schema, spec, seed);
-    std::mem::swap(&mut t, &mut t2);
+    let spec = spec_from(&schema, &fields);
+    let mut t = Table::create(dir, schema, spec, seed);
     log.push(format!("spec {fields:?}"));
     let mut next_id = 0i64;
     let steps = 3 + r.below(5);
@@ -200,10 +200,13 @@ pub fn row_strings(t: &Table, b: &RecordBatch) -> Vec<String> {
     (0..b.num_rows()).map(|i| schema.fields.iter().enumerate().map(|(c, f)| format!("{:?}", cell(b.column(c), i, &f.ty))).collect::<Vec<_>>().join("|")).collect()
 }
 
-pub fn matching_rows(t: &Table, b: &RecordBatch, filter: &Expr) -> Vec<String> {
+pub fn matching_rows(t: &Table, b: &RecordBatch, filter: &Expr) -> Vec<String> { matching_rows_sem(t, b, filter, None) }
+
+/// `sem = None`: a row matches if it matches under ANY float semantics (what the planner must be sound against); `Some(s)`: exactly under `s`.
+pub fn matching_rows_sem(t: &Table, b: &RecordBatch, filter: &Expr, sem: Option<FloatSem>) -> Vec<String> {
     let schema = t.meta.current_schema();
     let idx: BTreeMap<&str, (usize, &Type)> = schema.fields.iter().enumerate().map(|(i, f)| (f.name.as_str(), (i, &f.ty))).collect();
-    (0..b.num_rows()).filter(|&i| row_matches_any_sem(filter, &|c| { let (ci, ty) = idx[c]; cell(b.column(ci), i, ty) })).map(|i| {
+    (0..b.num_rows()).filter(|&i| { let get = |c: &str| { let (ci, ty) = idx[c]; cell(b.column(ci), i, ty) }; match sem { None => row_matches_any_sem(filter, &get), Some(s) => eval_row(filter, &get, s) == Some(true) } }).map(|i| {
         schema.fields.iter().enumerate().map(|(c, f)| format!("{:?}", cell(b.column(c), i, &f.ty))).collect::<Vec<_>>().join("|") }).collect()
 }
 

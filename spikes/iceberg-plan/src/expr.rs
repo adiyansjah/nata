@@ -4,6 +4,7 @@
 //!  * `project`: the INCLUSIVE PROJECTION of a filter onto a partition spec.
 //! A planner is sound if whenever a row matches by `eval_row`, the file holding it is not pruned by the other two.
 use crate::meta::{Schema, Spec};
+use crate::types::{civil_from_days, MICROS_PER_DAY};
 use crate::transform::{Op, Transform, holds};
 use crate::types::*;
 
@@ -19,9 +20,16 @@ pub fn not(a: Expr) -> Expr { Expr::Not(Box::new(a)) }
 pub fn pred(c: &str, p: P) -> Expr { Expr::Pred(c.to_string(), p) }
 pub fn cmp(c: &str, op: Op, v: Value) -> Expr { pred(c, P::Cmp(op, v)) }
 
-/// `Total`: NaN equals itself and is above everything (Java, DuckDB). `Ieee`: every comparison with NaN is false except `!=`.
+/// Three meanings of a floating-point comparison, all in use:
+///  * `Total`: the order of the Iceberg bounds (Java's `Double.compare`): NaN equals itself and is above everything, -0.0 is BELOW +0.0;
+///  * `Sql`: DuckDB and SQL engines: NaN equals itself and is above everything, but -0.0 EQUALS +0.0;
+///  * `Ieee`: Arrow compute and pyiceberg: every comparison with NaN is false except `!=`, and -0.0 equals +0.0.
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub enum FloatSem { Total, Ieee }
+pub enum FloatSem { Total, Sql, Ieee }
+
+fn canon_zero(v: &Value) -> Value {
+    match v { Value::Double(x) if *x == 0.0 => Value::Double(0.0), Value::Float(x) if *x == 0.0 => Value::Float(0.0), o => o.clone() }
+}
 
 fn leaf(p: &P, v: &Option<Value>, sem: FloatSem) -> Option<bool> {
     // SQL: a comparison with NULL is unknown; IS NULL and IS NOT NULL are never unknown
@@ -32,6 +40,15 @@ fn leaf(p: &P, v: &Option<Value>, sem: FloatSem) -> Option<bool> {
     }
     let v = v.as_ref()?;
     let nan = is_nan(v);
+    if sem != FloatSem::Total {      // -0.0 equals +0.0: compare canonical zeros
+        let c = |x: &Value| canon_zero(x);
+        let p2 = match p { P::Cmp(o, l) => P::Cmp(*o, c(l)), P::Ne(l) => P::Ne(c(l)), P::In(ls) => P::In(ls.iter().map(c).collect()), P::NotIn(ls) => P::NotIn(ls.iter().map(c).collect()), o => o.clone() };
+        return leaf_cmp(&p2, &c(v), nan, if sem == FloatSem::Ieee { FloatSem::Ieee } else { FloatSem::Total });
+    }
+    leaf_cmp(p, v, nan, sem)
+}
+
+fn leaf_cmp(p: &P, v: &Value, nan: bool, sem: FloatSem) -> Option<bool> {
     Some(match p {
         P::IsNaN => nan,
         P::NotNaN => !nan,
@@ -58,7 +75,7 @@ pub fn eval_row(e: &Expr, get: &dyn Fn(&str) -> Option<Value>, sem: FloatSem) ->
 
 /// A row matches when the filter is TRUE (unknown filters the row out), under either float semantics (the planner must keep the file for both).
 pub fn row_matches_any_sem(e: &Expr, get: &dyn Fn(&str) -> Option<Value>) -> bool {
-    eval_row(e, get, FloatSem::Total) == Some(true) || eval_row(e, get, FloatSem::Ieee) == Some(true)
+    [FloatSem::Total, FloatSem::Sql, FloatSem::Ieee].iter().any(|s| eval_row(e, get, *s) == Some(true))
 }
 
 /// Push NOT down to the leaves (so that pruning sees only positive structure). Valid for the Total float semantics; rows that differ under Ieee
@@ -103,6 +120,9 @@ impl Bounds {
 
 /// Could any row described by `b` satisfy the predicate? false only when the bounds PROVE that none can.
 pub fn might_match_bounds(p: &P, b: &Bounds) -> bool {
+    // Bounds are in totalOrder (-0.0 < +0.0) but engines may compare the zeros as equal: widen a zero literal to whichever zero is the more inclusive for
+    // the bound being tested (a lower bound is tested against +0.0, an upper bound against -0.0).
+    let widen = |lit: &Value, up: bool| -> Value { match lit { Value::Double(x) if *x == 0.0 => Value::Double(if up { -0.0 } else { 0.0 }), Value::Float(x) if *x == 0.0 => Value::Float(if up { -0.0 } else { 0.0 }), o => o.clone() } };
     let no_values = b.nulls_only || b.nans_only;
     let nan_possible = b.is_float && b.nans != Count::Zero && !b.nulls_only;           // a NaN may be present: bounds say nothing about it
     match p {
@@ -117,18 +137,19 @@ pub fn might_match_bounds(p: &P, b: &Bounds) -> bool {
                 return match op { Op::Eq | Op::Ge => b.nans != Count::Zero, Op::Gt => false, Op::Le => !b.nulls_only, Op::Lt => !b.nulls_only && !b.nans_only, Op::StartsWith => false };
             }
             if no_values && !(nan_possible && matches!(op, Op::Gt | Op::Ge)) { return false; }
+            let (lo_lit, up_lit) = (widen(lit, false), widen(lit, true));
             match op {
-                Op::Lt => b.lower.as_ref().is_none_or(|l| vcmp(l, lit).is_lt()),
-                Op::Le => b.lower.as_ref().is_none_or(|l| vcmp(l, lit).is_le()),
-                Op::Gt => nan_possible || b.upper.as_ref().is_none_or(|u| vcmp(u, lit).is_gt()),
-                Op::Ge => nan_possible || b.upper.as_ref().is_none_or(|u| vcmp(u, lit).is_ge()),
-                Op::Eq => b.lower.as_ref().is_none_or(|l| vcmp(l, lit).is_le()) && b.upper.as_ref().is_none_or(|u| vcmp(u, lit).is_ge()),
+                Op::Lt => b.lower.as_ref().is_none_or(|l| vcmp(l, &lo_lit).is_lt()),
+                Op::Le => b.lower.as_ref().is_none_or(|l| vcmp(l, &lo_lit).is_le()),
+                Op::Gt => nan_possible || b.upper.as_ref().is_none_or(|u| vcmp(u, &up_lit).is_gt()),
+                Op::Ge => nan_possible || b.upper.as_ref().is_none_or(|u| vcmp(u, &up_lit).is_ge()),
+                Op::Eq => b.lower.as_ref().is_none_or(|l| vcmp(l, &lo_lit).is_le()) && b.upper.as_ref().is_none_or(|u| vcmp(u, &up_lit).is_ge()),
                 Op::StartsWith => starts_with_possible(b, lit),
             }
         }
         P::In(ls) => {
             if no_values { return false; }
-            ls.iter().any(|l| if is_nan(l) { b.nans != Count::Zero } else { b.lower.as_ref().is_none_or(|x| vcmp(x, l).is_le()) && b.upper.as_ref().is_none_or(|u| vcmp(u, l).is_ge()) })
+            ls.iter().any(|l| if is_nan(l) { b.nans != Count::Zero } else { b.lower.as_ref().is_none_or(|x| vcmp(x, &widen(l, false)).is_le()) && b.upper.as_ref().is_none_or(|u| vcmp(u, &widen(l, true)).is_ge()) })
         }
     }
 }
@@ -214,7 +235,73 @@ pub fn tuple_might_match(p: &PProj, tuple: &[Option<Value>]) -> bool {
             None => true,
             // a truncate partition value that is not a multiple of its width is the wrapped result of an overflow: it says nothing about the rows
             Some(Some(v)) if guard.is_some_and(|w| !crate::transform::plausible_truncate_value(v, w)) => true,
-            Some(v) => leaf(pp, v, FloatSem::Total).unwrap_or(false) || matches!(pp, P::Cmp(..) | P::In(_)) && v.as_ref().is_some_and(is_nan),
+            Some(v) => [FloatSem::Total, FloatSem::Sql, FloatSem::Ieee].iter().any(|s| leaf(pp, v, *s).unwrap_or(false)) || matches!(pp, P::Cmp(..) | P::In(_)) && v.as_ref().is_some_and(is_nan),
+        },
+    }
+}
+
+// ---------------------------------------------------------------- rendering (for the other engines in the interop checks)
+
+pub fn lit_sql(v: &Value, scale: u8) -> String {
+    match v {
+        Value::Int(x) | Value::Date(x) if matches!(v, Value::Int(_)) => x.to_string(),
+        Value::Long(x) => x.to_string(),
+        Value::Date(d) => { let (y, m, dd) = civil_from_days(*d as i64); format!("DATE '{y:04}-{m:02}-{dd:02}'") }
+        Value::Ts(t) => { let days = t.div_euclid(MICROS_PER_DAY); let us = t.rem_euclid(MICROS_PER_DAY); let (y, m, d) = civil_from_days(days);
+                          format!("TIMESTAMP '{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}.{:06}'", us / 3_600_000_000, us / 60_000_000 % 60, us / 1_000_000 % 60, us % 1_000_000) }
+        Value::Decimal(x) => { let neg = *x < 0; let a = x.unsigned_abs().to_string(); let a = format!("{:0>w$}", a, w = scale as usize + 1); let (i, f) = a.split_at(a.len() - scale as usize);
+                               format!("{}{}{}{}", if neg { "-" } else { "" }, i, if scale > 0 { "." } else { "" }, f) }
+        Value::Str(s) => format!("'{}'", s.replace('\'', "''")),
+        Value::Double(x) if !x.is_finite() => format!("'{}'::DOUBLE", if x.is_nan() { "NaN" } else if *x > 0.0 { "Infinity" } else { "-Infinity" }),
+        Value::Double(x) => format!("{x:?}"), Value::Float(x) => format!("{x:?}"), Value::Bool(b) => b.to_string(),
+        other => panic!("no SQL literal for {other:?}"),
+    }
+}
+
+/// The filter as a SQL WHERE clause (columns quoted), for DuckDB.
+pub fn to_sql(e: &Expr, schema: &Schema) -> String {
+    let col = |c: &str| -> (String, u8) { let f = schema.by_name(c).expect("column"); (format!("\"{c}\""), if let Type::Decimal(_, s) = f.ty { s } else { 0 }) };
+    match e {
+        Expr::True => "TRUE".into(), Expr::False => "FALSE".into(),
+        Expr::And(a, b) => format!("({} AND {})", to_sql(a, schema), to_sql(b, schema)),
+        Expr::Or(a, b) => format!("({} OR {})", to_sql(a, schema), to_sql(b, schema)),
+        Expr::Not(a) => format!("(NOT {})", to_sql(a, schema)),
+        Expr::Pred(c, p) => {
+            let (q, sc) = col(c);
+            let op = |o: &Op| match o { Op::Eq => "=", Op::Lt => "<", Op::Le => "<=", Op::Gt => ">", Op::Ge => ">=", Op::StartsWith => "starts_with" };
+            match p {
+                P::Cmp(Op::StartsWith, v) => format!("starts_with({q}, {})", lit_sql(v, sc)),
+                P::Cmp(o, v) => format!("({q} {} {})", op(o), lit_sql(v, sc)),
+                P::Ne(v) => format!("({q} <> {})", lit_sql(v, sc)),
+                P::In(vs) => format!("({q} IN ({}))", vs.iter().map(|v| lit_sql(v, sc)).collect::<Vec<_>>().join(", ")),
+                P::NotIn(vs) => format!("({q} NOT IN ({}))", vs.iter().map(|v| lit_sql(v, sc)).collect::<Vec<_>>().join(", ")),
+                P::IsNull => format!("({q} IS NULL)"), P::NotNull => format!("({q} IS NOT NULL)"),
+                P::IsNaN => format!("isnan({q})"), P::NotNaN => format!("(NOT isnan({q}))"), P::NotStartsWith(v) => format!("(NOT starts_with({q}, {}))", lit_sql(v, sc)),
+            }
+        }
+    }
+}
+
+/// The filter as JSON (an AST the Python harness turns into pyiceberg expressions): values are `{"t": type, "v": text}`.
+pub fn to_json(e: &Expr, schema: &Schema) -> serde_json::Value {
+    use serde_json::json;
+    let val = |c: &str, v: &Value| -> serde_json::Value {
+        let f = schema.by_name(c).unwrap();
+        let sc = if let Type::Decimal(_, s) = f.ty { s } else { 0 };
+        let text = match v { Value::Str(s) => s.clone(), Value::Date(_) | Value::Ts(_) => lit_sql(v, sc).split('\'').nth(1).unwrap().replace(' ', "T"), o => lit_sql(o, sc) };
+        json!({"t": f.ty.to_json(), "v": text})
+    };
+    match e {
+        Expr::True => json!({"op": "true"}), Expr::False => json!({"op": "false"}),
+        Expr::And(a, b) => json!({"op": "and", "l": to_json(a, schema), "r": to_json(b, schema)}), Expr::Or(a, b) => json!({"op": "or", "l": to_json(a, schema), "r": to_json(b, schema)}),
+        Expr::Not(a) => json!({"op": "not", "x": to_json(a, schema)}),
+        Expr::Pred(c, p) => match p {
+            P::Cmp(o, v) => json!({"op": match o { Op::Eq => "eq", Op::Lt => "lt", Op::Le => "le", Op::Gt => "gt", Op::Ge => "ge", Op::StartsWith => "starts_with" }, "col": c, "val": val(c, v)}),
+            P::Ne(v) => json!({"op": "ne", "col": c, "val": val(c, v)}),
+            P::In(vs) => json!({"op": "in", "col": c, "vals": vs.iter().map(|v| val(c, v)).collect::<Vec<_>>()}),
+            P::NotIn(vs) => json!({"op": "not_in", "col": c, "vals": vs.iter().map(|v| val(c, v)).collect::<Vec<_>>()}),
+            P::IsNull => json!({"op": "is_null", "col": c}), P::NotNull => json!({"op": "not_null", "col": c}),
+            P::IsNaN => json!({"op": "is_nan", "col": c}), P::NotNaN => json!({"op": "not_nan", "col": c}), P::NotStartsWith(v) => json!({"op": "not_starts_with", "col": c, "val": val(c, v)}),
         },
     }
 }

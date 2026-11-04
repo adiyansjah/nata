@@ -329,7 +329,7 @@ impl Table {
                            size: std::fs::metadata(&path).unwrap().len() as i64, referenced: Some(data_path.to_string()), ..Default::default() };
         let entry = Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f };
         let mut list = self.live_manifests().unwrap();
-        list.push(self.write_manifest_file(&spec, POS_DELETES, &[entry], snap_id, seq));
+        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));
         self.snapshot_commit("delete", list)
     }
 
@@ -354,7 +354,7 @@ impl Table {
         metrics(&dschema, rows, &mut f);
         let entry = Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f };
         let mut list = self.live_manifests().unwrap();
-        list.push(self.write_manifest_file(&spec, EQ_DELETES, &[entry], snap_id, seq));
+        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));      // the MANIFEST content is 0 (data) or 1 (deletes), not the file content
         self.snapshot_commit("delete", list)
     }
 
