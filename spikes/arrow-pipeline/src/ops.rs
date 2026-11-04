@@ -1,8 +1,5 @@
 //! Operators of the protocol over Arrow batches with a selection vector. Each takes `&Batch`, builds a new `Batch`
 //! that shares the columns, and never copies column data.
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
-
 use crate::batch::{Batch, Ref};
 use crate::genops::engine::Step;
 use crate::genops::kernels::{EngineError, R, filter_range, mul, sub_const_left};
@@ -114,52 +111,5 @@ impl From<Step> for StepSpec {
     }
 }
 
-// ---------------------------------------------------------------- limit
-
-/// `LIMIT n`, shared by all tasks of the pipeline, exact however the batches interleave. It counts LIVE rows
-/// (after the selection) and cuts the selection vector, not the columns.
-#[derive(Clone)]
-pub struct Limit(Arc<AtomicUsize>);
-
-impl Limit {
-    pub fn new(n: usize) -> Self {
-        Limit(Arc::new(AtomicUsize::new(n)))
-    }
-
-    pub fn remaining(&self) -> usize {
-        self.0.load(SeqCst)
-    }
-}
-
-impl OperatorFactory for Limit {
-    fn make(&self) -> Box<dyn Operator> {
-        Box::new(LimitOp(Arc::clone(&self.0)))
-    }
-}
-
-struct LimitOp(Arc<AtomicUsize>);
-
-/// The first `take` live rows of `input`.
-pub fn truncate(input: &Batch, take: usize) -> Batch {
-    let sel: Vec<u32> = match input.sel() {
-        Some(s) => s[..take].to_vec(),
-        None => (0..take as u32).collect(),
-    };
-    input.with_sel(sel)
-}
-
-impl Operator for LimitOp {
-    fn execute(&mut self, input: &Batch, out: &mut Batch) -> Result<OpResult> {
-        loop {
-            let remaining = self.0.load(SeqCst);
-            if remaining == 0 {
-                return Ok(OpResult::Finished);
-            }
-            let take = remaining.min(input.len());
-            if self.0.compare_exchange(remaining, remaining - take, SeqCst, SeqCst).is_ok() {
-                *out = truncate(input, take);
-                return Ok(if take == remaining { OpResult::Finished } else { OpResult::NeedMoreInput });
-            }
-        }
-    }
-}
+// LIMIT lives in `limit.rs` (the loom model compiles that file as it is); re-exported here so paths do not change.
+pub use crate::limit::{Limit, truncate};

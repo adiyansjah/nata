@@ -1,13 +1,19 @@
 //! An exchange for Arrow batches (port of the operator-trait prototype's channel). The producer side COMPACTS the
 //! selection before a batch enters the channel (ADR 0001 / 0003). Wakers are stored under the channel lock and
 //! called after it is released; the consumer's `Source::finish` closes the channel for the producers.
+//!
+//! LOOM CHANGES (bench/results/20261104-stop-depth-loom.md): `Mutex`/`AtomicUsize` come from `crate::proto::sync` (std
+//! normally, loom under `--cfg nata_loom`; `Arc` stays std's because it holds trait objects), and `close_consumers`
+//! drops the consumer wakers still stored (finding F1 of spikes/exchange-loom: a stale waker owns its task, which owns
+//! the scheduler, which owns this channel, so a cancelled query leaked itself).
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use crate::batch::Batch;
 use crate::proto::api::*;
 use crate::proto::sched::lock;
+use crate::proto::sync::Ordering::SeqCst;
+use crate::proto::sync::{AtomicUsize, Mutex};
 
 struct ChanState {
     queue: VecDeque<Batch>,
@@ -77,8 +83,12 @@ impl Channel {
         let mut s = lock(&self.state);
         s.consumers_closed = true;
         let to_wake = std::mem::take(&mut s.producer_wakers);
+        // F1: every consumer task has ended when the channel is closed, so the consumer wakers still stored are
+        // stale. Take them and drop them outside the lock.
+        let stale = std::mem::take(&mut s.consumer_wakers);
         drop(s);
         wake_all(to_wake);
+        drop(stale);
     }
 }
 

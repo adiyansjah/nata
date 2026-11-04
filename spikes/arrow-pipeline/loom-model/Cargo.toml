@@ -1,0 +1,33 @@
+# THROWAWAY SPIKE for ADR 0001 (early finish / LIMIT through a per-stage `stop_depth`): loom model of the scheduler and
+# the exchange of spikes/arrow-pipeline. It compiles the REAL source files of that spike with `#[path]`
+# (../src/proto/*.rs, ../src/exchange.rs, ../src/limit.rs), never a copy; only the Arrow `Batch` is replaced by a
+# small stand-in (src/batch.rs), because Arrow does not belong in a model checker. See
+# bench/results/20261104-stop-depth-loom.md. Own [workspace] and target dir; not part of the spike's build.
+[package]
+name = "spike-ap-loom-model"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+# Switches that the scheduler source (src/proto/sched.rs) reads with `cfg!`; all off here, never enabled.
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+# loom is only built with RUSTFLAGS="--cfg nata_loom" (not `loom`: other crates react to that name).
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+
+[profile.release]
+opt-level = 3
+debug = false
+# the spike's own profile has overflow-checks ON (ADR 0003 decision 6); the model keeps it, so a counter that wraps fails
+overflow-checks = true

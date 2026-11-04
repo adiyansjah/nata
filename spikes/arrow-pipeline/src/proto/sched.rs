@@ -10,7 +10,7 @@ use std::sync::atomic::AtomicU64;
 
 use crate::proto::api::*;
 use crate::batch::Batch;
-// The synchronization primitives come from `crate::sync`: std normally, `loom` under `--cfg loom`.
+// The synchronization primitives come from `crate::sync`: std normally, `loom` under `--cfg nata_loom`.
 // The trait objects of `api.rs` (`Arc<dyn SourceFactory>` and friends) stay on std's `Arc`.
 use crate::proto::sync::Ordering::SeqCst;
 use crate::proto::sync::thread::JoinHandle;
@@ -304,7 +304,7 @@ fn run_task(shared: &Arc<Shared>, task: Arc<TaskCell>) {
         let mut st = lock(&task.state);
         // Only checked by the loom tests: a task may start only from `Queued` (never while another
         // worker runs it, never after `Done`).
-        #[cfg(loom)]
+        #[cfg(nata_loom)]
         assert!(
             matches!(*st, TaskState::Queued),
             "task started from a state other than Queued"
@@ -376,7 +376,7 @@ fn worker(shared: Arc<Shared>) {
                 if shared.shutdown.load(SeqCst) {
                     return;
                 }
-                #[cfg(not(loom))]
+                #[cfg(not(nata_loom))]
                 {
                     let delay = TEST_WORKER_DELAY_US.load(SeqCst);
                     if delay > 0 {
@@ -507,7 +507,7 @@ impl RunningQuery {
         }
         // Only checked by the loom tests: when `wait` returns, the queue is empty and every task
         // is `Done` (none is left Queued, Running or Parked).
-        #[cfg(loom)]
+        #[cfg(nata_loom)]
         {
             assert!(
                 lock(&self.shared.queue).is_empty(),

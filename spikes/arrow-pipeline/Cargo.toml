@@ -17,7 +17,7 @@ parquet = "60"
 
 [features]
 # The scheduler snapshot (src/proto/sched.rs) still contains the cfg! switches of the loom validation
-# (bench/results/20261104-loom-scheduler.md). They are declared so the file stays byte-for-byte the same;
+# (bench/results/20261104-loom-scheduler.md). They are declared so the file stays the same (apart from the cfg name);
 # never enabled here.
 bug-lost-shutdown = []
 bug-wake-ignored-while-running = []
@@ -25,8 +25,12 @@ bug-park-ignores-notified = []
 bug-wake-enqueues-running = []
 bug-cancel-does-not-wake = []
 
+# The loom model of the scheduler/exchange/LIMIT is NOT built from this crate: `loom-model/` (its own workspace)
+# compiles src/proto/*.rs, src/exchange.rs and src/limit.rs under RUSTFLAGS="--cfg nata_loom"
+# (bench/results/20261104-stop-depth-loom.md). This crate has no loom dependency and refuses that cfg (see lib.rs).
+
 [lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)', 'cfg(nata_loom)'] }
 
 [profile.release]
 opt-level = 3
