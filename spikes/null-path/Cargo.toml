@@ -1,0 +1,27 @@
+# THROWAWAY SPIKE for ADR 0003 (NULL cost): word-wise validity bitmaps against the per-row representations of spikes/generic-ops. Not part of the main workspace.
+# Own workspace, own target dir. Delete once ADR 0003 is accepted.
+[package]
+name = "spike-null-path"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = "60"
+libc = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# ADR 0003 decision 6: the engine is built and tested with overflow checks on.
+overflow-checks = true
+
+# Same as release but with overflow checks off, only to measure what the checks cost.
+[profile.nochecks]
+inherits = "release"
+overflow-checks = false
