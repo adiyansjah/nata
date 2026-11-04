@@ -1,0 +1,39 @@
+# THROWAWAY SPIKE for ADR 0003 / verification-plan item 18: what does COMPACTION (materialising only the selected rows
+# with arrow `take` / `filter`) cost, against carrying the selection vector into our own selection-aware kernels?
+# Own workspace, own target dir. Not part of the main workspace. Delete once ADR 0003 is accepted.
+[package]
+name = "spike-compaction"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+name = "compaction"
+path = "src/lib.rs"
+
+[[bin]]
+name = "compaction-bench"
+path = "src/main.rs"
+
+[dependencies]
+arrow = "60"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# ADR 0003 decision 6: our own code is built with overflow checks on (the kernels here use explicit wrapping ops where
+# they mean to wrap). The dependencies are not (see spikes/hash-ops/Cargo.toml for the arrow-data panic under NULL slots).
+overflow-checks = true
+
+[profile.release.package."*"]
+overflow-checks = false
+
+[profile.test.package."*"]
+overflow-checks = false
+
+[profile.dev.package."*"]
+overflow-checks = false
