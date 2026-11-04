@@ -1,0 +1,26 @@
+# THROWAWAY SPIKE for ADR 0002: does the tokio -> CPU-pool hand-off (waker fired from a tokio task
+# into the std-thread scheduler) lose wakeups, deadlock under saturation, stall I/O or flood memory?
+# src/{api,batch,sched}.rs are a snapshot of `git show HEAD:spikes/operator-trait/src/...` (commit
+# 7f2e3be); see SNAPSHOT.md for the exact differences. Not part of the main workspace.
+[package]
+name = "spike-async-bridge"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
+
+# The model checker is only built with RUSTFLAGS="--cfg nata_loom" (not `loom`: tokio reacts to that name).
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[features]
+default = ["invariants"]
+# Extra run-time checks in the snapshotted scheduler (a task is never run twice at once).
+invariants = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
