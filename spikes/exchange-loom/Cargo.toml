@@ -1,0 +1,28 @@
+# THROWAWAY SPIKE for ADR 0001 (open check 1b): loom model of the exchange between pipeline
+# fragments. src/{api,batch,sched,sync}.rs, src/exchange.rs and src/limit.rs are snapshots of
+# `git show HEAD:spikes/operator-trait/src/...` (commit ce5f715); see SNAPSHOT.md for the exact
+# differences. Not part of the main workspace.
+[package]
+name = "spike-exchange-loom"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+# Deliberate scheduler bugs inherited from the snapshot of sched.rs (all off, never enable them
+# outside a mutation check). The exchange mutants are NOT features: they are applied to a private
+# copy of the crate by mutants/mutate.py.
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+# The model checker is only built with RUSTFLAGS="--cfg nata_loom" (not `loom`: tokio-style crates react to that name).
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
