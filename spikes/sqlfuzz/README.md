@@ -49,6 +49,11 @@ Results on the dev box (DuckDB 2.0.0): the control (a faithful rendering against
 **28 of 28 faults are caught on each of seeds 1, 2, 3** (4,000 to 6,000 queries allowed; the slowest catch took 2,767 queries on seed 1).
 Each is shrunk automatically to a one- or two-line reproducer with 0 to 3 rows. A 20,000-query clean run takes about 75 seconds on 4 jobs.
 
+GCP (job `sqlfuzz`, 2026-11-04, clean VMs, 8 vCPU, DuckDB 2.0.0): **ARM64 (`n4a-highcpu-8`) and x86-64 (`c3d-highcpu-8`) both PASS everything**: the 14 tests,
+`prove` on seeds 1, 2 and 3 (28 of 28 faults caught each time, control clean), and two 60,000-query control campaigns (seeds 101 and 102) with
+0 differences. The two architectures produced the same counts of oracle errors (4,993 and 5,030 of 60,000), so DuckDB itself behaved identically on both
+for these queries. VM cost $0.009 and $0.007.
+
 Things the checks of the fuzzer itself found: the `trim` fault SURVIVED until the string pool contained values with trailing blanks; no
 INTEGER column ever held 2147483647 (so overflow was reachable only through literals) until the join key `a` got extreme values; one fault
 rendered invalid SQL and was "caught" by the parse error (now a fault whose rendering the engine rejects is reported INVALID, and the
