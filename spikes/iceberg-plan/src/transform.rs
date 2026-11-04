@@ -80,8 +80,10 @@ impl Transform {
             Transform::Void => return None,
             Transform::Bucket(n) => Int(((iceberg_hash(v) & i32::MAX) as i64 % *n as i64) as i32),
             Transform::Truncate(w) => match v {
-                Int(x) => Int(x - x.rem_euclid(*w as i32)),
-                Long(x) => Long(x - x.rem_euclid(*w as i64)),
+                // `v - (((v % W) + W) % W)` overflows for values within W of the type's minimum; Java wraps, so we do too (every implementation must agree on the
+                // partition value). The result is then NOT a lower bound of v and not a multiple of W: the planner must never prune on such a partition value.
+                Int(x) => Int(x.wrapping_sub(x.rem_euclid(*w as i32))),
+                Long(x) => Long(x.wrapping_sub(x.rem_euclid(*w as i64))),
                 Decimal(x) => Decimal(x - x.rem_euclid(*w as i128)),
                 Str(s) => Str(s.chars().take(*w as usize).collect()),
                 Bin(b) => Bin(b.iter().take(*w as usize).copied().collect()),
@@ -131,4 +133,9 @@ pub fn holds(v: &Value, op: Op, lit: &Value) -> bool {
         Op::Eq => vcmp(v, lit).is_eq(), Op::Lt => vcmp(v, lit).is_lt(), Op::Le => vcmp(v, lit).is_le(), Op::Gt => vcmp(v, lit).is_gt(), Op::Ge => vcmp(v, lit).is_ge(),
         Op::StartsWith => match (v, lit) { (Value::Str(a), Value::Str(b)) => a.starts_with(b.as_str()), (Value::Bin(a), Value::Bin(b)) => a.starts_with(b), _ => false },
     }
+}
+
+/// Is `p` a value a (non-overflowing) `truncate[w]` could have produced? Wrapped results of the overflow above are not multiples of `w`.
+pub fn plausible_truncate_value(p: &Value, w: u32) -> bool {
+    match p { Value::Int(x) => x.rem_euclid(w as i32) == 0, Value::Long(x) => x.rem_euclid(w as i64) == 0, Value::Decimal(x) => x.rem_euclid(w as i128) == 0, _ => true }
 }

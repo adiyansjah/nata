@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use crate::{Res, err};
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Type { Boolean, Int, Long, Float, Double, Decimal(u8, u8), Date, Timestamp, TimestampTz, String, Uuid, Fixed(usize), Binary }
+pub enum Type { Boolean, Int, Long, Float, Double, Decimal(u8, u8), Date, Timestamp, TimestampTz, String, Uuid, Fixed(usize), Binary, Other(String) }
 
 impl Type {
     pub fn to_json(&self) -> serde_json::Value {
@@ -12,7 +12,7 @@ impl Type {
         serde_json::Value::String(match self {
             Boolean => "boolean".into(), Int => "int".into(), Long => "long".into(), Float => "float".into(), Double => "double".into(),
             Decimal(p, s) => format!("decimal({p}, {s})"), Date => "date".into(), Timestamp => "timestamp".into(), TimestampTz => "timestamptz".into(),
-            String => "string".into(), Uuid => "uuid".into(), Fixed(n) => format!("fixed[{n}]"), Binary => "binary".into(),
+            String => "string".into(), Uuid => "uuid".into(), Fixed(n) => format!("fixed[{n}]"), Binary => "binary".into(), Other(s) => s.clone(),
         })
     }
 
@@ -28,6 +28,11 @@ impl Type {
             _ if s.starts_with("fixed[") => Type::Fixed(s.trim_start_matches("fixed[").trim_end_matches(']').parse().map_err(|_| "bad fixed length")?),
             _ => return err(format!("unsupported type {s}")),
         })
+    }
+
+    /// Nested and unknown types are kept as `Other`: columns of such types are never used for pruning.
+    pub fn parse_lenient(j: &serde_json::Value) -> Type {
+        match j.as_str() { Some(s) => Type::parse(s).unwrap_or_else(|_| Type::Other(s.to_string())), None => Type::Other(j.to_string()) }
     }
 }
 
@@ -97,6 +102,7 @@ pub fn deserialize(t: &Type, b: &[u8]) -> Res<Value> {
         Type::String => Value::Str(String::from_utf8(b.to_vec()).map_err(|e| format!("bound is not UTF-8: {e}"))?),
         Type::Binary | Type::Fixed(_) => Value::Bin(b.to_vec()),
         Type::Uuid => { need(16)?; Value::Uuid(b.try_into().unwrap()) }
+        Type::Other(o) => return err(format!("no bound deserialization for {o}")),
     })
 }
 
