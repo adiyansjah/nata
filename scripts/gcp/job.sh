@@ -195,6 +195,14 @@ case "$JOB" in
     # the unmutated control sweep, 13 mutants, the shuttle/madsim/turmoil trials and the abstraction-cost benchmark. The exit status
     # is recorded and does not stop the job, so the results are kept.
     run sim-harness bash -c 'cd "$SRC/spikes/sim-harness" && ./gcp-check.sh "$RESULTS/sim-harness" "${SIM_SEEDS:-20000}" > "$RESULTS/sim-harness-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sim-harness-exit.txt"; true' ;;
+  iceberg|iceberg-smoke)
+    # verification-plan item 24 (spikes/iceberg-commit): the TLA+ model (TLC, every mutant) and the commit spike against the Apache
+    # REST reference fixture. `iceberg-smoke` is the cheap shake-out with short timeouts (it exercises the tool setup, the Rust
+    # build, the fixture build, the suites and the interop check, and the long model runs time out by design); the full model run
+    # is `iceberg`. The exit status is recorded and does not stop the job, so the results are kept.
+    export IC_WORK="$WORK/iceberg-commit-work" IC_RESUME=1
+    [ "$JOB" = iceberg-smoke ] && export IC_TLC_TIMEOUT=300 IC_MODEL_BUDGET=900 IC_MUTANT_TIMEOUT=180 IC_SEEDS=2
+    run ic-all bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-commit" > "$RESULTS/iceberg-commit-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-commit-exit.txt"; true' ;;
   armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
@@ -236,7 +244,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac
