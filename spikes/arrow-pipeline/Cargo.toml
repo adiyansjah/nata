@@ -1,0 +1,46 @@
+# THROWAWAY SPIKE for ADR 0001 ("Would change if: the prototype's protocol proves unable to carry Arrow
+# batches with selection vectors and fused operators") and ADR 0003 decision 6 (overflow-checks).
+# Q1 and Q6 and LIMIT / early finish on the PROTOCOL scheduler (snapshot of spikes/operator-trait, src/proto)
+# over Arrow batches with a selection vector (kernels snapshot of spikes/generic-ops, src/genops).
+# Not part of the main workspace (own [workspace] table, own target dir). Delete once ADR 0001 is accepted.
+[package]
+name = "spike-arrow-pipeline"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = "60"
+
+[features]
+# The scheduler snapshot (src/proto/sched.rs) still contains the cfg! switches of the loom validation
+# (bench/results/20261104-loom-scheduler.md). They are declared so the file stays byte-for-byte the same;
+# never enabled here.
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# ADR 0003 decision 6: integer overflow is an error in release builds too. Everything in this spike
+# (tests, the DuckDB diff, the mutation script, the benchmark) runs with it ON.
+overflow-checks = true
+
+# Used only by scripts/mutate.py: the release configuration (opt-level 3, overflow-checks ON) without LTO and with
+# many codegen units, so each of the ~30 rebuilds of a mutant takes seconds instead of minutes.
+[profile.mutate]
+inherits = "release"
+lto = "off"
+codegen-units = 16
+debug = false
