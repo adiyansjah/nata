@@ -8,3 +8,19 @@ edition = "2024"
 publish = false
 
 [workspace]
+
+[features]
+# Deliberate bugs, only for validating the loom model (bench/results/20261104-loom-scheduler.md).
+# Never enable them outside that check; the default build has none of them.
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+# Only built with RUSTFLAGS="--cfg loom"; a normal build neither downloads nor compiles it.
+[target.'cfg(loom)'.dependencies]
+loom = "0.7"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }

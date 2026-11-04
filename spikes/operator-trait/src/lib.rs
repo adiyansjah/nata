@@ -3,8 +3,11 @@
 
 pub mod api;
 pub mod batch;
+// The operators use std primitives and file I/O: they are not part of the loom model.
+#[cfg(not(loom))]
 pub mod ops;
 pub mod sched;
+pub mod sync;
 
 pub use api::*;
 pub use batch::Batch;

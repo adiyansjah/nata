@@ -52,6 +52,11 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - That prototype also found a real scheduler bug (a lost shutdown notification) that 10 of 10 idle-machine runs missed and that hung most runs under CPU contention; fixed, and covered by a deterministic test.
 - Protocol cost on one-row batches: about 190 ns per batch without blocking, 630-800 ns per batch through a capacity-1 exchange where nearly every batch parks and wakes a task. About 2-10% of the work in an 8K-row batch if a kernel costs about 1 ns per row (an estimate, not measured).
 
+Loom model check of the scheduler (`bench/results/20261104-loom-scheduler.md`; the real `sched.rs` with swappable sync primitives; 2 workers, 1-2 tasks; written by a delegated agent, and the orchestrator re-ran the default suite, the fixed code under loom, and two of the mutants):
+- Shutdown with idle workers always terminates (exhaustive, no preemption bound, 819 and 1.4M executions); a wake that arrives while a task is running is never lost, a task starts only from `Queued`, and cancel racing with completion, an error and a dependent-pipeline start always ends with every task `Done` and an empty queue (preemption bound 3, up to 239k executions each).
+- The model can fail: reintroducing the original lost-shutdown bug makes loom report a deadlock (the child reports all 9 tests; the orchestrator re-ran a1 and saw it); four wake-protocol mutants are each caught by at least one test (the cancel-does-not-wake mutant only by one). The default build is unchanged: 15 protocol tests and the shutdown test pass.
+- Bounds: 2 workers and 1-2 tasks, preemption bound 3 (at bound 4, 5 of the 7 bounded tests finished and passed; two did not finish in 280 s); loom does not model the SeqCst total order or spurious wake-ups; `ops.rs` (the exchange waker protocol), early finish, blocked sinks and finalize errors are not under loom.
+
 **Reasoned:** skew handling, window functions and the exchange boundary. These are reasons for the choice and none was measured. The precedent in Why is confirmed only through secondary sources for DuckDB and Velox.
 
 **Not covered:**
@@ -67,6 +72,7 @@ Hybrid: push-based inside a node, stream-based between fragments.
 ## Confidence
 
 - **Decision: medium.** It rests on requirements and design reasoning that match `vision.md` and common practice, not on the spike.
+- **The scheduler's shutdown, wake and cancel protocol is free of lost wakeups and deadlocks: medium-high within the loom bounds** (2 workers, 1-2 tasks); exhaustive for shutdown, bounded for wake and cancel, and not covering the exchange.
 - **The protocol can express join, `LIMIT`, blocking exchange and spill: medium-high.** Shown in a prototype with deliberate-breakage checks, on x86-64 and (tests only) ARM64, and without Arrow.
 - **"Push costs little" (dispatch overhead on x86-64 and ARM64, linear chain, Arrow kernels): high.** On ARM64 the quiet machine resolves differences of about 1%, and finds none. The corrected comparison finds no difference beyond about ±3-5% at any batch size or thread count, down to 256-row batches. Not shown for ARM64, cheaper kernels or branching pipelines.
 - Would change if: the prototype's protocol proves unable to carry Arrow batches with selection vectors and fused operators; or the same comparison with much cheaper kernels, static dispatch or branching pipelines shows a clear cost for push.
@@ -88,10 +94,13 @@ Hybrid: push-based inside a node, stream-based between fragments.
 
 - **Before acceptance:**
   1. ~~Prototype the operator trait against the hard cases~~ done: `bench/results/20261103-operator-trait-prototype.md`. ARM64 tests: done (`bench/results/20261104-arm64-run1-operator-protocol.md`). Remaining from it: rebuild the scheduler prototype itself on Arrow batches with selection vectors (the generic-operator experiment, `bench/results/20261104-generic-ops-x86.md`, ran Arrow batches with selection vectors through separate filter, project and aggregate stages on a simple morsel loop, not on the protocol prototype); a fused operator.
+  1b. ~~Model-check the scheduler~~ done within bounds: `bench/results/20261104-loom-scheduler.md`. Remaining: model the exchange waker protocol (`ops.rs`) and early finish; the tokio-to-pool bridge (ADR 0002).
   2. ~~Re-run pull versus push correctly~~ done for x86-64: `bench/results/20261104-pull-vs-push-corrected.md`. Also done for ARM64: `bench/results/20261104-arm64-run2-benchmarks.md`. Open check 2 is closed.
 - At the window function slice (slice 8), the first real test of partitioned parallel windows with spill.
 
 ## Revision notes
+
+- 2026-11-04, loom model of the scheduler (2 workers, 1-2 tasks): no lost wakeup or deadlock in shutdown, wake-while-running and cancel races; reintroducing the original bug makes the model fail; four more mutants caught. Confidence in the scheduler protocol raised to medium-high within the stated bounds; exchange and early finish still unmodelled.
 
 - 2026-11-04, generic-operator experiment (x86-64): operators over Arrow batches with a selection vector, as separate stages with a morsel-per-row-group loop, cost 1.06-1.12x a hand-fused loop end to end on Q1 and are faster on Q6. This does not test the operator protocol or the scheduler, which stay as in the earlier prototype; it supports the unfused operator-per-stage shape of the pipeline model. x86-64 only here; the ARM64 run (`bench/results/20261104-generic-ops-arm64.md`) showed the same direction with a larger unselective-query gap (1.20-1.29x).
 

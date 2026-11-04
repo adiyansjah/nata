@@ -6,16 +6,21 @@
 //! `notified`, so no wake-up is lost.
 
 use std::collections::VecDeque;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering::SeqCst};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard};
-use std::thread::JoinHandle;
+use std::sync::atomic::AtomicU64;
 
 use crate::api::*;
 use crate::batch::Batch;
+// The synchronization primitives come from `crate::sync`: std normally, `loom` under `--cfg loom`.
+// The trait objects of `api.rs` (`Arc<dyn SourceFactory>` and friends) stay on std's `Arc`.
+use crate::sync::Ordering::SeqCst;
+use crate::sync::thread::JoinHandle;
+use crate::sync::{Arc, AtomicBool, AtomicUsize, Condvar, Mutex, MutexGuard};
 
 /// Test hook: microseconds a worker sleeps, holding the queue lock, between seeing an empty queue
 /// and waiting for work. It widens the window in which a lost notification can happen, so a test
 /// can hit that race every time instead of one run in a thousand. Zero (the default) disables it.
+/// Always a std atomic (a loom atomic cannot live in a `static`); the loom build ignores it, since
+/// loom explores the interleavings itself.
 pub static TEST_WORKER_DELAY_US: AtomicU64 = AtomicU64::new(0);
 
 pub fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -47,9 +52,9 @@ struct TaskCell {
 
 struct PipelineRt {
     name: String,
-    source: Arc<dyn SourceFactory>,
-    ops: Vec<Arc<dyn OperatorFactory>>,
-    sink: Arc<dyn GlobalSink>,
+    source: std::sync::Arc<dyn SourceFactory>,
+    ops: Vec<std::sync::Arc<dyn OperatorFactory>>,
+    sink: std::sync::Arc<dyn GlobalSink>,
     tasks: usize,
     dependents: Vec<usize>,
     remaining_deps: AtomicUsize,
@@ -93,7 +98,10 @@ impl Shared {
         // Parked tasks must run once more to notice the cancellation and finish.
         let tasks: Vec<_> = lock(&self.all_tasks).clone();
         for t in tasks {
-            t.wake();
+            // Mutant for the loom validation: cancellation forgets to wake the tasks.
+            if !cfg!(feature = "bug-cancel-does-not-wake") {
+                TaskCell::wake(&t);
+            }
         }
         self.check_complete();
     }
@@ -105,7 +113,7 @@ impl Shared {
             .cloned()
             .collect();
         for t in tasks {
-            t.wake();
+            TaskCell::wake(&t);
         }
     }
 
@@ -121,10 +129,10 @@ impl Shared {
         }
     }
 
-    fn start_pipeline(self: &Arc<Self>, p: usize) {
-        let rt = &self.pipelines[p];
+    fn start_pipeline(this: &Arc<Self>, p: usize) {
+        let rt = &this.pipelines[p];
         rt.remaining_tasks.store(rt.tasks, SeqCst);
-        self.live_tasks.fetch_add(rt.tasks, SeqCst);
+        this.live_tasks.fetch_add(rt.tasks, SeqCst);
         for i in 0..rt.tasks {
             let body = TaskBody {
                 source: rt.source.make(),
@@ -134,44 +142,54 @@ impl Shared {
                 finishing: false,
             };
             let cell = Arc::new(TaskCell {
-                shared: Arc::clone(self),
+                shared: Arc::clone(this),
                 pipeline: p,
                 state: Mutex::new(TaskState::Queued),
                 body: Mutex::new(body),
             });
-            lock(&self.all_tasks).push(Arc::clone(&cell));
-            self.enqueue(cell);
+            lock(&this.all_tasks).push(Arc::clone(&cell));
+            this.enqueue(cell);
         }
     }
 
-    fn pipeline_done(self: &Arc<Self>, p: usize) {
-        self.pending_pipelines.fetch_sub(1, SeqCst);
-        for &d in &self.pipelines[p].dependents {
-            if self.pipelines[d].remaining_deps.fetch_sub(1, SeqCst) == 1
-                && !self.cancelled.load(SeqCst)
+    fn pipeline_done(this: &Arc<Self>, p: usize) {
+        this.pending_pipelines.fetch_sub(1, SeqCst);
+        for &d in &this.pipelines[p].dependents {
+            if this.pipelines[d].remaining_deps.fetch_sub(1, SeqCst) == 1
+                && !this.cancelled.load(SeqCst)
             {
-                self.start_pipeline(d);
+                Shared::start_pipeline(this, d);
             }
         }
-        self.check_complete();
+        this.check_complete();
     }
 }
 
 impl TaskCell {
-    fn waker(self: &Arc<Self>) -> Waker {
-        let me = Arc::clone(self);
-        Waker::new(move || me.wake())
+    fn waker(this: &Arc<Self>) -> Waker {
+        let me = Arc::clone(this);
+        Waker::new(move || TaskCell::wake(&me))
     }
 
-    fn wake(self: &Arc<Self>) {
-        let mut st = lock(&self.state);
+    fn wake(this: &Arc<Self>) {
+        let mut st = lock(&this.state);
         match &mut *st {
             TaskState::Parked => {
                 *st = TaskState::Queued;
                 drop(st);
-                self.shared.enqueue(Arc::clone(self));
+                this.shared.enqueue(Arc::clone(this));
             }
-            TaskState::Running { notified } => *notified = true,
+            TaskState::Running { notified } => {
+                // Mutant for the loom validation: forget a wake that arrives while running.
+                if !cfg!(feature = "bug-wake-ignored-while-running") {
+                    *notified = true;
+                }
+                // Mutant: also queue the task although a worker is running it.
+                if cfg!(feature = "bug-wake-enqueues-running") {
+                    drop(st);
+                    this.shared.enqueue(Arc::clone(this));
+                }
+            }
             TaskState::Queued | TaskState::Done => {}
         }
     }
@@ -263,14 +281,26 @@ impl TaskBody {
 }
 
 fn run_task(shared: &Arc<Shared>, task: Arc<TaskCell>) {
-    *lock(&task.state) = TaskState::Running { notified: false };
-    let waker = task.waker();
+    {
+        let mut st = lock(&task.state);
+        // Only checked by the loom tests: a task may start only from `Queued` (never while another
+        // worker runs it, never after `Done`).
+        #[cfg(loom)]
+        assert!(
+            matches!(*st, TaskState::Queued),
+            "task started from a state other than Queued"
+        );
+        *st = TaskState::Running { notified: false };
+    }
+    let waker = TaskCell::waker(&task);
     let p = &shared.pipelines[task.pipeline];
     let result = lock(&task.body).run(&waker, shared, p);
     match result {
         Ok(Step::Blocked) => {
             let mut st = lock(&task.state);
-            let notified = matches!(*st, TaskState::Running { notified: true });
+            // Mutant for the loom validation: clear `Running` without looking at `notified`.
+            let notified = matches!(*st, TaskState::Running { notified: true })
+                && !cfg!(feature = "bug-park-ignores-notified");
             if notified {
                 *st = TaskState::Queued;
                 drop(st);
@@ -308,7 +338,7 @@ fn finish_task(shared: &Arc<Shared>, task: &Arc<TaskCell>) {
     }
     if p.remaining_tasks.fetch_sub(1, SeqCst) == 1 && !shared.cancelled.load(SeqCst) {
         match p.sink.finalize() {
-            Ok(()) => shared.pipeline_done(task.pipeline),
+            Ok(()) => Shared::pipeline_done(shared, task.pipeline),
             Err(e) => shared.fail(e),
         }
     }
@@ -327,9 +357,12 @@ fn worker(shared: Arc<Shared>) {
                 if shared.shutdown.load(SeqCst) {
                     return;
                 }
-                let delay = TEST_WORKER_DELAY_US.load(SeqCst);
-                if delay > 0 {
-                    std::thread::sleep(std::time::Duration::from_micros(delay));
+                #[cfg(not(loom))]
+                {
+                    let delay = TEST_WORKER_DELAY_US.load(SeqCst);
+                    if delay > 0 {
+                        std::thread::sleep(std::time::Duration::from_micros(delay));
+                    }
                 }
                 q = shared.queue_cv.wait(q).unwrap_or_else(|e| e.into_inner());
             }
@@ -409,11 +442,11 @@ impl Query {
         let workers = (0..threads.max(1))
             .map(|_| {
                 let s = Arc::clone(&shared);
-                std::thread::spawn(move || worker(s))
+                crate::sync::thread::spawn(move || worker(s))
             })
             .collect();
         for r in roots {
-            shared.start_pipeline(r);
+            Shared::start_pipeline(&shared, r);
         }
         if n == 0 {
             *lock(&shared.done) = true;
@@ -441,13 +474,31 @@ impl RunningQuery {
         }
         // Set the flag while holding the queue lock the workers wait on. Without the lock a worker
         // can check the flag, then miss the notification, and sleep forever.
-        {
+        if cfg!(feature = "bug-lost-shutdown") {
+            // Mutant for the loom validation: the original bug, flag set outside the lock.
+            self.shared.shutdown.store(true, SeqCst);
+        } else {
             let _queue = lock(&self.shared.queue);
             self.shared.shutdown.store(true, SeqCst);
         }
         self.shared.queue_cv.notify_all();
         for w in self.workers {
             let _ = w.join();
+        }
+        // Only checked by the loom tests: when `wait` returns, the queue is empty and every task
+        // is `Done` (none is left Queued, Running or Parked).
+        #[cfg(loom)]
+        {
+            assert!(
+                lock(&self.shared.queue).is_empty(),
+                "task left in the queue"
+            );
+            for t in lock(&self.shared.all_tasks).iter() {
+                assert!(
+                    matches!(*lock(&t.state), TaskState::Done),
+                    "task not Done when wait() returned"
+                );
+            }
         }
         // Break the reference cycles (tasks hold the scheduler; wakers hold tasks).
         lock(&self.shared.queue).clear();
