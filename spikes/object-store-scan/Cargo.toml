@@ -1,0 +1,39 @@
+# THROWAWAY SPIKE for ADR 0002 (verification-plan item 27, a gate): does the tokio -> CPU-pool bridge work against an
+# OBJECT STORE with real latency? Request coalescing, prefetch, retries, in-flight cancellation, memory bound, tail latency.
+# The operator protocol (src/api.rs, src/batch.rs) is included by #[path] from spikes/operator-trait, and the bridge channel,
+# scheduler and sync shim (chan.rs, sched.rs, sync.rs) from spikes/async-bridge: nothing is copied. Not part of the main
+# workspace. Delete once ADR 0002 is accepted; keep the results.
+[package]
+name = "spike-object-store-scan"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "net", "io-util", "fs", "macros"] }
+# "aws" = the S3 API client (also what GCS's S3-interoperability endpoint speaks); "fs" = the local-disk control arm.
+object_store = { version = "0.14", default-features = false, features = ["aws", "fs"] }
+parquet = { version = "60", features = ["async"] }
+arrow = "60"
+futures = "0.3"
+bytes = "1"
+
+[[bin]]
+name = "objscan"
+path = "src/main.rs"
+
+[features]
+default = ["invariants"]
+# The snapshotted scheduler (async-bridge/src/sched.rs) asserts that a task is never run twice at once.
+invariants = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+
+[profile.release]
+opt-level = 3
+debug = "line-tables-only"
+# ADR 0003 decision 6: integer overflow is an error in release builds too.
+overflow-checks = true
