@@ -23,9 +23,23 @@ Run on the dev box with small bounds only (the owner's limit for local heavy wor
 | the 6 canaries (each state is reachable) | all violated as required |
 | the 12 mutants | **all 12 CAUGHT** (the model sees every rule it is meant to protect) |
 
-NOT yet run: `safe-2x2` and the liveness configurations `live-safe-2x2`, `live-safe-1x3`, `safe-2x3`, `live-safe-2x3` on the final
-spec (too big for the local limit; GCP job `failmodel`). The numbers above are for the model only; nothing here shows the rules are
-right for real code (see the limits below).
+GCP run `failmodel-arm64` (2026-11-04, `n4a-highcpu-16`, 16 vCPU, 32 GiB, TLC 2.19, JDK 17; results in `bench/gcp-runs/failmodel-arm64/`,
+which is not committed): the run was **cut short**, see below.
+
+| Configuration | Result | Distinct states | Time |
+|---|---|---|---|
+| `smoke`, `live-smoke` | PASS | 2,527 | 1 s |
+| `safe-1x2`, `live-safe-1x2` | PASS | 294,429 | 2.5 s, 13 s |
+| `safe-1x3`, `live-safe-1x3` | PASS | 6,299,337 | 18 s, 413 s |
+| `safe-2x2`, `live-safe-2x2` (2 tasks, 2 workers, one crash, one wrong suspicion, one lost message, one coordinator crash) | PASS | 11,882,257 | 35 s, 727 s |
+| `safe-2x3` (2 tasks, 3 workers) | PASS | 61,509,559 | 201 s |
+| `live-safe-2x3` | **NOT FINISHED**: killed after about 30 minutes, still enumerating (30.3 M states found at the last log line) | | |
+| the 6 canaries and the 12 mutants on GCP | **NOT RUN** (they come after the configurations; the mutants and canaries did pass on the dev box) | | |
+
+So the final spec holds its safety properties for 2 tasks with 2 and 3 workers and its liveness properties for 2 tasks with 2 workers;
+liveness for 3 workers is unchecked. The run was cut short because the orchestrator was a child of the interactive session, which was
+interrupted; it died during its own cleanup, after the VM was deleted and before the data disk was (the disk was removed by hand, nothing
+is left). Cost: about $0.17 of VM time plus a few cents of disk.
 
 ## What TLC found while the model was written (each one is now a rule, and a mutant reproduces it)
 

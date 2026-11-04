@@ -25,8 +25,11 @@ Run on the dev box (8 vCPU, shared) within the owner's 10-minute limit for local
 | `check.sh` on SF0.01 and on SF1, `--quick` (13 queries in memory; 6 join kinds + Q13 partitioned with 32 partitions and a 64 MB budget; sort with spill, fan-in 4 and 2, one task; windows with spill) | all comparisons pass; Q18 57 rows, Q21 100 rows, sort 6,001,215 rows identical to DuckDB; sort spills about 1.2 GB (merge passes included) with at most 5 files open |
 | `mutate.py` | **21 of 21 CAUGHT** (4 minutes) |
 
-NOT yet run: the non-quick part of `check.sh` (1, 2 and 8 tasks for Q18 and Q21), a clean ARM64 or x86-64 VM (`gcp-check.sh`, job
-`opsbeyond`), and any timing claim. The DuckDB times that `gcp-check.sh` records are informational, one warm run, not a benchmark.
+GCP (job `opsbeyond`, 2026-11-04, clean VMs, SF1): **ARM64** (`n4a-highcpu-8`) and **x86-64** (`c3d-highcpu-8`) both PASS the build, the unit
+tests and the full differential check (31 and 30 comparisons, including 1, 2 and 8 tasks for Q18 and Q21, partitioned joins, and sort
+with spill: 6,001,215 rows identical to DuckDB, about 1.2 GB spilled, at most 8 files open). The mutation phase FAILED on both for a harness
+reason (rustup had no toolchain for the copies outside the repo), fixed in `gcp-check.sh`; the 21 mutants were caught on the dev box.
+Each run cost about $0.006 of VM time. NOT yet run: the mutants on GCP, and any timing claim. The DuckDB times that `gcp-check.sh` records are informational, one warm run, not a benchmark.
 Scale (SF10 and up, larger than memory with many partitions) is item 32.
 
 ## What the protocol could and could not express (the answer to item 31)

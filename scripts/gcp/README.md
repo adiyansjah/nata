@@ -85,3 +85,10 @@ Two related defects found the same day and fixed: the orchestrator pulls `state`
 a job must NEVER put large files under `$RESULTS` (a 3.7 GB results directory made the pull time out, the orchestrator called a
 healthy VM `stuck` and recreated it); and the run id now carries a random suffix because runs started in the same second
 shared one directory and one label. Open improvement: a `recover --run-id <id>` subcommand that does steps 1-4 itself.
+
+## Start `run` detached, never as a child of an interactive session (found 2026-11-04, run `failmodel-arm64`)
+
+An orchestrator started as a background child of a chat or terminal session is killed when that session is interrupted or torn down.
+It died mid-cleanup: the VM was deleted, the data disk was not, and the job (50 minutes in, with the longest model check still running)
+was lost. Start long runs as `setsid nohup scripts/gcp/orchestrate.sh run ... > log 2>&1 < /dev/null &` so they survive, and then watch
+the log or the process; the recovery steps in the section above apply if one dies anyway.
