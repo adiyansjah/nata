@@ -48,6 +48,8 @@ Order within a slice: make it right, prove it right, then make it fast. A fast w
 
 ## 6. Decisions rest on evidence and record why
 
+**Preferred evidence, strongest first:** a formal proof or exhaustive model check within stated bounds; a differential or property test against an independent reference; a measurement with a control arm; a reasoned argument (always labelled as reasoned). Use the strongest that is affordable, and combine them: empirical checks find what we did not think of, formal checks cover every input in their bounds. A check is only evidence if it is shown to fail on a known-bad version (a past bug or a deliberate mutation).
+
 A decision that cannot be explained cannot be revisited. Every architecture or build-versus-reuse choice is written in `docs/decisions/NNNN-title.md` (template: `decisions/0000-template.md`). About one page; link the detail instead of copying it.
 
 ### What an ADR contains
@@ -69,7 +71,7 @@ A decision that cannot be explained cannot be revisited. Every architecture or b
 - **Weak evidence is called weak.** "We found no cost" is not "there is no cost".
 - **Build versus reuse needs a bake-off**: a small benchmark of the existing crate against the custom attempt.
 - **Status.** An agent or a human proposes; a human accepts. An accepted ADR is not edited in place: append a dated amendment, or supersede it with a new ADR. A proposed ADR is updated when new evidence arrives, and says what changed.
-- **Independent check before acceptance.** Someone who did not produce the evidence reads it and tries to break it (a human, or a second agent given the data and asked to critique, not to confirm). Their findings are checked against the code before they are acted on (section 8).
+- **Independent check before acceptance is empirical and formal, not critique.** Before an ADR is accepted, its claims are re-checked by something that can fail: the measurement re-run by someone who did not take it, a differential test against DuckDB, a property test against a scalar reference, a mutation check that the tests catch known-bad versions, a model checker (loom, shuttle, TLA+) for concurrency, a bounded proof (Kani) for kernels. A reviewer, human or agent, may point at what to check, but every finding becomes a test, proof or measurement, or it is dropped. A written critique alone does not count as the check. Findings are checked against the code before they are acted on (section 8).
 - **Spikes are throwaway.** Spike code lives in `spikes/`, results in `bench/results/`. Delete the code once the ADR is accepted; keep the results.
 - **Both architectures.** Evidence for a performance-sensitive decision is recorded on x86-64 and ARM64, or the ADR says which one is unmeasured (see [portability.md](portability.md), section 7).
 
@@ -93,10 +95,22 @@ A measurement is evidence only if it follows these.
 
 ## 8. Roles (humans and agents)
 
-- Claude Code plans and implements multi-file changes and runs the tooling. It may draft ADRs, run spikes and critique evidence; a human accepts an ADR (section 6).
-- Codex reviews independently before merging a large slice (`/codex:review`).
+- Claude Code plans and implements multi-file changes and runs the tooling. It may draft ADRs, run spikes and write the tests, proofs and measurements that check evidence; a human accepts an ADR (section 6).
+- **Adversarial review is not the default.** Do not start a second agent to critique ADRs, specs or results as a routine step: the tokens are better spent on tests, proofs and measurements (section 6). A review is allowed only when the human asks for one, or as a single short pass before a spec is frozen that asks for properties and invariants to check, and each of its findings must become a test, proof or measurement, or be dropped. Codex, where installed, may be used the same way for a large slice (`/codex:review`), on request.
 - No agent commits, pushes or opens PRs unless asked.
-- Review findings are checked against the code before they are acted on.
+- Any review finding is checked against the code, and turned into a test, proof or measurement, before it is acted on.
+
+### Orchestrator and child agents
+
+Since 2026-11-04 the main Claude Code session works as an **orchestrator**: it plans, briefs, checks and reports, and delegates the implementation and verification work to child agents. The human decides; the orchestrator does not accept ADRs, commit, push or spend cloud money without being asked.
+
+- **Default child:** Claude Sonnet 5.5 at high effort. Other models or settings only when the human asks.
+- **The brief is the whole context.** A child sees nothing of the conversation. Each brief states the goal, what is already ruled out, the files to read, the exact scope (which paths it may edit, which results file it writes), the standing rules (no GCP, no commit or push, no private data in files) and the form of the final report.
+- **Verification over critique.** Briefs ask for proofs, property tests, mutation checks, model checking (Kani, loom) and measurements. Every claim in a child's report must be backed by a command it ran. A child is not asked to review for the sake of reviewing; a suspected bug becomes a failing test first.
+- **Checks must be able to fail.** A proof or model counts only if it fails on a known-bad version (the old bug, or a mutation). The brief requires that evidence.
+- **The orchestrator re-runs what matters before relying on it.** A child's summary is a claim. The orchestrator runs the reproduce command and reads the diff before results go into an ADR.
+- **Parallel children get disjoint scope.** Where scopes could overlap, a child works in its own worktree. Nothing is committed while a child is mid-edit in the shared checkout.
+- **Cloud runs stay with the human's cost approval** (next section). A child never launches one on its own.
 
 ### Cloud spend (GCP)
 
