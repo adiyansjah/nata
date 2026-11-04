@@ -36,8 +36,8 @@ Each rule is the smallest one that makes the model's invariants and liveness pro
 
 ## Evidence
 
-- **Measured:** nothing on real machines. Model checking results are in `spikes/failure-model/README.md` (small bounds on the dev box; the
-  final-spec run on GCP is pending).
+- **Measured:** nothing on real machines. Model checking results are in `spikes/failure-model/README.md`: the final spec passes safety and liveness
+  for 2 tasks with 2 and 3 workers (up to 61.5 M states), all canaries trigger and all 12 mutants are caught, on GCP (ARM64).
 - **Reasoned:** the rules for a write query (Iceberg commit) are separate; the failure of a coordinator in the middle of a commit is item 24.
 - **Not covered:** half-read streams; non-deterministic tasks (a re-run that returns different rows); coordinator replacement; network
   partitions that heal (a partitioned worker that returns is modelled as a zombie); several queries sharing workers; memory and spill

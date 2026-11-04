@@ -43,8 +43,13 @@ boot disk (the six canaries then failed for the same reason). The **12 mutants a
 dev box). `gcp-check.sh` now keeps TLC's scratch files on the 30 GB data disk (`FM_TMP`); whether 30 GB is enough for the 3-worker liveness
 graph is unknown.
 
-So the final spec holds its safety properties for 2 tasks with 2 and 3 workers and its liveness properties for 2 tasks with 2 workers;
-liveness for 3 workers is unchecked. The run was cut short because the orchestrator was a child of the interactive session, which was
+Third run `failmodel-retry2` (same machine, a 300 GB data disk for TLC's scratch files, `FM_ONLY=live-safe-2x3`, 84 minutes, VM cost $0.275):
+**`live-safe-2x3` PASS** (61,509,559 distinct states, 4,900 s; TLC peaked at 21 GB of its 24 GB heap, 21 GB on disk) and **all 6 canaries
+VIOLATED as required**. With the 12 mutants (12 of 12 CAUGHT on GCP in the retry run), every configuration, canary and mutant has now passed on GCP
+for the final spec.
+
+(The paragraphs above describe the earlier attempts that led here.) So the final spec holds its safety properties for 2 tasks with 2 and 3 workers and its liveness properties for 2 tasks with 2 workers;
+liveness for 2 tasks with 3 workers was unchecked until the third run (above). The run was cut short because the orchestrator was a child of the interactive session, which was
 interrupted; it died during its own cleanup, after the VM was deleted and before the data disk was (the disk was removed by hand, nothing
 is left). Cost: about $0.17 of VM time plus a few cents of disk.
 
