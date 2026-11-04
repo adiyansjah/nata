@@ -29,7 +29,9 @@ GCP (job `opsbeyond`, 2026-11-04, clean VMs, SF1): **ARM64** (`n4a-highcpu-8`) a
 tests and the full differential check (31 and 30 comparisons, including 1, 2 and 8 tasks for Q18 and Q21, partitioned joins, and sort
 with spill: 6,001,215 rows identical to DuckDB, about 1.2 GB spilled, at most 8 files open). The mutation phase FAILED on both for a harness
 reason (rustup had no toolchain for the copies outside the repo), fixed in `gcp-check.sh`; the 21 mutants were caught on the dev box.
-Each run cost about $0.006 of VM time. NOT yet run: the mutants on GCP, and any timing claim. The DuckDB times that `gcp-check.sh` records are informational, one warm run, not a benchmark.
+Each run cost about $0.006 of VM time. The rerun with the fix (`opsbeyond-arm64-r2`, `opsbeyond-x86-r2`) PASSED every gating phase on both
+machines: build, unit tests, the full differential check, and **21 of 21 mutants CAUGHT** (3 minutes; VM cost $0.011 and $0.009).
+NOT yet run: any timing claim (the DuckDB times in `duckdb-times.txt` are one warm run, informational). The DuckDB times that `gcp-check.sh` records are informational, one warm run, not a benchmark.
 Scale (SF10 and up, larger than memory with many partitions) is item 32.
 
 ## What the protocol could and could not express (the answer to item 31)
