@@ -72,6 +72,30 @@ fn main() {
             std::fs::write(&a[5], serde_json::to_vec_pretty(&out).unwrap()).unwrap();
             println!("{n} filters");
         }
+        Some("check-partitions") => {
+            // recompute the partition tuple of every row of every live data file with OUR transforms and compare it with the manifest's tuple (written by another engine)
+            let t = Table::open(Path::new(&a[2])).unwrap();
+            let af = all_fields(&t);
+            let (mut files, mut rows, mut bad) = (0, 0, 0);
+            let mut by_transform: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+            for (m, e) in t.live_entries().unwrap() {
+                if e.file.content != iceplan::manifest::DATA { continue; }
+                let spec = t.meta.spec(m.spec_id).unwrap();
+                let fields: Vec<iceplan::meta::Field> = spec.fields.iter().map(|pf| af[&pf.source_id].clone()).collect();
+                let b = read_fields(&e.file.path, &fields).unwrap();
+                files += 1;
+                for (pi, pf) in spec.fields.iter().enumerate() {
+                    let ent = by_transform.entry(pf.transform.name().split('[').next().unwrap().to_string()).or_default();
+                    for i in 0..b.num_rows() {
+                        rows += 1; ent.0 += 1;
+                        let got = cell(b.column(pi), i, &fields[pi].ty).and_then(|v| pf.transform.apply(&v));
+                        if got != e.file.partition[pi] { bad += 1; ent.1 += 1; if bad <= 5 { eprintln!("MISMATCH {} row {i}: ours {got:?}, manifest {:?}", e.file.path, e.file.partition[pi]); } }
+                    }
+                }
+            }
+            println!("{files} files, {rows} row-field checks, {bad} mismatches; by transform (checks, mismatches): {by_transform:?}");
+            if bad > 0 { std::process::exit(1); }
+        }
         Some("stats") => {
             let t = Table::open(Path::new(&a[2])).unwrap();
             let entries = t.live_entries().unwrap();
