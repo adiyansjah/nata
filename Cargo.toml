@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/nata", "crates/nata-bench", "crates/nata-check"]
+members = ["crates/nata", "crates/nata-bench", "crates/nata-check", "crates/nata-kernels"]
 exclude = ["spikes"]
 
 [workspace.package]
@@ -21,3 +21,10 @@ todo = "deny"
 unimplemented = "deny"
 unwrap_used = "warn"
 dbg_macro = "deny"
+
+# ADR 0003, decision 6: integer overflow is an error in release builds too (Cargo's default for release is off).
+# Workspace-wide, not per package: a per-package entry only protects code that is compiled in that package, and
+# rustc inlines small and generic kernel functions into the calling crate, where the CALLER's setting applies
+# (shown by crates/nata-kernels/lint-fixtures/overflow_checks.py). Cost: see bench/results/20261104-kernel-lints-and-guards.md.
+[profile.release]
+overflow-checks = true
