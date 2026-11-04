@@ -55,3 +55,29 @@ Agents run at the same time only when their edit scopes are disjoint and none de
 Deferred until K1 and L1 finish, because they would edit the same files: 2, 3, 4, 16, 18. Item 8 needs a push. Items 5, 19 need a cost approval if they use GCP.
 
 Benchmarks on the shared 8-vCPU VM are disturbed by the other agents. Correctness first; timings use interleaved arms with a control and are run when `uptime` shows a low load, and the report states the load.
+
+## Added 2026-11-04 after the scope decision: writes and reads, single-node and distributed, Iceberg first
+
+The owner decided that the engine writes as well as reads, runs single-node and distributed, and targets Apache Iceberg first.
+Nothing below has been started. Everything in the table runs on GCP (the owner's rule); each run needs its cost shown and a yes.
+Facts about Iceberg and about object-store conditional writes are from memory and must be checked against the current Iceberg
+specification and the `object_store` crate before they are relied on.
+
+| # | What to verify | How | Priority | Status |
+|---|---|---|---|---|
+| 23 | Distributed bugs are reproducible: a deterministic simulation harness (injected clock, network, file I/O, scheduler seed) exists before the first distributed code | spike: run the existing scheduler and exchange under a simulated network with seeded fault injection; a failing seed must replay exactly | **Gate** (architectural: it shapes every later interface) | not started |
+| 24 | The Iceberg commit is atomic and safe under concurrent writers, retries and crashes | TLA+/Quint model of the commit (optimistic concurrency, retry, conflict detection, orphan files); then a linearizability and invariant check (never a snapshot that references a missing or partial file; no lost update) against a real REST catalog and against conditional object-store writes, with injected crashes | **Gate** | not started |
+| 25 | What we write, others read, and the reverse | interop matrix: tables written by Nata read by DuckDB, pyiceberg and a reference engine, and the reverse; schema and partition evolution; snapshot isolation; sorted by the Iceberg spec's own test vectors for the partition transforms (bucket uses murmur3, truncate, year/month/day/hour) | **Gate** | not started |
+| 26 | Planning an Iceberg scan is correct and fast: manifests, manifest lists, partition and column-stat pruning, position and equality deletes, deletion vectors (v3, if targeted) | property test with a reference: pruning must never drop a file that holds a matching row (soundness); planning time and memory on tables with 10k, 100k and 1M data files | **Gate** | not started |
+| 27 | The object-store read path works with real latency: request coalescing, prefetch, retries, in-flight cancellation, memory bound, tail latency | scan spike over Parquet in a bucket in the same region, against DuckDB on the same files | **Gate** | not started |
+| 28 | The network exchange: framing, backpressure, flow control, cancellation, ordering, throughput, behaviour when a worker dies mid-query | spike on 2-8 VMs, with fault injection; compare with the in-process exchange; deterministic simulation (item 23) for the fault cases | **Gate** | not started |
+| 29 | The failure model of a distributed query is stated and holds: task retry is idempotent, results are not duplicated, cancellation reaches every node, no orphaned spill or shuffle data | TLA+/Quint model of the query lifecycle; fault-injection tests; a stated rule for what a failed task, a failed worker and a failed coordinator do | **Gate** | not started |
+| 30 | Writes produce correct files: Parquet round trip with other readers, column statistics are SOUND (min/max truncation for strings), field ids, name mapping, file sizing, sort order | differential against a reference writer and reader; property tests on statistics | Gate | not started |
+| 31 | The operator protocol handles sort and top-N with spill, outer/semi/anti joins, window functions, TPC-H Q18 and Q21 | extend the existing spike; differential against DuckDB; mutants | Gate (was found missing in the first review) | not started |
+| 32 | Scale: 32-64 vCPUs, SF10-SF100, larger than memory, spilling join and aggregate under a 1,024-file limit | GCP large Spot VM | Gate | not started |
+| 33 | A differential SQL fuzzer with DuckDB as the oracle (NULL, NaN and -0.0, dates and time zones, Unicode, collation, ordering), shown to catch known-bad engines | build once, use on every later slice | Gate | not started |
+| 34 | Engineering checks: sanitizers on the real code, `cargo-deny`/`audit`/`geiger`, benchmark regression harness, our verification tools in CI | CI plus a scheduled GCP job | Later (in parallel with the first slices) | not started |
+| 35 | Compatibility with real clients (Flight SQL, ADBC, JDBC, Postgres wire) end to end | test with the real clients | Later | not started |
+
+New ADRs the scope decision calls for (not yet written): table format and catalog (Iceberg first); distributed execution and its
+failure model; the testing strategy (deterministic simulation, fault injection, differential fuzzing).
