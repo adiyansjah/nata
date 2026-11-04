@@ -13,7 +13,9 @@ phase() { # name cmd...
   local n=$1; shift; local t0=$SECONDS
   if "$@" > "$OUT/$n.txt" 2>&1; then log "PASS $n ($((SECONDS - t0)) s)"; else log "FAIL $n ($((SECONDS - t0)) s), see $n.txt"; FAILED=1; fi
 }
-log "host: $(uname -m), $(nproc) vCPU, $(awk '/MemTotal/{printf "%d MiB",$2/1024}' /proc/meminfo); $(rustc --version); $(duckdb --version)"
+# the mutation script builds copies of the crate OUTSIDE the repo, where rustup has no toolchain override: pin the active one (found by the first mutants run)
+TC=$(rustup show active-toolchain 2>/dev/null | awk '{print $1; exit}'); [ -n "$TC" ] && export RUSTUP_TOOLCHAIN=$TC
+log "host: $(uname -m), $(nproc) vCPU, $(awk '/MemTotal/{printf "%d MiB",$2/1024}' /proc/meminfo); $(rustc --version); duckdb $(duckdb --version); toolchain ${RUSTUP_TOOLCHAIN:-default}"
 phase build cargo build --release --locked
 phase unit-tests cargo test --release --locked
 export OB_THREADS=$(nproc)
@@ -24,7 +26,9 @@ phase mutants python3 -I mutate.py --work "$OUT/mutwork"
 rm -rf "$OUT/mutwork" "$OUT"/check/*.parquet "$OUT"/check/spill-*   # results stay small: the orchestrator pulls this directory
 # informational, NOT a benchmark: DuckDB's own time for the same queries on this machine, one run each, warm cache
 for q in q18 q21 q13 sort; do
-  /usr/bin/time -f "$q duckdb %e s" duckdb -c "create view customer as select * from '$DATA/customer.parquet'; create view orders as select * from '$DATA/orders.parquet'; create view lineitem as select * from '$DATA/lineitem.parquet'; create view supplier as select * from '$DATA/supplier.parquet'; create view nation as select * from '$DATA/nation.parquet'; create table r as $(cat sql/$q.sql);" >/dev/null 2>> "$OUT/duckdb-times.txt"
+  t0=$(date +%s.%N)
+  duckdb -c "create view customer as select * from '$DATA/customer.parquet'; create view orders as select * from '$DATA/orders.parquet'; create view lineitem as select * from '$DATA/lineitem.parquet'; create view supplier as select * from '$DATA/supplier.parquet'; create view nation as select * from '$DATA/nation.parquet'; create table r as $(cat sql/$q.sql);" >/dev/null 2>&1
+  echo "$q duckdb $(awk -v a="$t0" -v b="$(date +%s.%N)" 'BEGIN{printf "%.2f", b-a}') s" >> "$OUT/duckdb-times.txt"
 done
 [ $FAILED = 0 ] && log "VERDICT: all gating phases passed" || log "VERDICT: FAILED"
 exit $FAILED
