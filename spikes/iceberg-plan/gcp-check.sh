@@ -12,6 +12,14 @@ gate() { local n=$1; shift; local t0=$SECONDS; if "$@" > "$OUT/$n.txt" 2>&1; the
 info() { local n=$1; shift; local t0=$SECONDS; "$@" > "$OUT/$n.txt" 2>&1; log "INFO $n: exit $? ($((SECONDS - t0)) s), see $n.txt"; }
 # the mutation script builds copies of the crate OUTSIDE the repo, where rustup has no toolchain override: pin the active one
 TC=$(rustup show active-toolchain 2>/dev/null | awk '{print $1; exit}'); [ -n "$TC" ] && export RUSTUP_TOOLCHAIN=$TC
+# IP_ONLY=mutants runs only the mutation phase (used to rerun it alone after a defect in that phase; nothing else is needed for it)
+if [ "${IP_ONLY:-}" = mutants ]; then
+  log "host: $(uname -m), $(nproc) vCPU; mode: mutants only"
+  gate mutants python3 -I mutate.py --work "$W/mut"
+  rm -rf "$W/mut"
+  [ $FAILED = 0 ] && log "VERDICT: the mutation phase passed" || log "VERDICT: FAILED"
+  exit $FAILED
+fi
 log "host: $(uname -m), $(nproc) vCPU, $(awk '/MemTotal/{printf "%d MiB",$2/1024}' /proc/meminfo); $(rustc --version)"
 # --- pinned Python tools (uv, then a venv): the versions the spike was developed against
 UV_VERSION=0.13.6; A=$(uname -m)

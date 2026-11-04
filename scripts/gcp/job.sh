@@ -218,8 +218,10 @@ case "$JOB" in
   parquetwrite)
     # verification-plan item 30 (spikes/parquet-write): tests, every writer configuration verified and read back by DuckDB, DuckDB as writer, known-bad statistics.
     run pw-all bash -c 'cd "$SRC/spikes/parquet-write" && PQW_WORK="$WORK/pqw-work" ./gcp-check.sh "$RESULTS/parquet-write" > "$RESULTS/parquet-write-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/parquet-write-exit.txt"; true' ;;
-  icebergplan)
+  icebergplan|icebergplan-mut)
     # verification-plan items 25 and 26 (spikes/iceberg-plan): tests, 22 mutants, interop with pyiceberg and DuckDB both ways, planning at 10k / 100k / 1M files.
+    # icebergplan-mut: only the mutation phase (the first icebergplan runs failed it at once on a missing toolchain pin that was fixed after the upload)
+    [ "$JOB" = icebergplan-mut ] && export IP_ONLY=mutants
     run ip-all bash -c 'cd "$SRC/spikes/iceberg-plan" && IP_WORK="$WORK/iceberg-plan-work" ./gcp-check.sh "$RESULTS/iceberg-plan" > "$RESULTS/iceberg-plan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-plan-exit.txt"; true' ;;
   armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers

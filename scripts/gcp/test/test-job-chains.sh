@@ -9,7 +9,7 @@ cp "$HERE/job.sh" "$T/job.sh"
 cat > "$T/lib.sh" <<'LIB'
 : "${WORK:?}"; RESULTS="$WORK/results"; mkdir -p "$RESULTS"
 now() { date -u +%H:%M:%S; }; boot_id() { echo stubboot0; }
-step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; return 0; }
+step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; return 0; }
 fail_job() { echo "FAILJOB $1"; }
 finish_job() { echo "FINISHED"; }
 LIB
@@ -35,5 +35,7 @@ p=$(steps perf); has p-timing "$p" && ! has np-all "$p" && ok "perf alone runs o
 a=$(steps armcheck); has ac-all "$a" && ! has np-all "$a" && ok "armcheck runs only its own steps" || bad "armcheck"
 r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=exloom-mutants hash-layers nullmut data-shapes arrow-mutants$' && ok "armcheck-retry runs only the five tasks that did not finish" || bad "armcheck-retry tasks: $(echo "$r" | grep ARMTASKS)"
 echo "$a" | grep -q '^ARMTASKS=<all>$' && ok "armcheck runs all tasks" || bad "armcheck tasks: $(echo "$a" | grep ARMTASKS)"
+pm=$(steps icebergplan-mut); echo "$pm" | grep -q '^IPONLY=mutants$' && ok "icebergplan-mut runs only the mutation phase" || bad "icebergplan-mut: $(echo "$pm" | grep IPONLY)"
+pf=$(steps icebergplan); echo "$pf" | grep -q '^IPONLY=<all phases>$' && ok "icebergplan runs all phases" || bad "icebergplan: $(echo "$pf" | grep IPONLY)"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }
