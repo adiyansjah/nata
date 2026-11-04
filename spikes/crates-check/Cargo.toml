@@ -1,0 +1,23 @@
+# THROWAWAY SPIKE for ADR 0002 open check (3): do object_store, crossbeam-deque and the compression crates build, pass
+# their behaviour tests, and use their fast paths on x86-64 AND ARM64? Not part of the main workspace.
+[package]
+name = "spike-crates-check"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+object_store = { version = "0.12", default-features = false, features = ["fs"] }
+crossbeam-deque = "0.8"
+snap = "1"
+lz4_flex = "0.11"
+flate2 = "1"
+zstd = "0.13"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+bytes = "1"
+futures = "0.3"
+
+[profile.release]
+overflow-checks = true
