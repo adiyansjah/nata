@@ -1,0 +1,19 @@
+# THROWAWAY: a minimal Flight SQL server on the Rust arrow-flight crate (the library Nata would use at its edge),
+# serving the decimal test table so real clients can read Decimal64 from it (ADR 0003 decision 3, client-edge widening).
+# Delete once the question is settled.
+[package]
+name = "decimal-clients-flight-server"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+arrow-flight = { version = "60.1.0", features = ["flight-sql"] }
+tonic = "0.14.1"
+prost = "0.14"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+futures = "0.3"
+bytes = "1"

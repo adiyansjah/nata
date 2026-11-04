@@ -1,0 +1,13 @@
+# THROWAWAY: writes Arrow IPC (file + stream) and Parquet files with Decimal64(15,2) / Decimal128(15,2) columns
+# so real clients can be tried against them (ADR 0003 decision 3). Delete once the question is settled.
+[package]
+name = "decimal-verify-writer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = "60"
+parquet = "60"
