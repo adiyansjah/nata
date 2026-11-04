@@ -15,7 +15,7 @@ Evidence: `bench/results/20261103-decimal-rules-duckdb.md` (the rules checked ag
 
 - `DECIMAL(p, s)` with 1 <= p <= 38 and 0 <= s <= p. Negative scale and p > 38 are `not supported yet`.
 - Stored as Arrow `Decimal64` when p <= 18, otherwise `Decimal128` (ADR 0003, decision 3). **The result precision of an operation decides the stored type.**
-- Integer types take part in decimal arithmetic as exact decimals: `TINYINT` is (3,0), `SMALLINT` (5,0), `INTEGER` (10,0), `BIGINT` (19,0).
+- Integer types take part in arithmetic WITH A DECIMAL as exact decimals: `TINYINT` is (3,0), `SMALLINT` (5,0), `INTEGER` (10,0), `BIGINT` (19,0). Arithmetic between two integers (`+ - * % //`) stays integer: the result has the wider of the two integer types and an overflow is an error (`INTEGER * INTEGER` is `INTEGER`, as in DuckDB and Postgres). Only `/` between integers is a decimal (section 3).
 - Literals: `1.5` is `DECIMAL(2,1)`; whole numbers are `INTEGER` or `BIGINT` by size; **`1e2` is an exact decimal** (here `DECIMAL(3,0)`; `1e-3` is `DECIMAL(3,3)`); a literal with more than 38 digits is an error. A `DOUBLE` is written `CAST(x AS DOUBLE)` or `x::DOUBLE`.
 
 ## 3. Result types
@@ -24,26 +24,26 @@ Write the operand types as (p1,s1) and (p2,s2). "Checked" means every result is 
 
 | operation | scale S | precision P |
 |---|---|---|
-| `a + b`, `a - b` | `max(s1, s2)` | `min(38, max(p1-s1, p2-s2) + S + 1)`; checked. At the cap the scale is kept, never cut |
+| `a + b`, `a - b` | `max(s1, s2)` | `min(38, max(p1-s1, p2-s2) + S + 1)`; checked. At the cap the scale is kept, never cut. **If an operand does not fit the result type once rescaled to S, that is an overflow error even if the exact sum would fit** (a 128-bit kernel cannot do otherwise; same as DuckDB; 2,644 cases per operator in the verification) |
 | `a * b` | `s1 + s2`; bind error if above 38 | `p1 + p2`, but if both p1 and p2 are <= 18 and S < 18 then `min(p1 + p2, 18)`; otherwise `min(p1 + p2, 38)`; checked |
 | `a / b` | `min(s1 + 6, 38)` | `(p1 - s1) + s2 + S`; bind error if above 38; rounded half away from zero at scale S; checked |
-| `a % b` | `max(s1, s2)` | `max(p1-s1, p2-s2) + S`; bind error if above 38; the sign follows the dividend; checked |
+| `a % b` | `max(s1, s2)` | `min(p1-s1, p2-s2) + S` (never above 38: the result is smaller than both operands, so its integer digits fit the smaller of the two); **bind error (`not supported yet`) if aligning the operands to scale S needs more than 38 digits, that is if `max(p1-s1, p2-s2) + S > 38`** (cast one operand to a narrower decimal); the sign follows the dividend; checked |
 | `a // b` (integers only) | | integer division truncating toward zero; decimals are `not supported yet` |
 | `-a`, `ABS(a)` | `s1` | `p1` |
 | `FLOOR`, `CEIL`, `TRUNC` | 0 | `p1` |
-| `ROUND(a, n)`, n a constant | `n` if `0 <= n < s1`, unchanged if `n >= s1`, 0 if `n < 0` | `p1`, except `min(p1 + 1, 38)` if `n < 0`; half away from zero |
+| `ROUND(a, n)`, n a constant | `n` if `0 <= n < s1`, unchanged if `n >= s1`, 0 if `n < 0` | `p1`, except for `n < 0`: `p1 + 1` only if `s1 = 0` and `-n <= p1`, else `p1`, capped at 38 (DuckDB's rule); half away from zero; checked |
 
-Examples (all derived from the formulas above; the `+`, `-`, `*` and `%` columns agree with DuckDB wherever DuckDB returns a decimal, see the evidence file):
+Examples (all derived from the formulas above; the `+`, `-` and `*` columns agree with DuckDB wherever DuckDB returns a decimal; `%` is tighter than DuckDB, see section 9; evidence in `bench/results/20261104-decimal-verification.md`):
 
 | operands | `+` / `-` | `*` | `/` | `%` |
 |---|---|---|---|---|
 | `DECIMAL(15,2)` and `DECIMAL(15,2)` | (16,2) | (18,4) | (23,8) | (15,2) |
-| `DECIMAL(15,2)` and `DECIMAL(5,3)` | (17,3) | (18,5) | (24,8) | (16,3) |
+| `DECIMAL(15,2)` and `DECIMAL(5,3)` | (17,3) | (18,5) | (24,8) | (5,3) |
 | `DECIMAL(18,2)` and `DECIMAL(18,2)` | (19,2) | (18,4) | (26,8) | (18,2) |
 | `DECIMAL(38,2)` and `DECIMAL(38,2)` | (38,2) | (38,4) | bind error | (38,2) |
 | `DECIMAL(10,2)` and `DECIMAL(10,2)` | (11,2) | (18,4) | (18,8) | (10,2) |
 | `DECIMAL(10,9)` and `DECIMAL(10,9)` | (11,9) | (20,18) | (25,15) | (10,9) |
-| `DECIMAL(15,2)` and `DECIMAL(20,2)` | (21,2) | (35,4) | (23,8) | (20,2) |
+| `DECIMAL(15,2)` and `DECIMAL(20,2)` | (21,2) | (35,4) | (23,8) | (15,2) |
 | `DECIMAL(20,20)` and `DECIMAL(20,20)` | (21,20) | bind error | bind error | (20,20) |
 | `DECIMAL(10,0)` and `DECIMAL(10,0)` | (11,0) | (18,0) | (16,6) | (10,0) |
 | `DECIMAL(19,0)` and `DECIMAL(19,0)` | (20,0) | (38,0) | (25,6) | (19,0) |
@@ -57,12 +57,13 @@ Notes:
 - `*` stays 64-bit for ordinary operands: `price * (1 - discount) * (1 + tax)` on `DECIMAL(15,2)` columns is `DECIMAL(18,6)`, stored as `Decimal64`. The cost is a possible run-time overflow error if a result needs more than 18 digits; the message suggests casting an operand to a wider decimal.
 - `INTEGER / INTEGER` is the decimal rule applied to (10,0) and (10,0), so `7 / 2` is `3.500000` of type `DECIMAL(16,6)`; use `7 // 2` for `3`.
 - Division by a column with a large scale can need many integer digits; that is what the bind error on precision above 38 catches. Cast the operands to a narrower decimal first.
-- `%` and `//` by zero are errors, like `/`.
+- `%` and `//` by zero are errors, like `/`. So is `MIN % -1` and `MIN // -1` for the integer types (the checked remainder overflows, as in DuckDB), even though the remainder itself would be 0.
 
 ## 4. Mixing types
 
 | operands | rule |
 |---|---|
+| integer with integer (`+ - * % //`) | integer arithmetic in the wider type; overflow is an error (section 2) |
 | decimal with integer | the integer is an exact decimal (section 2); result per section 3 |
 | decimal with `DOUBLE`/`FLOAT`, arithmetic **or** comparison | **bind error.** Exact and approximate numbers are not mixed implicitly. Write `CAST(x AS DOUBLE)` for an approximate result or `CAST(y AS DECIMAL(p,s))` for an exact one |
 | integer with `DOUBLE` | not specified here (integer rules); `not supported yet` until they are |
@@ -110,6 +111,8 @@ Bind-time errors reject the query. Run-time errors apply to selected, valid rows
 | `STDDEV`, `VAR_*` | `DOUBLE` (so `(x - AVG(x)) / STDDEV(x)` needs an explicit cast, and the error says so) |
 | `COUNT` | not decimal-specific |
 
+`AVG` rounds half away from zero, like every other rounding in this document (section 6). Checked in `bench/results/20261104-decimal-verification.md` against 441 groups computed with DuckDB's HUGEINT arithmetic and 24 exact ties.
+
 `AVG` examples:
 
 | input | result |
@@ -136,9 +139,9 @@ Each row has a `nata-check` test in `check/queries/decimal-differences/` (Nata-o
 | `CASE`/`COALESCE`/`UNION` of decimals that do not fit 38 | silently rounds | bind error |
 | `1e2` literal | `DOUBLE` | exact decimal |
 | `DOUBLE` to integer or `DECIMAL` | half to even for integers; inconsistent for decimals | half away from zero on the exact value |
-| `%` where the type would exceed 38 | falls back to `DOUBLE` | bind error |
+| `%` of decimals | the wider operand's type, or `DOUBLE` when the types do not line up | the tight type of section 3; bind error where aligning the operands needs more than 38 digits |
 
-Everywhere else the rules match DuckDB's result types and errors (`+`, `-`, `*`, `%`, `SUM`, `ROUND`/`FLOOR`/`CEIL`, casts from strings and between decimals, modulo sign), which is what the differential tests rely on.
+Everywhere else the rules match DuckDB's result types and errors (`+`, `-`, `*`, `SUM`, `ROUND`/`FLOOR`/`CEIL`, casts from strings and between decimals, and the sign of `%`; the result TYPE of `%` is the one difference listed above), which is what the differential tests rely on.
 
 ### Testing
 
@@ -147,6 +150,7 @@ Everywhere else the rules match DuckDB's result types and errors (`+`, `-`, `*`,
 - Differences: `-- expect-error-nata: <text>` (Nata must fail with that text) or `-- tolerance: <relative>` (numeric cells compared within a relative tolerance, for exact decimals against DuckDB's `DOUBLE`; `0` compares values and ignores formatting). A tolerance must allow for the decimal scale: a quotient rounded to 8 places differs from the double by up to about 1e-8 relative.
 - `DOUBLE` against `DOUBLE` (for example `STDDEV`): `-- tolerance: 1e-12`.
 - A tolerance query with several rows must have an `ORDER BY`, because unordered rows are sorted as text.
+- DuckDB prints `DECIMAL(p,p)` values without a leading zero (`.9801`, `-.05`). Either Nata prints the same or `nata-check` normalises the text before comparing; decide when the first decimal query runs.
 - Limits: DuckDB computes in `DOUBLE`, so comparisons are only meaningful up to about 15 significant digits.
 
 ## 10. Kernel notes (ADR 0003)
@@ -155,3 +159,8 @@ Everywhere else the rules match DuckDB's result types and errors (`+`, `-`, `*`,
 - `SUM` and `AVG` over `Decimal64` inputs fit an `i128` accumulator; over `Decimal128` inputs they need a wider accumulator and a single check at the end. This keeps the result independent of thread count (ADR 0001).
 - Comparisons and hash keys across `Decimal64` and `Decimal128` widen and rescale before comparing or hashing.
 - Every optimized kernel has a scalar reference (`portability.md`).
+
+Measured facts for the kernels (`bench/results/20261104-decimal-verification.md`; all type pairs with both operands of at most 18 digits):
+- `+` and `-` with a result precision of at most 18 can never overflow `i64`. With a result precision of 19 or more, widen before rescaling (11,970 of 16,511 such pairs need it).
+- A `*` whose result precision is capped (21,489 pairs): the result can exceed the stated precision (all of them) and even `i64` (21,419 of them), so the overflow check must compare the product with `10^P`, never with `i64`.
+- A `Decimal64` quotient can have a `Decimal128` divisor (8,840 pairs).
