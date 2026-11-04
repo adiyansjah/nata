@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks of the QueryLifecycle model: the real configurations, the coverage canaries, and the mutants.
 
-  check.py model   [--quick]   run every real configuration; each must PASS; each canary must be VIOLATED on its own invariant
+  check.py model   [--quick | --only cfg,cfg]   run every real configuration (or only these); each must PASS; each canary must be VIOLATED on its own invariant
   check.py mutants [--dry] [name ...]   each mutant edits a private copy of the spec; it must be CAUGHT (TLC reports a violation)
   check.py list
   common flags: --java J --jar JAR --out DIR --workers N --timeout S --heap-mb M
@@ -39,7 +39,7 @@ def stage(dst):
     shutil.copytree(os.path.join(HERE, "cfg"), os.path.join(dst, "cfg"), copy_function=shutil.copy)
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["model", "mutants", "list"]); ap.add_argument("names", nargs="*")
-    ap.add_argument("--quick", action="store_true"); ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--quick", action="store_true"); ap.add_argument("--only", default=""); ap.add_argument("--dry", action="store_true")
     ap.add_argument("--java", default="java"); ap.add_argument("--jar", default="tla2tools.jar"); ap.add_argument("--out", default=os.path.join(HERE, "out"))
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 4); ap.add_argument("--timeout", type=int, default=3600); ap.add_argument("--heap-mb", type=int, default=8192)
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
@@ -52,7 +52,7 @@ def main():
     if a.cmd == "model":
         stage(work); ok, txt = tlc_runner.sany(a.java, a.jar, work)
         if not ok: print("SANY FAILED\n" + txt); return 1
-        for cfg in (QUICK if a.quick else REAL):
+        for cfg in (a.only.split(',') if a.only else QUICK if a.quick else REAL):
             r = run(cfg, "real"); good = r.status == "PASS"; fails += not good
             print(f"{'ok  ' if good else 'FAIL'} {cfg:16} {r.status:9} {r.distinct:>10} states {r.seconds:7.1f}s {r.what}", flush=True)
         for inv in CANARIES:
