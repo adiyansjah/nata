@@ -147,7 +147,7 @@ case "$JOB" in
     # The older protocol and shutdown suites on the sliced scheduler, with the file-descriptor limit of a fresh VM. They are
     # RECORDED, not gating: a failure here is a finding (the first run found one: spill files held open across yields) and
     # must not stop the overhead measurement that follows.
-    run f-compat bash -c 'cd "$SRC/spikes/fairness" && { echo "ulimit -n: $(ulimit -n)"; RUSTFLAGS= cargo test --release --test protocol --test shutdown -- --test-threads=1 --nocapture; echo "exit status: $?"; } > "$RESULTS/fairness-compat.txt" 2>&1; true'
+    run f-compat bash -c 'cd "$SRC/spikes/fairness" && { echo "ulimit -n: $(ulimit -n)"; RUSTFLAGS= cargo test --release --test protocol --test shutdown --test spill_fds --test spill_fd_limit -- --test-threads=1 --nocapture; echo "exit status: $?"; } > "$RESULTS/fairness-compat.txt" 2>&1; true'
     run f-overhead bash -c 'cd "$SRC/spikes/fairness" && { echo "load: $(cat /proc/loadavg)"; NATA_NOTE="quiet GCP run" ./target/release/examples/overhead --rounds 20; } > "$RESULTS/fairness-overhead.txt" 2>&1' ;;&
   bridge|cpack)
     # The tokio-to-CPU-pool bridge (ADR 0002): stress with weak memory ordering (ARM64), then the I/O latency under a
