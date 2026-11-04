@@ -78,7 +78,7 @@ case "$JOB" in
     for i in 1 2; do for ov in false true; do for m in membench bench; do
       run "v-genops-$m-ov-$ov-$i" bash -c 'cd "$SRC" && { echo "load: $(cat /proc/loadavg)"; "$WORK/target-go-'"$ov"'/release/spike-generic-ops" '"$m"' data/tpch-sf1/lineitem.parquet 25; } > "$RESULTS/genops-'"$m"'-ov-'"$ov"'-'"$i"'.txt"'
     done; done; done ;;
-  hashops)
+  hashops|timing)
     # The hash join and general hash aggregate spike (ADR 0003 item 15), from a clean tarball on a quiet machine.
     # Each part of spikes/hash-ops/run-all.sh is its own resumable step. Correctness first: a red step stops the job
     # before any timing is recorded.
@@ -99,7 +99,10 @@ case "$JOB" in
     # Last, and slowest (about 45 minutes): the mutation check of the TESTS. It validates the test suite, not the
     # engine, so the correctness steps above (tests, DuckDB diff, nullcheck) gate the timings and this one does not.
     # The step still fails the job when a mutant survives.
-    run h-mutate bash -c 'cd "$SRC/spikes/hash-ops" && HASH_OPS_DATA="$SRC/data/tpch-sf1" python3 mutate.py > "$RESULTS/hashops-mutate.txt" 2>&1' ;;
+    # (the `timing` bundle skips it: 30 of 30 mutants were caught on ARM64 in the parmut-hashops run)
+    [ "$JOB" = hashops ] && run h-mutate bash -c 'cd "$SRC/spikes/hash-ops" && HASH_OPS_DATA="$SRC/data/tpch-sf1" python3 mutate.py > "$RESULTS/hashops-mutate.txt" 2>&1'
+    unset CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS   # it must not leak into the builds of the blocks that follow in the timing bundle
+    : ;;&
   decimal)
     # The exhaustive decimal verification (ADR 0003, docs/decimal-rules.md) in its FULL profile, with every mutant.
     # Python 3 and DuckDB only; the DuckDB answers are cached on the data disk, so a restart after a preemption
@@ -172,13 +175,14 @@ case "$JOB" in
     run k-install bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); echo "toolchain: $RUSTUP_TOOLCHAIN"; command -v cargo-kani >/dev/null || { cargo install --locked kani-verifier && cargo kani setup; }; cargo kani --version'
     run kc-all bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); { free -g | head -2; TMPDIR="$WORK/kc-tmp" bash -c "mkdir -p \$TMPDIR && $SRC/scripts/gcp/kani-crate.sh all $RESULTS/kc ${KANI_PAR:-3} 900"; true; } > "$RESULTS/kani-crate-all.txt" 2>&1'
     run kc-timeouts bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); { TMPDIR="$WORK/kc-tmp" bash -c "mkdir -p \$TMPDIR && $SRC/scripts/gcp/kani-crate.sh timeouts $RESULTS/kc 2 3600"; true; } > "$RESULTS/kani-crate-timeouts.txt" 2>&1' ;;
-  nullpath)
+  nullpath|timing)
     # ADR 0003 item 16: the word-wise NULL path, timed on a QUIET machine (the agent's numbers were taken at load 2-14).
     # spikes/null-path/run-all.sh: correctness first (tests, check, nullcheck, DuckDB diff; it stops at the first failure,
     # so a wrong engine never produces a timing), then the ladder (wall and CPU time), the overflow-checks A/B/A/B, the
     # density table and the stage timings. The mutation check is skipped: it ran locally and is not timing-sensitive.
     run np-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
-    run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;
+    run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;&
+
   armcheck)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
@@ -190,7 +194,7 @@ case "$JOB" in
     # breakage of kernels.rs is applied to a temp copy and the relevant harnesses run, cheapest first, until one fails.
     run k-install bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); echo "toolchain: $RUSTUP_TOOLCHAIN"; command -v cargo-kani >/dev/null || { cargo install --locked kani-verifier && cargo kani setup; }; cargo kani --version'
     run kmc bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); cd "$SRC/spikes/kani-nata-kernels" && { free -g | head -2; python3 -I mutate_kani.py --rows 4 --cap 900 --heavy; true; } > "$RESULTS/kani-mut-crate.txt" 2>&1' ;;
-  perf)
+  perf|timing)
     # ADR 0003 item 19: why is Q1 further from the hand-fused loop on ARM64? perf record (software cpu-clock, a VM may
     # not expose hardware counters) of the generic engine and of the fused baseline, one thread, batches in memory, Q1 and Q6.
     # perf itself is installed by vm-startup.sh (root) for this job.
@@ -200,9 +204,23 @@ case "$JOB" in
     run p-timing bash -c 'cd "$SRC" && B=spikes/generic-ops/target/release/spike-generic-ops && { echo "load: $(cat /proc/loadavg)"; for q in q1 q6; do for arm in generic fused; do a=""; [ $arm = fused ] && a=fused; s=$(date +%s.%N); $B loop data/tpch-sf1/lineitem.parquet 20 $q $a; e=$(date +%s.%N); echo "$q $arm: $(awk -v s=$s -v e=$e "BEGIN{printf \"%.2f\", e-s}") s for 20 iterations incl. one preload"; done; done; } > "$RESULTS/perf-timing.txt" 2>&1'
     for q in q1 q6; do for arm in generic fused; do
       run "p-record-$q-$arm" bash -c 'cd "$SRC" && B=spikes/generic-ops/target/release/spike-generic-ops && a=""; [ '"$arm"' = fused ] && a=fused; perf record -e cpu-clock -F 999 -g -o "$WORK/perf-'"$q-$arm"'.data" -- $B loop data/tpch-sf1/lineitem.parquet 60 '"$q"' $a > /dev/null 2> "$RESULTS/perf-record-'"$q-$arm"'.err"; perf report -i "$WORK/perf-'"$q-$arm"'.data" --stdio --no-children --percent-limit 1.5 -g none 2>/dev/null | grep -v "^#" | grep -v "^$" | head -40 > "$RESULTS/perf-report-'"$q-$arm"'.txt"; perf stat -e task-clock,context-switches,page-faults -- $B loop data/tpch-sf1/lineitem.parquet 10 '"$q"' $a > /dev/null 2> "$RESULTS/perf-stat-'"$q-$arm"'.txt"; true'
-    done; done ;;
+    done; done ;;&
+
+  timing)
+    # The rest of the timing bundle (after hashops, nullpath and perf above): the compaction and push-cost micro-benchmarks and
+    # the Arrow pipeline's correctness gate and benchmarks, on a QUIET machine, one after the other. Correctness first: the
+    # arrow-pipeline gate (tests + DuckDB digit-for-digit diff) must pass before its timings are recorded.
+    run t-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run t-compaction bash -c 'cd "$SRC" && spikes/compaction/gcp-check.sh "$RESULTS/compaction" 25 > "$RESULTS/compaction-run.txt" 2>&1'
+    run t-pushcost bash -c 'cd "$SRC" && spikes/push-cost/gcp-check.sh "$RESULTS/push-cost" 25 > "$RESULTS/push-cost-run.txt" 2>&1'
+    run t-ap-build bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo build --release'
+    run t-ap-tests bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo test --release --no-fail-fast -- --test-threads=1 > "$RESULTS/arrow-pipeline-tests.txt" 2>&1'
+    run t-ap-diff bash -c 'cd "$SRC/spikes/arrow-pipeline" && scripts/duckdb_diff.sh "$SRC/data/tpch-sf1/lineitem.parquet" > "$RESULTS/arrow-pipeline-duckdb-diff.txt" 2>&1'
+    run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
+
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|nullpath|armcheck|kani-mut-crate) ;;   # the blocks above end with ;;& so that cpack runs all three
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|kani-mut-crate) ;;
+  hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac
 finish_job
