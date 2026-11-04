@@ -105,8 +105,16 @@ fn main() {
             let src = Source::open(path, plan.columns);
             let batches = preload(&src, 0);
             let v = mem_visit(&batches);
-            for _ in 0..n {
-                std::hint::black_box(run(batches.len(), &v, &plan, 1).expect("run"));
+            // loop <file> <n> <q1|q6> [fused]: the generic engine, or the hand-fused baseline, one thread, batches in
+            // memory; for `perf record` (the same query shape and data, only the implementation differs).
+            if args.get(5).map(String::as_str) == Some("fused") {
+                for _ in 0..n {
+                    std::hint::black_box(fused(plan.name, batches.len(), &v, 1).expect("fused"));
+                }
+            } else {
+                for _ in 0..n {
+                    std::hint::black_box(run(batches.len(), &v, &plan, 1).expect("run"));
+                }
             }
         }
         "bench" => compare("End to end (Parquet decode included)", path, n, &[1, 2, 4, 8], false),

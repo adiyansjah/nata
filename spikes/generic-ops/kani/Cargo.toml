@@ -1,0 +1,16 @@
+# Formal-verification harness crate for ../src/kernels.rs (Kani bounded model checker).
+# THROWAWAY with the spike. It includes the real kernels.rs via #[path]; only the one arrow type that
+# kernels.rs names (NullBuffer) is replaced by a stub in ./arrow-stub. See bench/results/20261104-kani-kernels.md.
+[package]
+name = "kani-kernels"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+arrow = { path = "arrow-stub", package = "arrow-stub" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
