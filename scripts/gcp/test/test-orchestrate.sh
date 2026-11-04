@@ -107,6 +107,11 @@ for _ in $(seq 1 100); do [ "$(calls 'instances create')" -ge 1 ] && break; slee
 kill -INT "$pid"; wait "$pid"; rc=$?
 check "Ctrl-C mid-run: cleans up and exits 130" "[ $rc -eq 130 ] && [ \$(left) -eq 0 ]"
 
+# ---------------------------------------------------------------- run ids are unique
+# (2026-11-04: four runs started in one second got the same id, the same run directory and the same resource label)
+for i in 1 2 3 4 5 6; do ( orch plan --job ci 2>&1 | head -1 | awk '{print $2}' > "$T/rid-$i.txt" ) & done; wait
+check "six plans started at once get six different run ids" "[ \$(cat $T/rid-*.txt | sort -u | wc -l) -eq 6 ]"
+
 # ---------------------------------------------------------------- never the real gcloud
 check "nothing called the real gcloud or ssh by name" "[ ! -e $T/real-calls.log ]"
 

@@ -34,7 +34,10 @@ PULL_SECONDS=${PULL_SECONDS:-120}
 CREATE_RETRY_SECONDS=${CREATE_RETRY_SECONDS:-45}
 MIN_REMAINING_SECONDS=${MIN_REMAINING_SECONDS:-120}      # do not create a VM for less than this
 CLEANUP_RETRY_SECONDS=${CLEANUP_RETRY_SECONDS:-2}
-RUN_ID=${RUN_ID:-nata-$(date +%m%d-%H%M%S)}
+# The id is also the label of every resource and the name of the run directory, so two runs started in the same second must not
+# share it (found 2026-11-04: three of four runs started together failed at ssh-keygen because the directory existed; a failed run
+# also cleans up everything with its label, so a shared id could have deleted another run's VM). A random suffix keeps it unique.
+RUN_ID=${RUN_ID:-nata-$(date +%m%d-%H%M%S)-$(od -An -N2 -tx1 /dev/urandom | tr -d ' \n')}
 PROJECT=${PROJECT:-}
 APPROVED_USD=""
 OUT=${OUT:-}
