@@ -1,0 +1,14 @@
+# THROWAWAY SPIKE for verification-plan item 23 (deterministic simulation harness before any distributed code).
+# Own workspace, not part of the main one. Delete the code once the ADR is accepted; keep bench/results/20261104-sim-harness.md.
+#   sim/                 the hand-written harness (no dependencies): executor, virtual time, network, object store, toy protocol
+#   trials/shuttle-trial the real scheduler + exchange under shuttle (build-or-buy trial)
+#   trials/madsim-trial  the same toy under madsim (needs RUSTFLAGS="--cfg madsim")
+#   trials/turmoil-trial the same toy under turmoil
+# `cargo check`/`cargo build` at this root only touches `sim` (default-members); the trials are built with `-p`.
+[workspace]
+resolver = "3"
+members = ["sim", "trials/shuttle-trial", "trials/madsim-trial", "trials/turmoil-trial"]
+default-members = ["sim"]
+
+[profile.release]
+debug = false

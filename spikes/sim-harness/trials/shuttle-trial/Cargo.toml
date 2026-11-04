@@ -1,0 +1,18 @@
+[package]
+name = "shuttle-trial"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+shuttle = "0.9"
+
+[features]
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)', 'cfg(nata_loom)'] }

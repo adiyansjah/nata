@@ -190,6 +190,11 @@ case "$JOB" in
     # ($WORK/objstore.env, mode 600, 'export NAME=value' lines); without it the script says REAL STORE NOT MEASURED. The exit
     # status is recorded and does not stop the job, so the results are kept.
     run o-object-store-scan bash -c 'cd "$SRC" && { [ -f "$WORK/objstore.env" ] && set -a && . "$WORK/objstore.env" && set +a; }; spikes/object-store-scan/gcp-check.sh "$RESULTS/object-store-scan" > "$RESULTS/object-store-scan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/object-store-scan-exit.txt"; true' ;;
+  simharness)
+    # spikes/sim-harness (verification-plan item 23): build, unit tests, determinism (trace hashes, compare them across machines),
+    # the unmutated control sweep, 13 mutants, the shuttle/madsim/turmoil trials and the abstraction-cost benchmark. The exit status
+    # is recorded and does not stop the job, so the results are kept.
+    run sim-harness bash -c 'cd "$SRC/spikes/sim-harness" && ./gcp-check.sh "$RESULTS/sim-harness" "${SIM_SEEDS:-20000}" > "$RESULTS/sim-harness-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sim-harness-exit.txt"; true' ;;
   armcheck|armcheck-retry)
     # The ARM correctness bundle (scripts/gcp/armcheck.sh): exchange-loom suite and mutants, the hash-ops DuckDB/nullcheck layers
     # shown to fail on known-bad engines, the null-path mutation check, and (when present) the stop_depth loom model and the
@@ -231,7 +236,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

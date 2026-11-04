@@ -1,0 +1,17 @@
+[package]
+name = "madsim-trial"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Build with RUSTFLAGS="--cfg madsim" (the simulation switch of madsim); without it the crate is empty.
+[dependencies]
+madsim = "0.2"
+nata-sim = { path = "../../sim" }
+
+[[bin]]
+name = "madsim-trial"
+path = "src/main.rs"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(madsim)'] }

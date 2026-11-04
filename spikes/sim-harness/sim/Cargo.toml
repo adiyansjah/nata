@@ -1,0 +1,20 @@
+[package]
+name = "nata-sim"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# No dependencies on purpose: the harness is std only. (The scheduler and exchange it drives are included
+# with #[path] from spikes/operator-trait and spikes/exchange-loom, never copied.)
+
+[features]
+# Deliberate scheduler bugs of the included spikes/operator-trait/src/sched.rs; declared only so that file
+# compiles without warnings here. Never enable them.
+bug-lost-shutdown = []
+bug-wake-ignored-while-running = []
+bug-park-ignores-notified = []
+bug-wake-enqueues-running = []
+bug-cancel-does-not-wake = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)', 'cfg(nata_loom)'] }
