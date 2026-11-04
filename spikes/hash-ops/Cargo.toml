@@ -1,0 +1,48 @@
+# THROWAWAY SPIKE for ADR 0003: what does a GENERAL hash aggregate and a hash JOIN cost on the decided batch
+# design (Arrow batches + selection vector, checked kernels) against hand-fused hashbrown loops?
+# Extends spikes/generic-ops. Not part of the main workspace. Delete once ADR 0003 is accepted.
+[package]
+name = "spike-hash-ops"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+name = "hash_ops"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hash-ops"
+path = "src/main.rs"
+
+[dependencies]
+arrow = "60"
+parquet = "60"
+hashbrown = "0.17"
+foldhash = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+# ADR 0003 decision 6: arithmetic overflow must be an error, not a wrap. This is a separate cargo project,
+# so the workspace setting does not reach it; set it here. Our own code is checked ...
+overflow-checks = true
+
+# ... but the DEPENDENCIES are not: arrow adds an offset to every dictionary key, including the unspecified key
+# under a NULL slot, with a plain `+` (arrow-data 60.1.0 src/transform/primitive.rs:46). With checks on, a legal
+# array with i32::MAX under a NULL slot panics inside concat. tests/overflow_config.rs holds both facts as tests.
+[profile.release.package."*"]
+overflow-checks = false
+
+[profile.test.package."*"]
+overflow-checks = false
+
+[profile.dev.package."*"]
+overflow-checks = false
+
+[profile.test]
+opt-level = 1
