@@ -29,6 +29,10 @@ orch plan --job ci > "$T/plan.out" 2>&1; rc=$?
 check "plan exits 0 and prints the worst-case cost" "[ $rc -eq 0 ] && grep -q 'Worst-case cost' $T/plan.out"
 check "plan calls nothing" "[ ! -e $F/calls.log ]"
 orch plan --job genops > "$T/plan2.out" 2>&1; rc=$?
+orch plan --job verify > "$T/plan3.out" 2>&1; rc=$?
+for j in hashops kani kani-mut decimal parmut parmut-hashops crates fairness-bench bridge perf cpack; do orch plan --job $j > "$T/plan-$j.out" 2>&1; rc=$?
+check "the $j job is a known job" "[ $rc -eq 0 ] && grep -q \"job: $j\" $T/plan-$j.out && [ ! -e $F/calls.log ]"; done
+check "the verify job is a known job" "[ $rc -eq 0 ] && grep -q 'job: verify' $T/plan3.out && [ ! -e $F/calls.log ]"
 check "the genops job is a known job" "[ $rc -eq 0 ] && grep -q 'job: genops' $T/plan2.out && [ ! -e $F/calls.log ]"
 new_world noapproval
 orch run --job ci > "$T/o" 2>&1; rc=$?

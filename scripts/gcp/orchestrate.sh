@@ -75,7 +75,8 @@ check_machines() {
     cls=$c
   done
   DISK_CLASS=$cls
-  IMAGE=$(image_family "${MACHINES%% *}")
+  # IMAGE_FAMILY overrides the default (debian-12-*): Kani's prebuilt binaries need glibc 2.39, which is in debian-13.
+  IMAGE=${IMAGE_FAMILY:-$(image_family "${MACHINES%% *}")}
 }
 
 # Worst-case cost: the dearest machine of the chain for all the allowed VM-hours, plus disks and the IP.
@@ -164,7 +165,7 @@ pull_state() { # copy state, results and logs from the data disk; only replace l
 
 upload_source() {
   tar -czf - -C "$REPO" --exclude=./target --exclude='./spikes/*/target' --exclude=./data --exclude=./.git \
-    --exclude=./bench/gcp-runs --exclude='*.duckdb' . \
+    --exclude=./bench/gcp-runs --exclude='*.duckdb' --exclude=.venv --exclude=__pycache__ --exclude=target . \
     | vm_ssh "mkdir -p /mnt/work/src && tar -xzf - -C /mnt/work/src && echo '$JOB' > /mnt/work/JOBNAME && touch /mnt/work/START"
 }
 
@@ -252,7 +253,7 @@ do_run() {
   local bound; bound=$(bound_usd)
   [ -n "$APPROVED_USD" ] || die "a real run needs --approved-usd (at least \$$bound, the worst case for this plan); try '$0 plan' first"
   le "$bound" "$APPROVED_USD" || die "the worst case is \$$bound but only \$$APPROVED_USD was approved; nothing was called"
-  case "$JOB" in ci|bench|all|genops) ;; *) die "unknown job $JOB" ;; esac
+  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|nullpath) ;; *) die "unknown job $JOB" ;; esac
   [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
   [ -n "$PROJECT" ] || die "no project: pass --project or set one with gcloud"
   mkdir -p "$OUT"; : > "$OUT/gcloud.log"

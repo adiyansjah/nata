@@ -52,7 +52,7 @@ scripts/gcp/orchestrate.sh cleanup --run-id <id>                          # dele
 ```
 
 Jobs: `ci` (workspace tests and the operator-protocol tests six times), `bench` (SF1 data, kernel benchmark three
-times, pull-versus-push, v2), `genops` (the generic-operator experiment: unit tests, correctness checks, benchmarks, DuckDB timings), `all`. Edit `job.sh` to change them.
+times, pull-versus-push, v2), `cpack` (three jobs in one VM: `crates` = object_store, crossbeam-deque and the compression crates built and tested on this architecture; `fairness-bench` = the overhead of the time slice on a quiet machine; `bridge` = the tokio-to-pool stress and the I/O latency measurements), `perf` (perf profiles of the generic and fused Q1 and Q6; vm-startup.sh installs perf for it), `decimal` (the full exhaustive decimal verification with every mutant), `hashops` (the hash join and aggregate spike: tests, DuckDB diff, NULL check, mutation run, peak memory, benchmarks), `kani` (the Kani proofs, one harness at a time with a time cap, on a high-memory machine), `verify` (clean-machine reproduction of the verification: workspace checks, lint fixtures, guarded-expression diff and mutations, the loom model and its deliberate bugs, and the overflow-checks cost comparison), `genops` (the generic-operator experiment: unit tests, correctness checks, benchmarks, DuckDB timings), `all`. Edit `job.sh` to change them.
 
 ## What has been verified, and what has not
 
