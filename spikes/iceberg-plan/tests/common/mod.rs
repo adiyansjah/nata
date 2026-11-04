@@ -118,6 +118,23 @@ pub fn random_table_in(seed: u64, dir: &std::path::Path) -> (Table, Vec<String>)
         if step == 1 && r.chance(60) { let f = rand_spec_fields(t.meta.current_schema(), &mut r); let names: Vec<(&str, Transform)> = f.iter().map(|(c, tr)| (c.as_str(), tr.clone())).collect(); t.evolve_spec(&names); log.push(format!("evolve spec {f:?}")); }
         if step == 1 && r.chance(50) { t.add_column("extra", Type::Int); log.push("add column extra".into()); }
         if step == 2 && r.chance(40) { t.rename_column("k", "kk"); log.push("rename k -> kk".into()); }
+        if r.chance(25) {
+            // a row delta: new rows, a position delete on the first new file and an equality delete on k, all in ONE commit (the same sequence number)
+            let sch = t.meta.current_schema().clone();
+            let (b, _) = rand_batch(&sch, 2 + r.below(20) as usize, &mut next_id, &mut r);
+            let col = sch.fields.iter().find(|f| f.name == "k" || f.name == "kk").unwrap().clone();
+            let vals: Vec<Option<Value>> = (0..2).map(|_| rand_value(&col.ty, &mut r)).collect();
+            let rows = RecordBatch::try_new(arrow_schema(&Schema { id: 0, fields: vec![col.clone()] }), vec![build_array(&col.ty, &vals)]).unwrap();
+            let default_spec = t.meta.spec(t.meta.default_spec_id).unwrap().clone();
+            let part: Vec<Option<Value>> = if default_spec.fields.is_empty() { vec![] } else {
+                // the partition tuple of one of the NEW rows, computed with the table's own transforms
+                default_spec.fields.iter().map(|pf| { let (ci, f) = sch.fields.iter().enumerate().find(|(_, f)| f.id == pf.source_id).unwrap(); cell(b.column(ci), 0, &f.ty).and_then(|v| pf.transform.apply(&v)) }).collect() };
+            let pos: Vec<i64> = vec![0];
+            let ids = [col.id];
+            let (use_pos, use_eq) = (r.chance(60), r.chance(70));
+            t.row_delta(&b, if use_pos { Some(&pos[..]) } else { None }, if use_eq { Some((&ids[..], &rows, part)) } else { None });
+            log.push(format!("row delta ({} rows, eq {vals:?})", b.num_rows()));
+        }
         if r.chance(35) {
             let entries = t.live_entries().unwrap();
             let datas: Vec<_> = entries.iter().filter(|(_, e)| e.file.content == DATA).collect();

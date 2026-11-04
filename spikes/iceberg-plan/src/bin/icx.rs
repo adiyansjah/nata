@@ -96,6 +96,45 @@ fn main() {
             println!("{files} files, {rows} row-field checks, {bad} mismatches; by transform (checks, mismatches): {by_transform:?}");
             if bad > 0 { std::process::exit(1); }
         }
+        Some("synth") => {
+            let (files, clustered, per): (u64, bool, usize) = (a[3].parse().unwrap(), a[4] == "clustered", a.get(5).map_or(10_000, |v| v.parse().unwrap()));
+            let dest = Path::new(&a[2]);
+            let _ = std::fs::remove_dir_all(dest);
+            let t0 = std::time::Instant::now();
+            let t = iceplan::synth::build(dest, files, clustered, per);
+            let bytes: u64 = std::fs::read_dir(dest.join("metadata")).unwrap().map(|e| e.unwrap().metadata().unwrap().len()).sum();
+            println!("{} ({files} files, {} layout, {} MB of metadata, built in {:.1} s)", t.metadata_path().display(), a[4], bytes >> 20, t0.elapsed().as_secs_f64());
+        }
+        Some("bench-one") => {
+            // icx bench-one <table> <threads> <repeats> <query>
+            let t = Table::open(Path::new(&a[2])).unwrap();
+            let (threads, reps): (usize, usize) = (a[3].parse().unwrap(), a[4].parse().unwrap());
+            let day = |d: i32| iceplan::types::Value::Ts(d as i64 * iceplan::types::MICROS_PER_DAY);
+            use iceplan::transform::Op;
+            let f = match a[5].as_str() {
+                "point" => and(and(cmp("ts", Op::Ge, day(15_500)), cmp("ts", Op::Lt, day(15_501))), cmp("k", Op::Eq, iceplan::types::Value::Int(5))),
+                "week" => and(cmp("ts", Op::Ge, day(15_500)), cmp("ts", Op::Lt, day(15_507))),
+                "id" => cmp("id", Op::Eq, iceplan::types::Value::Long(123_456_789)),
+                "name_prefix" => cmp("name", Op::StartsWith, iceplan::types::Value::Str("qab".into())),
+                "k_range" => and(cmp("k", Op::Ge, iceplan::types::Value::Int(3000)), cmp("k", Op::Lt, iceplan::types::Value::Int(4000))),
+                "nonselective" => cmp("score", Op::Gt, iceplan::types::Value::Double(-1.0)),
+                "all" => Expr::True,
+                q => { eprintln!("unknown query {q}"); std::process::exit(2) }
+            };
+            let mut times = vec![];
+            let mut last = None;
+            for _ in 0..reps {
+                let t0 = std::time::Instant::now();
+                let (tasks, st) = plan(&t, &f, &PlanOpts { threads, use_summaries: true }).unwrap();
+                times.push(t0.elapsed().as_secs_f64() * 1000.0);
+                last = Some((tasks.len(), st));
+            }
+            times.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let (n, st) = last.unwrap();
+            let hwm = std::fs::read_to_string("/proc/self/status").unwrap().lines().find(|l| l.starts_with("VmHWM")).map(|l| l.split_whitespace().nth(1).unwrap().parse::<u64>().unwrap() / 1024).unwrap_or(0);
+            println!("{}", json!({"query": a[5], "threads": threads, "planned_files": n, "ms_min": times[0], "ms_median": times[times.len() / 2], "manifests": st.manifests, "manifests_pruned": st.manifests_pruned,
+                                  "entries_examined": st.entries, "pruned_partition": st.pruned_partition, "pruned_metrics": st.pruned_metrics, "delete_files": st.delete_files, "peak_rss_mb": hwm}));
+        }
         Some("stats") => {
             let t = Table::open(Path::new(&a[2])).unwrap();
             let entries = t.live_entries().unwrap();

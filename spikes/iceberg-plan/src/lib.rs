@@ -4,6 +4,7 @@ pub mod expr;
 pub mod manifest;
 pub mod plan;
 pub mod read;
+pub mod synth;
 pub mod table;
 pub mod meta;
 pub mod transform;

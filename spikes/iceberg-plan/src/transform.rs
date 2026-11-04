@@ -109,6 +109,8 @@ impl Transform {
             Transform::Identity => Some((op, lit.clone())),
             Transform::Bucket(_) => (op == Op::Eq).then(|| (Op::Eq, self.apply(lit).unwrap())),
             Transform::Truncate(w) => match op {
+                // a literal within a width of the type's minimum truncates to a wrapped value (see `apply`): no projection then
+                _ if !plausible_truncate_value(&self.apply(lit)?, *w) => None,
                 Op::Eq => Some((Op::Eq, self.apply(lit)?)),
                 Op::Lt | Op::Le => Some((Op::Le, self.apply(lit)?)),
                 Op::Gt | Op::Ge => Some((Op::Ge, self.apply(lit)?)),

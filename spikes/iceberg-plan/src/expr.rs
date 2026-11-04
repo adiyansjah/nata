@@ -89,6 +89,8 @@ pub fn rewrite_not(e: &Expr) -> Expr {
                 P::Cmp(Op::Eq, v) => pred(c, P::Ne(v.clone())),
                 // NOT (x < c) is x >= c for every NaN-free value; a NaN row satisfies it under IEEE semantics (NOT false), so the NaN rows are kept: `OR x IS NaN`
                 // (provably false for a column that is not floating point)
+                // ... and NOT (x < NaN) is true for every row under IEEE semantics (the comparison is false), but false for every row under the total order: keep everything
+                P::Cmp(Op::Lt | Op::Le | Op::Gt | Op::Ge, v) if is_nan(v) => Expr::True,
                 P::Cmp(Op::Lt, v) => or(cmp(c, Op::Ge, v.clone()), pred(c, P::IsNaN)), P::Cmp(Op::Le, v) => or(cmp(c, Op::Gt, v.clone()), pred(c, P::IsNaN)),
                 P::Cmp(Op::Gt, v) => or(cmp(c, Op::Le, v.clone()), pred(c, P::IsNaN)), P::Cmp(Op::Ge, v) => or(cmp(c, Op::Lt, v.clone()), pred(c, P::IsNaN)), P::Cmp(Op::StartsWith, v) => pred(c, P::NotStartsWith(v.clone())),
                 P::Ne(v) => cmp(c, Op::Eq, v.clone()), P::In(vs) => pred(c, P::NotIn(vs.clone())), P::NotIn(vs) => pred(c, P::In(vs.clone())),

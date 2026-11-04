@@ -50,6 +50,9 @@ fn spec_truncate_and_time_transform_examples() {
     assert_eq!(b.apply(&Value::Int(34)), Some(Value::Int((2017239379i32 & i32::MAX) % 16)));
     assert!(matches!(b.apply(&Value::Str("iceberg".into())), Some(Value::Int(x)) if (0..16).contains(&x)));
     assert!(matches!(Transform::Bucket(7).apply(&Value::Long(i64::MIN)), Some(Value::Int(x)) if (0..7).contains(&x)));
+    // a NEGATIVE hash: the sign bit is dropped before the modulo
+    assert_eq!(Transform::Bucket(7).apply(&Value::Decimal(1420)), Some(Value::Int((-500754589i32 & i32::MAX) % 7)));
+    assert_eq!(Transform::Bucket(16).apply(&Value::Date(date(2017, 11, 16))), Some(Value::Int((-653330422i32 & i32::MAX) % 16)));
 }
 
 #[test]

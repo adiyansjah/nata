@@ -210,7 +210,7 @@ impl Table {
         (path.to_string_lossy().to_string(), std::fs::metadata(&path).unwrap().len() as i64)
     }
 
-    fn snapshot_commit(&mut self, op: &str, manifests: Vec<ManifestFile>) -> i64 {
+    pub fn snapshot_commit(&mut self, op: &str, manifests: Vec<ManifestFile>) -> i64 {
         self.meta.last_seq += 1;
         let id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
         let ml = self.dir.join("metadata").join(format!("snap-{id}.avro"));
@@ -223,7 +223,7 @@ impl Table {
         id
     }
 
-    fn write_manifest_file(&mut self, spec: &Spec, content: i32, entries: &[Entry], snap_id: i64, seq: i64) -> ManifestFile {
+    pub fn write_manifest_file(&mut self, spec: &Spec, content: i32, entries: &[Entry], snap_id: i64, seq: i64) -> ManifestFile {
         let schema = self.meta.current_schema().clone();
         let schema_for_spec = self.meta.schemas.iter().find(|s| spec.fields.iter().all(|f| s.field(f.source_id).is_some())).unwrap_or(&schema).clone();
         let (bytes, partitions) = write_manifest(spec, &schema_for_spec, content, entries, self.codec.clone()).unwrap();
@@ -245,8 +245,8 @@ impl Table {
         }).collect()
     }
 
-    /// Append `batch` (columns in the CURRENT schema's order). One data file per partition tuple; one manifest.
-    pub fn append(&mut self, batch: &RecordBatch) -> i64 {
+    /// Write the data files for `batch` (one per partition tuple under the default spec) and return their ADDED manifest entries.
+    fn data_entries(&mut self, batch: &RecordBatch, snap_id: i64) -> Vec<Entry> {
         let schema = self.meta.current_schema().clone();
         let spec = self.meta.spec(self.meta.default_spec_id).unwrap().clone();
         let mut groups: BTreeMap<String, (Vec<Option<Value>>, Vec<u32>)> = BTreeMap::new();
@@ -254,8 +254,6 @@ impl Table {
             let t = self.tuple(&spec, &schema, batch, r);
             groups.entry(format!("{t:?}")).or_insert_with(|| (t.clone(), vec![])).1.push(r as u32);
         }
-        let seq = self.meta.last_seq + 1;
-        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
         let mut entries = vec![];
         for (_, (tuple, rows)) in groups {
             let sub = take_record_batch(batch, &UInt32Array::from(rows)).unwrap();
@@ -265,6 +263,15 @@ impl Table {
             metrics(&schema, &sub, &mut f);
             entries.push(Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f });
         }
+        entries
+    }
+
+    /// Append `batch` (columns in the CURRENT schema's order). One data file per partition tuple; one manifest.
+    pub fn append(&mut self, batch: &RecordBatch) -> i64 {
+        let spec = self.meta.spec(self.meta.default_spec_id).unwrap().clone();
+        let seq = self.meta.last_seq + 1;
+        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
+        let entries = self.data_entries(batch, snap_id);
         let mut list = self.live_manifests().unwrap();
         let mf = self.write_manifest_file(&spec, DATA, &entries, snap_id, seq);
         list.push(mf);
@@ -308,14 +315,10 @@ impl Table {
         self.snapshot_commit("overwrite", list)
     }
 
-    /// A position delete file for `data_path` (deleting the given row positions), in the same partition and spec as that data file.
-    pub fn delete_positions(&mut self, data_path: &str, positions: &[i64]) -> i64 {
-        let (m, e) = self.live_entries().unwrap().into_iter().find(|(_, e)| e.file.path == data_path).expect("data file");
-        let spec = self.meta.spec(m.spec_id).unwrap().clone();
+    fn pos_delete_entry(&mut self, data_path: &str, partition: Vec<Option<Value>>, positions: &[i64], snap_id: i64) -> Entry {
         let mut pos = positions.to_vec();
         pos.sort();
-        let aschema = Arc::new(ASchema::new(vec![AField::new("file_path", DataType::Utf8, false).with_metadata(fid_meta(2147483546)),
-                                                 AField::new("pos", DataType::Int64, false).with_metadata(fid_meta(2147483545))]));
+        let aschema = Arc::new(ASchema::new(vec![AField::new("file_path", DataType::Utf8, false).with_metadata(fid_meta(2147483546)), AField::new("pos", DataType::Int64, false).with_metadata(fid_meta(2147483545))]));
         let batch = RecordBatch::try_new(aschema.clone(), vec![Arc::new(StringArray::from(vec![data_path; pos.len()])), Arc::new(Int64Array::from(pos.clone()))]).unwrap();
         let name = format!("deletes/{:016x}-pos.parquet", self.next_uid());
         let path = self.dir.join("data").join(&name);
@@ -323,19 +326,12 @@ impl Table {
         let mut w = ArrowWriter::try_new(File::create(&path).unwrap(), aschema, None).unwrap();
         w.write(&batch).unwrap();
         w.close().unwrap();
-        let seq = self.meta.last_seq + 1;
-        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
-        let f = DataFile { content: POS_DELETES, path: path.to_string_lossy().to_string(), format: "parquet".into(), partition: e.file.partition.clone(), record_count: pos.len() as i64,
+        let f = DataFile { content: POS_DELETES, path: path.to_string_lossy().to_string(), format: "parquet".into(), partition, record_count: pos.len() as i64,
                            size: std::fs::metadata(&path).unwrap().len() as i64, referenced: Some(data_path.to_string()), ..Default::default() };
-        let entry = Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f };
-        let mut list = self.live_manifests().unwrap();
-        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));
-        self.snapshot_commit("delete", list)
+        Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f }
     }
 
-    /// An equality delete file on the columns `ids` with the given rows (all columns of `rows` are the delete columns, in the order of `ids`).
-    /// `partition`: the partition it belongs to under the default spec; ignored (global) when the default spec is unpartitioned.
-    pub fn delete_equality(&mut self, ids: &[i32], rows: &RecordBatch, partition: Vec<Option<Value>>) -> i64 {
+    fn eq_delete_entry(&mut self, ids: &[i32], rows: &RecordBatch, partition: Vec<Option<Value>>, snap_id: i64) -> Entry {
         let schema = self.meta.current_schema().clone();
         let spec = self.meta.spec(self.meta.default_spec_id).unwrap().clone();
         assert!(spec.fields.is_empty() || partition.len() == spec.fields.len(), "the partition tuple must belong to the default spec");
@@ -347,15 +343,51 @@ impl Table {
         let mut w = ArrowWriter::try_new(File::create(&path).unwrap(), arrow_schema(&dschema), None).unwrap();
         w.write(rows).unwrap();
         w.close().unwrap();
-        let seq = self.meta.last_seq + 1;
-        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
         let mut f = DataFile { content: EQ_DELETES, path: path.to_string_lossy().to_string(), format: "parquet".into(), partition: if spec.fields.is_empty() { vec![] } else { partition },
                                size: std::fs::metadata(&path).unwrap().len() as i64, equality_ids: ids.to_vec(), ..Default::default() };
         metrics(&dschema, rows, &mut f);
-        let entry = Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f };
+        Entry { status: ADDED, snapshot_id: Some(snap_id), seq: None, file_seq: None, file: f }
+    }
+
+    /// A position delete file for `data_path` (deleting the given row positions), in the same partition and spec as that data file.
+    pub fn delete_positions(&mut self, data_path: &str, positions: &[i64]) -> i64 {
+        let (m, e) = self.live_entries().unwrap().into_iter().find(|(_, e)| e.file.path == data_path).expect("data file");
+        let spec = self.meta.spec(m.spec_id).unwrap().clone();
+        let seq = self.meta.last_seq + 1;
+        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
+        let entry = self.pos_delete_entry(data_path, e.file.partition.clone(), positions, snap_id);
         let mut list = self.live_manifests().unwrap();
-        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));      // the MANIFEST content is 0 (data) or 1 (deletes), not the file content
+        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));
         self.snapshot_commit("delete", list)
+    }
+
+    /// An equality delete file on the columns `ids` with the given rows (all columns of `rows` are the delete columns, in the order of `ids`).
+    /// `partition`: the partition it belongs to under the default spec; ignored (global) when the default spec is unpartitioned.
+    pub fn delete_equality(&mut self, ids: &[i32], rows: &RecordBatch, partition: Vec<Option<Value>>) -> i64 {
+        let spec = self.meta.spec(self.meta.default_spec_id).unwrap().clone();
+        let seq = self.meta.last_seq + 1;
+        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
+        let entry = self.eq_delete_entry(ids, rows, partition, snap_id);
+        let mut list = self.live_manifests().unwrap();
+        list.push(self.write_manifest_file(&spec, 1, &[entry], snap_id, seq));
+        self.snapshot_commit("delete", list)
+    }
+
+    /// A row delta: ONE commit that adds the rows of `batch` AND deletes. The data and delete files then share a sequence number: position deletes apply to the
+    /// new data files (>=), equality deletes do not (they need a strictly greater number): the upsert pattern "delete the old row, insert the new one".
+    /// `pos`: delete these positions of the first new data file; `eq`: (ids, rows, partition tuple under the default spec).
+    pub fn row_delta(&mut self, batch: &RecordBatch, pos: Option<&[i64]>, eq: Option<(&[i32], &RecordBatch, Vec<Option<Value>>)>) -> i64 {
+        let spec = self.meta.spec(self.meta.default_spec_id).unwrap().clone();
+        let seq = self.meta.last_seq + 1;
+        let snap_id = 1_000_000 + self.meta.snapshots.len() as i64 * 7 + 3;
+        let data = self.data_entries(batch, snap_id);
+        let mut dels = vec![];
+        if let (Some(p), Some(first)) = (pos, data.first()) { let (path, part) = (first.file.path.clone(), first.file.partition.clone()); dels.push(self.pos_delete_entry(&path, part, p, snap_id)); }
+        if let Some((ids, rows, part)) = eq { dels.push(self.eq_delete_entry(ids, rows, part, snap_id)); }
+        let mut list = self.live_manifests().unwrap();
+        list.push(self.write_manifest_file(&spec, DATA, &data, snap_id, seq));
+        if !dels.is_empty() { list.push(self.write_manifest_file(&spec, 1, &dels, snap_id, seq)); }
+        self.snapshot_commit("overwrite", list)
     }
 
     // ---- evolution (metadata-only commits)
