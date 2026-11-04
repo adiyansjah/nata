@@ -20,7 +20,13 @@ Run on the dev box (100,000 rows, 33 rolled files, 6 min 43 s), all GATING phase
 (default, small row groups and pages, truncation at 8, chunk-level statistics only, bloom filters, no dictionary and no compression, no truncation,
 sorted by `id` descending, sorted by `u8` then `id`, rolling files): independent verification, DuckDB reads exactly the same rows, and the pruning
 suite finds 0 wrong counts. The sorted-descending files are in order across files. Rolling files at a 600 KB target came out at 629 to 636 KB (+5 to
-6%), the last file the remainder. NOT yet run on a clean VM or at larger sizes (job `parquetwrite`, 500,000 rows).
+6%), the last file the remainder. 
+
+GCP (job `parquetwrite`, 2026-11-04, clean VMs, 500,000 rows, 95 MB source, 163 rolled files): **ARM64 (`n4a-highcpu-8`) and x86-64 (`c3d-highcpu-8`) both PASS
+every gating phase** (47 PASS, 0 FAIL each): the cargo tests, all 10 writer configurations verified, DuckDB reads the same rows, the pruning suite finds 0 wrong
+counts, 11 of 11 bad-statistics files flagged and 2 of 2 controls accepted, and DuckDB's pruning loses rows on 5 of the 11 bad files. On both machines
+the unmitigated parquet-rs output has the NaN defect (2,932 `stat-nan` errors) and DuckDB's own files have 0 errors. Rolling files again came out
+627 to 636 KB for a 600 KB target. VM time 604 s and 739 s, cost $0.017 and $0.014. Not run: anything larger than 500,000 rows.
 
 ## Findings
 
