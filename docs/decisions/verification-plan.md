@@ -81,3 +81,46 @@ specification and the `object_store` crate before they are relied on.
 
 New ADRs the scope decision calls for (not yet written): table format and catalog (Iceberg first); distributed execution and its
 failure model; the testing strategy (deterministic simulation, fault injection, differential fuzzing).
+
+## GCP run plan for the items that had none (written 2026-11-04)
+
+**Working rule from the owner, for now: one agent at a time in the shared VM, no parallel subagents.** The "Agents run at the same
+time" table above is suspended; the items below are written and checked one after another, and a spike's GCP run is started only
+after its code has passed its local checks. Nothing here has been run or approved. The dollar figures are ROUGH estimates
+(`prices.env` rate x hours, plus about $0.01-0.04 for disk and IP); the binding number is the worst case that
+`orchestrate.sh plan` prints, and every run still needs its cost shown and a yes.
+
+### Order (each row needs the earlier ones it names)
+
+| Step | Item | Written locally first | GCP run (job name, machine, time) | Rough cost | Depends on |
+|---|---|---|---|---|---|
+| 1 | 29 Failure model | TLA+ model of the query lifecycle (task retry, worker death, coordinator death, cancellation, orphaned spill) plus its mutants; one short ADR draft | `failmodel`: `n4a-highcpu-16`, TLC with a 1 h budget and a mutant sweep | $0.25 | none (no code) |
+| 2 | 31 Operators beyond scan/filter/aggregate/inner join | `spikes/operators-beyond/`: sort and top-N with spill, left/right/full, semi and anti joins, window functions, Q18 and Q21; differential vs DuckDB; mutants | `opsbeyond`: ARM64 `n4a-highmem-8` (spill needs memory control) 2 h, then x86-64 `c3d-highcpu-8` 1.5 h | $0.35 + $0.11 | none |
+| 3 | 33 Differential SQL fuzzer | `crates/sqlfuzz/` or a spike: grammar-based generator (NULL, NaN, -0.0, dates, time zones, Unicode, ordering), DuckDB oracle, shrinker | `fuzz`: `n4a-highcpu-8`, 3 h campaign, then 1 h proving it catches the known-bad engines (the hash-ops and null-path mutants) | $0.35 | 2 (so it can fuzz the new operators) |
+| 4 | 30 Write correctness | `spikes/parquet-write/`: writer with field ids, sorted output, statistics; round trip against pyarrow, DuckDB and parquet-rs; property tests on min/max truncation | `parquetwrite`: `n4a-highcpu-8` 1.5 h, then x86-64 `c3d-highcpu-8` 1 h | $0.17 + $0.07 | none |
+| 5 | 25 Iceberg interop (rest of the matrix) | extend `spikes/iceberg-commit/`: partition-transform test vectors, schema and partition evolution, files read by DuckDB and pyiceberg and the reverse | `iceberg-interop`: `n4a-highcpu-8` 1.5 h (after the `iceberg` run passes) | $0.16 | `iceberg` run (group A) |
+| 6 | 26 Iceberg scan planning | `spikes/iceberg-plan/`: generator of metadata-only tables with 10k, 100k, 1M files; planner with partition and column-stat pruning and position/equality deletes; soundness property test against a brute-force reference | `iceberg-plan`: shake-out at 10k on `n4a-highcpu-8` 0.5 h; then full on `n4a-highmem-16` 2 h (memory at 1M files is a measurement) | $0.05 + $0.62 | 5 |
+| 7 | 28 Network exchange | `spikes/net-exchange/`: framing, credit-based backpressure, cancellation, worker kill, on the simulation harness | stage A `netexch-sim`: one VM, 2-8 nodes in network namespaces with `tc netem` loss and delay, `n4a-highcpu-8` 1.5 h; stage B `netexch-real`: 4 x `n4a-highcpu-8` in one zone, 1 h (needs a multi-VM mode in `orchestrate.sh`, which does not exist yet, see "Prerequisites") | $0.16 + $0.45 | 1, `simharness` run |
+| 8 | 34 Engineering checks | CI workflow files, `cargo-deny`, `cargo-audit`, `cargo-geiger`, benchmark regression harness (a baseline file plus a threshold), sanitizer and Miri jobs for the real crates | `eng-checks`: `n4a-highcpu-8` 1.5 h (ASan, TSan, Miri, UBSan on the Arrow pipeline and kernels; nightly toolchain) | $0.16 | none |
+| 9 | 32 Scale | no new code beyond a harness: run the existing pipelines at SF10 then SF100 with spill forced by a memory cap and a 1,024-descriptor `ulimit` | stage A `scale-sf10`: `n4a-highcpu-32` 1 h (400 GiB-equivalent disk not needed, 60 GB); stage B `scale-sf100`: `n4a-highcpu-32` up to 5 h with a 300 GB disk, only if A passes; also the cheap Q1/Q6 scaling check at 32 and 64 vCPUs (1 h) | $0.43 + $2.1 + $0.45 | 2 (spill code), 3 (to check results) |
+| 10 | 35 Real client compatibility | nothing yet: needs a server, which does not exist | none planned until a Flight SQL or Postgres-wire slice exists; then `clients` on `n4a-highcpu-8` 1 h with real ADBC, JDBC and psql clients | $0.12 | a server slice |
+
+Rough total if every run passes the first time: about $6.2, of which scale is about $3. Expect a retry on the first run of most
+spikes (the earlier runs needed one), so budget about $8 and still approve each run separately.
+
+### Prerequisites to write before the runs
+
+- **Multi-VM mode in `orchestrate.sh`** (only for step 7B): N VMs with one label, a shared private network, one data disk each, and a
+  hard cap on the total VM-hours. Until it exists, step 7B stays unplanned and 7A answers most of the design questions.
+- **A large-disk path for step 9**: the data disk is 30-100 GB today; SF100 needs about 300 GB, Hyperdisk Balanced or pd-ssd. The cost
+  bound must include it (about $0.04 per hour at that size).
+- **A `recover --run-id` subcommand** (see `scripts/gcp/README.md`): worth doing before the long runs (steps 7B and 9), because a
+  five-hour run is the case where the orchestrator's machine going down hurts most.
+- **Pulling only small files**: all new jobs must keep large data under `/mnt/work/data` and never under `$RESULTS`.
+
+### Per-item decisions that are not GCP work
+
+- ADRs for table format and catalog, distributed execution and its failure model, and the testing strategy are written locally. The
+  failure-model ADR comes with step 1, the table-format ADR after steps 5 and 6, the testing-strategy ADR after step 3.
+- Item 35 is deliberately not given a GCP run now. Planning one before a server exists would only produce a stub.
+- Steps 1 and 2 are the ones that can still change the protocol; steps 4 to 8 are expected to confirm or tune.
