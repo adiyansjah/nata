@@ -239,6 +239,29 @@ if [ "${NX_MUTANTS:-1}" = 1 ]; then
 fi
 profile clean ""
 
+# ----------------------------------------------------------------------------------------------------------------- S1d
+say "S1d. how much does a random-loss profile vary from run to run?"
+# The same job gave 980, 82 and 698 MB/s on the region profile (10 ms + 0.05% loss) on three runs (2026-11-05). Repeat it and report the spread,
+# so a number on a lossy profile is never quoted without it. Informational: not a pass/fail check, apart from every run being exact.
+profile region "delay 10ms 2ms loss 0.05%"
+VR=${NX_VAR_RUNS:-8}; [ "$QUICK" = 1 ] && VR=${NX_VAR_RUNS:-4}
+VROWS=$((ROWS / 4)); [ "$QUICK" = 1 ] && VROWS=250000
+var_list=""; var_bad=0
+for r in $(seq 1 "$VR"); do
+  launch "s1d-$r" --rows "$VROWS" --credit-bytes "$CREDIT" --dead-ms 20000 --connect-timeout-s 60
+  wait_nodes
+  verify_run "$VROWS" "$CREDIT" >/dev/null || var_bad=$((var_bad + 1))
+  s=$(run_secs); b=$(bytes_moved)
+  var_list="$var_list $(awk -v b="$b" -v s="$s" 'BEGIN{printf "%.0f", b/1e6/s}')"
+done
+sorted=$(echo $var_list | tr ' ' '\n' | sort -n | tr '\n' ' ')
+vmin=$(echo $sorted | awk '{print $1}'); vmax=$(echo $sorted | awk '{print $NF}'); vmed=$(echo $var_list | tr ' ' '\n' | median)
+log "S1d region profile, $VR runs of $VROWS rows per node: MB/s moved, sorted: $sorted (min $vmin, median $vmed, max $vmax; max/min $(awk -v a="$vmax" -v b="$vmin" 'BEGIN{ if (b>0) printf "%.1f", a/b; else print "n/a" }'))"
+check s1d-loss-runs-all-exact $([ "$var_bad" = 0 ] && echo 0 || echo 1) "($var_bad of $VR runs inexact)"
+md ""; md "## S1d. Spread of the random-loss profile (region: 10 ms, 0.05% loss), $VR runs of $VROWS rows per node"; md ""
+md "MB/s moved, sorted: $sorted. Min $vmin, median $vmed, max $vmax."
+profile clean ""
+
 # ----------------------------------------------------------------------------------------------------------------- S2
 say "S2. backpressure: slow consumers, small credit, wide-area profile"
 profile region "delay 10ms 2ms loss 0.05%"
