@@ -198,7 +198,7 @@ case "$JOB" in
     # versions. The real store's coordinates, if any, would be read from a file the owner placed on the data disk
     # ($WORK/objstore.env, mode 600, 'export NAME=value' lines); without it the script says REAL STORE NOT MEASURED. The exit
     # status is recorded and does not stop the job, so the results are kept.
-    run o-object-store-scan bash -c 'cd "$SRC" && { [ -f "$WORK/objstore.env" ] && set -a && . "$WORK/objstore.env" && set +a; }; spikes/object-store-scan/gcp-check.sh "$RESULTS/object-store-scan" > "$RESULTS/object-store-scan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/object-store-scan-exit.txt"; true' ;;
+    run o-object-store-scan bash -c 'cd "$SRC" && { for f in "$WORK/objstore.env" "$SRC/spikes/object-store-scan/objstore.env"; do [ -f "$f" ] && set -a && . "$f" && set +a; done; }; spikes/object-store-scan/gcp-check.sh "$RESULTS/object-store-scan" > "$RESULTS/object-store-scan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/object-store-scan-exit.txt"; true' ;;
   simharness)
     # spikes/sim-harness (verification-plan item 23): build, unit tests, determinism (trace hashes, compare them across machines),
     # the unmutated control sweep, 13 mutants, the shuttle/madsim/turmoil trials and the abstraction-cost benchmark. The exit status

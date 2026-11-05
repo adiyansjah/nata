@@ -59,6 +59,7 @@ check "happy path: its own resources are gone" "[ \$(ls -d $F/vms/happy-*/ 2>/de
 check "another run's resources (different label) are untouched" "[ -d $F/disks/unrelated-disk ] && [ -d $F/vms/unrelated-vm ]"
 check "create calls carry the safety flags (Spot, DELETE, max-run-duration in seconds, no service account)" \
   "grep 'instances create' $F/calls.log | grep -q -- '--provisioning-model SPOT' && grep 'instances create' $F/calls.log | grep -qE -- '--max-run-duration [0-9]+s' && grep 'instances create' $F/calls.log | grep -q -- '--no-service-account'"
+check "default run: no service account and no scope is attached (the VM can reach nothing in the project)" "! grep 'instances create' $F/calls.log | grep -q -- '--service-account=' && ! grep 'instances create' $F/calls.log | grep -q -- '--scopes='"
 check "the machine used is recorded" "grep -q 'n4a-highcpu-8' $O/report.txt"
 
 # ---------------------------------------------------------------- preemptions: resume on the same data disk
@@ -114,6 +115,23 @@ check "six plans started at once get six different run ids" "[ \$(cat $T/rid-*.t
 
 # ---------------------------------------------------------------- never the real gcloud
 check "nothing called the real gcloud or ssh by name" "[ ! -e $T/real-calls.log ]"
+
+# ---------------------------------------------------------------- the opt-in VM identity (--vm-service-account)
+new_world sa
+orch run --job ci --approved-usd 1 --run-id sa --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
+check "--vm-service-account: the VM gets that account with the read-only Cloud Storage scope, and not --no-service-account" "[ $rc -eq 0 ] && grep 'instances create' $F/calls.log | grep -q -- '--service-account=nata-objscan-ro@some-project.iam.gserviceaccount.com' && grep 'instances create' $F/calls.log | grep -q -- '--scopes=https://www.googleapis.com/auth/devstorage.read_only' && ! grep 'instances create' $F/calls.log | grep -q -- '--no-service-account'"
+check "--vm-service-account: only the read-only storage scope is requested (no cloud-platform, no read-write)" "! grep 'instances create' $F/calls.log | grep -qE -- 'cloud-platform|devstorage.read_write|devstorage.full_control'"
+check "--vm-service-account: its resources are gone afterwards" "[ \$(left) -eq 0 ]"
+for bad in "default" "123456789-compute@developer.gserviceaccount.com" "x@y.com" "nata@proj.iam.gserviceaccount.com;rm" "NATA-X@proj.iam.gserviceaccount.com"; do
+  new_world badsa
+  orch run --job ci --approved-usd 1 --vm-service-account "$bad" > "$T/o" 2>&1; rc=$?
+  check "--vm-service-account '$bad' is refused before anything is called" "[ $rc -eq 2 ] && grep -q 'vm-service-account' $T/o && [ ! -e $F/calls.log ]"
+done
+new_world saplan
+orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
+check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"
+orch plan --job ci > "$T/o" 2>&1
+check "plan of a default run says the VM identity is none" "grep -q 'VM identity: none' $T/o"
 
 rm -rf "$T"
 echo; [ $fails -eq 0 ] && echo "all orchestrator tests passed" || { echo "$fails failed"; exit 1; }

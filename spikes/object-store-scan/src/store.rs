@@ -25,6 +25,9 @@ pub const ENV_SECRET: &str = "NATA_OBJSTORE_SECRET_ACCESS_KEY";
 pub const ENV_LABEL: &str = "NATA_OBJSTORE_LABEL";
 pub const ENV_HTTP1: &str = "NATA_OBJSTORE_HTTP1";
 pub const ENV_ALLOW_HTTP: &str = "NATA_OBJSTORE_ALLOW_HTTP";
+/// `gcs`: Google Cloud Storage through its native API, with the credentials of the service account attached to the VM (metadata server): no key
+/// is configured anywhere. Anything else or unset: the S3 API at NATA_OBJSTORE_ENDPOINT (what was used before).
+pub const ENV_KIND: &str = "NATA_OBJSTORE_KIND";
 
 #[derive(Clone)]
 pub struct StoreSpec {
@@ -39,6 +42,8 @@ pub struct StoreSpec {
     /// A free-text, NON-SECRET description the operator supplies ("GCS S3-interop, same region as the VM").
     pub label: String,
     pub simulated: bool,
+    /// Google Cloud Storage with the VM's attached service account (see `ENV_KIND`).
+    pub gcs: bool,
 }
 
 // Debug must never show the coordinates.
@@ -69,18 +74,20 @@ impl StoreSpec {
             http1_only: false,
             label: "SIMULATED local server (loopback)".into(),
             simulated: true,
+            gcs: false,
         }
     }
 
     pub fn real_from_env() -> RealConfig {
+        let gcs = env_nonempty(ENV_KIND).as_deref() == Some("gcs");
         let ep = env_nonempty(ENV_ENDPOINT);
         let bucket = env_nonempty(ENV_BUCKET);
         let prefix = env_nonempty(ENV_PREFIX);
-        if ep.is_none() && bucket.is_none() && prefix.is_none() {
+        if ep.is_none() && bucket.is_none() && prefix.is_none() && !gcs {
             return RealConfig::NotConfigured;
         }
         let mut missing = Vec::new();
-        if ep.is_none() {
+        if ep.is_none() && !gcs {
             missing.push(ENV_ENDPOINT);
         }
         if bucket.is_none() {
@@ -113,6 +120,7 @@ impl StoreSpec {
             secret_key,
             label: env_nonempty(ENV_LABEL).unwrap_or_else(|| "REAL store (no label supplied)".into()),
             simulated: false,
+            gcs,
         })
     }
 
@@ -132,6 +140,9 @@ impl StoreSpec {
     /// `builtin_retries`: `None` disables the crate's own retries (the engine's retry layer is under test);
     /// `Some(n)` enables `object_store`'s own retry with that many retries (the reference arm of the fault tests).
     pub fn build(&self, builtin_retries: Option<usize>) -> Result<Arc<dyn ObjectStore>, String> {
+        if self.gcs {
+            return self.build_gcs(builtin_retries);
+        }
         let mut b = AmazonS3Builder::new()
             .with_endpoint(&self.endpoint)
             .with_bucket_name(&self.bucket)
@@ -169,6 +180,26 @@ impl StoreSpec {
         };
         b = b.with_retry(retry);
         let s = b.build().map_err(|e| self.redactor().apply(&e.to_string()))?;
+        Ok(Arc::new(s))
+    }
+
+    /// Google Cloud Storage, native API. Credentials: the service account of the VM through the metadata server (object_store finds them itself);
+    /// nothing secret is read from the environment or a file. Same client options and retry policy as the S3 store, so the arms are comparable.
+    fn build_gcs(&self, builtin_retries: Option<usize>) -> Result<Arc<dyn ObjectStore>, String> {
+        use object_store::gcp::GoogleCloudStorageBuilder;
+        let mut co = ClientOptions::new().with_pool_max_idle_per_host(64).with_connect_timeout(Duration::from_secs(5)).with_timeout(Duration::from_secs(120));
+        if self.http1_only {
+            co = co.with_http1_only();
+        }
+        let retry = match builtin_retries {
+            None => RetryConfig { backoff: BackoffConfig::default(), max_retries: 0, retry_timeout: Duration::from_secs(30) },
+            Some(n) => RetryConfig {
+                backoff: BackoffConfig { init_backoff: Duration::from_millis(40), max_backoff: Duration::from_secs(2), base: 2.0 },
+                max_retries: n,
+                retry_timeout: Duration::from_secs(30),
+            },
+        };
+        let s = GoogleCloudStorageBuilder::new().with_bucket_name(&self.bucket).with_client_options(co).with_retry(retry).build().map_err(|e| self.redactor().apply(&e.to_string()))?;
         Ok(Arc::new(s))
     }
 
@@ -270,6 +301,39 @@ mod tests {
     }
 
     #[test]
+    fn the_gcs_kind_needs_a_bucket_and_a_prefix_but_no_endpoint_and_no_key() {
+        // std::env is process-wide: this is the only test that sets these variables
+        unsafe {
+            std::env::set_var(ENV_KIND, "gcs");
+            std::env::remove_var(ENV_ENDPOINT);
+            std::env::remove_var(ENV_KEY_ID);
+            std::env::remove_var(ENV_SECRET);
+            std::env::remove_var(ENV_BUCKET);
+            std::env::remove_var(ENV_PREFIX);
+        }
+        match StoreSpec::real_from_env() {
+            RealConfig::Incomplete(m) => assert_eq!(m, vec![ENV_BUCKET, ENV_PREFIX], "the endpoint must not be required for gcs"),
+            _ => panic!("gcs without a bucket and a prefix must be refused"),
+        }
+        unsafe {
+            std::env::set_var(ENV_BUCKET, "some-bucket");
+            std::env::set_var(ENV_PREFIX, "some/prefix/");
+        }
+        match StoreSpec::real_from_env() {
+            RealConfig::Configured(s) => {
+                assert!(s.gcs && !s.simulated && !s.has_credentials(), "no key may be needed");
+                assert_eq!(s.prefix, "some/prefix");
+            }
+            _ => panic!("gcs with a bucket and a prefix must be configured"),
+        }
+        unsafe {
+            std::env::remove_var(ENV_KIND);
+            std::env::remove_var(ENV_BUCKET);
+            std::env::remove_var(ENV_PREFIX);
+        }
+    }
+
+    #[test]
     fn debug_of_the_spec_shows_nothing() {
         let s = StoreSpec {
             endpoint: "https://secret-endpoint.example".into(),
@@ -282,6 +346,7 @@ mod tests {
             http1_only: false,
             label: "x".into(),
             simulated: false,
+            gcs: false,
         };
         let d = format!("{s:?}");
         assert!(!d.contains("secret"), "{d}");

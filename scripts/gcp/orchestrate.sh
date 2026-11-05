@@ -41,6 +41,10 @@ RUN_ID=${RUN_ID:-nata-$(date +%m%d-%H%M%S)-$(od -An -N2 -tx1 /dev/urandom | tr -
 PROJECT=${PROJECT:-}
 APPROVED_USD=""
 OUT=${OUT:-}
+# The VM identity. DEFAULT: none (no service account, no scopes): a VM that can reach nothing in the project. --vm-service-account EMAIL attaches ONE user-created
+# service account with the read-only Cloud Storage scope and nothing else, for the jobs that read a real bucket (objscan). The default compute service account
+# (project number + "-compute@developer.gserviceaccount.com") is refused on purpose: it usually holds broad project roles.
+VM_SA=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --job) JOB=$2; shift 2 ;;
@@ -52,11 +56,21 @@ while [ $# -gt 0 ]; do
     --max-preemptions) MAX_PREEMPTIONS=$2; shift 2 ;;
     --project) PROJECT=$2; shift 2 ;;
     --out) OUT=$2; shift 2 ;;
+    --vm-service-account) VM_SA=$2; shift 2 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
 OUT=${OUT:-$REPO/bench/gcp-runs/$RUN_ID}
 DISK="$RUN_ID-work"
+if [ -n "$VM_SA" ]; then
+  echo "$VM_SA" | grep -qE '^[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]*\.iam\.gserviceaccount\.com$' \
+    || { echo "error: --vm-service-account must be a user-created service account (name@project.iam.gserviceaccount.com); the default compute account is refused" >&2; exit 2; }
+  ID_ARGS=("--service-account=$VM_SA" "--scopes=https://www.googleapis.com/auth/devstorage.read_only")
+  ID_TEXT="service account $VM_SA with the read-only Cloud Storage scope only"
+else
+  ID_ARGS=(--no-service-account --no-scopes)
+  ID_TEXT="none (--no-service-account --no-scopes)"
+fi
 
 log() { echo "[$(date -u +%H:%M:%S)] $*" >&2; }
 die() { echo "error: $*" >&2; exit 2; }
@@ -117,8 +131,9 @@ Commands, in order (labels: nata-run=$RUN_ID on everything):
         --provisioning-model SPOT --instance-termination-action DELETE --max-run-duration <remaining seconds>
         --image-family $IMAGE --boot-disk-size ${BOOT_GB}GB --boot-disk-type $DISK_CLASS
         --disk name=$DISK,device-name=work,mode=rw,boot=no,auto-delete=no --labels nata-run=$RUN_ID
-        --no-service-account --no-scopes --metadata block-project-ssh-keys=TRUE
+        ${ID_ARGS[*]} --metadata block-project-ssh-keys=TRUE
         --metadata-from-file startup-script=vm-startup.sh,ssh-keys=<throwaway key made for this run>
+  VM identity: $ID_TEXT
   4. repeat 3 on the same data disk after each preemption; copy state/results/logs back every ${PULL_SECONDS}s over ssh
   5. on every way out: delete all instances and disks labelled nata-run=$RUN_ID, then list them to prove they are gone
 
@@ -149,7 +164,7 @@ create_vm_any() { # $1 max-run-duration seconds ; sets VM, MACHINE_USED
         --provisioning-model SPOT --instance-termination-action DELETE --max-run-duration "${dur}s" \
         --image-family "$IMAGE" --image-project debian-cloud --boot-disk-size "${BOOT_GB}GB" --boot-disk-type "$DISK_CLASS" \
         --disk "name=$DISK,device-name=work,mode=rw,boot=no,auto-delete=no" --labels "nata-run=$RUN_ID" \
-        --no-service-account --no-scopes --metadata block-project-ssh-keys=TRUE \
+        "${ID_ARGS[@]}" --metadata block-project-ssh-keys=TRUE \
         --metadata-from-file "startup-script=$HERE/vm-startup.sh,ssh-keys=$OUT/ssh-keys.meta" >> "$OUT/gcloud.log" 2>&1; then
       MACHINE_USED=$m; log "created $VM ($m) in $ZONE"; return 0
     fi

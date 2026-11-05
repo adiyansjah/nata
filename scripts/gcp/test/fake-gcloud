@@ -32,9 +32,17 @@ case "$1 $2 $3" in
     done; exit 0 ;;
   "compute instances create")
     name=$4; machine=$(arg --machine-type "$@"); disk=$(arg --disk "$@" | sed -n 's/^name=\([^,]*\),.*/\1/p')
-    for need in "--provisioning-model SPOT" "--instance-termination-action DELETE" "--max-run-duration" "--no-service-account" "--no-scopes" "auto-delete=no" "nata-run=" "startup-script=" "block-project-ssh-keys=TRUE"; do
+    for need in "--provisioning-model SPOT" "--instance-termination-action DELETE" "--max-run-duration" "auto-delete=no" "nata-run=" "startup-script=" "block-project-ssh-keys=TRUE"; do
       has "$need" || { echo "FAKE: instance create without required flag: $need" >&2; exit 2; }
     done
+    # the VM identity: NONE, or exactly one user-created service account with the read-only storage scope and no other scope
+    if has "--no-service-account"; then
+      has "--no-scopes" || { echo "FAKE: --no-service-account without --no-scopes" >&2; exit 2; }
+      has "--service-account=" && { echo "FAKE: both --no-service-account and --service-account" >&2; exit 2; }
+    else
+      echo "$all" | grep -qE -- '--service-account=[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]*\.iam\.gserviceaccount\.com( |$)' || { echo "FAKE: instance create without an identity decision (needs --no-service-account or a user-created --service-account)" >&2; exit 2; }
+      echo "$all" | grep -qE -- '--scopes=https://www\.googleapis\.com/auth/devstorage\.read_only( |$)' || { echo "FAKE: a service account without exactly the read-only storage scope" >&2; exit 2; }
+    fi
     [ -d "$FAKE/disks/$disk" ] || { echo "ERROR: disk $disk not found" >&2; exit 1; }
     in_list "$machine" "${FAKE_FAIL_MACHINES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED for $machine" >&2; exit 1; }
     in_list "$zone" "${FAKE_FAIL_VM_ZONES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED in $zone" >&2; exit 1; }

@@ -14,7 +14,7 @@ publish = false
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "net", "io-util", "fs", "macros"] }
 # "aws" = the S3 API client (also what GCS's S3-interoperability endpoint speaks); "fs" = the local-disk control arm.
-object_store = { version = "0.14", default-features = false, features = ["aws", "fs"] }
+object_store = { version = "0.14", default-features = false, features = ["aws", "gcp", "fs"] }
 parquet = { version = "60", features = ["async"] }
 arrow = "60"
 futures = "0.3"

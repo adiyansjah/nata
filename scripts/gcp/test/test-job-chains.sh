@@ -45,6 +45,8 @@ has ic-all "$im" && bad "icebergmodel must not run the full iceberg step ic-all"
 extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-model)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergmodel runs no step of any other job (only the common setup and ic-model)" || bad "icebergmodel runs extra steps: $extra"
 has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
+# objscan reads the real store's coordinates from a git-ignored file that travels with the uploaded source (no secret: KIND=gcs uses the VM's service account)
+grep -q 'spikes/object-store-scan/objstore.env' "$HERE/job.sh" && grep -q '^/spikes/object-store-scan/objstore.env$' "$HERE/../../.gitignore" && ok "objscan sources spikes/object-store-scan/objstore.env, which is git-ignored" || bad "objscan config file not wired or not ignored"
 # netexchsim: ONE step (nx-all) that runs spikes/net-exchange/gcp-check.sh; no settle steps, nothing of another job.
 nx=$(steps netexchsim)
 has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"

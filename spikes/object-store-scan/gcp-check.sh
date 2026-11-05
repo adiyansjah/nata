@@ -26,7 +26,9 @@
 #
 # THE REAL STORE (mode b) comes ONLY from the environment, is never written to a file or a log, and the results directory is
 # scanned for it at the end:
-#   NATA_OBJSTORE_ENDPOINT   e.g. https://storage.googleapis.com   (the S3-API endpoint; GCS speaks it through HMAC keys)
+#   NATA_OBJSTORE_KIND=gcs   Google Cloud Storage through its native API, with the credentials of the service account attached to the VM (orchestrate.sh
+#                            --vm-service-account; read-only scope): NO endpoint and NO key are configured, nothing secret exists anywhere. Needs only BUCKET and PREFIX.
+#   NATA_OBJSTORE_ENDPOINT   e.g. https://storage.googleapis.com   (the S3-API endpoint; GCS speaks it through HMAC keys; not used with KIND=gcs)
 #   NATA_OBJSTORE_BUCKET     the bucket (in the same region as the VM)
 #   NATA_OBJSTORE_PREFIX     the temporary test prefix; <prefix>/<layout>/part-NNNN.parquet must exist (see `objscan upload`)
 #   NATA_OBJSTORE_REGION     optional, default "auto"
@@ -142,20 +144,7 @@ fi
 NROWS=$(duckdb -noheader -list -c "SELECT count(*) FROM read_parquet('$LI')")
 note "lineitem rows: $NROWS"
 if [ ! -f "$DATA/layouts/.done" ]; then
-  PER=$(( (NROWS + 99) / 100 ))
-  {
-    echo "CREATE TABLE li AS SELECT * FROM read_parquet('$LI');"
-    echo "COPY li TO '$DATA/layouts/big1/part-0000.parquet' (FORMAT parquet, ROW_GROUP_SIZE 1500000);"
-    echo "COPY li TO '$DATA/layouts/mid1/part-0000.parquet' (FORMAT parquet, ROW_GROUP_SIZE 122880);"
-    echo "COPY li TO '$DATA/layouts/small1/part-0000.parquet' (FORMAT parquet, ROW_GROUP_SIZE 20000);"
-    for i in $(seq 0 99); do
-      printf "COPY (SELECT * FROM li WHERE rowid >= %d AND rowid < %d) TO '%s/layouts/files100/part-%04d.parquet' (FORMAT parquet, ROW_GROUP_SIZE 1000000);\n" \
-        $((i * PER)) $(((i + 1) * PER)) "$DATA" "$i"
-    done
-  } > "$OUT/layouts.sql"
-  mkdir -p "$DATA/layouts/big1" "$DATA/layouts/mid1" "$DATA/layouts/small1" "$DATA/layouts/files100"
-  duckdb -bail < "$OUT/layouts.sql" > "$OUT/layouts-gen.txt" 2>&1 || { note "layout generation failed (see layouts-gen.txt)"; exit 4; }
-  touch "$DATA/layouts/.done"
+  "$HERE/make-layouts.sh" "$LI" "$DATA/layouts" "$OUT/layouts.sql" > "$OUT/layouts-gen.txt" 2>&1 || { note "layout generation failed (see layouts-gen.txt)"; exit 4; }
 fi
 "$BIN" expected --lineitem "$LI" --out "$DATA/expected" 2>&1 | tee "$OUT/expected.txt" | tee -a "$SUMMARY"
 [ "${PIPESTATUS[0]}" -eq 0 ] || { note "reference results could not be computed"; exit 4; }
