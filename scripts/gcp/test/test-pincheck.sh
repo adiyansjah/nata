@@ -46,4 +46,42 @@ check "rows of other cells (T1, three stages, the medium kernel) are ignored" "!
 printf '| cheap L1 B1024 T4 | 0.1 | -3.0 ? | +1.0 | +10.0 | +9.0 | +0.0 ? | yes |\n| cheap L1 B8192 T4 | 0.1 | +5.0 | +5.0 | +2.0 | +2.0 | +0.0 ? | yes |\n| cheap L1 B65536 T4 | 0.1 | +0.0 ? | +0.0 | +0.0 | +0.0 | +0.0 ? | yes |\n' > $T/neg.md
 check "negative numbers and the ? marker are parsed (static -3.0 ?, dyn +10.0 gives 13.0; dyn below static gives -3.0)" "[ \"\$($PC --gap-row x $T/neg.md)\" = '| x | 13.0 | -3.0 | 0.0 | 5.0 | 2.0 | yes/yes/yes |' ]"
 
+
+# ---- the whole script against a FAKE benchmark and a FAKE taskset, on a 4-cpu topology fixture: 2 cores x 2 threads (cpus 0,1 | 2,3): distinct = 0,2; siblings = 0,1,2,3
+printf '# CPU,Core\n0,0\n1,0\n2,1\n3,1\n' > $T/fix4.txt
+cat > $T/taskset <<'FT'
+#!/bin/bash
+# fake taskset: records the cpu list in the environment of the program it runs
+[ "$1" = -c ] || exit 9
+cpus=$2; shift 2; exec env FAKE_CPUS="$cpus" "$@"
+FT
+cat > $T/push_cost <<'FB'
+#!/bin/bash
+# fake benchmark: prints the summary table the script parses; FAILS its self-test (unless --ignore-selftest) when pinned to the cpu list in FAKE_FAIL_ON
+ignore=0; for a in "$@"; do [ "$a" = --ignore-selftest ] && ignore=1; done
+echo "$@" >> "$FAKE_CALLS"
+if [ "${FAKE_CPUS:-}" = "${FAKE_FAIL_ON:-none}" ] && [ $ignore = 0 ]; then echo "**Harness self-test: FAIL - no number from this run is evidence**"; echo "HARNESS SELF-TEST FAILED: stopping before the benchmark"; exit 1; fi
+gap=${FAKE_GAP:-10}
+cat <<MD
+- 1-minute load average at start, before any benchmark thread ran: **0.10**
+| cell | control ns/row | static | dyn-direct | dyn | static-in-sched | twin | quiet |
+|---|---|---|---|---|---|---|---|
+| cheap L1 B1024 T4 | 0.1 | +20.0 | +20.0 | +$((20 + gap)).0 | +30.0 | +0.0 ? | yes |
+| cheap L1 B8192 T4 | 0.1 | +20.0 | +20.0 | +$((20 + gap)).0 | +30.0 | +0.0 ? | yes |
+| cheap L1 B65536 T4 | 0.1 | +20.0 | +20.0 | +$((20 + gap)).0 | +30.0 | +0.0 ? | yes |
+MD
+FB
+chmod +x $T/taskset $T/push_cost
+export FAKE_CALLS=$T/calls.txt; : > $FAKE_CALLS
+FAKE_FAIL_ON=0,1,2,3 PIN_TOPOLOGY=$T/fix4.txt PIN_BIN=$T/push_cost PIN_TASKSET=$T/taskset PIN_SETTLE_MAX=0 PIN_ROUNDS=3 "$PC" $T/out > $T/run.txt 2>&1; rc=$?
+check "the script runs the three sets: unpinned, distinct cores (0,2), siblings (0,1,2,3)" "[ $rc -eq 0 ] && grep -q '== distinct (taskset -c 0,2)' $T/run.txt && grep -q '== siblings (taskset -c 0,1,2,3)' $T/run.txt && grep -q '^== unpinned' $T/run.txt"
+check "a self-test failure is reported, the set is re-run with --ignore-selftest, and nothing else is" "grep -q 'SELF-TEST FAILED (siblings)' $T/run.txt && [ \$(grep -c -- '--ignore-selftest' $T/calls.txt) -eq 1 ]"
+check "the re-run row is labelled UNVALIDATED and the others are not" "grep -q '^| siblings \[UNVALIDATED' $T/run.txt && grep -q '^| unpinned |' $T/run.txt && grep -q '^| distinct |' $T/run.txt"
+check "the final line says the runs completed but names the unvalidated set (exit 0, not a quiet pass)" "grep -q 'RESULT pin-check: the runs completed; UNVALIDATED.*siblings' $T/run.txt"
+check "the failed attempt's output is kept next to the re-run" "[ -s $T/out/siblings-selftest-failed.md ] && grep -q 'SELF-TEST FAILED' $T/out/siblings-selftest-failed.md"
+PIN_TOPOLOGY=$T/no-ht.txt PIN_BIN=$T/push_cost PIN_TASKSET=$T/taskset PIN_SETTLE_MAX=0 PIN_ROUNDS=3 "$PC" $T/out2 > $T/run2.txt 2>&1; rc=$?
+check "on a machine with one thread per core the siblings run is skipped, with the reason, and the result is a plain pass" "[ $rc -eq 0 ] && grep -q 'siblings: not run' $T/run2.txt && grep -q 'RESULT pin-check: the runs completed (the table' $T/run2.txt"
+FAKE_BAD=1 PIN_TOPOLOGY=$T/fix4.txt PIN_BIN=/nonexistent PIN_TASKSET=$T/taskset PIN_SETTLE_MAX=0 "$PC" $T/out3 > $T/run3.txt 2>&1; rc=$?
+check "a missing benchmark binary is a setup failure (exit 4), not a quiet pass" "[ $rc -eq 4 ] && grep -q 'SETUP FAILED' $T/run3.txt"
+
 [ "$fails" = 0 ] && echo "all pincheck tests passed" || { echo "PINCHECK TESTS FAILED ($fails)"; exit 1; }

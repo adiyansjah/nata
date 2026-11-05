@@ -55,21 +55,33 @@ if [ -z "$TOPO" ]; then TOPO="$OUT/lscpu-p.txt"; lscpu -p=CPU,CORE > "$TOPO" 2>/
 cat "$OUT/machine.txt" | tee -a "$SUMMARY"
 eval "$(pin_sets "$TOPO" | sed 's/^/PS_/')"
 note "threads per core: $PS_threads_per_core; distinct-core set: $PS_distinct; sibling set: $PS_siblings"
-command -v taskset > /dev/null || { note "SETUP FAILED: taskset is not installed"; exit 4; }
+TASKSET=${PIN_TASKSET:-taskset}   # PIN_TASKSET: another program (the tests use a fake one)
+command -v "$TASKSET" > /dev/null || { note "SETUP FAILED: taskset is not installed"; exit 4; }
 
 # the benchmark example (built by the caller, or here)
-BIN="$HERE/target/release/examples/push_cost"
+BIN=${PIN_BIN:-$HERE/target/release/examples/push_cost}   # PIN_BIN: another binary (the tests use a fake one)
 if [ ! -x "$BIN" ]; then ( cd "$HERE" && RUSTFLAGS= cargo build --release --examples 2>&1 | tail -3 ) || { note "SETUP FAILED: build"; exit 4; }; fi
 [ -x "$BIN" ] || { note "SETUP FAILED: no $BIN"; exit 4; }
 
 FAILED=0
+UNVALIDATED=""
 run_set() { # run_set NAME CPULIST|""   (empty = unpinned)
   local name=$1 cpus=$2
   if [ -x "$SETTLE_SH" ]; then "$SETTLE_SH" "pin-$name" 0.5 "${PIN_SETTLE_MAX:-300}" | tee -a "$SUMMARY"; fi
   note "== $name ${cpus:+(taskset -c $cpus)}"
   local cmd=("$BIN" --rounds "$ROUNDS" --total-log2 "$LOG2" --threads 4 --lens 1 --batches 1024,8192,65536 --kernels cheap --no-branch --csv "$OUT/$name.csv")
-  if [ -n "$cpus" ]; then taskset -c "$cpus" "${cmd[@]}" > "$OUT/$name.md" 2> "$OUT/$name.err"; else "${cmd[@]}" > "$OUT/$name.md" 2> "$OUT/$name.err"; fi
+  if [ -n "$cpus" ]; then "$TASKSET" -c "$cpus" "${cmd[@]}" > "$OUT/$name.md" 2> "$OUT/$name.err"; else "${cmd[@]}" > "$OUT/$name.md" 2> "$OUT/$name.err"; fi
   local rc=$?
+  if [ $rc -ne 0 ] && grep -q "HARNESS SELF-TEST FAILED" "$OUT/$name.md" 2> /dev/null; then
+    # The harness refused to validate its own measurement on this CPU set (found on the sibling threads of the c3d: an injected 100 ns busy-wait read as +202 ns).
+    # That is a result. The cells are run once more WITHOUT the validation so that the gradient is visible, and every number from that run is labelled UNVALIDATED.
+    note "SELF-TEST FAILED ($name): $(grep -E 'FAIL \(' "$OUT/$name.md" | head -1 | cut -c1-160)"
+    note "re-running $name WITHOUT the self-test; its numbers are UNVALIDATED and are not evidence"
+    UNVALIDATED="$UNVALIDATED $name"
+    cp "$OUT/$name.md" "$OUT/$name-selftest-failed.md"
+    if [ -n "$cpus" ]; then "$TASKSET" -c "$cpus" "${cmd[@]}" --ignore-selftest > "$OUT/$name.md" 2> "$OUT/$name.err"; else "${cmd[@]}" --ignore-selftest > "$OUT/$name.md" 2> "$OUT/$name.err"; fi
+    rc=$?
+  fi
   if [ $rc -ne 0 ]; then note "RUN FAILED ($name): exit $rc: $(tail -3 "$OUT/$name.err" | tr '\n' ' ')"; FAILED=1; fi
   grep -E "load average at start|SANITY ONLY" "$OUT/$name.md" | head -2 | tee -a "$SUMMARY"
 }
@@ -84,7 +96,10 @@ note "| pin set | B1024 | B8192 | B65536 | static B8192 (+%) | dyn B8192 (+%) | 
 note "|---|---:|---:|---:|---:|---:|---|"
 for name in unpinned distinct siblings; do
   [ -f "$OUT/$name.md" ] || continue
-  gap_row "$name" "$OUT/$name.md" | tee -a "$SUMMARY"
+  label=$name; case " $UNVALIDATED " in *" $name "*) label="$name [UNVALIDATED: the harness self-test failed]" ;; esac
+  gap_row "$label" "$OUT/$name.md" | tee -a "$SUMMARY"
 done
-[ $FAILED = 0 ] && note "RESULT pin-check: the runs completed (the table above is the finding; this script has no pass/fail on the numbers)" || note "RESULT pin-check: A RUN FAILED"
+if [ $FAILED != 0 ]; then note "RESULT pin-check: A RUN FAILED"
+elif [ -n "$UNVALIDATED" ]; then note "RESULT pin-check: the runs completed; UNVALIDATED (self-test failed, numbers are not evidence):$UNVALIDATED"
+else note "RESULT pin-check: the runs completed (the table above is the finding; this script has no pass/fail on the numbers)"; fi
 exit $FAILED
