@@ -131,14 +131,31 @@ fn a_deadlock_and_a_livelock_are_reported_not_hung() {
     ex.spawn(0, std::future::pending::<()>());
     assert_eq!(ex.run(u64::MAX, 1000, || false), RunEnd::Quiescent);
 
+    // A LIVELOCK: a task that is always runnable and never makes progress, and gives control back to the executor each time (it
+    // wakes itself and returns Pending). The poll limit must end the run. (The first version of this test looped on
+    // `Sleep::new(ex, 0).await` and `ready(()).await`: both are Ready on the first poll, so the task never returned from ONE poll
+    // and no executor can interrupt that; it hung for an hour on the first GCP run, 2026-11-05. A future that never yields is a
+    // bug of the code under test, not something a cooperative executor can report.)
+    struct YieldNow(bool);
+    impl std::future::Future for YieldNow {
+        type Output = ();
+        fn poll(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<()> {
+            if self.0 {
+                std::task::Poll::Ready(())
+            } else {
+                self.0 = true;
+                cx.waker().wake_by_ref();
+                std::task::Poll::Pending
+            }
+        }
+    }
     let ex = Executor::new_sim(1);
-    let ex2 = ex.clone();
     ex.spawn(0, async move {
         loop {
-            Sleep::new(ex2.clone(), 0).await; // never advances virtual time
-            std::future::ready(()).await;
+            YieldNow(false).await; // runnable again at once; virtual time never advances
         }
     });
     let end = ex.run(u64::MAX, 10_000, || false);
-    assert!(matches!(end, RunEnd::StepLimit | RunEnd::Quiescent), "got {end:?}");
+    assert_eq!(end, RunEnd::StepLimit, "a livelock ends at the poll limit");
+    assert_eq!(ex.now(), 0, "virtual time did not advance");
 }

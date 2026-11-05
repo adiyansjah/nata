@@ -89,7 +89,8 @@ step machine machine
 # ---------------------------------------------------------------------------------------------- builds
 step build-release cargo build --release -p nata-sim --bins || { echo "cannot continue without a release build"; }
 step build-debug cargo build -p nata-sim --bins || { echo "cannot continue without a debug build"; }
-step unit-tests cargo test -p nata-sim --no-fail-fast -- --test-threads=4
+# a test that hangs must not hold the run for an hour (the first GCP run lost 58 minutes on one): 15 minutes for the whole suite
+step unit-tests timeout 900 cargo test -p nata-sim --no-fail-fast -- --test-threads=4
 step info-release "$REL/simctl" info
 step info-debug "$DBG/simctl" info
 
