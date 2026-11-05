@@ -1,6 +1,6 @@
 # 0005: Table format and catalog (Apache Iceberg first)
 
-Status: proposed (draft written 2026-11-05 from the read-path, planning and write evidence; the commit model is now checked (section Evidence), but the catalog and the commit against real catalogs and object stores are not; not accepted)
+Status: accepted in part (by the owner, 2026-11-05): rules 1 to 7 and the evidence behind them; rule 8 (catalog and commit protocol) stays open, see the revision notes
 Date: 2026-11-05
 
 ## Context
@@ -17,8 +17,9 @@ format is an external specification that other engines implement, so the cheapes
 3. **Pruning is sound by construction and by test.** The planner may skip a file only when no row of it can match; "plan, then filter" must equal a full read, on random tables and
    filters, with mutants. Where Iceberg's bound order and SQL semantics differ, the planner keeps the file: a zero literal is widened to the more inclusive zero (-0.0 sorts below +0.0
    in bounds, SQL treats them as equal); NaN rows are kept for negated ordering comparisons; a truncate partition value that is not a multiple of its width is never pruned on.
-4. **The writer refuses, or routes elsewhere, rows in the truncate overflow zone** (values within one width of the type's minimum). OPEN DECISION for the owner: refuse the write, or write
-   them to a separate partition. Other engines lose rows there today (see Evidence).
+4. **The writer refuses rows in the truncate overflow zone** (values within one width of the type's minimum), with an error that names the column, the width and the value. **Decided by the owner,
+   2026-11-05: refuse.** Writing them to a separate partition was the alternative; other engines lose rows there today (see Evidence), and a layout they misread would still look healthy. The rule can be relaxed later;
+   a wrong answer cannot be taken back.
 5. **Statistics written must be sound; a missing statistic is allowed, a wrong one is not.** The writer checks every column chunk (no NaN as a bound, correct truncation with increment,
    bounds that do not cut a UTF-8 character, correct null counts) and turns a statistic off when it cannot be sound.
 6. **Manifests are kept clustered by partition, and rewriting them is a required maintenance operation.** A scattered layout makes every partition filter read every manifest.
@@ -80,3 +81,15 @@ product feature, not an afterthought.
 ## Revisit when
 
 The commit spike runs against a product catalog with a database metastore or an object-store warehouse, or the Polaris `Idempotency-Key` behaviour is tested; the model is tied to the code or its bounds are enlarged; a nested-type or v3 table is needed; the Java library or `iceberg-rust` can be compared; a plan over 100,000 files is on the hot path of a real query.
+
+## Revision notes
+
+- 2026-11-05, **accepted in part by the owner**: rules 1 to 7 (format version 2 first; conformance tested against independent readers; sound pruning; the writer refuses the truncate overflow zone; sound statistics; clustered manifests with maintenance; our own manifest decoder). **Rule 8 stays open** (catalog and commit protocol). Checks still open (verification-plan items in brackets):
+  - Rule 8: the operation token against the REST `Idempotency-Key` for retried commits (Polaris 1.8.0 ships an `Idempotency-Key` filter and settings; its behaviour was not tested) [24]; a database metastore and an object-store warehouse behind the catalog (Polaris was run only as a loopback test fixture with an in-memory metastore and local-disk storage); the commit against a real object store; whether catalog-less commit by conditional put is allowed at all; equality deletes and deletion vectors are not modelled; the model is not tied to the code by a refinement check.
+  - Rule 7: the decoder is a spike (`spikes/manifest-decode`). Before it is product code: all partition types (it keeps int, long, date and timestamp), resolution by field id, v1 and v3 manifests, a run on manifests written by the Java library, a timing on a settled machine, and the cross-check of each manifest's entry count against the manifest list (plain Avro has no checksum).
+  - Format version 3, nested types, name mapping for files without field ids, time travel, branches and tags are not covered.
+  - Read-path confidence stays medium-high until a Java-written table has been read.
+
+## Amendments
+
+None yet.

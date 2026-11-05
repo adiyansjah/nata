@@ -1,6 +1,6 @@
 # 0006: Testing strategy (differential, mutation-checked, deterministic simulation)
 
-Status: proposed (draft written 2026-11-05 from the evidence of the spikes; not accepted)
+Status: accepted (by the owner, 2026-11-05)
 Date: 2026-11-05
 
 ## Context
@@ -56,3 +56,17 @@ Easier: every change has a cheap, replayable check and a record of what it can c
 ## Revisit when
 
 The first slice of the engine exists and the fuzzer runs against it; the abstraction-cost benchmark is available from a quiet machine; CI is set up.
+
+## Revision notes
+
+- 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets):
+  - Nothing here has run against Nata itself: the differential fuzzer, the simulation harness and the mutation runners were built and run on spikes; the first slice is where they meet real code [33, 23].
+  - Sanitizers, Miri and the dependency checks (`cargo-deny`, `cargo-audit`, `cargo-geiger`) are not set up. CI runs formatting, lints, tests and the operator-protocol tests on x86-64 and ARM64 runners (all green on 2026-11-05), but not the mutation runners or the script tests [34, 8].
+  - Lessons from applying the rules in the days after the draft, to be folded into the text of rules 1, 7 and 8 as amendments (NOT applied yet; each cites its evidence):
+    - Rule 7: a timed block must settle before it starts, and a block that starts inside a longer step needs its own settle. The step-level settle missed three such blocks (the later phases of the NULL-path run, the push-cost benchmark, the Arrow engine-only block), and the exchange check's profiles ran back to back and started at loads of 0.9 to 2.2 (`bench/results/20261105-timing-settled-rerun.md`, `20261105-net-exchange.md`). A result from a random-loss network profile is quoted with its spread over repeated runs, never as one number: the same job gave 980, 82 and 698 MB/s, and about 9x between the best and worst of 8 runs.
+    - Rule 1: a mutant run that does not compile, or whose test binary crashes, is INVALID and not a catch; and a mutant whose edit matched nothing must be reported as INVALID (it happened once this week and would have counted as "survived" or "caught" by accident).
+    - Rule 8: every place a job is registered needs a test (the job list, the VM start-up script, the tests' own lists). The first `icebergspikes` runs would have skipped their gating interop because `vm-startup.sh` did not list the job; a test now fails if an Iceberg job that runs the interop is missing there.
+
+## Amendments
+
+None yet.
