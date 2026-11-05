@@ -37,5 +37,20 @@ r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=exloom-mutants hash-la
 echo "$a" | grep -q '^ARMTASKS=<all>$' && ok "armcheck runs all tasks" || bad "armcheck tasks: $(echo "$a" | grep ARMTASKS)"
 pm=$(steps icebergplan-mut); echo "$pm" | grep -q '^IPONLY=mutants$' && ok "icebergplan-mut runs only the mutation phase" || bad "icebergplan-mut: $(echo "$pm" | grep IPONLY)"
 pf=$(steps icebergplan); echo "$pf" | grep -q '^IPONLY=<all phases>$' && ok "icebergplan runs all phases" || bad "icebergplan: $(echo "$pf" | grep IPONLY)"
+# the settle step: in the timing jobs every timed step is preceded by a wait for a quiet machine; the other jobs do not have it
+idx() { echo "$2" | grep -n "^STEP $1\$" | head -1 | cut -d: -f1; }
+t=$(steps timing)
+for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-membench-ov-off" "settle-h-duckdb:h-duckdb" "settle-np-all:np-all" "settle-p-timing:p-timing" "settle-t-compaction:t-compaction" "settle-t-pushcost:t-pushcost" "settle-t-ap-bench:t-ap-bench"; do
+  s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
+  [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
+done
+for j in hashops armcheck simharness objscan iceberg; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
+# the settle script itself: succeeds at once on a quiet machine, and gives up (exit 0, says so) when the load never falls
+S=$(sed -n "s/^SETTLE='\(.*\)'\$/\1/p" "$HERE/job.sh")
+[ -n "$S" ] || bad "could not extract the SETTLE script"
+echo "0.05 0.10 0.10 1/100 1" > "$T/quiet"; echo "9.00 5.00 2.00 1/100 1" > "$T/busy"
+out=$(bash -c "${S//\/proc\/loadavg/$T/quiet}" 2>&1); echo "$out" | grep -q '^settled: load 0.05 after 0 s$' && ok "settle: a quiet machine settles at once" || bad "settle quiet: $out"
+out=$(bash -c "$(echo "$S" | sed "s|/proc/loadavg|$T/busy|; s|seq 1 60|seq 1 2|; s|sleep 10|sleep 0|")" 2>&1); rc=$?; echo "$out" | grep -q 'load did not settle: 9.00' && [ $rc = 0 ] && ok "settle: a busy machine is given up on cleanly (exit 0, says so)" || bad "settle busy rc=$rc: $out"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

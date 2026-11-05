@@ -13,6 +13,11 @@ JOB=$(cat "$WORK/JOBNAME" 2>/dev/null || echo ci)
 BOOT=$(boot_id | cut -c1-8)
 
 run() { step "$@" || { fail_job "$1"; exit 1; }; }
+# Timing needs a QUIET machine: a step started right after a heavy one sees a 1-minute load average of 2-3 (found 2026-11-05: every timed
+# step of the first timing bundle started at load 2.7-3.3 and the scripts label such numbers SANITY ONLY). settle_before NAME waits (at most
+# ten minutes) until the 1-minute load is below 0.5; it is a no-op in the other jobs, whose steps are not timing.
+SETTLE='for i in $(seq 1 60); do l=$(cut -d" " -f1 /proc/loadavg); awk -v l="$l" "BEGIN{exit !(l<0.5)}" && { echo "settled: load $l after $((i*10-10)) s"; exit 0; }; sleep 10; done; echo "load did not settle: $l"; exit 0'
+settle_before() { case "$JOB" in timing|perf|nullpath) run "settle-$1" bash -c "$SETTLE" ;; esac; }
 
 run setup-rust bash -c 'command -v rustup >/dev/null || curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
   cd "$SRC" && { rustup show active-toolchain || rustup toolchain install; }'
@@ -93,8 +98,10 @@ case "$JOB" in
     run h-build-ov-off bash -c 'cd "$SRC/spikes/hash-ops" && CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=false RUSTFLAGS= CARGO_TARGET_DIR="$WORK/target-ho-off" cargo build --release'
     for m in membench bench; do for ov in on off; do
       B='target/release/hash-ops'; [ "$ov" = off ] && B="$WORK/target-ho-off/release/hash-ops"
+      settle_before "h-$m-ov-$ov"
       run "h-$m-ov-$ov" bash -c 'cd "$SRC/spikes/hash-ops" && { echo "load: $(cat /proc/loadavg)"; '"$B"' '"$m"' "$SRC/data/tpch-sf1" 25; } > "$RESULTS/hashops-'"$m"'-ov-'"$ov"'.txt" 2>&1'
     done; done
+    settle_before h-duckdb
     run h-duckdb bash -c 'cd "$SRC/spikes/hash-ops" && { echo "load: $(cat /proc/loadavg)"; ./duckdb-time.sh "$SRC/data/tpch-sf1" 16; } > "$RESULTS/hashops-duckdb.txt" 2>&1'
     # Last, and slowest (about 45 minutes): the mutation check of the TESTS. It validates the test suite, not the
     # engine, so the correctness steps above (tests, DuckDB diff, nullcheck) gate the timings and this one does not.
@@ -181,6 +188,7 @@ case "$JOB" in
     # so a wrong engine never produces a timing), then the ladder (wall and CPU time), the overflow-checks A/B/A/B, the
     # density table and the stage timings. The mutation check is skipped: it ran locally and is not timing-sensitive.
     run np-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    settle_before np-all
     run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;&
 
   objscan)
@@ -246,6 +254,7 @@ case "$JOB" in
     run p-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run p-build bash -c 'cd "$SRC/spikes/generic-ops" && CARGO_PROFILE_RELEASE_DEBUG=line-tables-only RUSTFLAGS="-C force-frame-pointers=yes" cargo build --release'
     run p-machine bash -c '{ lscpu | grep -E "Model name|Architecture|L1d|L2|L3"; perf --version; cat /proc/sys/kernel/perf_event_paranoid; } > "$RESULTS/perf-machine.txt" 2>&1'
+    settle_before p-timing
     run p-timing bash -c 'cd "$SRC" && B=spikes/generic-ops/target/release/spike-generic-ops && { echo "load: $(cat /proc/loadavg)"; for q in q1 q6; do for arm in generic fused; do a=""; [ $arm = fused ] && a=fused; s=$(date +%s.%N); $B loop data/tpch-sf1/lineitem.parquet 20 $q $a; e=$(date +%s.%N); echo "$q $arm: $(awk -v s=$s -v e=$e "BEGIN{printf \"%.2f\", e-s}") s for 20 iterations incl. one preload"; done; done; } > "$RESULTS/perf-timing.txt" 2>&1'
     for q in q1 q6; do for arm in generic fused; do
       run "p-record-$q-$arm" bash -c 'cd "$SRC" && B=spikes/generic-ops/target/release/spike-generic-ops && a=""; [ '"$arm"' = fused ] && a=fused; perf record -e cpu-clock -F 999 -g -o "$WORK/perf-'"$q-$arm"'.data" -- $B loop data/tpch-sf1/lineitem.parquet 60 '"$q"' $a > /dev/null 2> "$RESULTS/perf-record-'"$q-$arm"'.err"; perf report -i "$WORK/perf-'"$q-$arm"'.data" --stdio --no-children --percent-limit 1.5 -g none 2>/dev/null | grep -v "^#" | grep -v "^$" | head -40 > "$RESULTS/perf-report-'"$q-$arm"'.txt"; perf stat -e task-clock,context-switches,page-faults -- $B loop data/tpch-sf1/lineitem.parquet 10 '"$q"' $a > /dev/null 2> "$RESULTS/perf-stat-'"$q-$arm"'.txt"; true'
@@ -256,11 +265,14 @@ case "$JOB" in
     # the Arrow pipeline's correctness gate and benchmarks, on a QUIET machine, one after the other. Correctness first: the
     # arrow-pipeline gate (tests + DuckDB digit-for-digit diff) must pass before its timings are recorded.
     run t-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    settle_before t-compaction
     run t-compaction bash -c 'cd "$SRC" && spikes/compaction/gcp-check.sh "$RESULTS/compaction" 25 > "$RESULTS/compaction-run.txt" 2>&1'
+    settle_before t-pushcost
     run t-pushcost bash -c 'cd "$SRC" && spikes/push-cost/gcp-check.sh "$RESULTS/push-cost" 25 > "$RESULTS/push-cost-run.txt" 2>&1'
     run t-ap-build bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo build --release'
     run t-ap-tests bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo test --release --no-fail-fast -- --test-threads=1 > "$RESULTS/arrow-pipeline-tests.txt" 2>&1'
     run t-ap-diff bash -c 'cd "$SRC/spikes/arrow-pipeline" && scripts/duckdb_diff.sh "$SRC/data/tpch-sf1/lineitem.parquet" > "$RESULTS/arrow-pipeline-duckdb-diff.txt" 2>&1'
+    settle_before t-ap-bench
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
