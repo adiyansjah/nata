@@ -310,3 +310,23 @@ Conditional create on a local file system (`PutMode::Create`, an atomic hard lin
 - The stress runs are six seeds of at most 16 writers with three operations each, one SIGKILL; `bad-blind-retry` is not found by stress (0 of 3), only by its forced scenario.
 - Independent interop (pyiceberg reading our manifests) did not run.
 - The cost $0.224 is VM time only.
+
+## 9. Plan for the re-run of the unchecked model configurations (job `icebergmodel`; written 2026-11-05, NOT run)
+
+The job runs only the 15 TLC runs that have no result (section 8), with no Rust build, catalog, spike, interop or mutant phase, on one `n4a-highcpu-16` Spot VM (16 vCPU, 32 GB; one TLC worker per vCPU, TLC heap about 19,800 MB). Description, variables and tests: `scripts/gcp/README.md`, section "`icebergmodel`". The verdict is FAIL if any run is a TIMEOUT, NOT-RUN, ERROR or unexpected result.
+
+**Limits (defaults):** 4,500 s for `three-*` runs and `live-3`, 2,700 s for the others, 9,000 s (2 h 30 min) for the whole model phase, each run cut to the time left. **Order:** `three-store-ser`, `three-rest-snap-i4`, `live-2`, the 11 canaries, `live-3`.
+
+**How long each run needs (what is known and what is not):**
+
+| Run | Estimate |
+|---|---|
+| `three-store-ser` | About the time of `three-rest-ser`, which took 2,481 s on 8 vCPU. It did not finish in 2,700 s, and at the same number of distinct states (about 114 million) it was about 10% slower than `three-rest-ser` (2,644 s against about 2,400 s), which suggests about 2,750 s on 8 vCPU (an inference from one pair of progress lines, not a measurement). What 16 workers change is **unknown**. |
+| `three-rest-snap-i4` | **Unknown.** TLC stops at the first violation of I4; how deep that is in the snapshot-isolation space was not measured. |
+| `live-2` | **Unknown.** It checks liveness (termination and progress) on two writers; no liveness run has ever been timed. |
+| `live-3` | **Unknown**, and the most likely to be expensive: three writers with liveness checking. |
+| the 11 canaries | **Unknown**, each. Each stops at the first state where its situation is reached, in the `three-rest-ser` state space; the depth at which each is reached was not measured. |
+
+So the 9,000 s budget is a cap, not a prediction: if the unknown runs are cheap the job ends early, and if not, the runs at the end of the order are `NOT-RUN` (a FAIL that names them), to be run in a second `icebergmodel` with `IC_MODEL_ONLY` set to those names.
+
+**Cost** (prices from `scripts/gcp/prices.env`; the `n4a-highcpu-16` price of $0.1968/h is derived from the core and RAM prices of 2026-11-03, not fetched, and must be recomputed before the run): the first run cost $0.224 for 2 h 17 min of VM time on `n4a-highcpu-8` ($0.0984/h). A run that uses the full 9,000 s model budget is about 2 h 35 min of VM time, about $0.51 for the VM. **Proposed cap: `--max-vm-hours 3.0`**, for which `orchestrate.sh plan` prints a worst case of **$0.646** (VM, external IP, disks and the Hyperdisk allowance), so `--approved-usd 0.65`. It needs the owner's explicit yes first.

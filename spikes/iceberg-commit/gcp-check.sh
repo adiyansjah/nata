@@ -24,6 +24,18 @@
 #   IC_MUTANT_TIMEOUT  seconds per TLC run of a mutant (default 900)
 #   IC_WRITERS         writer processes per stress run (default: 4, 8, 16 in turn); IC_SEEDS stress seeds (default 6)
 #   IC_PORT            port of the catalog (default 8181)
+#   IC_MODE            full (default): every phase.  model: the targeted model re-run of the `icebergmodel` GCP job: ONLY the phases
+#                      tools, model-lint, model-parse-and-edits and model-full (no Rust, no catalog, no spikes, no interop, no mutants),
+#                      model-full restricted to IC_MODEL_ONLY, each run cut to the time left in IC_MODEL_BUDGET. A TIMEOUT, ERROR or
+#                      NOT-RUN run, or any result other than the expected one, makes the verdict FAIL.
+#   IC_MODEL_ONLY      mode model: comma-separated run names, done in this order (default: the 15 runs without a result in the first
+#                      GCP run, three-store-ser first and the liveness run live-3 last). `run_model.py --list` prints all names;
+#                      an unknown name is an error.
+#   IC_TLC_TIMEOUT_BIG mode model: seconds allowed for one three-writer run (three-* and live-3; default 4500); IC_TLC_TIMEOUT
+#                      (default 2700) applies to the others. In mode full IC_TLC_TIMEOUT applies to every run, as before.
+#   IC_MODEL_HEAP_MB   TLC heap in MB (default: 62% of the machine's RAM, at least 10000: 10000 on the 16 GB n4a-highcpu-8, about 19800
+#                      on the 32 GB n4a-highcpu-16). TLC gets one worker per vCPU (nproc) in both modes.
+#   IC_MEMINFO         file read instead of /proc/meminfo (tests)
 #
 # Expected duration, an ESTIMATE that nothing has confirmed (neither TLC nor the catalog was ever run on the dev box):
 #   tools 2-3 min; lint/unit/parse 1 min; Rust build 4-8 min (ARM64, cold) and tests 2-5 min; Gradle build of the fixture
@@ -47,7 +59,22 @@ STATE=$WORKBASE/state; mkdir -p "$STATE"
 PORT=${IC_PORT:-8181}
 SEEDS=${IC_SEEDS:-6}
 TLC_TIMEOUT=${IC_TLC_TIMEOUT:-2700}
-MODEL_BUDGET=${IC_MODEL_BUDGET:-7200}
+MODE=${IC_MODE:-full}
+case "$MODE" in full | model) ;; *) echo "IC_MODE must be full or model, not '$MODE'" >&2; exit 2 ;; esac
+# The default list of the targeted re-run: the 15 runs that had no result in the first GCP run (iceberg-full-arm64), cheapest guess
+# first is NOT knowable (the costs are unknown), so: the near-complete three-store-ser, then the I4 run, the 2-writer liveness run,
+# the 11 canaries, and the 3-writer liveness run (the most expensive unknown) last.
+MODEL_ONLY_DEFAULT="three-store-ser,three-rest-snap-i4,live-2,canary-Unknown,canary-Conflict,canary-RetryCommitted,canary-CompactCommitted,canary-DeleteCommitted,canary-ValidationAbort,canary-CrashedButCommitted,canary-LateOldAttempt,canary-DuplicateDelivered,canary-OrphanCollected,canary-ReaderPinned,live-3"
+MODEL_ONLY=${IC_MODEL_ONLY:-$MODEL_ONLY_DEFAULT}
+TLC_TIMEOUT_BIG=${IC_TLC_TIMEOUT_BIG:-4500}
+if [ "$MODE" = model ]; then MODEL_BUDGET=${IC_MODEL_BUDGET:-9000}; else MODEL_BUDGET=${IC_MODEL_BUDGET:-7200}; fi
+default_heap_mb() { # 62% of RAM, but at least 10000 (the value used on the 16 GB machines)
+  local kb mb
+  kb=$(awk '/^MemTotal:/ {print $2}' "${IC_MEMINFO:-/proc/meminfo}" 2> /dev/null)
+  mb=$(( ${kb:-0} / 1024 * 62 / 100 ))
+  if [ "$mb" -gt 10000 ]; then echo "$mb"; else echo 10000; fi
+}
+HEAP_MB=${IC_MODEL_HEAP_MB:-$(default_heap_mb)}
 MUTANT_TIMEOUT=${IC_MUTANT_TIMEOUT:-900}
 NPROC=$(nproc)
 JAVA="$TOOLS/jdk/bin/java"
@@ -173,8 +200,13 @@ ph_store_suite() {
 }
 
 ph_model_full() {
+  local extra=()
+  if [ "$MODE" = model ]; then
+    extra=(--only "$MODEL_ONLY" --timeout-big "$TLC_TIMEOUT_BIG" --clamp-to-budget)
+    [ "${IC_RESUME:-0}" = 1 ] && extra+=(--resume)
+  fi
   cd "$HERE/model" && python3 -I run_model.py --jar "$JAR" --java "$JAVA" --out "$OUT/model" --work "$WORKBASE/model-work" \
-    --workers "$NPROC" --heap-mb 10000 --timeout "$TLC_TIMEOUT" --budget "$MODEL_BUDGET"
+    --workers "$NPROC" --heap-mb "$HEAP_MB" --timeout "$TLC_TIMEOUT" --budget "$MODEL_BUDGET" ${extra[@]+"${extra[@]}"}
 }
 ph_model_mutants() {
   cd "$HERE/model" && python3 -I mutate_model.py --baseline --jar "$JAR" --java "$JAVA" --out "$OUT/mutants" --work "$WORKBASE/mutants-work" \
@@ -190,6 +222,10 @@ cp "$TOOLS/VERSIONS.txt" "$OUT/tool-versions.txt" 2> /dev/null || true
 # 2. the model: static checks, parse of every mutant
 phase model-lint yes ph_model_lint
 phase model-parse-and-edits yes ph_model_parse
+if [ "$MODE" = model ]; then
+  log "MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits and model-full; runs: $MODEL_ONLY"
+  log "limits: ${TLC_TIMEOUT}s per run, ${TLC_TIMEOUT_BIG}s per three-writer run (three-*, live-3), ${MODEL_BUDGET}s in total (each run is cut to the time left); TLC heap ${HEAP_MB} MB, ${NPROC} workers"
+else
 # 3. smoke: does TLC evaluate the spec?
 phase model-smoke yes ph_model_smoke
 # 4. Rust build and tests (mock catalog + object-store mode; no Java needed)
@@ -207,27 +243,31 @@ cp "$CATALOG_RUN/catalog.log" "$OUT/catalog.log" 2> /dev/null || true
 cleanup
 # 6. the object-store mode
 phase spike-object-store yes ph_store_suite
+fi
 # 7. the model: the full unmutated run (every configuration, liveness, canaries), then every mutant
 phase model-full yes ph_model_full
 cp "$OUT/model/model-summary.txt" "$OUT/model-summary.txt" 2> /dev/null || true
-phase model-mutants yes ph_model_mutants
+[ "$MODE" = model ] || phase model-mutants yes ph_model_mutants
 
 # ------------------------------------------------------------------------------------------------ verdict
 {
   echo
   echo "---- model: unmutated runs"
   cat "$OUT/model-summary.txt" 2> /dev/null || echo "(no model summary)"
-  echo
-  echo "---- model: mutants"
-  sed -n '/^mutant /,$p' "$OUT/model-mutants.txt" 2> /dev/null || echo "(no mutant table)"
-  echo
-  echo "---- spike: REST reference catalog"
-  tail -n 4 "$OUT/spike-rest-catalog.txt" 2> /dev/null
-  echo "---- spike: object store"
-  tail -n 4 "$OUT/spike-object-store.txt" 2> /dev/null
+  if [ "$MODE" = full ]; then
+    echo
+    echo "---- model: mutants"
+    sed -n '/^mutant /,$p' "$OUT/model-mutants.txt" 2> /dev/null || echo "(no mutant table)"
+    echo
+    echo "---- spike: REST reference catalog"
+    tail -n 4 "$OUT/spike-rest-catalog.txt" 2> /dev/null
+    echo "---- spike: object store"
+    tail -n 4 "$OUT/spike-object-store.txt" 2> /dev/null
+  fi
 } >> "$SUMMARY"
 if [ "$FAILED" -eq 0 ]; then
-  log "VERDICT PASS (every gating phase passed)"
+  [ "$MODE" = model ] && log "VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)"
+  [ "$MODE" = model ] || log "VERDICT PASS (every gating phase passed)"
   exit 0
 fi
 log "VERDICT FAIL ($FAILED gating phase(s) failed; see the PHASE lines above and the per-phase files in $OUT)"

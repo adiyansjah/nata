@@ -9,7 +9,7 @@ cp "$HERE/job.sh" "$T/job.sh"
 cat > "$T/lib.sh" <<'LIB'
 : "${WORK:?}"; RESULTS="$WORK/results"; mkdir -p "$RESULTS"
 now() { date -u +%H:%M:%S; }; boot_id() { echo stubboot0; }
-step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; return 0; }
+step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; case "$1" in ic-all|ic-model) echo "ICMODE[$1]=${IC_MODE:-<full>}";; esac; return 0; }
 fail_job() { echo "FAILJOB $1"; }
 finish_job() { echo "FINISHED"; }
 LIB
@@ -37,6 +37,14 @@ r=$(steps armcheck-retry); echo "$r" | grep -q '^ARMTASKS=exloom-mutants hash-la
 echo "$a" | grep -q '^ARMTASKS=<all>$' && ok "armcheck runs all tasks" || bad "armcheck tasks: $(echo "$a" | grep ARMTASKS)"
 pm=$(steps icebergplan-mut); echo "$pm" | grep -q '^IPONLY=mutants$' && ok "icebergplan-mut runs only the mutation phase" || bad "icebergplan-mut: $(echo "$pm" | grep IPONLY)"
 pf=$(steps icebergplan); echo "$pf" | grep -q '^IPONLY=<all phases>$' && ok "icebergplan runs all phases" || bad "icebergplan: $(echo "$pf" | grep IPONLY)"
+# icebergmodel: the targeted TLC re-run. It is ONE step (ic-model) that runs gcp-check.sh in model mode, which has only the tools, model-lint,
+# model-parse-and-edits and model-full phases; it must not select the full check's step (ic-all), any other job's steps, or the full mode.
+im=$(steps icebergmodel); ic=$(steps iceberg)
+has ic-model "$im" && echo "$im" | grep -q '^ICMODE\[ic-model\]=model$' && ok "icebergmodel runs the one model-mode step" || bad "icebergmodel: $(echo "$im" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
+has ic-all "$im" && bad "icebergmodel must not run the full iceberg step ic-all" || ok "icebergmodel does not run the full iceberg check"
+extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-model)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "icebergmodel runs no step of any other job (only the common setup and ic-model)" || bad "icebergmodel runs extra steps: $extra"
+has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
 # the settle step: in the timing jobs every timed step is preceded by a wait for a quiet machine; the other jobs do not have it
 idx() { echo "$2" | grep -n "^STEP $1\$" | head -1 | cut -d: -f1; }
 t=$(steps timing)
@@ -44,7 +52,7 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
-for j in hashops armcheck simharness objscan iceberg; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+for j in hashops armcheck simharness objscan iceberg icebergmodel; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle script itself: succeeds at once on a quiet machine, and gives up (exit 0, says so) when the load never falls
 S=$(sed -n "s/^SETTLE='\(.*\)'\$/\1/p" "$HERE/job.sh")

@@ -1,0 +1,29 @@
+#!/bin/bash
+# A fake `java` for the tests of run_model.py and of gcp-check.sh's model mode: it answers SANY (parse check) and TLC the way the
+# real ones print, and behaves per configuration so that the tests need neither a JDK nor minutes of model checking.
+#   a normal configuration            -> "Model checking completed. No error has been found.", exit 0
+#   three-rest-snap-i4, canary-*      -> "Error: Invariant <I4_NoPhantom | the canary> is violated.", exit 12 (their expected outcome)
+#   a name listed in $FAKE_SLOW       -> sleeps $FAKE_SLOW_SECONDS (default 30) before answering, so a timeout can cut it
+#   a name listed in $FAKE_BROKEN     -> prints a TLC evaluation error, exit 150
+# Every TLC call is appended to $FAKE_LOG (if set) as "<name> workers=<n> xmx=<MB>".
+case "$*" in
+  *tla2sany.SANY*) echo "Semantic processing of module MC"; exit 0 ;;
+esac
+cfg=""; workers=""; xmx=""
+for a in "$@"; do case "$a" in -Xmx*m) xmx=${a#-Xmx}; xmx=${xmx%m} ;; esac; done
+while [ $# -gt 0 ]; do
+  case "$1" in -config) cfg=$2 ;; -workers) workers=$2 ;; esac
+  shift
+done
+[ -n "$cfg" ] || { echo "fake-java: not a TLC call" >&2; exit 2; }
+name=$(basename "$cfg" .cfg)
+[ -n "${FAKE_LOG:-}" ] && echo "$name workers=$workers xmx=$xmx" >> "$FAKE_LOG"
+case " ${FAKE_SLOW:-} " in *" $name "*) sleep "${FAKE_SLOW_SECONDS:-30}" ;; esac
+case " ${FAKE_BROKEN:-} " in *" $name "*) echo "Error: Evaluation error: fake"; exit 150 ;; esac
+canary=$(grep -o 'Canary_[A-Za-z]*' "$cfg" | head -1)
+if [ -n "$canary" ]; then echo "Error: Invariant $canary is violated."; echo "7 states generated, 6 distinct states found, 1 states left on queue."; exit 12; fi
+if [ "$name" = three-rest-snap-i4 ]; then echo "Error: Invariant I4_NoPhantom is violated."; echo "7 states generated, 6 distinct states found, 1 states left on queue."; exit 12; fi
+echo "Model checking completed. No error has been found."
+echo "100 states generated, 50 distinct states found, 0 states left on queue."
+echo "The depth of the complete state graph search is 9."
+exit 0

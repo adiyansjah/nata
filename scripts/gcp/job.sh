@@ -211,6 +211,16 @@ case "$JOB" in
     export IC_WORK="$WORK/iceberg-commit-work" IC_RESUME=1
     [ "$JOB" = iceberg-smoke ] && export IC_TLC_TIMEOUT=300 IC_MODEL_BUDGET=900 IC_MUTANT_TIMEOUT=180 IC_SEEDS=2
     run ic-all bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-commit" > "$RESULTS/iceberg-commit-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-commit-exit.txt"; true' ;;
+  icebergmodel)
+    # verification-plan item 24, targeted re-run of the TLC runs that had no result in `iceberg-full-arm64` (three-store-ser timed out; the
+    # I4 run, both liveness runs and the 11 canaries were never started): ONLY tools, model-lint, model-parse-and-edits and model-full, for the
+    # runs in IC_MODEL_ONLY (default: those 15). No Rust build, REST catalog, spikes, interop or mutants. Intended machine: n4a-highcpu-16
+    # (16 TLC workers). Defaults: 4500 s per three-writer run (three-*, live-3), 2700 s per other run, 9000 s in all (each run is cut to
+    # the time left). A TIMEOUT or NOT-RUN run makes the verdict FAIL. The orchestrator forwards no environment to the VM, so to change the
+    # IC_* variables put 'export NAME=value' lines in spikes/iceberg-commit/icebergmodel.env before the run (uploaded with the source, kept
+    # out of git, copied to the results). The exit status is recorded and does not stop the job, so the results are kept.
+    export IC_WORK="$WORK/iceberg-model-work" IC_RESUME=1 IC_MODE=model
+    run ic-model bash -c 'cd "$SRC" && { f=spikes/iceberg-commit/icebergmodel.env; if [ -f "$f" ]; then cp "$f" "$RESULTS/iceberg-model-env.txt"; set -a; . "./$f"; set +a; fi; }; spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-model" > "$RESULTS/iceberg-model-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-model-exit.txt"; true' ;;
   failmodel|failmodel-retry)
     # verification-plan item 29 (spikes/failure-model): the QueryLifecycle TLA+ model (TLC), the canaries and the mutants.
     # failmodel-retry: only the configuration the first run did not finish (it was cut short), with a longer TLC timeout
@@ -276,7 +286,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

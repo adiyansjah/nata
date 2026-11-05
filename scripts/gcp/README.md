@@ -54,6 +54,57 @@ scripts/gcp/orchestrate.sh cleanup --run-id <id>                          # dele
 Jobs: `ci` (workspace tests and the operator-protocol tests six times), `bench` (SF1 data, kernel benchmark three
 times, pull-versus-push, v2), `cpack` (three jobs in one VM: `crates` = object_store, crossbeam-deque and the compression crates built and tested on this architecture; `fairness-bench` = the overhead of the time slice on a quiet machine; `bridge` = the tokio-to-pool stress and the I/O latency measurements), `perf` (perf profiles of the generic and fused Q1 and Q6; vm-startup.sh installs perf for it), `decimal` (the full exhaustive decimal verification with every mutant), `hashops` (the hash join and aggregate spike: tests, DuckDB diff, NULL check, mutation run, peak memory, benchmarks), `kani` (the Kani proofs, one harness at a time with a time cap, on a high-memory machine), `verify` (clean-machine reproduction of the verification: workspace checks, lint fixtures, guarded-expression diff and mutations, the loom model and its deliberate bugs, and the overflow-checks cost comparison), `genops` (the generic-operator experiment: unit tests, correctness checks, benchmarks, DuckDB timings), `all`. Edit `job.sh` to change them.
 
+## `icebergmodel`: the targeted TLC re-run (item 24)
+
+The first `iceberg` run (`iceberg-full-arm64`, `bench/results/20261104-iceberg-commit.md` section 8) used up its model budget:
+`three-store-ser` timed out, and `three-rest-snap-i4`, `live-2`, `live-3` and the 11 canaries were never started. `icebergmodel`
+runs only those 15 TLC runs, without repeating the 2 h of work that already has a result.
+
+- **What it runs:** `spikes/iceberg-commit/gcp-check.sh` with `IC_MODE=model`: the phases `tools`, `model-lint`, `model-parse-and-edits`
+  and `model-full` (restricted to the chosen runs), nothing else: no Rust build or tests, no catalog build or start, no spike, no
+  interop, no `model-smoke`, no mutants. (The common `setup-rust` and `setup-duckdb` steps of every job still run: about 15 s.)
+  Results go to `results/iceberg-model/` (`summary.txt`, `model-summary.txt` in the format of the full job, one `*.tlc.txt` per run),
+  `iceberg-model-run.txt` and `iceberg-model-exit.txt`.
+- **Verdict:** `summary.txt` ends with `VERDICT PASS` only if every requested run ended as expected. A `TIMEOUT`, an `ERROR`, a run that
+  was `NOT-RUN` because the budget was spent, a result other than the expected one, or an unknown run name is a mismatch and gives
+  `VERDICT FAIL` and `exit status: 1`. A PASS here covers only the runs asked for, not the phases of the full check.
+- **Machine:** `n4a-highcpu-16` (16 vCPU, 32 GB; one TLC worker per vCPU, `nproc`). The TLC heap is 62% of the RAM but at least
+  10000 MB: 10000 on the 16 GB `n4a-highcpu-8` (as before) and about 19800 MB on 32 GB. How much faster 16 workers are than 8 has
+  NOT been measured; TLC does not scale linearly. The chain must be this one machine: there is no price in `prices.env` for another
+  16-vCPU type, and the price of `n4a-highcpu-16` is DERIVED (cores x core price + GiB x RAM price), not fetched: recompute it first.
+- **Environment variables** (defaults in brackets; the orchestrator forwards no environment, so put `export NAME=value` lines in
+  `spikes/iceberg-commit/icebergmodel.env` before the run: it is uploaded with the source, ignored by git, and copied into the results):
+
+  | variable | meaning |
+  |---|---|
+  | `IC_MODEL_ONLY` (the 15 runs: `three-store-ser`, `three-rest-snap-i4`, `live-2`, the 11 `canary-*`, `live-3`) | comma-separated run names, done in this order; `python3 spikes/iceberg-commit/model/run_model.py --list` prints all 24; an unknown name is an error |
+  | `IC_TLC_TIMEOUT_BIG` (4500) | seconds for one three-writer run (`three-*` and `live-3`) |
+  | `IC_TLC_TIMEOUT` (2700) | seconds for every other run (as in the full job) |
+  | `IC_MODEL_BUDGET` (9000) | seconds for all runs together; each run is also cut to the time left, so the budget is not overrun by a run's limit; a run that cannot start (under 30 s left) is `NOT-RUN` |
+  | `IC_MODEL_HEAP_MB` (62% of RAM, at least 10000) | TLC heap |
+
+- **Order:** the near-complete `three-store-ser` first, then `three-rest-snap-i4` (expected to end early in a violation of I4), `live-2`,
+  the 11 canaries (each stops at its first violation), and the three-writer liveness run `live-3` last because it is the most
+  expensive unknown. Costs of everything except `three-store-ser` are unknown (see the record); if the budget runs out, the rows at
+  the end say `NOT-RUN`.
+- **Preemption:** `IC_RESUME=1` makes a restarted job skip the runs that already ended as expected (their rows are marked
+  `(resumed)`); the run that was interrupted starts again from its beginning.
+- **Cost** (prices from `prices.env`, `n4a-highcpu-16` Spot $0.1968/h, derived; the `n4a-highcpu-8` run cost $0.224 for 2 h 17 min,
+  i.e. $0.0984/h): the model budget is 9000 s = 2 h 30 min and the VM needs about 2 min more for tools, lint, parse and setup, so
+  a run that uses the whole budget is about 2 h 35 min of VM time = $0.51 for the VM. The proposed cap is **3.0 VM-hours** (about 25
+  minutes of margin): `scripts/gcp/orchestrate.sh plan --job icebergmodel --machines n4a-highcpu-16 --max-vm-hours 3.0` prints a worst case of **$0.646**
+  (VM, external IP, boot and data disk, Hyperdisk allowance). The real cost is the VM time actually used at $0.1968/h plus about
+  $0.02; if every run ends early it is lower. Run it only after the owner's yes:
+
+  ```bash
+  scripts/gcp/orchestrate.sh plan --job icebergmodel --machines n4a-highcpu-16 --max-vm-hours 3.0
+  setsid nohup scripts/gcp/orchestrate.sh run --job icebergmodel --machines n4a-highcpu-16 --max-vm-hours 3.0 --approved-usd 0.65 > run.log 2>&1 < /dev/null &
+  ```
+
+- **Tests** (all local, no GCP, no TLC): `scripts/gcp/test/test-icebergmodel.sh` (the model mode end to end with a fake `java`),
+  `scripts/gcp/test/test-job-chains.sh` (the job selects only its own step) and `spikes/iceberg-commit/model/test_model_tools.py`
+  (`run_model.py`: per-run limits, the budget clamp, TIMEOUT and NOT-RUN as mismatches, unknown names, resume).
+
 ## What has been verified, and what has not
 
 - **Tested locally, with a fake `gcloud` and `ssh`** (`test/test-orchestrate.sh`, 27 checks, nine deliberate
