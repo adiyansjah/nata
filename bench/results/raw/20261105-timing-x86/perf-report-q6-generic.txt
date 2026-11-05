@@ -1,0 +1,6 @@
+    44.06%  spike-generic-o  spike-generic-ops  [.] <spike_generic_ops::engine::FilterDec as spike_generic_ops::engine::Op>::exec
+    28.65%  spike-generic-o  spike-generic-ops  [.] <spike_generic_ops::engine::FilterDate as spike_generic_ops::engine::Op>::exec
+     5.70%  spike-generic-o  spike-generic-ops  [.] <spike_generic_ops::engine::Project as spike_generic_ops::engine::Op>::exec
+     5.30%  spike-generic-o  libc.so.6          [.] 0x000000000016e0ba
+     2.41%  spike-generic-o  spike-generic-ops  [.] <snap::decompress::Decoder>::decompress
+     1.85%  spike-generic-o  [kernel.kallsyms]  [k] do_user_addr_fault

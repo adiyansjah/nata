@@ -1,0 +1,39 @@
+
+==== toolchain ====
+2026-11-05T02:13:59Z
+Linux 6.1.0-54-cloud-amd64 x86_64
+Architecture:                            x86_64
+CPU(s):                                  8
+Model name:                              AMD EPYC 9B14
+Thread(s) per core:                      2
+L2 cache:                                4 MiB (4 instances)
+L3 cache:                                32 MiB (1 instance)
+               total        used        free      shared  buff/cache   available
+Mem:              15           0           9           0           5          15
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+git: unknown
+Cargo.lock sha256: 03d71d26ebdb3a4b70f1498da32623782cd6e686d84ba82b794552d0980716bc
+RUSTFLAGS=<unset>  (default target features: the numbers are for baseline x86-64 / aarch64 code)
+load average (1 min) start: 0.48
+
+==== build (release, locked) ====
+
+==== unit tests (release build, overflow checks on for this crate; ONE test thread so the timing self-test inside is not disturbed) ====
+cargo test exit status: 0
+
+==== harness self-test: an arm with an injected extra cost must be detected as slower by that amount ====
+load average (1 min) before the self-test: 0.49
+self-test exit status: 0
+
+==== benchmark, 10% NULLs, 5 types x 3 selection shapes x 6 selectivities x 3 batch sizes = 270 cells, 25 rounds ====
+load average (1 min) before the benchmark: 0.49
+load average (1 min) after the benchmark: 0.57
+
+==== benchmark, no NULLs, 8192 rows (the NULL-free control), 25 rounds ====
+load average (1 min) after the second benchmark: 0.60
+
+==== done ====
+results in /mnt/work/results/compaction
+load stayed below 2 at every check
+Break-even tables: /mnt/work/results/compaction/compaction.md (section 'Break-even selectivity'); raw numbers: /mnt/work/results/compaction/compaction.csv

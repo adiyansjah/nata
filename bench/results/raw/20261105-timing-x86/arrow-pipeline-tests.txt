@@ -1,0 +1,82 @@
+   Compiling spike-arrow-pipeline v0.0.0 (/mnt/work/src/spikes/arrow-pipeline)
+    Finished `release` profile [optimized + debuginfo] target(s) in 34.62s
+     Running unittests src/lib.rs (target/release/deps/spike_arrow_pipeline-43603e37b50241f8)
+
+running 10 tests
+test genops::kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test genops::kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test genops::kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test genops::kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test genops::kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test genops::kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test genops::kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+test genops::kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test genops::kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test genops::kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/release/deps/spike_arrow_pipeline-020f03b9a7601e33)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/exchange.rs (target/release/deps/exchange-5dfad5cec39ccabb)
+
+running 3 tests
+test compaction_before_the_exchange_applies_the_selection_and_the_computed_columns ... ok
+test early_finish_crosses_the_exchange_and_stops_the_scan ... ok
+test limit_above_an_exchange_is_exact_and_correct_on_random_cases ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s
+
+     Running tests/limit.rs (target/release/deps/limit-3dd61623c2669613)
+
+running 7 tests
+test a_batch_already_admitted_by_the_limit_survives_a_sideways_stop_while_the_sink_is_blocked ... ok
+test a_output_is_exactly_min_k_n_rows_of_the_filtered_result ... ok
+test b_cancel_mid_flight_wakes_parked_tasks_and_terminates ... ok
+test b_early_finish_reaches_the_source_with_a_provable_bound ... ok
+test b_k_zero_and_empty_input_terminate_without_hanging ... ok
+test b_parked_tasks_are_woken_and_finished_by_early_finish ... ok
+test limit_is_exact_under_heavy_contention ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.91s
+
+     Running tests/pipeline.rs (target/release/deps/pipeline-b825c5c981c7d191)
+
+running 6 tests
+test a_blocked_sink_leaves_the_arrow_batch_untouched_and_loses_no_row ... ok
+test an_error_in_one_task_stops_the_other_tasks_and_reports_it ... ok
+test an_overflow_in_a_row_the_filter_removed_is_not_an_error_but_a_selected_one_is ... ok
+test operators_share_the_column_buffers_and_never_copy_data ... ok
+test overflow_checks_are_on_in_this_build ... ok
+test rows_are_not_lost_without_a_limit_across_threads_tasks_and_nulls ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
+     Running tests/queries.rs (target/release/deps/queries-e8c125b0226a3404)
+
+running 4 tests
+test limit_over_the_parquet_scan_stops_reading_row_groups ... ok
+test q1_and_q6_equal_the_generic_ops_engine_at_every_thread_and_task_count ... ok
+test q1_and_q6_survive_blocked_sources_and_slow_stages ... ok
+test q1_and_q6_with_synthetic_nulls_equal_the_scalar_reference ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.28s
+
+     Running tests/stress.rs (target/release/deps/stress-37aeb367aa58e2cd)
+
+running 2 tests
+test limit_queries_terminate_under_cpu_contention_and_injected_delays ... ok
+test many_repetitions_of_the_same_stuck_task_case_with_worker_delay ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.69s
+
+   Doc-tests spike_arrow_pipeline
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,114 @@
+
+==== machine ====
+2026-11-05T02:17:46Z
+Linux 6.1.0-54-cloud-amd64 x86_64
+CPU(s):                                  8
+Model name:                              AMD EPYC 9B14
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+L1d cache:                               128 KiB (4 instances)
+L2 cache:                                4 MiB (4 instances)
+L3 cache:                                32 MiB (1 instance)
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+               total        used        free      shared  buff/cache   available
+Mem:           16001         642        9198           0        6490       15358
+ 02:17:46 up 58 min,  0 user,  load average: 0.43, 1.41, 1.76
+RUSTFLAGS=<empty: baseline target features>
+
+==== build (release, with the examples and the test binaries) ====
+   Compiling spike-push-cost v0.0.0 (/mnt/work/src/spikes/push-cost)
+    Finished `release` profile [optimized + debuginfo] target(s) in 6.89s
+
+==== unit tests (release profile: overflow checks on) ====
+test arms::tests::arm_names_are_distinct ... ok
+test arms::tests::spin_takes_at_least_what_it_was_asked ... ok
+test kernels::tests::compact_applies_the_selection ... ok
+test kernels::tests::fused_loops_equal_reference ... ok
+test kernels::tests::medium_kernel_really_filters_and_cheap_does_not ... ok
+test kernels::tests::stage_chain_equals_reference_on_one_morsel ... ok
+test kernels::tests::the_checksum_notices_a_lost_morsel_a_changed_constant_and_a_swapped_kind ... ok
+test selftest::tests::calibration_reports_at_least_the_requested_spin ... ok
+test selftest::tests::judge_accepts_the_right_size_and_rejects_the_wrong_one ... ok
+test selftest::tests::twin_check_flags_a_difference_between_identical_arms ... ok
+test stats::tests::paired_overhead_is_computed_round_by_round ... ok
+test stats::tests::quartiles_of_known_data ... ok
+test stats::tests::verdict_flags_a_difference_smaller_than_its_spread ... ok
+test sys::tests::foreign_cpu_is_machine_busy_minus_own ... ok
+test sys::tests::proc_stat_lines_parse ... ok
+test sys::tests::quiet_is_refused_under_load_or_foreign_use_or_unknown ... ok
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test branching_topology_every_arm_equals_the_scalar_reference ... ok
+test branching_topology_survives_many_park_and_wake_cycles ... ok
+test interleaving_rotates_the_starting_arm_and_keeps_every_round ... ok
+test linear_chain_every_arm_equals_the_scalar_reference ... ok
+test linear_chain_with_no_input_gives_the_empty_checksum_in_every_arm ... ok
+test options_parse ... ok
+test the_check_fires_for_a_branching_arm_too - should panic ... ok
+test the_check_fires_when_an_arm_returns_a_wrong_checksum - should panic ... ok
+test the_whole_report_path_runs_on_a_smoke_grid ... ok
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.29s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+unit tests passed
+
+==== smoke pass (mechanics only: a tiny grid, 3 rounds, no numbers to keep) ====
+smoke pass ok
+
+==== wait for the machine to be quiet (the build and the tests just ran) ====
+1-minute load average now: 0.83 (settled below 1.0: 1)
+
+==== benchmark: harness self-test, then the grid (25 rounds) ====
+- 1-minute load average at start, before any benchmark thread ran: **0.83**
+**Harness self-test: PASS - the harness measures an injected cost of 100 to 1600 ns per batch correctly**
+load1 0.83 -> 1.00 (includes this benchmark's own 1 threads), other processes used 0.04 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.00 (includes this benchmark's own 4 threads), other processes used 0.20 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.00 (includes this benchmark's own 1 threads), other processes used 0.04 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.00 (includes this benchmark's own 4 threads), other processes used 0.10 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.00 (includes this benchmark's own 1 threads), other processes used 0.12 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.00 (includes this benchmark's own 4 threads), other processes used 0.08 cores, run started at load1 0.83: **quiet**
+load1 1.00 -> 1.24 (includes this benchmark's own 1 threads), other processes used 0.05 cores, run started at load1 0.83: **quiet**
+load1 1.24 -> 1.46 (includes this benchmark's own 4 threads), other processes used 0.09 cores, run started at load1 0.83: **quiet**
+load1 1.46 -> 1.46 (includes this benchmark's own 1 threads), other processes used 0.03 cores, run started at load1 0.83: **quiet**
+load1 1.46 -> 1.46 (includes this benchmark's own 4 threads), other processes used 0.10 cores, run started at load1 0.83: **quiet**
+load1 1.46 -> 1.42 (includes this benchmark's own 1 threads), other processes used 0.01 cores, run started at load1 0.83: **quiet**
+load1 1.42 -> 1.63 (includes this benchmark's own 4 threads), other processes used 0.14 cores, run started at load1 0.83: **quiet**
+load1 1.63 -> 1.50 (includes this benchmark's own 1 threads), other processes used 0.15 cores, run started at load1 0.83: **quiet**
+load1 1.50 -> 1.50 (includes this benchmark's own 4 threads), other processes used 0.12 cores, run started at load1 0.83: **quiet**
+load1 1.50 -> 1.46 (includes this benchmark's own 1 threads), other processes used 0.02 cores, run started at load1 0.83: **quiet**
+load1 1.46 -> 1.46 (includes this benchmark's own 4 threads), other processes used 0.08 cores, run started at load1 0.83: **quiet**
+load1 1.46 -> 1.39 (includes this benchmark's own 1 threads), other processes used 0.03 cores, run started at load1 0.83: **quiet**
+load1 1.39 -> 1.39 (includes this benchmark's own 4 threads), other processes used 0.02 cores, run started at load1 0.83: **quiet**
+load1 1.39 -> 1.33 (includes this benchmark's own 1 threads), other processes used 0.06 cores, run started at load1 0.83: **quiet**
+load1 1.33 -> 1.33 (includes this benchmark's own 4 threads), other processes used 0.14 cores, run started at load1 0.83: **quiet**
+load1 1.33 -> 1.30 (includes this benchmark's own 1 threads), other processes used 0.04 cores, run started at load1 0.83: **quiet**
+load1 1.30 -> 1.52 (includes this benchmark's own 4 threads), other processes used 0.15 cores, run started at load1 0.83: **quiet**
+load1 1.52 -> 1.48 (includes this benchmark's own 1 threads), other processes used 0.11 cores, run started at load1 0.83: **quiet**
+load1 1.48 -> 1.68 (includes this benchmark's own 4 threads), other processes used 0.12 cores, run started at load1 0.83: **quiet**
+load1 1.68 -> 1.42 (includes this benchmark's own 1 threads), other processes used 0.02 cores, run started at load1 0.83: **quiet**
+load1 1.42 -> 1.62 (includes this benchmark's own 4 threads), other processes used 0.05 cores, run started at load1 0.83: **quiet**
+load1 1.62 -> 1.49 (includes this benchmark's own 1 threads), other processes used 0.02 cores, run started at load1 0.83: **quiet**
+load1 1.49 -> 1.61 (includes this benchmark's own 4 threads), other processes used 0.08 cores, run started at load1 0.83: **quiet**
+load1 1.61 -> 1.40 (includes this benchmark's own 1 threads), other processes used 0.01 cores, run started at load1 0.83: **quiet**
+load1 1.40 -> 1.80 (includes this benchmark's own 4 threads), other processes used 0.05 cores, run started at load1 0.83: **quiet**
+load1 1.80 -> 1.53 (includes this benchmark's own 1 threads), other processes used 0.01 cores, run started at load1 0.83: **quiet**
+load1 1.53 -> 1.72 (includes this benchmark's own 4 threads), other processes used 0.06 cores, run started at load1 0.83: **quiet**
+load1 1.72 -> 1.50 (includes this benchmark's own 1 threads), other processes used 0.01 cores, run started at load1 0.83: **quiet**
+load1 1.50 -> 1.70 (includes this benchmark's own 4 threads), other processes used 0.09 cores, run started at load1 0.83: **quiet**
+load1 1.70 -> 1.43 (includes this benchmark's own 1 threads), other processes used 0.02 cores, run started at load1 0.83: **quiet**
+load1 1.43 -> 1.82 (includes this benchmark's own 4 threads), other processes used 0.06 cores, run started at load1 0.83: **quiet**
+load1 1.82 -> 1.68 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 1.68 -> 1.71 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 1.71 -> 1.73 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 1.73 -> 1.75 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 1.75 -> 1.75 (includes this benchmark's own 3 threads), other processes used 0.11 cores, run started at load1 0.83: **quiet**
+load1 1.75 -> 1.85 (includes this benchmark's own 3 threads), other processes used 0.05 cores, run started at load1 0.83: **quiet**
+load1 1.85 -> 2.11 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 2.11 -> 2.17 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 2.17 -> 2.16 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 2.16 -> 2.23 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+load1 2.13 -> 2.13 (includes this benchmark's own 3 threads), other processes used 0.07 cores, run started at load1 0.83: **quiet**
+load1 2.13 -> 2.20 (includes this benchmark's own 3 threads), other processes used 0.03 cores, run started at load1 0.83: **quiet**
+Overhead of each arm against the hand-fused control, median of the paired per-round ratios, in percent. `?` = the interquartile range is wider than the overhead (not a result). `twin` is the control against itself: the noise floor of that cell. Cells not labelled quiet are marked `S` (SANITY ONLY).
+All cells were measured with the run-start load average < 2, no other process using >= 0.5 core, and a validated harness: **quiet**.
+done: /mnt/work/results/push-cost/results.md  /mnt/work/results/push-cost/rounds.csv

@@ -1,0 +1,214 @@
+# push-cost benchmark
+
+- arch `x86_64`, 8 CPUs visible, rounds 3 (after 1 discarded warm-up round), rows per run 2^18 = 262144 (SMOKE RUN: mechanics only, no numbers)
+- 1-minute load average at start, before any benchmark thread ran: **0.83**
+- **SANITY ONLY: smoke run.**
+
+## Fixed cost of one run (zero morsels)
+
+Median of 31 interleaved runs, microseconds. This is included in every timing below.
+
+| threads | control | static | dyn-direct | dyn | static-in-sched |
+|---|---|---|---|---|---|
+| 1 | 42 | 42 | 42 | 56 | 56 |
+| 4 | 103 | 93 | 90 | 137 | 139 |
+
+## Linear chain: control vs static vs dyn
+
+Arms: see `src/arms.rs`. Overhead = (arm - control) / control per round, then median [q1, q3] over the rounds.
+
+### cheap kernel, 1 stage(s), 1024 rows/batch, 1 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 1 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 2765930408686538240 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.497 | 509 | - | - | - |
+| control-twin | 0.498 | 510 | -1.2 [-13.2, -0.3] | -6 [-89, -1] | NOISY (IQR > difference) |
+| static | 0.705 | 722 | +39.5 [+22.8, +47.8] | +200 [+121, +243] | slower |
+| dyn-direct | 0.685 | 701 | +38.5 [+20.6, +43.8] | +195 [+107, +223] | slower |
+| dyn | 0.804 | 824 | +61.8 [+41.3, +62.7] | +315 [+228, +318] | slower |
+| static-in-sched | 0.805 | 824 | +62.6 [+41.8, +64.3] | +317 [+230, +326] | slower |
+
+### cheap kernel, 1 stage(s), 1024 rows/batch, 4 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 4 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 2765930408686538240 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.555 | 2275 | - | - | - |
+| control-twin | 0.552 | 2260 | -0.7 [-7.3, +5.7] | -16 [-175, +125] | NOISY (IQR > difference) |
+| static | 0.630 | 2582 | +13.5 [+9.2, +16.4] | +306 [+212, +367] | slower |
+| dyn-direct | 0.633 | 2591 | +17.6 [+14.6, +56.4] | +387 [+325, +1342] | NOISY (IQR > difference) |
+| dyn | 0.857 | 3509 | +49.5 [+49.3, +51.9] | +1193 [+1138, +1213] | slower |
+| static-in-sched | 0.745 | 3050 | +38.4 [+35.1, +43.2] | +846 [+786, +1001] | slower |
+
+### cheap kernel, 3 stage(s), 1024 rows/batch, 1 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 1 threads), other processes used 1.60 cores, run started at load1 0.83: **SANITY ONLY**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 2765930408689421824 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.531 | 544 | - | - | - |
+| control-twin | 0.541 | 554 | +1.2 [+0.6, +1.6] | +6 [+3, +8] | slower |
+| static | 1.101 | 1127 | +103.0 [+97.7, +107.0] | +549 [+545, +576] | slower |
+| dyn-direct | 1.163 | 1191 | +107.4 [+105.3, +113.1] | +629 [+590, +638] | slower |
+| dyn | 1.330 | 1361 | +148.0 [+140.2, +152.8] | +805 [+790, +823] | slower |
+| static-in-sched | 1.256 | 1286 | +130.6 [+127.1, +133.5] | +725 [+710, +733] | slower |
+
+### cheap kernel, 3 stage(s), 1024 rows/batch, 4 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 4 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 2765930408689421824 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.558 | 2288 | - | - | - |
+| control-twin | 0.567 | 2323 | -5.7 [-6.9, +5.5] | -141 [-163, +100] | NOISY (IQR > difference) |
+| static | 0.681 | 2789 | +14.5 [+13.8, +28.8] | +332 [+328, +604] | NOISY (IQR > difference) |
+| dyn-direct | 0.734 | 3008 | +31.5 [+30.7, +39.0] | +736 [+729, +840] | slower |
+| dyn | 1.009 | 4132 | +80.6 [+68.7, +94.9] | +1845 [+1622, +2030] | slower |
+| static-in-sched | 0.940 | 3850 | +60.4 [+58.3, +64.8] | +1386 [+1306, +1485] | slower |
+
+### medium kernel, 1 stage(s), 1024 rows/batch, 1 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 1 threads), other processes used 0.98 cores, run started at load1 0.83: **SANITY ONLY**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 114346098387023104 count 229376
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 1.299 | 1330 | - | - | - |
+| control-twin | 1.217 | 1246 | -2.2 [-4.5, -2.2] | -28 [-60, -28] | NOISY (IQR > difference) |
+| static | 1.669 | 1709 | +28.5 [+26.6, +33.4] | +379 [+354, +431] | slower |
+| dyn-direct | 1.667 | 1707 | +28.3 [+27.1, +33.3] | +377 [+361, +431] | slower |
+| dyn | 1.806 | 1849 | +39.0 [+38.5, +44.4] | +519 [+513, +574] | slower |
+| static-in-sched | 1.846 | 1890 | +46.2 [+42.3, +47.9] | +615 [+563, +620] | slower |
+
+### medium kernel, 1 stage(s), 1024 rows/batch, 4 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 4 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 114346098387023104 count 229376
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.770 | 3152 | - | - | - |
+| control-twin | 0.740 | 3033 | -2.3 [-3.1, -0.1] | -76 [-98, -8] | NOISY (IQR > difference) |
+| static | 0.832 | 3410 | +9.1 [+6.9, +10.4] | +287 [+219, +317] | slower |
+| dyn-direct | 0.851 | 3487 | +10.6 [+7.5, +18.3] | +335 [+238, +552] | NOISY (IQR > difference) |
+| dyn | 1.115 | 4565 | +44.8 [+42.9, +47.1] | +1413 [+1373, +1439] | slower |
+| static-in-sched | 1.194 | 4890 | +55.2 [+46.2, +75.6] | +1738 [+1422, +2433] | slower |
+
+### medium kernel, 3 stage(s), 1024 rows/batch, 1 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 1 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 13257921551499360000 count 163840
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 2.151 | 2202 | - | - | - |
+| control-twin | 2.150 | 2202 | -0.0 [-0.4, +0.1] | -1 [-9, +3] | NOISY (IQR > difference) |
+| static | 4.116 | 4214 | +91.5 [+91.1, +92.2] | +2014 [+2005, +2030] | slower |
+| dyn-direct | 4.131 | 4230 | +92.2 [+92.0, +99.2] | +2030 [+2026, +2184] | slower |
+| dyn | 4.434 | 4540 | +106.2 [+104.4, +107.6] | +2338 [+2297, +2370] | slower |
+| static-in-sched | 4.336 | 4440 | +101.8 [+101.6, +107.2] | +2239 [+2236, +2359] | slower |
+
+### medium kernel, 3 stage(s), 1024 rows/batch, 4 thread(s)
+
+load1 0.83 -> 0.83 (includes this benchmark's own 4 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all 6 arms identical, equal to the scalar reference): sum 13257921551499360000 count 163840
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| control (control) | 0.928 | 3799 | - | - | - |
+| control-twin | 0.955 | 3913 | +3.0 [-4.1, +11.4] | +114 [-187, +392] | NOISY (IQR > difference) |
+| static | 1.536 | 6290 | +65.9 [+65.7, +66.9] | +2491 [+2400, +2692] | slower |
+| dyn-direct | 1.496 | 6128 | +48.4 [+46.3, +64.5] | +1941 [+1890, +2338] | slower |
+| dyn | 2.046 | 8379 | +114.4 [+103.9, +117.5] | +4105 [+3994, +4342] | slower |
+| static-in-sched | 1.891 | 7746 | +100.6 [+89.6, +114.4] | +3822 [+3640, +4087] | slower |
+
+## Branching: 1 producer -> exchange -> 2 consumers, on 3 threads
+
+`hand` = 3 OS threads and a Mutex/Condvar bounded queue calling the same kernels; `proto` = the real scheduler and exchange of spikes/operator-trait. Control = `hand`.
+
+### branching, cheap kernel, 1024 rows/batch, exchange capacity 1
+
+load1 0.83 -> 0.83 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all arms identical, equal to the scalar reference of a 3-stage chain): sum 2765930408689421824 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| hand (control) | 12.894 | 39611 | - | - | - |
+| hand-twin | 12.720 | 39075 | -0.2 [-0.9, +1.6] | -78 [-354, +643] | NOISY (IQR > difference) |
+| proto | 4.359 | 13390 | -66.1 [-66.5, -65.9] | -26525 [-26534, -26144] | faster |
+
+### branching, cheap kernel, 1024 rows/batch, exchange capacity 4
+
+load1 0.83 -> 0.83 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all arms identical, equal to the scalar reference of a 3-stage chain): sum 2765930408689421824 count 262144
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| hand (control) | 3.666 | 11263 | - | - | - |
+| hand-twin | 3.684 | 11316 | +0.5 [-0.5, +1.1] | +52 [-59, +126] | NOISY (IQR > difference) |
+| proto | 4.123 | 12666 | +11.9 [+11.3, +14.0] | +1339 [+1287, +1550] | slower |
+
+### branching, medium kernel, 1024 rows/batch, exchange capacity 1
+
+load1 0.83 -> 0.83 (includes this benchmark's own 3 threads), other processes used 0.00 cores, run started at load1 0.83: **quiet**
+
+checksum (all arms identical, equal to the scalar reference of a 3-stage chain): sum 13257921551499360000 count 163840
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| hand (control) | 7.074 | 21731 | - | - | - |
+| hand-twin | 7.374 | 22653 | +2.7 [-1.5, +9.7] | +604 [-305, +1934] | NOISY (IQR > difference) |
+| proto | 6.226 | 19127 | -8.4 [-12.5, -4.9] | -1822 [-2794, -1043] | faster |
+
+### branching, medium kernel, 1024 rows/batch, exchange capacity 4
+
+load1 0.83 -> 0.83 (includes this benchmark's own 3 threads), other processes used 1.20 cores, run started at load1 0.83: **SANITY ONLY**
+
+checksum (all arms identical, equal to the scalar reference of a 3-stage chain): sum 13257921551499360000 count 163840
+
+| arm | ns/row (median) | ns/batch/worker (median) | overhead % vs control: median [q1, q3] | difference ns/batch/worker: median [q1, q3] | verdict |
+|---|---|---|---|---|---|
+| hand (control) | 4.898 | 15048 | - | - | - |
+| hand-twin | 4.842 | 14874 | -1.2 [-4.2, +3.7] | -174 [-643, +536] | NOISY (IQR > difference) |
+| proto | 5.940 | 18247 | +20.7 [+19.4, +30.9] | +3116 [+2953, +4571] | slower |
+
+## Summary
+
+Overhead of each arm against the hand-fused control, median of the paired per-round ratios, in percent. `?` = the interquartile range is wider than the overhead (not a result). `twin` is the control against itself: the noise floor of that cell. Cells not labelled quiet are marked `S` (SANITY ONLY).
+
+| cell | control ns/row | static | dyn-direct | dyn | static-in-sched | twin | quiet |
+|---|---|---|---|---|---|---|---|
+| cheap L1 B1024 T1 | 0.497 | +39.5 | +38.5 | +61.8 | +62.6 | -1.2 ? | S |
+| cheap L1 B1024 T4 | 0.555 | +13.5 | +17.6 ? | +49.5 | +38.4 | -0.7 ? | S |
+| cheap L3 B1024 T1 | 0.531 | +103.0 | +107.4 | +148.0 | +130.6 | +1.2 | S |
+| cheap L3 B1024 T4 | 0.558 | +14.5 ? | +31.5 | +80.6 | +60.4 | -5.7 ? | S |
+| medium L1 B1024 T1 | 1.299 | +28.5 | +28.3 | +39.0 | +46.2 | -2.2 ? | S |
+| medium L1 B1024 T4 | 0.770 | +9.1 | +10.6 ? | +44.8 | +55.2 | -2.3 ? | S |
+| medium L3 B1024 T1 | 2.151 | +91.5 | +92.2 | +106.2 | +101.8 | -0.0 ? | S |
+| medium L3 B1024 T4 | 0.928 | +65.9 | +48.4 | +114.4 | +100.6 | +3.0 ? | S |
+
+| branching cell | hand ns/row | proto overhead % | twin | quiet |
+|---|---|---|---|---|
+| cheap B1024 cap1 | 12.894 | -66.1 | -0.2 ? | S |
+| cheap B1024 cap4 | 3.666 | +11.9 | +0.5 ? | S |
+| medium B1024 cap1 | 7.074 | -8.4 | +2.7 ? | S |
+| medium B1024 cap4 | 4.898 | +20.7 | -1.2 ? | S |
+
+**SANITY ONLY: 12 cell(s) are not quiet (load, other processes, too few CPUs, smoke run or unvalidated harness).**

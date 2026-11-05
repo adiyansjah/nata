@@ -1,0 +1,29 @@
+agg_orderkey: 1493405 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  agg_orderkey  threads=1  (1493405 rows, sha256 e3b9514312e1)
+identical  agg_orderkey  threads=4  (1493405 rows, sha256 e3b9514312e1)
+identical  agg_orderkey  threads=8  (1493405 rows, sha256 e3b9514312e1)
+agg_partkey: 200000 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  agg_partkey  threads=1  (200000 rows, sha256 64cb6371ea2f)
+identical  agg_partkey  threads=4  (200000 rows, sha256 64cb6371ea2f)
+identical  agg_partkey  threads=8  (200000 rows, sha256 64cb6371ea2f)
+agg_modedate: 17677 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  agg_modedate  threads=1  (17677 rows, sha256 9c46d79a1f3e)
+identical  agg_modedate  threads=4  (17677 rows, sha256 9c46d79a1f3e)
+identical  agg_modedate  threads=8  (17677 rows, sha256 9c46d79a1f3e)
+agg_comment: 1482071 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  agg_comment  threads=1  (1482071 rows, sha256 8ea69d2b4ba3)
+identical  agg_comment  threads=4  (1482071 rows, sha256 8ea69d2b4ba3)
+identical  agg_comment  threads=8  (1482071 rows, sha256 8ea69d2b4ba3)
+q3: 11620 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  q3  threads=1  (11620 rows, sha256 eaf42bb16276)
+identical  q3  threads=4  (11620 rows, sha256 eaf42bb16276)
+identical  q3  threads=8  (11620 rows, sha256 eaf42bb16276)
+q12: 2 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  q12  threads=1  (2 rows, sha256 01fd331449d5)
+identical  q12  threads=4  (2 rows, sha256 01fd331449d5)
+identical  q12  threads=8  (2 rows, sha256 01fd331449d5)
+j3: 35 groups; identical at 1, 4, 8 threads and to the fused baseline
+identical  j3  threads=1  (35 rows, sha256 1fc78a4153fc)
+identical  j3  threads=4  (35 rows, sha256 1fc78a4153fc)
+identical  j3  threads=8  (35 rows, sha256 1fc78a4153fc)
+ALL 7 QUERIES IDENTICAL at 1, 4 and 8 threads

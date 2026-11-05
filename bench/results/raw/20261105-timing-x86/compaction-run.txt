@@ -1,0 +1,94 @@
+
+==== toolchain ====
+2026-11-05T02:13:59Z
+Linux 6.1.0-54-cloud-amd64 x86_64
+Architecture:                            x86_64
+CPU(s):                                  8
+Model name:                              AMD EPYC 9B14
+Thread(s) per core:                      2
+L2 cache:                                4 MiB (4 instances)
+L3 cache:                                32 MiB (1 instance)
+               total        used        free      shared  buff/cache   available
+Mem:              15           0           9           0           5          15
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+git: unknown
+Cargo.lock sha256: 03d71d26ebdb3a4b70f1498da32623782cd6e686d84ba82b794552d0980716bc
+RUSTFLAGS=<unset>  (default target features: the numbers are for baseline x86-64 / aarch64 code)
+load average (1 min) start: 0.48
+
+==== build (release, locked) ====
+   Compiling spike-compaction v0.0.0 (/mnt/work/src/spikes/compaction)
+    Finished `release` profile [optimized + debuginfo] target(s) in 12.59s
+  Executable unittests src/lib.rs (target/release/deps/compaction-589f6878caabc33c)
+  Executable unittests src/main.rs (target/release/deps/compaction_bench-66771c250980991c)
+  Executable tests/arms_agree.rs (target/release/deps/arms_agree-849a8fcec0f5acc4)
+
+==== unit tests (release build, overflow checks on for this crate; ONE test thread so the timing self-test inside is not disturbed) ====
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test a_cell_with_a_wrong_arm_is_refused ... ok
+test a_tiny_grid_runs_end_to_end_and_the_report_has_the_tables ... ok
+test all_arms_agree_for_every_type_shape_selectivity_and_null_density ... ok
+test an_empty_selection_gives_empty_results_in_every_arm ... ok
+test awkward_selections_first_last_word_boundaries_all_and_one ... ok
+test break_even_interpolates_and_reports_never ... ok
+test compaction_keeps_exactly_the_selected_rows_with_their_values_and_nulls ... ok
+test every_arm_checksum_depends_on_the_data ... ok
+test every_kernel_mutant_is_detected_by_the_agreement_check ... ok
+test nulls_are_under_the_selection_and_their_slots_hold_garbage ... ok
+test the_harness_detects_an_injected_cost_by_the_expected_amount ... ok
+test the_harness_interleaves_pairs_rounds_and_reports_reps ... ok
+test the_selection_shapes_are_what_they_say ... ok
+test the_verdict_needs_three_quarters_of_the_rounds ... ok
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+cargo test exit status: 0
+
+==== harness self-test: an arm with an injected extra cost must be detected as slower by that amount ====
+load average (1 min) before the self-test: 0.49
+## Harness self-test (Int64, 8192 rows, 10% random idx, 10% NULLs; arm A = 813 ns per call; 41 rounds; load 0.49 -> 0.49)
+
+An arm with a known extra cost injected per call must be detected as slower by that amount; an identical twin must come out the same.
+
+| arm | injected ns/call | measured difference to A (paired median) | tolerance | verdict | expected | ok |
+|---|---:|---:|---:|---|---|---|
+| A-twin | 0 | -1 | +-64 | same | same | yes |
+| A+1000ns | 1000 | 1032 | +-160 | slower | slower | yes |
+| A+5000ns | 5000 | 5066 | +-560 | slower | slower | yes |
+| A+20000ns | 20000 | 20078 | +-2060 | slower | slower | yes |
+
+SELF-TEST PASSED
+self-test exit status: 0
+
+==== benchmark, 10% NULLs, 5 types x 3 selection shapes x 6 selectivities x 3 batch sizes = 270 cells, 25 rounds ====
+load average (1 min) before the benchmark: 0.49
+[18/270] int64 n=1024 nulls=10% done, load1 0.49
+[36/270] int64 n=8192 nulls=10% done, load1 0.49
+[54/270] int64 n=65536 nulls=10% done, load1 0.49
+[72/270] dec64 n=1024 nulls=10% done, load1 0.49
+[90/270] dec64 n=8192 nulls=10% done, load1 0.53
+[108/270] dec64 n=65536 nulls=10% done, load1 0.53
+[126/270] dec128 n=1024 nulls=10% done, load1 0.53
+[144/270] dec128 n=8192 nulls=10% done, load1 0.53
+[162/270] dec128 n=65536 nulls=10% done, load1 0.53
+[180/270] utf8 n=1024 nulls=10% done, load1 0.53
+[198/270] utf8 n=8192 nulls=10% done, load1 0.53
+[216/270] utf8 n=65536 nulls=10% done, load1 0.57
+[234/270] dict n=1024 nulls=10% done, load1 0.57
+[252/270] dict n=8192 nulls=10% done, load1 0.57
+[270/270] dict n=65536 nulls=10% done, load1 0.57
+load average (1 min) after the benchmark: 0.57
+
+==== benchmark, no NULLs, 8192 rows (the NULL-free control), 25 rounds ====
+[18/90] int64 n=8192 nulls=0% done, load1 0.57
+[36/90] dec64 n=8192 nulls=0% done, load1 0.60
+[54/90] dec128 n=8192 nulls=0% done, load1 0.60
+[72/90] utf8 n=8192 nulls=0% done, load1 0.60
+[90/90] dict n=8192 nulls=0% done, load1 0.60
+load average (1 min) after the second benchmark: 0.60
+
+==== done ====
+results in /mnt/work/results/compaction
+load stayed below 2 at every check
+Break-even tables: /mnt/work/results/compaction/compaction.md (section 'Break-even selectivity'); raw numbers: /mnt/work/results/compaction/compaction.csv
