@@ -1,10 +1,6 @@
 # The Iceberg commit under concurrent writers, retries and crashes (verification-plan item 24, gate)
 
-Status: **built, parse-checked and compile-checked only. Nothing has been run**: not the model checker, not the Rust tests,
-not the catalog. On the shared dev box only `cargo check --tests --bins` and a SANY parse of the spec were allowed, and every
-run goes to GCP by the owner's decision. **GCP results: to be filled.** Every statement below about how the model or the
-spike behaves is therefore *reasoned* (the traces in "Mutants" were walked by hand), not measured. The facts about Iceberg,
-the REST API and object stores are from primary sources read on 2026-11-04 (section 1).
+Status: **first GCP run done on 2026-11-05 (section 8): the verdict is FAIL, and not because the model checker found a violation.** The phase `model-full` used up its 7,200 s budget: one configuration timed out (`three-store-ser`, no result) and 14 were never started (`three-rest-snap-i4`, `live-2`, `live-3` and the 11 canaries), so **15 of the 24 model runs have no result**. What did run passed: the seven smaller model configurations, `three-rest-ser` and `three-rest-snap` (no invariant violated), 9 of 9 mutants caught, and the commit spike against the Apache REST reference fixture 1.12.0 and against the object-store mode (every check as expected). The pyiceberg interop phase was skipped. Sections 1-7 below were written before the run; where they say "to be filled" or "nothing has been run", section 8 is the current state. The facts about Iceberg, the REST API and object stores are from primary sources read on 2026-11-04 (section 1).
 
 Code: `spikes/iceberg-commit/` (throwaway, own Cargo workspace; delete once the table-format ADR is accepted, keep this file).
 Entry point on a clean Debian VM: `spikes/iceberg-commit/gcp-check.sh <results-dir>`.
@@ -87,7 +83,7 @@ Not modelled: equality deletes, deletion vectors (so also none of v3's conflict 
 
 The canaries are state predicates that are *meant* to fail, each proving a situation is reachable (no vacuous pass): an unknown outcome, a conflict, a committed retry, a committed compaction and delete, a validation abort, a writer that crashed after its commit landed, an old attempt's request landing after a newer attempt started, a duplicate delivery, an orphan that was collected, a pinned reader.
 
-**State counts and diameters: to be filled** from `model/model-summary.txt` of the GCP run (`generated`, `distinct`, `depth` per configuration). Nothing is known about them yet; if a configuration hits the per-run limit (`IC_TLC_TIMEOUT`, default 45 min) it reports TIMEOUT, which is a failure, and the bound must then be reduced.
+**State counts and diameters:** section 8 (first run: 755 to 129,194,672 distinct states; `three-store-ser` hit the 45-minute limit before it finished).
 
 ### Mutants (`model/mutate_model.py`)
 
@@ -107,7 +103,7 @@ Each mutant is a one-line text edit of a definition marked `MUTATION POINT`, app
 
 The "reuse a sequence number" mutant is caught because the model's catalog is a pure compare-and-swap (F10); the reference server's additional sequence-number check (F7) would also reject it, which the model deliberately does not include.
 
-**Results: CAUGHT / SURVIVED / INVALID per mutant: to be filled.**
+**Results:** section 8 (9 of 9 caught).
 
 ### Checks of the harness itself (written; only the dry run was executed locally)
 
@@ -178,7 +174,7 @@ scripts/gcp/orchestrate.sh run  --job iceberg --machines n4a-highcpu-8 --max-vm-
 
 If the unmutated model hits the per-run time limit, reduce `MaxAttempts` or the budgets in `model/cfg/*.cfg` and say so in the results.
 
-## 5. GCP results: to be filled
+## 5. GCP results: to be filled (superseded by section 8, which holds the first run)
 
 | Item | Result |
 |---|---|
@@ -216,3 +212,101 @@ Scope decisions the owner may want to revisit: equality deletes and v3 deletion 
 3. **Which catalog to certify against.** The Apache fixture is the reference, not a product. Once the project picks a catalog (Polaris, Lakekeeper, Nessie, a cloud one), the suite should be re-run against it; that needs its setup (credentials, warehouse) and possibly cost.
 4. **How far to go on the object-store mode.** Local `Create` is faithful for one operation; a run against real S3/GCS/Azure (and `PutMode::Update` for a pointer file) costs money and needs credentials.
 5. **v3 scope.** If Nata targets v3 tables, position delete files are not allowed; deletion vectors and their conflict rule (at most one DV per data file, merge on conflict) need a model extension and writer support. Say whether v3 is in scope for the first slice.
+
+## 8. GCP run `iceberg-full-arm64`, 2026-11-05: verdict FAIL (the model phase ran out of time); nothing here is a pass
+
+**Run.** Job `iceberg` (the whole `spikes/iceberg-commit/gcp-check.sh`), one `n4a-highcpu-8` Spot VM (Neoverse-N3, 8 vCPU, 16 GB, Debian 12 ARM64, kernel 6.1.0-54-cloud-arm64, `rustc` 1.99.1), 2026-11-05 (the job ran 00:49:45 to 03:05:17 UTC; the orchestrator finished at 03:05:53). The run's own report: finished, 1 incarnation, 0 preemptions, 4 steps completed, **8,197 s of VM time counted, no resources left after cleanup, estimated cost $0.224** (last machine rate $0.0984/h x counted seconds, so VM time only; the 20 GB boot disk, 30 GB data disk and external IP are not in that figure). Tools: Temurin JDK 17.0.21+9, TLC 2.19 (tla2tools v1.7.4), Apache Iceberg REST fixture 1.12.0 built from the source release (jar sha256 `e92cfdba…0277e6`, Gradle `BUILD SUCCESSFUL in 2m 51s`). The model files on the VM are the ones in the repository today (`IcebergCommit.tla` sha256 `365cab76…8763`, `MC.tla` `a15593ad…e827f9`, `Cargo.lock` `639035e5…ac4bc`); the VM recorded `git: unknown` because the source is uploaded as a tarball. Raw outputs: `bench/results/raw/20261105-iceberg-full-arm64/` (about 280 KB). **The logs there are truncated**: `model-lint.txt`, `rust-build.txt` and every `mutants/*.tlc.txt` keep only their last 50 lines (a first line says so), the TLC progress logs of the model runs are whole (they are small), and the 7.3 MB REST-fixture request log and the journal archives are not copied (`README.txt` in that directory lists what was left out).
+
+**Verdict line:** `VERDICT FAIL (1 gating phase(s) failed ...)`; `iceberg-commit-exit.txt` holds `exit status: 1`.
+
+### Phases
+
+| Phase | Result | Seconds | Gating |
+|---|---|---|---|
+| tools | PASS | 4 | yes |
+| model-lint | PASS | 0 | yes |
+| model-parse-and-edits | PASS | 5 | yes |
+| model-smoke | PASS | 6 | yes |
+| rust-build | PASS | 14 | yes |
+| rust-tests | PASS | 10 | yes |
+| catalog-build | PASS | 175 | yes |
+| catalog-start | PASS | 2 | yes |
+| spike-rest-catalog | PASS | 20 | yes |
+| interop-pyiceberg | **SKIPPED** (exit 77) | 13 | no |
+| spike-object-store | PASS | 6 | yes |
+| model-full | **FAIL** (exit 1) | 7,864 | yes |
+| model-mutants | PASS | 12 | yes |
+
+### The unmutated model (`model-full`, TLC with 8 workers, 10,000 MB heap, 2,700 s per run, 7,200 s for the whole phase)
+
+`model-summary.txt` ends `TOTAL mismatches=15`: 1 TIMEOUT and 14 NOT-RUN. In the table below "result" is what happened; for the rows marked "not run" nothing was checked.
+
+| Run | Expected | Result | Generated | Distinct | Depth | Seconds |
+|---|---|---|---|---|---|---|
+| smoke-rest | PASS | PASS | 1,782 | 755 | 18 | 1 |
+| appends2-rest | PASS | PASS | 1,225,228 | 290,636 | 35 | 5 |
+| appends2-store | PASS | PASS | 1,225,228 | 290,636 | 35 | 5 |
+| ad-rest-ser | PASS | PASS | 1,165,651 | 280,106 | 35 | 5 |
+| ad-store-ser | PASS | PASS | 1,165,651 | 280,106 | 35 | 6 |
+| dc-rest | PASS | PASS | 1,106,074 | 269,576 | 35 | 5 |
+| dc-store | PASS | PASS | 1,106,074 | 269,576 | 35 | 5 |
+| three-rest-ser | PASS | **PASS** | 683,202,106 | 116,840,733 | 52 | 2,481 |
+| three-store-ser | PASS | **TIMEOUT, no result after 2,700 s** | - | - | - | 2,700 |
+| three-rest-snap | PASS (all but I4) | **PASS** | 756,039,330 | 129,194,672 | 52 | 2,650 |
+| three-rest-snap-i4 | VIOLATED:I4_NoPhantom | not run (budget spent) | - | - | - | - |
+| live-2 | PASS | not run (budget spent) | - | - | - | - |
+| live-3 | PASS | not run (budget spent) | - | - | - | - |
+| 11 canaries (`canary-Unknown`, `-Conflict`, `-RetryCommitted`, `-CompactCommitted`, `-DeleteCommitted`, `-ValidationAbort`, `-CrashedButCommitted`, `-LateOldAttempt`, `-DuplicateDelivered`, `-OrphanCollected`, `-ReaderPinned`) | each VIOLATED:Canary_* (a canary is a deliberately failing check; VIOLATED is its EXPECTED outcome, not a finding) | not run (budget spent) | - | - | - | - |
+
+In every pair of REST and STORE configurations that finished, the state counts are identical to the last digit (the three pairs above).
+
+**Why the phase ran out.** The phase budget (7,200 s) is checked only before a run starts. After the seven small runs (32 s), `three-rest-ser` (2,481 s) and the timed-out `three-store-ser` (2,700 s) the clock stood at 5,213 s, so `three-rest-snap` started; it finished at 2,650 s and the clock stood at 7,863 s (the phase took 7,864 s), after which 14 runs were refused. The 8-vCPU machine, not a violation, set the limit.
+
+**`three-store-ser` was close to done (an inference, not a result).** Its last progress line (02:19:59, 2,644 s after it started) reads 661,016,772 states generated, 113,880,982 distinct, 3,146,046 left on the queue, depth 45. `three-rest-ser` showed 663,593,191 generated, 114,238,285 distinct, 2,856,061 on the queue, depth 46 at 2,400 s, and finished with 683,202,106 generated 76 s later. If the STORE configuration has the same state space as the REST one (true in all three pairs that finished, but not shown here), `three-store-ser` needed a few more minutes; it ran about 10% slower than `three-rest-ser` at the same state count. **No invariant violation was seen in its log, and nothing was concluded about it.**
+
+**What `three-rest-ser` and `three-rest-snap` show.** For the bounded model (up to 3 writers each doing one operation: an append, a delete-where and a compaction; at most 2 attempts per writer; budgets of one crash, one duplicate delivery and one lost request; one pinned reader), TLC explored the whole reachable state graph and no invariant I1-I3, I5-I7 was violated under serializable isolation (`three-rest-ser`, which also checks I4) and under snapshot isolation (`three-rest-snap`, which does not check I4). TLC's own estimate of the chance that a fingerprint collision hid a state is printed in the logs: 0.0036 (optimistic) and 0.0043 (from the actual fingerprints) for `three-rest-ser`; 0.0044 and 2.1E-4 for `three-rest-snap`. These are small, not zero.
+
+### Mutants (`model-mutants`, 12 s)
+
+The baseline (unmutated copy) passed on `smoke-rest` (755 distinct states). **9 of 9 mutants CAUGHT, 0 SURVIVED, 0 INVALID** (the 7 required ones and the 2 extra ones):
+
+| Mutant | Caught by | Configuration | Distinct states | Seconds |
+|---|---|---|---|---|
+| no-cas | I6_SeqIncreases | appends2-rest | 343 | 1 |
+| skip-validation | I2_NoLostUpdate | dc-rest | 21,433 | 2 |
+| blind-retry-after-unknown | I5_AtMostOnce | smoke-rest | 665 | 1 |
+| commit-before-durable | I1_FilesExist | smoke-rest | 73 | 1 |
+| reuse-sequence-number | I6_SeqIncreases | smoke-rest | 48 | 1 |
+| compaction-deletes-live-files | I1_FilesExist | dc-rest | 461 | 1 |
+| accept-stale-base-on-retry | I2_NoLostUpdate | appends2-rest | 18,623 | 2 |
+| gc-ignores-active-writers | I1_FilesExist | smoke-rest | 114 | 1 |
+| gc-ignores-inflight-requests | I1_FilesExist | smoke-rest | 185 | 1 |
+
+Every mutant was caught on the first configuration in its list (section 2). The section 2 prediction (the invariant I expected from a hand trace) held for 8 of 9; for `no-cas` I predicted I2 (also I6, I7) and TLC reported I6 first, which is consistent with "also I6" but is not I2. TLC reports one violated invariant per mutant, so for `skip-validation` the I4 violation I predicted for the delete-misses-an-insert case was not exercised. The mutants were run only on small configurations; none was run against a `three-*` configuration.
+
+### The commit spike against the Apache REST reference fixture (`spike-rest-catalog`, 20 s)
+
+Fixture 1.12.0 started on port 8181 (`catalog-start.txt` lists the endpoints it advertises). `SUMMARY backend=rest forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0`, `SUITE PASS`:
+
+- 18 forced interleavings (lost update, unknown outcome, lost request, duplicate request, delete-then-compact, compact-then-delete, phantom under serializable and under snapshot isolation, append-then-compact, unknown-then-conflict): the correct writer passes every scenario; the five known-bad writer/scenario pairs are flagged with the expected invariant: `bad-no-cas` I2, `bad-blind-retry` I5, `bad-skip-validation` I2 (delete-then-compact), I2+I4 (compact-then-delete) and I4 (phantom, serializable). Under snapshot isolation `bad-skip-validation` is expected to pass and does.
+- 12 crash points (a writer dies after plan, files, list and commit, for each of append, delete and compact): all pass, each leaving 5-8 orphan files, which the checker treats as expected.
+- 6 stress runs with writer processes, lost responses and requests, duplicates, crash points and one SIGKILL each (seeds 1-6, 4/8/16 writers, 3 operations each): all pass; 7 to 26 snapshots checked per run, 8 to 27 metadata versions, 11 to 47 journalled operations, 30 to 266 orphan files.
+- Stress with the known-bad writers (informational, not a gate): `bad-no-cas` flagged in 3 of 3 runs, `bad-skip-validation` 3 of 3, **`bad-blind-retry` 0 of 3**. A stress run only exposes a blind retry if a race happens to occur; the forced scenario is what detects it.
+
+### The object-store mode (`spike-object-store`, 6 s)
+
+Conditional create on a local file system (`PutMode::Create`, an atomic hard link). `SUMMARY backend=store forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0`, `SUITE PASS`; the same five detections, stress seeds 1-6 all pass (10 to 24 snapshots checked, 11 to 25 metadata versions, 13 to 47 journalled operations, 18 to 207 orphan files); the known-bad writers in stress: `bad-no-cas` 3 of 3, `bad-skip-validation` 3 of 3, `bad-blind-retry` 0 of 3. The Rust tests (`rust-tests`): 8 unit tests and 4 scenario tests (the checker detects tampering; the mock REST catalog and the store mode with forced scenarios and the crash matrix; stress with writer processes) all pass.
+
+### The skipped phase
+
+`interop-pyiceberg` (not gating) exited 77 after 13 s with `pyiceberg could not load the table: ModuleNotFoundError('Could not load a FileIO, please consider installing one: pip3 install "pyiceberg[pyarrow]" ...')`. The VM had been set up before the commit that installs `pyiceberg[pyarrow]` instead of `pyiceberg` (that fix is in the repository now). **No independent reader has yet read the manifests our writers produce.**
+
+### What this does not show
+
+- **No model result for `three-store-ser`** (timeout), for **`three-rest-snap-i4`** (that I4 can fail under snapshot isolation, which shows I4 is a live check), for **liveness** (`live-2`, `live-3`: termination and progress have not been checked at all) or for **any of the 11 canaries** (so at three writers it is not shown that an unknown outcome, a conflict, a committed retry, a validation abort, a duplicate delivery, a collected orphan or a pinned reader are reachable; a configuration that cannot reach them would pass vacuously). The mutants, caught on small configurations, show some of these situations are reachable there (unknown outcome with retry, compaction, garbage collection), not all.
+- The passes are for a bounded model: at most 3 writers with one operation each, 2 attempts, budgets of one crash, one duplicate delivery and one lost request, one pinned reader, one table. A larger bound, a second operation per writer, or equality deletes and v3 deletion vectors (not modelled) could behave differently. TLC's fingerprint-collision estimate is small but not zero (above).
+- The model is not tied to the code by a refinement check: the model passing and the spike passing are two separate facts about two descriptions of the protocol.
+- The spike ran against one catalog, the Apache reference fixture 1.12.0 (a test fixture, JDBC/SQLite backed), not against any product (Polaris, Lakekeeper, Nessie, a cloud catalog), and the object-store mode used a local file system's atomic create, not S3, GCS or Azure over a network (no 409/404 races, no listing behaviour, no latency). Only ARM64 ran; x86-64 did not.
+- The stress runs are six seeds of at most 16 writers with three operations each, one SIGKILL; `bad-blind-retry` is not found by stress (0 of 3), only by its forced scenario.
+- Independent interop (pyiceberg reading our manifests) did not run.
+- The cost $0.224 is VM time only.

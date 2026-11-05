@@ -1,0 +1,27 @@
+[00:49:45] phase tools: start
+PHASE tools PASS (exit 0, 4s, gating=yes)
+[00:49:49] phase model-lint: start
+PHASE model-lint PASS (exit 0, 0s, gating=yes)
+[00:49:49] phase model-parse-and-edits: start
+PHASE model-parse-and-edits PASS (exit 0, 5s, gating=yes)
+[00:49:54] phase model-smoke: start
+PHASE model-smoke PASS (exit 0, 6s, gating=yes)
+[00:50:00] phase rust-build: start
+PHASE rust-build PASS (exit 0, 14s, gating=yes)
+[00:50:14] phase rust-tests: start
+PHASE rust-tests PASS (exit 0, 10s, gating=yes)
+[00:50:24] phase catalog-build: start
+PHASE catalog-build PASS (exit 0, 175s, gating=yes)
+[00:53:19] phase catalog-start: start
+PHASE catalog-start PASS (exit 0, 2s, gating=yes)
+[00:53:21] phase spike-rest-catalog: start
+PHASE spike-rest-catalog PASS (exit 0, 20s, gating=yes)
+[00:53:41] phase interop-pyiceberg: start
+PHASE interop-pyiceberg SKIPPED (exit 77, 13s, gating=no)
+[00:53:55] phase spike-object-store: start
+PHASE spike-object-store PASS (exit 0, 6s, gating=yes)
+[00:54:01] phase model-full: start
+PHASE model-full FAIL (exit 1, 7864s, gating=yes)
+[03:05:05] phase model-mutants: start
+PHASE model-mutants PASS (exit 0, 12s, gating=yes)
+VERDICT FAIL (1 gating phase(s) failed; see the PHASE lines above and the per-phase files in /mnt/work/results/iceberg-commit)

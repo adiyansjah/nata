@@ -1,0 +1,14 @@
+BASELINE PASS smoke-rest states=755 secs=1 
+
+mutant                             result    violated invariant / reason                                  config             distinct   secs
+no-cas                             CAUGHT    I6_SeqIncreases                                              appends2-rest           343      1
+skip-validation                    CAUGHT    I2_NoLostUpdate                                              dc-rest               21433      2
+blind-retry-after-unknown          CAUGHT    I5_AtMostOnce                                                smoke-rest              665      1
+commit-before-durable              CAUGHT    I1_FilesExist                                                smoke-rest               73      1
+reuse-sequence-number              CAUGHT    I6_SeqIncreases                                              smoke-rest               48      1
+compaction-deletes-live-files      CAUGHT    I1_FilesExist                                                dc-rest                 461      1
+accept-stale-base-on-retry         CAUGHT    I2_NoLostUpdate                                              appends2-rest         18623      2
+gc-ignores-active-writers          CAUGHT    I1_FilesExist                                                smoke-rest              114      1
+gc-ignores-inflight-requests       CAUGHT    I1_FilesExist                                                smoke-rest              185      1
+
+SUMMARY CAUGHT=9 SURVIVED=0 INVALID=0 DRY-OK=0 of 9 (required mutants: 7)

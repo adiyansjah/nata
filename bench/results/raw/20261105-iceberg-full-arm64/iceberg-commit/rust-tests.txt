@@ -1,0 +1,19 @@
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test corrupt_files_are_rejected ... ok
+test prng_is_deterministic_and_snapshot_ids_are_positive ... ok
+test fault_plan_parses_and_rejects_garbage ... ok
+test header_carries_schema_with_field_ids_and_metadata ... ok
+test lenient_view_reports_a_missing_file_and_strict_view_fails ... ok
+test varint_roundtrip_edge_values ... ok
+test manifest_and_list_roundtrip ... ok
+test position_deletes_apply_by_sequence_number ... ok
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test checker_sees_tampering ... ok
+test store_forced_scenarios_and_crash_matrix ... ok
+test stress_with_writer_processes_passes_for_the_correct_writer ... ok
+test mock_rest_forced_scenarios_and_crash_matrix ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.77s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

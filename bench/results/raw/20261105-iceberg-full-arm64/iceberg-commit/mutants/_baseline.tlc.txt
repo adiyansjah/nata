@@ -1,0 +1,28 @@
+$ /mnt/work/iceberg-commit-work/tools/jdk/bin/java -XX:+UseParallelGC -Xmx6000m -cp /mnt/work/iceberg-commit-work/tools/tla2tools.jar tlc2.TLC -config cfg/smoke-rest.cfg -workers 8 -deadlock -cleanup -metadir /mnt/work/iceberg-commit-work/mutants-work/_baseline/states-smoke-rest.cfg MC
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 90 and seed -6300120755200529697 with 8 workers on 8 cores with 5333MB heap and 64MB offheap memory [pid: 25966] (Linux 6.1.0-54-cloud-arm64 aarch64, Eclipse Adoptium 17.0.21 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /mnt/work/iceberg-commit-work/mutants-work/_baseline/MC.tla
+Parsing file /mnt/work/iceberg-commit-work/mutants-work/_baseline/IcebergCommit.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /tmp/Naturals.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module IcebergCommit
+Semantic processing of module MC
+Starting... (2026-11-05 03:05:05)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-05 03:05:06.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 4.2E-14
+1782 states generated, 755 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 18.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 8 and the 95th percentile is 4).
+Finished in 00s at (2026-11-05 03:05:06)

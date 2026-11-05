@@ -1,0 +1,30 @@
+--- invocation 1
+BASELINE staged and parsed (dry)
+
+mutant                             result    violated invariant / reason                                  config             distinct   secs
+no-cas                             DRY-OK    edit applies once; parses                                                              0      0
+skip-validation                    DRY-OK    edit applies once; parses                                                              0      0
+blind-retry-after-unknown          DRY-OK    edit applies once; parses                                                              0      0
+commit-before-durable              DRY-OK    edit applies once; parses                                                              0      0
+reuse-sequence-number              DRY-OK    edit applies once; parses                                                              0      0
+compaction-deletes-live-files      DRY-OK    edit applies once; parses                                                              0      0
+accept-stale-base-on-retry         DRY-OK    edit applies once; parses                                                              0      0
+gc-ignores-active-writers          DRY-OK    edit applies once; parses                                                              0      0
+gc-ignores-inflight-requests       DRY-OK    edit applies once; parses                                                              0      0
+
+SUMMARY CAUGHT=0 SURVIVED=0 INVALID=0 DRY-OK=9 of 9 (required mutants: 7)
+--- invocation 2
+BASELINE staged and parsed (dry)
+
+mutant                             result    violated invariant / reason                                  config             distinct   secs
+no-cas                             DRY-OK    edit applies once; parses                                                              0      0
+skip-validation                    DRY-OK    edit applies once; parses                                                              0      0
+blind-retry-after-unknown          DRY-OK    edit applies once; parses                                                              0      0
+commit-before-durable              DRY-OK    edit applies once; parses                                                              0      0
+reuse-sequence-number              DRY-OK    edit applies once; parses                                                              0      0
+compaction-deletes-live-files      DRY-OK    edit applies once; parses                                                              0      0
+accept-stale-base-on-retry         DRY-OK    edit applies once; parses                                                              0      0
+gc-ignores-active-writers          DRY-OK    edit applies once; parses                                                              0      0
+gc-ignores-inflight-requests       DRY-OK    edit applies once; parses                                                              0      0
+
+SUMMARY CAUGHT=0 SURVIVED=0 INVALID=0 DRY-OK=9 of 9 (required mutants: 7)

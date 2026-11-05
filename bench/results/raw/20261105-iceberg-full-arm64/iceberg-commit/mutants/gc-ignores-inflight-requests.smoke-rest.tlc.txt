@@ -1,0 +1,51 @@
+[truncated by the record: the last 50 of 704 lines]
+              dfiles |-> {},
+              man |-> <<"m", 0, 0>>,
+              addedRows |-> {1, 2},
+              delPairs |-> {} ] ] @@
+  1 :>
+      [ ver |-> 1,
+        lastSeq |-> 1,
+        snaps |->
+            { [ w |-> 0,
+                id |-> <<0, 0>>,
+                parent |-> <<0, 0>>,
+                op |-> "init",
+                seq |-> 0,
+                files |-> {<<"d", 0, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 0, 0>>,
+                addedRows |-> {1, 2},
+                delPairs |-> {} ],
+              [ w |-> 1,
+                id |-> <<1, 1>>,
+                parent |-> <<0, 0>>,
+                op |-> "append",
+                seq |-> 1,
+                files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 1, 1>>,
+                addedRows |-> {3},
+                delPairs |-> {} ] },
+        cur |->
+            [ w |-> 1,
+              id |-> <<1, 1>>,
+              parent |-> <<0, 0>>,
+              op |-> "append",
+              seq |-> 1,
+              files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+              del |-> {},
+              dfiles |-> {},
+              man |-> <<"m", 1, 1>>,
+              addedRows |-> {3},
+              delPairs |-> {} ] ] )
+/\ base = <<0>>
+/\ crashLeft = 0
+/\ plan = <<[targets |-> {}, inputs |-> {}]>>
+
+306 states generated, 185 distinct states found, 62 states left on queue.
+The depth of the complete state graph search is 12.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 9 and the 95th percentile is 5).
+Finished in 00s at (2026-11-05 03:05:17)

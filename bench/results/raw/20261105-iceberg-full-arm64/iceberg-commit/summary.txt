@@ -1,0 +1,82 @@
+2026-11-05T00:49:45Z
+Linux 6.1.0-54-cloud-arm64 aarch64
+Architecture:                            aarch64
+CPU(s):                                  8
+Model name:                              Neoverse-N3
+               total        used        free      shared  buff/cache   available
+Mem:              15           0          13           0           1          15
+/dev/nvme0n2     59G  713M   56G   2% /mnt/work
+git: unknown
+IC_WORK=/mnt/work/iceberg-commit-work IC_TOOLS=/mnt/work/iceberg-commit-work/tools
+365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763  /mnt/work/src/spikes/iceberg-commit/model/IcebergCommit.tla
+a15593ad0c06d7fb0a41db53e8b14900d7e349a3bda4e1c82cf690efbae827f9  /mnt/work/src/spikes/iceberg-commit/model/MC.tla
+639035e59385ad20cd218a9108e243eb49742d2cb81aa1a913461dac127ac4bc  /mnt/work/src/spikes/iceberg-commit/Cargo.lock
+PHASE tools PASS (exit 0, 4s, gating=yes)
+PHASE model-lint PASS (exit 0, 0s, gating=yes)
+PHASE model-parse-and-edits PASS (exit 0, 5s, gating=yes)
+PHASE model-smoke PASS (exit 0, 6s, gating=yes)
+PHASE rust-build PASS (exit 0, 14s, gating=yes)
+PHASE rust-tests PASS (exit 0, 10s, gating=yes)
+PHASE catalog-build PASS (exit 0, 175s, gating=yes)
+PHASE catalog-start PASS (exit 0, 2s, gating=yes)
+PHASE spike-rest-catalog PASS (exit 0, 20s, gating=yes)
+PHASE interop-pyiceberg SKIPPED (exit 77, 13s, gating=no)
+PHASE spike-object-store PASS (exit 0, 6s, gating=yes)
+PHASE model-full FAIL (exit 1, 7864s, gating=yes)
+PHASE model-mutants PASS (exit 0, 12s, gating=yes)
+
+---- model: unmutated runs
+model: IcebergCommit.tla sha256 365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763
+SANY: parses
+run                    expected                     result     detail                                generated    distinct depth    secs
+smoke-rest             PASS                         OK         PASS                                       1782         755    18       1
+appends2-rest          PASS                         OK         PASS                                    1225228      290636    35       5
+appends2-store         PASS                         OK         PASS                                    1225228      290636    35       5
+ad-rest-ser            PASS                         OK         PASS                                    1165651      280106    35       5
+ad-store-ser           PASS                         OK         PASS                                    1165651      280106    35       6
+dc-rest                PASS                         OK         PASS                                    1106074      269576    35       5
+dc-store               PASS                         OK         PASS                                    1106074      269576    35       5
+three-rest-ser         PASS                         OK         PASS                                  683202106   116840733    52    2481
+three-store-ser        PASS                         MISMATCH   TIMEOUT no result after 2700s                 0           0     -    2700
+three-rest-snap        PASS                         OK         PASS                                  756039330   129194672    52    2650
+three-rest-snap-i4     VIOLATED:I4_NoPhantom        NOT-RUN    the time budget of 7200s is spent
+live-2                 PASS                         NOT-RUN    the time budget of 7200s is spent
+live-3                 PASS                         NOT-RUN    the time budget of 7200s is spent
+canary-Unknown         VIOLATED:Canary_Unknown      NOT-RUN    the time budget of 7200s is spent
+canary-Conflict        VIOLATED:Canary_Conflict     NOT-RUN    the time budget of 7200s is spent
+canary-RetryCommitted  VIOLATED:Canary_RetryCommitted NOT-RUN    the time budget of 7200s is spent
+canary-CompactCommitted VIOLATED:Canary_CompactCommitted NOT-RUN    the time budget of 7200s is spent
+canary-DeleteCommitted VIOLATED:Canary_DeleteCommitted NOT-RUN    the time budget of 7200s is spent
+canary-ValidationAbort VIOLATED:Canary_ValidationAbort NOT-RUN    the time budget of 7200s is spent
+canary-CrashedButCommitted VIOLATED:Canary_CrashedButCommitted NOT-RUN    the time budget of 7200s is spent
+canary-LateOldAttempt  VIOLATED:Canary_LateOldAttempt NOT-RUN    the time budget of 7200s is spent
+canary-DuplicateDelivered VIOLATED:Canary_DuplicateDelivered NOT-RUN    the time budget of 7200s is spent
+canary-OrphanCollected VIOLATED:Canary_OrphanCollected NOT-RUN    the time budget of 7200s is spent
+canary-ReaderPinned    VIOLATED:Canary_ReaderPinned NOT-RUN    the time budget of 7200s is spent
+TOTAL mismatches=15
+
+---- model: mutants
+mutant                             result    violated invariant / reason                                  config             distinct   secs
+no-cas                             CAUGHT    I6_SeqIncreases                                              appends2-rest           343      1
+skip-validation                    CAUGHT    I2_NoLostUpdate                                              dc-rest               21433      2
+blind-retry-after-unknown          CAUGHT    I5_AtMostOnce                                                smoke-rest              665      1
+commit-before-durable              CAUGHT    I1_FilesExist                                                smoke-rest               73      1
+reuse-sequence-number              CAUGHT    I6_SeqIncreases                                              smoke-rest               48      1
+compaction-deletes-live-files      CAUGHT    I1_FilesExist                                                dc-rest                 461      1
+accept-stale-base-on-retry         CAUGHT    I2_NoLostUpdate                                              appends2-rest         18623      2
+gc-ignores-active-writers          CAUGHT    I1_FilesExist                                                smoke-rest              114      1
+gc-ignores-inflight-requests       CAUGHT    I1_FilesExist                                                smoke-rest              185      1
+
+SUMMARY CAUGHT=9 SURVIVED=0 INVALID=0 DRY-OK=0 of 9 (required mutants: 7)
+
+---- spike: REST reference catalog
+rest     stress bad-skip-validation  the checker flagged 3 of 3 runs
+
+SUMMARY backend=rest forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0
+SUITE PASS
+---- spike: object store
+store    stress bad-skip-validation  the checker flagged 3 of 3 runs
+
+SUMMARY backend=store forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0
+SUITE PASS
+VERDICT FAIL (1 gating phase(s) failed; see the PHASE lines above and the per-phase files in /mnt/work/results/iceberg-commit)

@@ -7,7 +7,7 @@ Date: 2026-11-05
 
 The owner decided the engine reads AND writes tables, single-node and distributed, and targets Apache Iceberg first (`docs/decisions/verification-plan.md`, items 24, 25, 26, 30). The
 format is an external specification that other engines implement, so the cheapest safe rule is: conform to the spec, and prove it against independent implementations. Spikes:
-`spikes/iceberg-plan/` (planning and interop), `spikes/parquet-write/` (writing data files), `spikes/iceberg-commit/` (the commit protocol; written, NOT yet run).
+`spikes/iceberg-plan/` (planning and interop), `spikes/parquet-write/` (writing data files), `spikes/iceberg-commit/` (the commit protocol; first GCP run 2026-11-05 incomplete: 15 of 24 model runs have no result).
 
 ## Decision (proposed rules)
 
@@ -24,8 +24,9 @@ format is an external specification that other engines implement, so the cheapes
 6. **Manifests are kept clustered by partition, and rewriting them is a required maintenance operation.** A scattered layout makes every partition filter read every manifest.
 7. **The read path decodes manifests straight into compact entries and streams tasks out.** The generic Avro value tree used by the spike costs about 15 KB of heap per entry; this is a
    planned improvement, not done. Whether to reuse `iceberg-rust` for this is undecided (no bake-off yet).
-8. **Catalog and commit protocol: NOT DECIDED.** The intended interface is the REST catalog with its atomic commit; the formal model and the concurrent-commit spike exist (item 24) but have
-   not run, so there is no evidence for or against any rule here. Questions the spike raises: operation token versus the REST `Idempotency-Key` for retried commits; which catalog to certify
+8. **Catalog and commit protocol: NOT DECIDED.** The intended interface is the REST catalog with its atomic commit; the formal model and the concurrent-commit spike (item 24) ran once on GCP on 2026-11-05 and the run
+   is incomplete (verdict FAIL because the model phase ran out of time, not because a violation was found; see Evidence). What it shows is bounded and covers only the Apache reference fixture and a local
+   conditional create, so it does not decide any rule here; the model's three-writer store configuration, liveness and coverage checks have not yet produced a result. Questions the spike raises: operation token versus the REST `Idempotency-Key` for retried commits; which catalog to certify
    against (the Apache fixture is a test fixture); whether catalog-less commit by conditional put is allowed at all.
 
 ## Why
@@ -49,8 +50,14 @@ A table format is a contract with other engines. Their readers decide what our f
   parquet-rs 60.1.0 writes NaN as min and max of an all-NaN float chunk (a spec violation; the writer turns those statistics off); the library cannot be made to write bounds narrower than the data.
 - **Measured, hazards:** on a `truncate[10]` table with values at both extremes of `int`, `k < 0` returns 3 of 5 rows in both DuckDB and pyiceberg; pyiceberg also loses the row for
   `k = -2147483648`. pyiceberg 0.12.0 cannot read equality deletes (58 of 80 tables) and crashes on a NULL identity-partition value.
+- **Measured, partly** (`bench/results/20261104-iceberg-commit.md` section 8; ARM64 `n4a-highcpu-8`, 2026-11-05, verdict FAIL): in the TLA+ model of the commit (bounded: at most 3 writers with one operation each, 2 attempts,
+  one crash, one duplicate delivery and one lost request, one pinned reader) TLC found no invariant violation in the 9 configurations that finished, the largest two with 116.8 and 129.2 million distinct states
+  (serializable and snapshot isolation, REST-style commit); 9 of 9 mutants of the model are caught; the commit spike passes all its gating checks against the Apache REST reference fixture 1.12.0 and against
+  conditional create on a local file system (18 forced interleavings with 5 of 5 known-bad writers caught, 12 crash points, 6 of 6 stress seeds, on each). **Not obtained:** `three-store-ser` timed out
+  (no result), and `three-rest-snap-i4`, both liveness configurations and all 11 coverage canaries were never started because the time budget was spent, so liveness and the reachability of the
+  checked situations at three writers are unchecked; the pyiceberg read of our manifests was skipped (setup defect, fixed since). A re-run of the unchecked configurations is planned.
 - **Reasoned:** the maintenance rule for manifests, and that a missing statistic is safe.
-- **Not covered:** format version 3; the REST catalog and the commit protocol (spike written, not run); time travel, branches and tags; nested types; name mapping for files without field ids;
+- **Not covered:** format version 3; the commit protocol beyond the bounded results above (one catalog, a fixture; no product catalog, no real S3/GCS/Azure; model liveness and canaries not yet run); time travel, branches and tags; nested types; name mapping for files without field ids;
   strict projection and residuals; pruning of delete files by their own metrics; a comparison with `iceberg-rust` or the Java library; real object stores.
 
 ## Confidence

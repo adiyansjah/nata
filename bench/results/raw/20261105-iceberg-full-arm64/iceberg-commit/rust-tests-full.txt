@@ -1,0 +1,43 @@
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (/mnt/work/iceberg-commit-work/target/release/deps/iceberg_commit-c3f89d2812e496eb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (/mnt/work/iceberg-commit-work/target/release/deps/ic_spike-36f398ba952599f1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/avro_and_files.rs (/mnt/work/iceberg-commit-work/target/release/deps/avro_and_files-9d48dd4f41a0ea82)
+
+running 8 tests
+test corrupt_files_are_rejected ... ok
+test prng_is_deterministic_and_snapshot_ids_are_positive ... ok
+test fault_plan_parses_and_rejects_garbage ... ok
+test header_carries_schema_with_field_ids_and_metadata ... ok
+test lenient_view_reports_a_missing_file_and_strict_view_fails ... ok
+test varint_roundtrip_edge_values ... ok
+test manifest_and_list_roundtrip ... ok
+test position_deletes_apply_by_sequence_number ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scenarios.rs (/mnt/work/iceberg-commit-work/target/release/deps/scenarios-0d37fcff1ca870e1)
+
+running 4 tests
+test checker_sees_tampering ... ok
+test store_forced_scenarios_and_crash_matrix ... ok
+test stress_with_writer_processes_passes_for_the_correct_writer ... ok
+test mock_rest_forced_scenarios_and_crash_matrix ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.77s
+
+   Doc-tests iceberg_commit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

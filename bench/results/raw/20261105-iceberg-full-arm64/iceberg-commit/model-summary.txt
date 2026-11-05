@@ -1,0 +1,28 @@
+model: IcebergCommit.tla sha256 365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763
+SANY: parses
+run                    expected                     result     detail                                generated    distinct depth    secs
+smoke-rest             PASS                         OK         PASS                                       1782         755    18       1
+appends2-rest          PASS                         OK         PASS                                    1225228      290636    35       5
+appends2-store         PASS                         OK         PASS                                    1225228      290636    35       5
+ad-rest-ser            PASS                         OK         PASS                                    1165651      280106    35       5
+ad-store-ser           PASS                         OK         PASS                                    1165651      280106    35       6
+dc-rest                PASS                         OK         PASS                                    1106074      269576    35       5
+dc-store               PASS                         OK         PASS                                    1106074      269576    35       5
+three-rest-ser         PASS                         OK         PASS                                  683202106   116840733    52    2481
+three-store-ser        PASS                         MISMATCH   TIMEOUT no result after 2700s                 0           0     -    2700
+three-rest-snap        PASS                         OK         PASS                                  756039330   129194672    52    2650
+three-rest-snap-i4     VIOLATED:I4_NoPhantom        NOT-RUN    the time budget of 7200s is spent
+live-2                 PASS                         NOT-RUN    the time budget of 7200s is spent
+live-3                 PASS                         NOT-RUN    the time budget of 7200s is spent
+canary-Unknown         VIOLATED:Canary_Unknown      NOT-RUN    the time budget of 7200s is spent
+canary-Conflict        VIOLATED:Canary_Conflict     NOT-RUN    the time budget of 7200s is spent
+canary-RetryCommitted  VIOLATED:Canary_RetryCommitted NOT-RUN    the time budget of 7200s is spent
+canary-CompactCommitted VIOLATED:Canary_CompactCommitted NOT-RUN    the time budget of 7200s is spent
+canary-DeleteCommitted VIOLATED:Canary_DeleteCommitted NOT-RUN    the time budget of 7200s is spent
+canary-ValidationAbort VIOLATED:Canary_ValidationAbort NOT-RUN    the time budget of 7200s is spent
+canary-CrashedButCommitted VIOLATED:Canary_CrashedButCommitted NOT-RUN    the time budget of 7200s is spent
+canary-LateOldAttempt  VIOLATED:Canary_LateOldAttempt NOT-RUN    the time budget of 7200s is spent
+canary-DuplicateDelivered VIOLATED:Canary_DuplicateDelivered NOT-RUN    the time budget of 7200s is spent
+canary-OrphanCollected VIOLATED:Canary_OrphanCollected NOT-RUN    the time budget of 7200s is spent
+canary-ReaderPinned    VIOLATED:Canary_ReaderPinned NOT-RUN    the time budget of 7200s is spent
+TOTAL mismatches=15
