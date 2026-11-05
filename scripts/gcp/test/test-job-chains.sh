@@ -52,6 +52,11 @@ ipo=$(steps icebergpolaris)
 has ic-polaris "$ipo" && ok "icebergpolaris runs the one polaris-mode step" || bad "icebergpolaris: $(echo "$ipo" | grep '^STEP' | tr '\n' ' ')"
 extra=$(echo "$ipo" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-polaris)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergpolaris runs no step of any other job" || bad "icebergpolaris runs extra steps: $extra"
+# pushpin: the build and ONE check step (pp-check); nothing of another job
+ppn=$(steps pushpin)
+has pp-build "$ppn" && has pp-check "$ppn" && ok "pushpin runs the build and the one pin-check step" || bad "pushpin: $(echo "$ppn" | grep '^STEP' | tr '\n' ' ')"
+extra=$(echo "$ppn" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|pp-build|pp-check)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "pushpin runs no step of any other job" || bad "pushpin runs extra steps: $extra"
 # netexchsim: ONE step (nx-all) that runs spikes/net-exchange/gcp-check.sh; no settle steps, nothing of another job.
 nx=$(steps netexchsim)
 has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"
@@ -74,7 +79,7 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
-for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris pushpin netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
 # not settle (the other results are kept; the NOT SETTLED line is the record). The real command is cut out of job.sh and run with a short wait.

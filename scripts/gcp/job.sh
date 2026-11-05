@@ -218,6 +218,12 @@ case "$JOB" in
     # kill -9, a partition and the process-exit race. SIMULATED NETWORK on one VM; stage B (separate VMs) is not this job. Needs sudo (vm-startup.sh).
     # The exit status is recorded and does not stop the job, so the results are kept.
     run nx-all bash -c 'cd "$SRC" && spikes/net-exchange/gcp-check.sh "$RESULTS/net-exchange" > "$RESULTS/net-exchange-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/net-exchange-exit.txt"; true' ;;
+  pushpin)
+    # ADR 0001 open check (verification-plan item 5): why does the scheduler of spikes/operator-trait cost far more with FOUR threads on the x86-64 c3d VM (4 cores x 2
+    # hardware threads) than on ARM64? The same cells run unpinned, on four distinct physical cores and on two cores' worth of sibling threads (spikes/push-cost/pin-check.sh;
+    # it settles before each run and computes the CPU sets from lscpu). Intended machines: c3d-highcpu-8, with n4a-highcpu-8 as the control (one thread per core).
+    run pp-build bash -c 'cd "$SRC/spikes/push-cost" && RUSTFLAGS= cargo build --release --examples'
+    run pp-check bash -c 'cd "$SRC" && spikes/push-cost/pin-check.sh "$RESULTS/pushpin" > "$RESULTS/pushpin-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/pushpin-exit.txt"; true' ;;
   icebergpolaris)
     # verification-plan item 24, ADR 0005 rule 8: the commit suite (18 forced interleavings with known-bad writers, 12 crash points, stress seeds) and the pyiceberg
     # interop against Apache POLARIS, a product catalog, instead of the Apache test fixture. IC_MODE=polaris: JDK 21 and the pinned Polaris release are downloaded
@@ -307,7 +313,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { bash "$SRC/scripts/gcp/settle.sh" ap-bench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; bash "$SRC/scripts/gcp/settle.sh" ap-membench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergpolaris|netexchsim) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergpolaris|pushpin|netexchsim) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

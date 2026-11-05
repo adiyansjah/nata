@@ -25,11 +25,19 @@ pub struct Opts {
     pub smoke: bool,
     pub selftest_only: bool,
     pub ignore_selftest: bool,
+    /// A FOCUSED run for an investigation (default: the whole grid). Each narrows the linear-chain grid; `--no-branch` skips the branching section.
+    /// A narrowed run is a probe of one cell, not a replacement for the full grid.
+    pub threads: Option<Vec<usize>>,
+    pub lens: Option<Vec<usize>>,
+    pub batches: Option<Vec<usize>>,
+    pub kernels: Option<Vec<String>>,
+    pub no_branch: bool,
 }
 
 impl Opts {
     pub fn parse(args: &[String]) -> Result<Opts, String> {
-        let mut o = Opts { rounds: 25, total_log2: 25, csv: None, smoke: false, selftest_only: false, ignore_selftest: false };
+        let mut o = Opts { rounds: 25, total_log2: 25, csv: None, smoke: false, selftest_only: false, ignore_selftest: false, threads: None, lens: None, batches: None, kernels: None, no_branch: false };
+        let list = |v: String, what: &str| -> Result<Vec<usize>, String> { v.split(',').map(|x| x.trim().parse::<usize>().map_err(|e| format!("{what}: {e}"))).collect() };
         let mut i = 0;
         while i < args.len() {
             let take = |i: &mut usize| -> Result<String, String> {
@@ -43,6 +51,11 @@ impl Opts {
                 "--smoke" => o.smoke = true,
                 "--selftest-only" => o.selftest_only = true,
                 "--ignore-selftest" => o.ignore_selftest = true,
+                "--threads" => o.threads = Some(list(take(&mut i)?, "--threads")?),
+                "--lens" => o.lens = Some(list(take(&mut i)?, "--lens")?),
+                "--batches" => o.batches = Some(list(take(&mut i)?, "--batches")?),
+                "--kernels" => o.kernels = Some(take(&mut i)?.split(',').map(|x| x.trim().to_string()).collect()),
+                "--no-branch" => o.no_branch = true,
                 other => return Err(format!("unknown argument {other}")),
             }
             i += 1;
@@ -232,6 +245,20 @@ pub fn run(o: &Opts) -> i32 {
     } else {
         (Kind::ALL.to_vec(), vec![1, 3, 6], vec![1024, 8192, 65536], vec![1, 4])
     };
+    let kernels: Vec<Kind> = match &o.kernels {
+        Some(want) => {
+            let k: Vec<Kind> = kernels.into_iter().filter(|k| want.iter().any(|w| w == k.name())).collect();
+            assert!(!k.is_empty(), "--kernels matched no kernel (cheap, medium)");
+            k
+        }
+        None => kernels,
+    };
+    let lens = o.lens.clone().unwrap_or(lens);
+    let batches = o.batches.clone().unwrap_or(batches);
+    let threads_list = o.threads.clone().unwrap_or(threads_list);
+    if o.threads.is_some() || o.lens.is_some() || o.batches.is_some() || o.kernels.is_some() || o.no_branch {
+        println!("**FOCUSED RUN** (narrowed grid: threads {threads_list:?}, stages {lens:?}, rows per batch {batches:?}, kernels {:?}, branching {}): a probe of those cells, not the full grid.\n", kernels.iter().map(|k| k.name()).collect::<Vec<_>>(), if o.no_branch { "skipped" } else { "run" });
+    }
     let names: Vec<String> = CHAIN_ARMS.iter().map(|a| a.name()).collect();
     let mut lines: Vec<SummaryLine> = Vec::new();
     let mut refs: HashMap<(usize, usize, usize), Acc> = HashMap::new();
@@ -271,7 +298,9 @@ pub fn run(o: &Opts) -> i32 {
     println!("## Branching: 1 producer -> exchange -> 2 consumers, on {BRANCH_THREADS} threads\n");
     println!("`hand` = 3 OS threads and a Mutex/Condvar bounded queue calling the same kernels; `proto` = the real scheduler and exchange of spikes/operator-trait. Control = `hand`.\n");
     let bnames: Vec<String> = BRANCH_ARMS.iter().map(|a| a.name().to_string()).collect();
-    let (bkernels, bbatches, caps): (Vec<Kind>, Vec<usize>, Vec<usize>) = if o.smoke {
+    let (bkernels, bbatches, caps): (Vec<Kind>, Vec<usize>, Vec<usize>) = if o.no_branch {
+        (vec![], vec![], vec![])
+    } else if o.smoke {
         (Kind::ALL.to_vec(), vec![1024], vec![1, 4])
     } else {
         (Kind::ALL.to_vec(), vec![1024, 8192, 65536], vec![1, 4])
