@@ -168,11 +168,16 @@ DUCKFLAG=""; [ "${NATA_SCAN_NO_DUCK:-0}" = 1 ] && DUCKFLAG="--no-duck" && note "
 
 # ---------------------------------------------------------------- 4. the simulated store and its tests
 say "simulated object store (SIMULATED): started as a separate process on 127.0.0.1"
+# A restart after a preemption finds the previous incarnation's sim.addr on the persistent disk: waiting for "a non-empty file" would
+# accept that stale port, and every request would go to a dead server (found by the first GCP run that was preempted, 2026-11-05).
+rm -f "$OUT/sim.addr" "$OUT/sim-server.txt"
 "$BIN" serve --root "$DATA/layouts" --bucket sim --profile zero --port-file "$OUT/sim.addr" > "$OUT/sim-server.txt" 2>&1 &
 SERVER_PID=$!
 for _ in $(seq 1 50); do [ -s "$OUT/sim.addr" ] && break; sleep 0.2; done
 [ -s "$OUT/sim.addr" ] || { note "the simulated store did not start"; exit 4; }
 ADDR=$(cat "$OUT/sim.addr")
+grep -q "^LISTEN $ADDR " "$OUT/sim-server.txt" || { note "the address in sim.addr ($ADDR) is not the one the server reported: $(head -1 "$OUT/sim-server.txt")"; exit 4; }
+"$BIN" ctl --addr "$ADDR" --stats > /dev/null 2>&1 || { note "the simulated store does not answer at $ADDR"; exit 4; }
 note "SIMULATED store listening on $ADDR"
 EXP="$DATA/expected"
 
