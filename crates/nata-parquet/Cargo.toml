@@ -1,0 +1,23 @@
+[package]
+name = "nata-parquet"
+description = "Parquet scan of slice 3: footer statistics adapter, filter parser, exact row filter, row-group reader (single thread)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+# Same arrow and parquet versions as spikes/parquet-scan (the baseline spike of the slice).
+[dependencies]
+nata-scan = { path = "../nata-scan" }
+arrow-array = "60"
+arrow-buffer = "60"
+arrow-schema = "60"
+arrow-select = "60"
+bytes = "1"
+parquet = "60"
+
+[lints]
+workspace = true
+
+# The tests write Parquet files with parquet-rs (several encodings, codecs and page versions) and compare with DuckDB and pyarrow.
+[dev-dependencies]

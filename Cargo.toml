@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/nata", "crates/nata-bench", "crates/nata-check", "crates/nata-kernels", "crates/nata-scan"]
+members = ["crates/nata", "crates/nata-bench", "crates/nata-check", "crates/nata-kernels", "crates/nata-parquet", "crates/nata-scan"]
 exclude = ["spikes"]
 
 [workspace.package]
@@ -28,3 +28,22 @@ dbg_macro = "deny"
 # (shown by crates/nata-kernels/lint-fixtures/overflow_checks.py). Cost: see bench/results/20261104-kernel-lints-and-guards.md.
 [profile.release]
 overflow-checks = true
+
+# ... but NOT for dependencies (ADR 0003 decision 6, the same setting as spikes/hash-ops): arrow computes on the slots under NULLs, whose contents are
+# unspecified, with plain `+`; with checks on, concat of dictionary arrays panics on an `i32::MAX` key under a NULL slot (arrow-data 60.1.0
+# src/transform/primitive.rs:46). The Parquet reader returns dictionary arrays, so this reaches the scan. crates/nata-parquet/tests/overflow_config.rs
+# holds both facts as tests. `"*"` matches every package that is not a workspace member.
+[profile.release.package."*"]
+overflow-checks = false
+
+[profile.test.package."*"]
+overflow-checks = false
+opt-level = 2
+
+[profile.dev.package."*"]
+overflow-checks = false
+opt-level = 2
+
+# The scan crate's own code is what the differential tests spend their time in (CSV rendering of 60,000-row batches); debug speed would make them take minutes.
+[profile.test.package.nata-parquet]
+opt-level = 2

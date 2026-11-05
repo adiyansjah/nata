@@ -8,6 +8,11 @@ rust-version.workspace = true
 
 [dependencies]
 clap.workspace = true
+nata-parquet = { path = "../nata-parquet" }
+
+[dev-dependencies]
+arrow-array = "60"
+parquet = "60"
 
 [lints]
 workspace = true
