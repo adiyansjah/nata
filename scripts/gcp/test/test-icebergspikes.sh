@@ -73,4 +73,11 @@ run_check badmode IC_MODE=nonsense
 check "an unknown IC_MODE is refused (exit 2) and the message lists spikes" "[ $RC -eq 2 ] && grep -q 'full, model or spikes' '$T/out$n.txt'"
 check "in the full mode interop-pyiceberg is still not gating (unchanged)" "grep -q 'phase interop-pyiceberg no ph_interop' '$TREE/gcp-check.sh'"
 
+# The job runs as the unprivileged user `nata`, so python3-venv (for the pyiceberg interop) must be installed by vm-startup.sh for every job that
+# runs the interop. Found 2026-11-05: icebergspikes was missing there, its interop would have been SKIPPED = FAIL on both VMs.
+VS=$REPO/scripts/gcp/vm-startup.sh
+for j in iceberg iceberg-smoke icebergspikes; do
+  grep 'python3-venv' "$VS" | grep -qE "in ([a-z-]+\|)*$j(\|[a-z-]+)*\)" && ok_=1 || ok_=0
+  check "vm-startup.sh installs python3-venv for the job $j" "[ $ok_ = 1 ]"
+done
 [ "$fails" = 0 ] && echo "all icebergspikes tests passed" || { echo "ICEBERGSPIKES TESTS FAILED ($fails)"; exit 1; }

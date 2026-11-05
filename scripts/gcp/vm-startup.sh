@@ -30,7 +30,7 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in perf|timing) ;; *) false ;; esac &&
   sysctl -w kernel.perf_event_paranoid=1 kernel.kptr_restrict=0 > /dev/null 2>&1 || true
 }
 # The Iceberg commit jobs build a Python venv for the independent-reader check (pyiceberg); the job runs without sudo, so install it here.
-case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke) python3 -m venv --help > /dev/null 2>&1 && python3 -c "import ensurepip" 2> /dev/null || apt-get install -y -qq python3-venv ;; esac
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke|icebergspikes) python3 -m venv --help > /dev/null 2>&1 && python3 -c "import ensurepip" 2> /dev/null || apt-get install -y -qq python3-venv ;; esac
 # The Kani jobs (and the memory measurements of hashops and timing) record peak memory with GNU time.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani*|timing|hashops) [ -x /usr/bin/time ] || apt-get install -y -qq time ;; esac
 if [ -f "$MNT/START" ] && ! pgrep -u nata -f "scripts/gcp/job.sh" > /dev/null; then
