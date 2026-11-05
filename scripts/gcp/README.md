@@ -105,6 +105,23 @@ runs only those 15 TLC runs, without repeating the 2 h of work that already has 
   `scripts/gcp/test/test-job-chains.sh` (the job selects only its own step) and `spikes/iceberg-commit/model/test_model_tools.py`
   (`run_model.py`: per-run limits, the budget clamp, TIMEOUT and NOT-RUN as mismatches, unknown names, resume).
 
+## `settle.sh`: timed blocks start on a quiet machine (2026-11-05)
+
+`settle.sh LABEL [LIMIT=0.5] [MAX_SECONDS=600]` waits until the 1-minute load average is below the limit and prints one line,
+`SETTLE <label>: settled, load 0.31 after 40 s (limit 0.5)` or `SETTLE <label>: NOT SETTLED, load 1.20 after 600 s (limit 0.5)`
+(exit 0 or 1). The job carries on either way, so its other results are kept; a NOT SETTLED line is the record that the block after it is
+SANITY ONLY. It replaces the inline loop of `job.sh` and is also called INSIDE the three blocks that missed the 0.5 rule on 2026-11-05:
+between the phases of `spikes/null-path/run-all.sh` (`SETTLE_MAX=600` from the job; the default 0 only prints the load), before the
+`bench` and the `membench` (engine-only) processes of the Arrow pipeline step, and in `spikes/push-cost/gcp-check.sh` (was: below 1.0;
+the push-cost harness now also calls a start load of 0.5 or more SANITY ONLY, it was 2). Tests: `test/test-settle.sh`.
+
+## `icebergspikes`: the code side of the Iceberg check without the model
+
+`icebergspikes` runs `spikes/iceberg-commit/gcp-check.sh` in `IC_MODE=spikes`: tools, Rust build and tests, the Apache REST reference
+fixture, the commit spike against it and against conditional create, and the pyiceberg interop. It skips every TLA+ phase (the model result
+does not depend on the VM's architecture; it is in the `iceberg` and `icebergmodel` runs). `interop-pyiceberg` is GATING in this mode, so a
+skip (the first run's setup defect) is a FAIL. Intended machines: `n4a-highcpu-8` and `c3d-highcpu-8` (x86-64). Tests: `test/test-icebergspikes.sh`.
+
 ## What has been verified, and what has not
 
 - **Tested locally, with a fake `gcloud` and `ssh`** (`test/test-orchestrate.sh`, 27 checks, nine deliberate

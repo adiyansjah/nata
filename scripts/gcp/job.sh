@@ -16,8 +16,9 @@ run() { step "$@" || { fail_job "$1"; exit 1; }; }
 # Timing needs a QUIET machine: a step started right after a heavy one sees a 1-minute load average of 2-3 (found 2026-11-05: every timed
 # step of the first timing bundle started at load 2.7-3.3 and the scripts label such numbers SANITY ONLY). settle_before NAME waits (at most
 # ten minutes) until the 1-minute load is below 0.5; it is a no-op in the other jobs, whose steps are not timing.
-SETTLE='for i in $(seq 1 60); do l=$(cut -d" " -f1 /proc/loadavg); awk -v l="$l" "BEGIN{exit !(l<0.5)}" && { echo "settled: load $l after $((i*10-10)) s"; exit 0; }; sleep 10; done; echo "load did not settle: $l"; exit 0'
-settle_before() { case "$JOB" in timing|perf|nullpath) run "settle-$1" bash -c "$SETTLE" ;; esac; }
+# scripts/gcp/settle.sh prints one SETTLE line (settled, or NOT SETTLED with the load); the job carries on either way so that its other
+# results are kept, and the line is the record that the block after a NOT SETTLED is SANITY ONLY.
+settle_before() { case "$JOB" in timing|perf|nullpath) run "settle-$1" bash -c 'bash "$SRC/scripts/gcp/settle.sh" "$0" 0.5 600; true' "$1" ;; esac; }
 
 run setup-rust bash -c 'command -v rustup >/dev/null || curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
   cd "$SRC" && { rustup show active-toolchain || rustup toolchain install; }'
@@ -189,7 +190,7 @@ case "$JOB" in
     # density table and the stage timings. The mutation check is skipped: it ran locally and is not timing-sensitive.
     run np-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     settle_before np-all
-    run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;&
+    run np-all bash -c 'cd "$SRC/spikes/null-path" && CARGO_BUILD_JOBS=$(nproc) OUT="$RESULTS/nullpath" SKIP_MUTATION=1 HEAVY= SETTLE_MAX=600 ./run-all.sh "$SRC/data/tpch-sf1/lineitem.parquet" 25 > "$RESULTS/nullpath-run.txt" 2>&1' ;;&
 
   objscan)
     # verification-plan item 27 (spikes/object-store-scan): the object-store read path against a SIMULATED store (latency tail,
@@ -211,6 +212,13 @@ case "$JOB" in
     export IC_WORK="$WORK/iceberg-commit-work" IC_RESUME=1
     [ "$JOB" = iceberg-smoke ] && export IC_TLC_TIMEOUT=300 IC_MODEL_BUDGET=900 IC_MUTANT_TIMEOUT=180 IC_SEEDS=2
     run ic-all bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-commit" > "$RESULTS/iceberg-commit-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-commit-exit.txt"; true' ;;
+  icebergspikes)
+    # verification-plan items 24, 25, 30: the CODE side of the Iceberg commit check (Rust build and tests, the Apache REST reference fixture,
+    # the commit spike against it and against conditional create, and the pyiceberg interop that the first run skipped) on another machine,
+    # WITHOUT the TLA+ model (IC_MODE=spikes; the model result is in the `iceberg` and `icebergmodel` runs and does not depend on the VM's
+    # architecture). interop-pyiceberg is gating in this mode, so a skip is a FAIL. Intended machines: n4a-highcpu-8 and c3d-highcpu-8.
+    export IC_WORK="$WORK/iceberg-spikes-work" IC_RESUME=1 IC_MODE=spikes
+    run ic-spikes bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-spikes" > "$RESULTS/iceberg-spikes-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-spikes-exit.txt"; true' ;;
   icebergmodel)
     # verification-plan item 24, targeted re-run of the TLC runs that had no result in `iceberg-full-arm64` (three-store-ser timed out; the
     # I4 run, both liveness runs and the 11 canaries were never started): ONLY tools, model-lint, model-parse-and-edits and model-full, for the
@@ -283,10 +291,10 @@ case "$JOB" in
     run t-ap-tests bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo test --release --no-fail-fast -- --test-threads=1 > "$RESULTS/arrow-pipeline-tests.txt" 2>&1'
     run t-ap-diff bash -c 'cd "$SRC/spikes/arrow-pipeline" && scripts/duckdb_diff.sh "$SRC/data/tpch-sf1/lineitem.parquet" > "$RESULTS/arrow-pipeline-duckdb-diff.txt" 2>&1'
     settle_before t-ap-bench
-    run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
+    run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { bash "$SRC/scripts/gcp/settle.sh" ap-bench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; bash "$SRC/scripts/gcp/settle.sh" ap-membench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

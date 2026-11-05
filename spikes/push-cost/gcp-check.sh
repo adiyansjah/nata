@@ -86,14 +86,11 @@ if [ "$RC" -ne 0 ]; then
 fi
 note "smoke pass ok"
 
-say "wait for the machine to be quiet (the build and the tests just ran)"
-settled=0
-for _ in $(seq 1 60); do
-  L=$(cut -d' ' -f1 /proc/loadavg)
-  if awk -v l="$L" 'BEGIN { exit !(l < 1.0) }'; then settled=1; break; fi
-  sleep 5
-done
-note "1-minute load average now: $(cut -d' ' -f1 /proc/loadavg) (settled below 1.0: $settled)"
+say "wait for the machine to be quiet (the build and the tests just ran): 1-minute load below 0.5, at most PC_SETTLE_MAX s"
+# Was: below 1.0 for at most 300 s, and the harness called 0.72 "quiet" (found 2026-11-05). Same rule as every other timed block (ADR 0006 rule 7).
+if settle_line=$("$HERE/../../scripts/gcp/settle.sh" push-cost 0.5 "${PC_SETTLE_MAX:-600}"); then settled=1; else settled=0; fi
+note "$settle_line"
+note "1-minute load average now: $(cut -d' ' -f1 /proc/loadavg) (settled below 0.5: $settled)"
 
 say "benchmark: harness self-test, then the grid ($ROUNDS rounds)"
 timeout 7200 "$BIN" --rounds "$ROUNDS" --csv "$OUT/rounds.csv" > "$OUT/results.md" 2> "$OUT/bench-stderr.txt"

@@ -9,7 +9,7 @@ cp "$HERE/job.sh" "$T/job.sh"
 cat > "$T/lib.sh" <<'LIB'
 : "${WORK:?}"; RESULTS="$WORK/results"; mkdir -p "$RESULTS"
 now() { date -u +%H:%M:%S; }; boot_id() { echo stubboot0; }
-step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; case "$1" in ic-all|ic-model) echo "ICMODE[$1]=${IC_MODE:-<full>}";; esac; return 0; }
+step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; case "$1" in ic-all|ic-model|ic-spikes) echo "ICMODE[$1]=${IC_MODE:-<full>}";; esac; return 0; }
 fail_job() { echo "FAILJOB $1"; }
 finish_job() { echo "FINISHED"; }
 LIB
@@ -45,6 +45,13 @@ has ic-all "$im" && bad "icebergmodel must not run the full iceberg step ic-all"
 extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-model)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergmodel runs no step of any other job (only the common setup and ic-model)" || bad "icebergmodel runs extra steps: $extra"
 has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
+# icebergspikes: ONE step (ic-spikes) in IC_MODE=spikes (no model); it must not select the full or the model step, nor any step of another job.
+isp=$(steps icebergspikes)
+has ic-spikes "$isp" && echo "$isp" | grep -q '^ICMODE\[ic-spikes\]=spikes$' && ok "icebergspikes runs the one spikes-mode step" || bad "icebergspikes: $(echo "$isp" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
+has ic-all "$isp" && bad "icebergspikes must not run the full iceberg step" || ok "icebergspikes does not run the full check"
+has ic-model "$isp" && bad "icebergspikes must not run the model step" || ok "icebergspikes does not run the model step"
+extra=$(echo "$isp" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-spikes)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "icebergspikes runs no step of any other job" || bad "icebergspikes runs extra steps: $extra"
 # the settle step: in the timing jobs every timed step is preceded by a wait for a quiet machine; the other jobs do not have it
 idx() { echo "$2" | grep -n "^STEP $1\$" | head -1 | cut -d: -f1; }
 t=$(steps timing)
@@ -52,13 +59,14 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
-for j in hashops armcheck simharness objscan iceberg icebergmodel; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
-# the settle script itself: succeeds at once on a quiet machine, and gives up (exit 0, says so) when the load never falls
-S=$(sed -n "s/^SETTLE='\(.*\)'\$/\1/p" "$HERE/job.sh")
-[ -n "$S" ] || bad "could not extract the SETTLE script"
+# the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
+# not settle (the other results are kept; the NOT SETTLED line is the record). The real command is cut out of job.sh and run with a short wait.
+C=$(sed -n "s/^settle_before() {.*run \"settle-\$1\" bash -c '\([^']*\)' \"\$1\".*\$/\1/p" "$HERE/job.sh")
+[ -n "$C" ] || bad "could not extract the settle command from job.sh"
 echo "0.05 0.10 0.10 1/100 1" > "$T/quiet"; echo "9.00 5.00 2.00 1/100 1" > "$T/busy"
-out=$(bash -c "${S//\/proc\/loadavg/$T/quiet}" 2>&1); echo "$out" | grep -q '^settled: load 0.05 after 0 s$' && ok "settle: a quiet machine settles at once" || bad "settle quiet: $out"
-out=$(bash -c "$(echo "$S" | sed "s|/proc/loadavg|$T/busy|; s|seq 1 60|seq 1 2|; s|sleep 10|sleep 0|")" 2>&1); rc=$?; echo "$out" | grep -q 'load did not settle: 9.00' && [ $rc = 0 ] && ok "settle: a busy machine is given up on cleanly (exit 0, says so)" || bad "settle busy rc=$rc: $out"
+out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/quiet" bash -c "${C/ 600;/ 600;}" lbl 2>&1); echo "$out" | grep -q '^SETTLE lbl: settled, load 0.05 after 0 s' && ok "settle step: a quiet machine settles at once" || bad "settle quiet: $out"
+out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/busy" SETTLE_POLL=1 bash -c "${C/ 600;/ 1;}" lbl 2>&1); rc=$?; echo "$out" | grep -q '^SETTLE lbl: NOT SETTLED, load 9.00' && [ $rc = 0 ] && ok "settle step: a busy machine is given up on cleanly (exit 0, says NOT SETTLED)" || bad "settle busy rc=$rc: $out"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

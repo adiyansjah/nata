@@ -2,13 +2,13 @@
 //!
 //! The 1-minute load average INCLUDES this benchmark's own worker threads (4 busy threads push it towards 4 within a
 //! minute), so on its own it cannot say whether anyone else is using the machine. Two measures are therefore used:
-//! the load average read BEFORE the benchmark starts any thread (the run-level "quiet" test, threshold 2), and the
+//! the load average read BEFORE the benchmark starts any thread (the run-level "quiet" test, threshold 0.5, the same as ADR 0006 rule 7), and the
 //! CPU time that was used by other processes (or stolen by the hypervisor) during each cell: the machine's busy time
 //! from /proc/stat minus this process's own CPU time. USER_HZ is assumed to be 100 (true on Linux x86-64 and ARM64).
 
 use std::time::Instant;
 
-pub const QUIET_LOAD_LIMIT: f64 = 2.0;
+pub const QUIET_LOAD_LIMIT: f64 = 0.5;
 /// A cell is "quiet" only if less than this many cores' worth of CPU went to other processes during the cell.
 pub const QUIET_FOREIGN_CORES: f64 = 0.5;
 const USER_HZ: f64 = 100.0;
@@ -99,7 +99,10 @@ mod tests {
     #[test]
     fn quiet_is_refused_under_load_or_foreign_use_or_unknown() {
         assert_eq!(label(0.1, 0.0), "quiet");
-        assert_eq!(label(1.99, 0.49), "quiet");
+        assert_eq!(label(0.49, 0.49), "quiet");
+        // 0.72 was called "quiet" by the old limit of 2 in the 2026-11-05 ARM64 run; the settle rule is below 0.5
+        assert_eq!(label(0.72, 0.0), "SANITY ONLY");
+        assert_eq!(label(0.5, 0.0), "SANITY ONLY");
         assert_eq!(label(2.0, 0.0), "SANITY ONLY");
         assert_eq!(label(2.5, 0.0), "SANITY ONLY");
         assert_eq!(label(0.1, 0.5), "SANITY ONLY");

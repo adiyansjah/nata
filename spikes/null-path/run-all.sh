@@ -37,6 +37,12 @@ export HEAVY
 
 say() { printf '\n==== %s ====\n' "$*" | tee -a "$OUT/run.log"; }
 load() { uptime | sed 's/.*load average/load average/'; }
+# Every timed phase starts on a settled machine (ADR 0006 rule 7: 1-minute load below 0.5): the phase before it leaves the 1-minute
+# average high (found 2026-11-05: the phases after the first printed loads of 1.4-2.0). SETTLE_MAX is the longest wait in seconds
+# per phase; the default 0 only prints the load (a development machine is never quiet), the GCP job sets 600. The line it prints
+# says "NOT SETTLED" when the wait ran out, and then the phase that follows is SANITY ONLY.
+SETTLE_SH="$PWD/../../scripts/gcp/settle.sh"   # run-all.sh has cd-ed to its own directory (line 26)
+settle() { [ -x "$SETTLE_SH" ] && { "$SETTLE_SH" "$1" 0.5 "${SETTLE_MAX:-0}" | tee -a "$OUT/run.log"; }; return 0; }
 
 say "machine"
 {
@@ -45,8 +51,8 @@ say "machine"
   rustc --version; echo "RUSTFLAGS=${RUSTFLAGS:-<unset>}"; uptime
 } | tee -a "$OUT/run.log"
 L1=$(awk '{print $1}' /proc/loadavg)
-if awk -v l="$L1" 'BEGIN{exit !(l >= 2.0)}'; then
-  echo "WARNING: 1-minute load average is $L1 (>= 2). Timing numbers from this run are SANITY ONLY." | tee -a "$OUT/run.log"
+if awk -v l="$L1" 'BEGIN{exit !(l >= 0.5)}'; then
+  echo "WARNING: 1-minute load average is $L1 (>= 0.5). Timing numbers taken before a SETTLE line says 'settled' are SANITY ONLY." | tee -a "$OUT/run.log"
 fi
 
 say "build (release: overflow-checks = true; nochecks: overflow-checks = false)"
@@ -86,10 +92,12 @@ else
 fi
 
 # ---------------------------------------------------------------- 3. timing
+settle 3a
 say "3a. ladder, wall clock ($ROUNDS rounds): old engine and each step, 0% vs 10% NULLs, interleaved. $(load)"
 $H $BIN ladder "$LI" "$ROUNDS" | tee "$OUT/ladder-wall.md" | tee -a "$OUT/run.log"
 echo "$(load)" | tee -a "$OUT/run.log"
 
+settle 3b
 say "3b. ladder, process CPU time (same arms). $(load)"
 NATA_CLOCK=cpu $H $BIN ladder "$LI" "$ROUNDS" | tee "$OUT/ladder-cpu.md" | tee -a "$OUT/run.log"
 echo "$(load)" | tee -a "$OUT/run.log"
@@ -97,16 +105,19 @@ echo "$(load)" | tee -a "$OUT/run.log"
 say "3c. cost of overflow-checks: release (on) and nochecks (off), alternated A B A B. $(load)"
 for rep in 1 2; do
   for b in "$BIN" "$NOCHK"; do
+    settle "3c-$(basename "$(dirname "$b")")-rep$rep"
     echo "--- $b (rep $rep) $(load)" | tee -a "$OUT/run.log"
     $H $b ladder "$LI" "$((ROUNDS / 2 + 1))" | tee "$OUT/ladder-$(basename "$(dirname "$b")")-$rep.md" | grep -E '^###|^\| (0|3|6) ' | tee -a "$OUT/run.log"
   done
 done
 
+settle 3d
 say "3d. NULL density 0 / 1 / 10 / 50 / 100%, old engine and the final step, process CPU time. $(load)"
 NATA_CLOCK=cpu $H $BIN density "$LI" "$ROUNDS" | tee "$OUT/density.md" | tee -a "$OUT/run.log"
 
 say "3e. where the time goes: per-stage minimum over passes, one thread, per-row masks (3a) / subtract NULL rows (3) / final (6). $(load)"
 for q in q1 q6; do for st in 3a 3 6; do
+  settle "3e-$q-$st"
   echo "--- $q step $st $(load)" | tee -a "$OUT/run.log"
   $H $BIN stages "$LI" 15 $q $st | tee -a "$OUT/stages.md" | tee -a "$OUT/run.log"
 done; done

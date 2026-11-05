@@ -24,7 +24,12 @@
 #   IC_MUTANT_TIMEOUT  seconds per TLC run of a mutant (default 900)
 #   IC_WRITERS         writer processes per stress run (default: 4, 8, 16 in turn); IC_SEEDS stress seeds (default 6)
 #   IC_PORT            port of the catalog (default 8181)
-#   IC_MODE            full (default): every phase.  model: the targeted model re-run of the `icebergmodel` GCP job: ONLY the phases
+#   IC_MODE            full (default): every phase.  spikes: everything EXCEPT the TLC model (no model-lint, model-parse-and-edits, model-smoke,
+#                      model-full, model-mutants): tools, rust-build, rust-tests, catalog-build, catalog-start, spike-rest-catalog,
+#                      interop-pyiceberg and spike-object-store, for re-running the code side on another machine without the 2-hour model
+#                      phase (the model result does not depend on the architecture of the VM). In this mode interop-pyiceberg is GATING:
+#                      the first run skipped it (setup defect) and a skip would otherwise pass unnoticed. The verdict says the model is NOT
+#                      covered.  model: the targeted model re-run of the `icebergmodel` GCP job: ONLY the phases
 #                      tools, model-lint, model-parse-and-edits and model-full (no Rust, no catalog, no spikes, no interop, no mutants),
 #                      model-full restricted to IC_MODEL_ONLY, each run cut to the time left in IC_MODEL_BUDGET. A TIMEOUT, ERROR or
 #                      NOT-RUN run, or any result other than the expected one, makes the verdict FAIL.
@@ -60,7 +65,7 @@ PORT=${IC_PORT:-8181}
 SEEDS=${IC_SEEDS:-6}
 TLC_TIMEOUT=${IC_TLC_TIMEOUT:-2700}
 MODE=${IC_MODE:-full}
-case "$MODE" in full | model) ;; *) echo "IC_MODE must be full or model, not '$MODE'" >&2; exit 2 ;; esac
+case "$MODE" in full | model | spikes) ;; *) echo "IC_MODE must be full, model or spikes, not '$MODE'" >&2; exit 2 ;; esac
 # The default list of the targeted re-run: the 15 runs that had no result in the first GCP run (iceberg-full-arm64), cheapest guess
 # first is NOT knowable (the costs are unknown), so: the near-complete three-store-ser, then the I4 run, the 2-writer liveness run,
 # the 11 canaries, and the 3-writer liveness run (the most expensive unknown) last.
@@ -220,14 +225,14 @@ URL=""
 phase tools yes "$HERE/scripts/setup-tools.sh" "$TOOLS"
 cp "$TOOLS/VERSIONS.txt" "$OUT/tool-versions.txt" 2> /dev/null || true
 # 2. the model: static checks, parse of every mutant
-phase model-lint yes ph_model_lint
-phase model-parse-and-edits yes ph_model_parse
+[ "$MODE" = spikes ] || phase model-lint yes ph_model_lint
+[ "$MODE" = spikes ] || phase model-parse-and-edits yes ph_model_parse
 if [ "$MODE" = model ]; then
   log "MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits and model-full; runs: $MODEL_ONLY"
   log "limits: ${TLC_TIMEOUT}s per run, ${TLC_TIMEOUT_BIG}s per three-writer run (three-*, live-3), ${MODEL_BUDGET}s in total (each run is cut to the time left); TLC heap ${HEAP_MB} MB, ${NPROC} workers"
 else
 # 3. smoke: does TLC evaluate the spec?
-phase model-smoke yes ph_model_smoke
+[ "$MODE" = spikes ] || phase model-smoke yes ph_model_smoke
 # 4. Rust build and tests (mock catalog + object-store mode; no Java needed)
 phase rust-build yes ph_rust_build
 phase rust-tests yes ph_rust_tests
@@ -238,36 +243,47 @@ URL=$(cat "$WORKBASE/catalog-url" 2> /dev/null || true)
 cp "$TOOLS/CATALOG.txt" "$OUT/catalog-version.txt" 2> /dev/null || true
 cp "$CATALOG_RUN/config.json" "$OUT/catalog-config.json" 2> /dev/null || true
 phase spike-rest-catalog yes ph_rest_suite
-phase interop-pyiceberg no ph_interop
+if [ "$MODE" = spikes ]; then phase interop-pyiceberg yes ph_interop; else phase interop-pyiceberg no ph_interop; fi
 cp "$CATALOG_RUN/catalog.log" "$OUT/catalog.log" 2> /dev/null || true
 cleanup
 # 6. the object-store mode
 phase spike-object-store yes ph_store_suite
 fi
 # 7. the model: the full unmutated run (every configuration, liveness, canaries), then every mutant
-phase model-full yes ph_model_full
-cp "$OUT/model/model-summary.txt" "$OUT/model-summary.txt" 2> /dev/null || true
-[ "$MODE" = model ] || phase model-mutants yes ph_model_mutants
+if [ "$MODE" != spikes ]; then
+  phase model-full yes ph_model_full
+  cp "$OUT/model/model-summary.txt" "$OUT/model-summary.txt" 2> /dev/null || true
+  [ "$MODE" = model ] || phase model-mutants yes ph_model_mutants
+fi
 
 # ------------------------------------------------------------------------------------------------ verdict
 {
   echo
-  echo "---- model: unmutated runs"
-  cat "$OUT/model-summary.txt" 2> /dev/null || echo "(no model summary)"
+  if [ "$MODE" = spikes ]; then
+    echo "---- model: NOT RUN in mode spikes"
+  else
+    echo "---- model: unmutated runs"
+    cat "$OUT/model-summary.txt" 2> /dev/null || echo "(no model summary)"
+  fi
   if [ "$MODE" = full ]; then
     echo
     echo "---- model: mutants"
     sed -n '/^mutant /,$p' "$OUT/model-mutants.txt" 2> /dev/null || echo "(no mutant table)"
     echo
+  fi
+  if [ "$MODE" != model ]; then
     echo "---- spike: REST reference catalog"
     tail -n 4 "$OUT/spike-rest-catalog.txt" 2> /dev/null
     echo "---- spike: object store"
     tail -n 4 "$OUT/spike-object-store.txt" 2> /dev/null
+    echo "---- interop: pyiceberg reads our manifests"
+    tail -n 4 "$OUT/interop-pyiceberg.txt" 2> /dev/null
   fi
 } >> "$SUMMARY"
 if [ "$FAILED" -eq 0 ]; then
   [ "$MODE" = model ] && log "VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)"
-  [ "$MODE" = model ] || log "VERDICT PASS (every gating phase passed)"
+  [ "$MODE" = spikes ] && log "VERDICT PASS (every phase of the code side passed, including the pyiceberg interop; the TLA+ model was NOT run in this mode: its result is in the model runs, not here)"
+  [ "$MODE" = full ] && log "VERDICT PASS (every gating phase passed)"
   exit 0
 fi
 log "VERDICT FAIL ($FAILED gating phase(s) failed; see the PHASE lines above and the per-phase files in $OUT)"
