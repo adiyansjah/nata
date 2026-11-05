@@ -219,6 +219,11 @@ else
     echo "REAL STORE NOT MEASURED: the layouts are not readable under the prefix. Upload them first: objscan upload --data <layouts dir> (needs write credentials in the environment)." | tee "$OUT/REAL-STORE-NOT-MEASURED.txt" | tee -a "$SUMMARY"
     fail 5
   else
+    if [ "${NATA_OBJSTORE_KIND:-}" = gcs ]; then
+      say "the VM's identity must be read-only (a write to the test prefix must be refused)"
+      "$BIN" real-readonly 2>&1 | "$BIN" redact | tee "$OUT/real-readonly.txt" | tee -a "$SUMMARY"
+      [ "${PIPESTATUS[0]}" -eq 0 ] || { note "THE VM IDENTITY CAN WRITE TO THE BUCKET: delete the service account's write role before anything else"; fail 7; }
+    fi
     mkdir -p "$OUT/real"
     wait_quiet 120
     RSAN=""; awk -v l="$(load1)" 'BEGIN{exit !(l>=2)}' && RSAN="--sanity-only"

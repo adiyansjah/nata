@@ -70,6 +70,7 @@ fn main() -> ExitCode {
         "real-status" => cmd_real_status(),
         "real-check" => cmd_real_check(&args),
         "upload" => cmd_upload(&args),
+        "real-readonly" => cmd_real_readonly(),
         "redact" => cmd_redact(),
         "leakscan" => cmd_leakscan(&args),
         c => Err(format!("unknown command {c}")),
@@ -352,7 +353,7 @@ fn cmd_bench(a: &Args) -> Result<u8, String> {
 fn cmd_real_status() -> Result<u8, String> {
     match StoreSpec::real_from_env() {
         RealConfig::Configured(s) => {
-            println!("configured ({}; credentials: {})", s.label, if s.has_credentials() { "HMAC from the environment" } else { "none, anonymous reads" });
+            println!("configured ({}; credentials: {})", s.label, if s.gcs { "the service account of this VM (metadata server), none configured" } else if s.has_credentials() { "HMAC from the environment" } else { "none, anonymous reads" });
             Ok(0)
         }
         RealConfig::NotConfigured => {
@@ -410,6 +411,31 @@ fn cmd_upload(a: &Args) -> Result<u8, String> {
     }
     println!("uploaded {n} file(s)");
     Ok(0)
+}
+
+/// The identity the VM runs with must be READ-ONLY. Tries to write a probe object under the test prefix and requires that the store refuses; if the write is
+/// accepted the probe is deleted again and the exit status is 7. (Added 2026-11-05: the service account could not be tested from outside, acting as it needs
+/// a role on the operator's own account, so the VM tests itself.)
+fn cmd_real_readonly() -> Result<u8, String> {
+    use object_store::{ObjectStoreExt, PutPayload};
+    let RealConfig::Configured(spec) = StoreSpec::real_from_env() else {
+        return Err("the real store is not configured".into());
+    };
+    let store = spec.build(None)?;
+    let rt = io_runtime(2);
+    let probe = spec.path(".write-probe-must-be-refused");
+    match rt.block_on(store.put(&probe, PutPayload::from(b"probe".to_vec()))) {
+        Err(e) => {
+            let msg = spec.redactor().apply(&e.to_string());
+            println!("READ-ONLY OK: the write was refused ({})", msg.chars().take(120).collect::<String>());
+            Ok(0)
+        }
+        Ok(_) => {
+            let _ = rt.block_on(store.delete(&probe));
+            println!("READ-ONLY VIOLATED: the VM identity can WRITE to the test prefix (the probe object was deleted again)");
+            Ok(7)
+        }
+    }
 }
 
 fn cmd_redact() -> Result<u8, String> {
