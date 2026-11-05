@@ -1,0 +1,51 @@
+[TRUNCATED by the recorder: the last 50 of 2445 lines of this TLC log; the first lines (command, parse, progress) and the counterexample trace are in the local copy only]
+                files |-> {<<"d", 0, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 0, 0>>,
+                addedRows |-> {1, 2},
+                delPairs |-> {} ],
+              [ w |-> 1,
+                id |-> <<1, 1>>,
+                parent |-> <<0, 0>>,
+                op |-> "append",
+                seq |-> 1,
+                files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 1, 1>>,
+                addedRows |-> {3},
+                delPairs |-> {} ],
+              [ w |-> 2,
+                id |-> <<2, 2>>,
+                parent |-> <<1, 1>>,
+                op |-> "delete",
+                seq |-> 2,
+                files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+                del |-> {<<<<"d", 0, 0>>, 1>>},
+                dfiles |-> {<<"x", 2, 0>>},
+                man |-> <<"m", 2, 2>>,
+                addedRows |-> {},
+                delPairs |-> {<<<<"d", 0, 0>>, 1>>} ] },
+        cur |->
+            [ w |-> 2,
+              id |-> <<2, 2>>,
+              parent |-> <<1, 1>>,
+              op |-> "delete",
+              seq |-> 2,
+              files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+              del |-> {<<<<"d", 0, 0>>, 1>>},
+              dfiles |-> {<<"x", 2, 0>>},
+              man |-> <<"m", 2, 2>>,
+              addedRows |-> {},
+              delPairs |-> {<<<<"d", 0, 0>>, 1>>} ] ] )
+/\ base = <<0, 1, 0>>
+/\ crashLeft = 1
+/\ plan = << [targets |-> {}, inputs |-> {}],
+   [targets |-> {<<<<"d", 0, 0>>, 1>>}, inputs |-> {}],
+   [targets |-> {}, inputs |-> {}] >>
+
+543022 states generated, 167721 distinct states found, 65853 states left on queue.
+The depth of the complete state graph search is 19.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 14 and the 95th percentile is 5).
+Finished in 01s at (2026-11-05 03:54:41)

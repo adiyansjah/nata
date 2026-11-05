@@ -1,6 +1,8 @@
 # The Iceberg commit under concurrent writers, retries and crashes (verification-plan item 24, gate)
 
-Status: **first GCP run done on 2026-11-05 (section 8): the verdict is FAIL, and not because the model checker found a violation.** The phase `model-full` used up its 7,200 s budget: one configuration timed out (`three-store-ser`, no result) and 14 were never started (`three-rest-snap-i4`, `live-2`, `live-3` and the 11 canaries), so **15 of the 24 model runs have no result**. What did run passed: the seven smaller model configurations, `three-rest-ser` and `three-rest-snap` (no invariant violated), 9 of 9 mutants caught, and the commit spike against the Apache REST reference fixture 1.12.0 and against the object-store mode (every check as expected). The pyiceberg interop phase was skipped. Sections 1-7 below were written before the run; where they say "to be filled" or "nothing has been run", section 8 is the current state. The facts about Iceberg, the REST API and object stores are from primary sources read on 2026-11-04 (section 1).
+Status (updated 2026-11-05): **the model part is now complete within its bounds: all 24 model runs have their expected result, from two GCP runs** (section 8: nine of them, verdict FAIL for lack of time; section 10: the other fifteen, verdict PASS), with the same `IcebergCommit.tla` and `MC.tla` in both (identical sha256, section 10). This covers only the model, as `checked within bounds`, not as a proof; later runs of the code side, the Apache Polaris product catalog and the pyiceberg interop are in sections 11 to 13. A real object store and a production vendor's catalog are still untested.
+
+History of the first run, which the next paragraph describes: **first GCP run done on 2026-11-05 (section 8): the verdict is FAIL, and not because the model checker found a violation.** The phase `model-full` used up its 7,200 s budget: one configuration timed out (`three-store-ser`, no result) and 14 were never started (`three-rest-snap-i4`, `live-2`, `live-3` and the 11 canaries), so **15 of the 24 model runs had no result** (they were run in section 10). What did run passed: the seven smaller model configurations, `three-rest-ser` and `three-rest-snap` (no invariant violated), 9 of 9 mutants caught, and the commit spike against the Apache REST reference fixture 1.12.0 and against the object-store mode (every check as expected). The pyiceberg interop phase was skipped. Sections 1-7 below were written before the run; where they say "to be filled" or "nothing has been run", sections 8 to 13 are the current state. The facts about Iceberg, the REST API and object stores are from primary sources read on 2026-11-04 (section 1).
 
 Code: `spikes/iceberg-commit/` (throwaway, own Cargo workspace; delete once the table-format ADR is accepted, keep this file).
 Entry point on a clean Debian VM: `spikes/iceberg-commit/gcp-check.sh <results-dir>`.
@@ -303,7 +305,7 @@ Conditional create on a local file system (`PutMode::Create`, an atomic hard lin
 
 ### What this does not show
 
-- **No model result for `three-store-ser`** (timeout), for **`three-rest-snap-i4`** (that I4 can fail under snapshot isolation, which shows I4 is a live check), for **liveness** (`live-2`, `live-3`: termination and progress have not been checked at all) or for **any of the 11 canaries** (so at three writers it is not shown that an unknown outcome, a conflict, a committed retry, a validation abort, a duplicate delivery, a collected orphan or a pinned reader are reachable; a configuration that cannot reach them would pass vacuously). The mutants, caught on small configurations, show some of these situations are reachable there (unknown outcome with retry, compaction, garbage collection), not all.
+- **(Closed by section 10, the re-run of exactly these 15 runs: all have their expected result.)** **No model result for `three-store-ser`** (timeout), for **`three-rest-snap-i4`** (that I4 can fail under snapshot isolation, which shows I4 is a live check), for **liveness** (`live-2`, `live-3`: termination and progress have not been checked at all) or for **any of the 11 canaries** (so at three writers it is not shown that an unknown outcome, a conflict, a committed retry, a validation abort, a duplicate delivery, a collected orphan or a pinned reader are reachable; a configuration that cannot reach them would pass vacuously). The mutants, caught on small configurations, show some of these situations are reachable there (unknown outcome with retry, compaction, garbage collection), not all.
 - The passes are for a bounded model: at most 3 writers with one operation each, 2 attempts, budgets of one crash, one duplicate delivery and one lost request, one pinned reader, one table. A larger bound, a second operation per writer, or equality deletes and v3 deletion vectors (not modelled) could behave differently. TLC's fingerprint-collision estimate is small but not zero (above).
 - The model is not tied to the code by a refinement check: the model passing and the spike passing are two separate facts about two descriptions of the protocol.
 - The spike ran against one catalog, the Apache reference fixture 1.12.0 (a test fixture, JDBC/SQLite backed), not against any product (Polaris, Lakekeeper, Nessie, a cloud catalog), and the object-store mode used a local file system's atomic create, not S3, GCS or Azure over a network (no 409/404 races, no listing behaviour, no latency). Only ARM64 ran; x86-64 did not.
@@ -319,17 +321,19 @@ The job runs only the 15 TLC runs that have no result (section 8), with no Rust 
 
 **How long each run needs (what is known and what is not):**
 
-| Run | Estimate |
-|---|---|
-| `three-store-ser` | About the time of `three-rest-ser`, which took 2,481 s on 8 vCPU. It did not finish in 2,700 s, and at the same number of distinct states (about 114 million) it was about 10% slower than `three-rest-ser` (2,644 s against about 2,400 s), which suggests about 2,750 s on 8 vCPU (an inference from one pair of progress lines, not a measurement). What 16 workers change is **unknown**. |
-| `three-rest-snap-i4` | **Unknown.** TLC stops at the first violation of I4; how deep that is in the snapshot-isolation space was not measured. |
-| `live-2` | **Unknown.** It checks liveness (termination and progress) on two writers; no liveness run has ever been timed. |
-| `live-3` | **Unknown**, and the most likely to be expensive: three writers with liveness checking. |
-| the 11 canaries | **Unknown**, each. Each stops at the first state where its situation is reached, in the `three-rest-ser` state space; the depth at which each is reached was not measured. |
+| Run | Estimate (before the run) | Actual (section 10) |
+|---|---|---|
+| `three-store-ser` | About the time of `three-rest-ser`, which took 2,481 s on 8 vCPU. It did not finish in 2,700 s, and at the same number of distinct states (about 114 million) it was about 10% slower than `three-rest-ser` (2,644 s against about 2,400 s), which suggests about 2,750 s on 8 vCPU (an inference from one pair of progress lines, not a measurement). What 16 workers change is **unknown**. | **1,485 s on 16 workers** (estimate about 2,750 s on 8 vCPU; the 16-vCPU figure was not estimated). PASS. |
+| `three-rest-snap-i4` | **Unknown.** TLC stops at the first violation of I4; how deep that is in the snapshot-isolation space was not measured. | **2 s** (depth 19, 543,022 states generated). VIOLATED I4_NoPhantom, as expected. |
+| `live-2` | **Unknown.** It checks liveness (termination and progress) on two writers; no liveness run has ever been timed. | **23 s** (1,165,651 generated, 280,106 distinct). PASS. |
+| `live-3` | **Unknown**, and the most likely to be expensive: three writers with liveness checking. | **1,326 s** (40,580,220 generated, 8,591,956 distinct, depth 51). PASS. Cheaper than feared: less than `three-store-ser`. |
+| the 11 canaries | **Unknown**, each. Each stops at the first state where its situation is reached, in the `three-rest-ser` state space; the depth at which each is reached was not measured. | **1 or 2 s each** (10 took 1 s, `canary-ValidationAbort` 2 s; 12 s in total); depths 7 to 17. Each REACHED. |
 
 So the 9,000 s budget is a cap, not a prediction: if the unknown runs are cheap the job ends early, and if not, the runs at the end of the order are `NOT-RUN` (a FAIL that names them), to be run in a second `icebergmodel` with `IC_MODEL_ONLY` set to those names.
 
-**Cost** (prices from `scripts/gcp/prices.env`; the `n4a-highcpu-16` price of $0.1968/h is derived from the core and RAM prices of 2026-11-03, not fetched, and must be recomputed before the run): the first run cost $0.224 for 2 h 17 min of VM time on `n4a-highcpu-8` ($0.0984/h). A run that uses the full 9,000 s model budget is about 2 h 35 min of VM time, about $0.51 for the VM. **Proposed cap: `--max-vm-hours 3.0`**, for which `orchestrate.sh plan` prints a worst case of **$0.646** (VM, external IP, disks and the Hyperdisk allowance), so `--approved-usd 0.65`. It needs the owner's explicit yes first.
+**Outcome (executed the same day, section 10).** The 9,000 s cap was not approached: the model phase took 2,848 s (the per-run times above add up to exactly that), no run was cut by its limit, none was `NOT-RUN`, and one VM run was enough; no second `icebergmodel` was needed. The estimates in the table were right about `three-store-ser` (the 8-vCPU figure cannot be compared directly with the 16-vCPU actual) and too pessimistic about everything else: the unknowns turned out to be cheap, `live-3` the only one above a minute besides `three-store-ser`.
+
+**Cost** (prices from `scripts/gcp/prices.env`; the `n4a-highcpu-16` price of $0.1968/h is derived from the core and RAM prices of 2026-11-03, not fetched, and must be recomputed before the run): the first run cost $0.224 for 2 h 17 min of VM time on `n4a-highcpu-8` ($0.0984/h). A run that uses the full 9,000 s model budget is about 2 h 35 min of VM time, about $0.51 for the VM. **Actual:** 3,028 s of VM time counted, estimate $0.166 (VM time only; below the $0.65 cap and the $0.51 planning figure). **Proposed cap: `--max-vm-hours 3.0`**, for which `orchestrate.sh plan` prints a worst case of **$0.646** (VM, external IP, disks and the Hyperdisk allowance), so `--approved-usd 0.65`. It needs the owner's explicit yes first.
 
 ## 10. GCP run `icebergmodel-arm64`, 2026-11-05: verdict PASS for the model phases it covers
 
@@ -338,20 +342,43 @@ TLC: tla2tools v1.7.4 (sha256 `936a2622...e050e88`), 16 workers, heap 19,870 MB.
 
 **Verdict line:** `VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)`; `TOTAL mismatches=0`. Phases: tools, model-lint and model-parse-and-edits PASS (8, 11 and 5 s); `model-full` PASS (2,848 s).
 
-| Run | Expected | Result | Generated | Distinct | Depth | Seconds |
-|---|---|---|---|---|---|---|
-| three-store-ser | PASS | **PASS** | 683,202,106 | 116,840,733 | 52 | 1,485 |
-| three-rest-snap-i4 | VIOLATED:I4_NoPhantom | VIOLATED I4_NoPhantom (expected) | 543,022 | 167,721 | 19 | 2 |
-| live-2 | PASS | **PASS** | 1,165,651 | 280,106 | 35 | 23 |
-| live-3 | PASS | **PASS** | 40,580,220 | 8,591,956 | 51 | 1,326 |
-| 11 canaries (`canary-Unknown`, `-Conflict`, `-RetryCommitted`, `-CompactCommitted`, `-DeleteCommitted`, `-ValidationAbort`, `-CrashedButCommitted`, `-LateOldAttempt`, `-DuplicateDelivered`, `-OrphanCollected`, `-ReaderPinned`) | each VIOLATED:Canary_* | each REACHED | 81 to 127,474 | 69 to 42,909 | 7 to 17 | 1 to 2 each |
+| # | Run | Expected | Result of the checker | What happened | Generated | Distinct | Depth | Seconds |
+|---|---|---|---|---|---|---|---|---|
+| 1 | three-store-ser | PASS | OK | PASS: no invariant violated, whole state graph explored | 683,202,106 | 116,840,733 | 52 | 1,485 |
+| 2 | three-rest-snap-i4 | VIOLATED:I4_NoPhantom | OK | VIOLATED, which is the **expected** outcome | 543,022 | 167,721 | 19 | 2 |
+| 3 | live-2 | PASS | OK | PASS: no invariant violated, whole state graph explored | 1,165,651 | 280,106 | 35 | 23 |
+| 4 | canary-Unknown | VIOLATED:Canary_Unknown | REACHED | VIOLATED, which is the **expected** outcome | 2,621 | 947 | 11 | 1 |
+| 5 | canary-Conflict | VIOLATED:Canary_Conflict | REACHED | VIOLATED, which is the **expected** outcome | 6,763 | 2,767 | 12 | 1 |
+| 6 | canary-RetryCommitted | VIOLATED:Canary_RetryCommitted | REACHED | VIOLATED, which is the **expected** outcome | 17,343 | 6,942 | 14 | 1 |
+| 7 | canary-CompactCommitted | VIOLATED:Canary_CompactCommitted | REACHED | VIOLATED, which is the **expected** outcome | 4,011 | 1,549 | 13 | 1 |
+| 8 | canary-DeleteCommitted | VIOLATED:Canary_DeleteCommitted | REACHED | VIOLATED, which is the **expected** outcome | 3,685 | 1,436 | 12 | 1 |
+| 9 | canary-ValidationAbort | VIOLATED:Canary_ValidationAbort | REACHED | VIOLATED, which is the **expected** outcome | 127,474 | 42,909 | 17 | 2 |
+| 10 | canary-CrashedButCommitted | VIOLATED:Canary_CrashedButCommitted | REACHED | VIOLATED, which is the **expected** outcome | 3,849 | 1,450 | 11 | 1 |
+| 11 | canary-LateOldAttempt | VIOLATED:Canary_LateOldAttempt | REACHED | VIOLATED, which is the **expected** outcome | 6,071 | 2,467 | 12 | 1 |
+| 12 | canary-DuplicateDelivered | VIOLATED:Canary_DuplicateDelivered | REACHED | VIOLATED, which is the **expected** outcome | 2,608 | 956 | 11 | 1 |
+| 13 | canary-OrphanCollected | VIOLATED:Canary_OrphanCollected | REACHED | VIOLATED, which is the **expected** outcome | 11,230 | 4,572 | 13 | 1 |
+| 14 | canary-ReaderPinned | VIOLATED:Canary_ReaderPinned | REACHED | VIOLATED, which is the **expected** outcome | 81 | 69 | 7 | 1 |
+| 15 | live-3 | PASS | OK | PASS: no invariant violated, whole state graph explored | 40,580,220 | 8,591,956 | 51 | 1,326 |
+| | **Total** | | | TOTAL mismatches=0 | | | | 2,848 |
+
+**How to read "VIOLATED".** For the 11 `canary-*` rows and for `three-rest-snap-i4`, "VIOLATED" is the **expected, correct** outcome and not a finding. A canary is a deliberately failing check (`Canary_X` asserts that a situation X never happens); TLC reporting it violated proves that X is reachable in that configuration, so the passes of the other runs are not vacuous for X. `three-rest-snap-i4` checks I4_NoPhantom under snapshot isolation, where it is supposed to fail (it shows I4 is a live check). The "Result" column is the checker's own word: `OK` = the run ended as expected, `REACHED` = the canary was reached. The three `PASS` rows (`three-store-ser`, `live-2`, `live-3`) are the only ones that say "no counterexample exists in the bounded model".
 
 **What it shows.**
-- `three-store-ser` (three writers, conditional-create store, serializable) explored the whole reachable state graph with no invariant violated. Its generated, distinct and depth numbers equal those of `three-rest-ser` in section 8 to the last digit, so all three REST/STORE pairs now agree. It took 1,485 s on 16 workers; the 8-worker run timed out at 2,700 s, so the section 9 guess of about 2,750 s on 8 vCPU was consistent with this.
+- `three-store-ser` (three writers, conditional-create store, serializable) explored the whole reachable state graph with no invariant violated. Its generated, distinct and depth numbers equal those of `three-rest-ser` in section 8 to the last digit, so all three REST/STORE pairs now agree. It took 1,485 s on 16 workers; the 8-worker run timed out at 2,700 s, which is consistent with the section 9 inference of about 2,750 s on 8 vCPU (not a like-for-like comparison: the worker count differs).
 - `three-rest-snap-i4` ended with I4_NoPhantom violated, as expected: I4 is a live check under snapshot isolation, not a vacuous one.
 - Liveness (`live-2`, `live-3`) passed: no counterexample to termination and progress in the bounded model, with 0 states left on the queue. These are the first liveness results.
 - All 11 coverage canaries were reached, so the situations the model claims to check (unknown outcome, conflict, committed retry, compaction, delete, validation abort, crash-but-committed, late old attempt, duplicate delivery, orphan collection, pinned reader) are reachable in it; the earlier passes were not vacuous for these.
 - TLC fingerprint-collision estimates: `three-store-ser` 3.6E-3 (calculated, optimistic) and 4.9E-4 (from the actual fingerprints); `live-3` 1.5E-5 and 9.5E-6; `live-2` 1.3E-8 and 5.3E-9. These are small but not zero, the same caveat as section 8.
+
+**Combined evidence: all 24 model runs have an expected result, from two runs, not one.** The model has 24 TLC runs: the 13 configurations in `model/cfg/` plus 11 canary runs that the runner derives from `three-rest-ser.cfg` by replacing its invariants with one canary each. The first run (section 8, `iceberg-full-arm64`, 8 vCPU) gave expected results for **nine**: `smoke-rest`, `appends2-rest`, `appends2-store`, `ad-rest-ser`, `ad-store-ser`, `dc-rest`, `dc-store`, `three-rest-ser`, `three-rest-snap`. This run (`icebergmodel-arm64`, 16 vCPU) gave expected results for the **other fifteen** (the 15 rows above). 9 + 15 = 24, and no run was done twice. Nobody has run all 24 in one go; the claim rests on the two runs having checked the same model, so I compared them:
+- `IcebergCommit.tla`: sha256 `365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763` in the `summary.txt` of both runs and in the working tree: **MATCH**.
+- `MC.tla`: `a15593ad0c06d7fb0a41db53e8b14900d7e349a3bda4e1c82cf690efbae827f9` in both and in the working tree: **MATCH**.
+- `Cargo.lock` (not part of the model, but the code side of the same checkout): `639035e59385ad20cd218a9108e243eb49742d2cb81aa1a913461dac127ac4bc` in both: **MATCH**.
+- The `cfg/*.cfg` files are **not hashed** by the harness, so there is no recorded hash to compare. The git history of `spikes/iceberg-commit/model/` shows no change to `IcebergCommit.tla`, `MC.tla` or `cfg/` after their first commit (2026-11-04 18:00 +0700, before both runs); the only later change in that directory is to `run_model.py` and its tests (commit `2bfaed8`, which added the `icebergmodel` job). So the configurations were, by the history, the same; this is an inference from git, not a hash of what ran on each VM. Both VMs reported `git: unknown` (the source is copied, not cloned).
+- Different between the runs: worker count (8 against 16), heap (10,000 against 19,870 MB) and per-run limits; TLC is the same (2.19, tla2tools v1.7.4, sha256 `936a2622...e050e88`). No configuration was run in both, so there is no direct comparison of the worker counts; indirectly, `live-2` (this run) and `ad-rest-ser` (first run) report the same counts (1,165,651 generated, 280,106 distinct, depth 35), and so do the REST and STORE pairs, as expected.
+- Mutants (9 of 9 caught) were run only in the first run, and only on the small configurations. That stays so: this run did not re-run them.
+
+**Scope of this verdict.** It covers only the model phases (tools, model-lint, model-parse-and-edits, model-full). At the time of this run the pyiceberg interop phase had never run successfully on a VM (it was skipped in section 8); it passes in sections 11 and 12, which are separate runs and are not part of this verdict. The real object store (S3, GCS, Azure over a network) and the REST catalog of a production vendor are untested here. The model's bounds are small: at most 3 writers with one operation each and the listed configurations. The result is **checked within bounds**, not a proof.
 
 **What this does not show.**
 - It closes the model part of the item 24 gate. It does not show the spike or the product code correct, and the model is not tied to the code by a refinement check.

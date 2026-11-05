@@ -1,0 +1,19 @@
+model: IcebergCommit.tla sha256 365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763
+SANY: parses
+run                    expected                     result     detail                                generated    distinct depth    secs
+three-store-ser        PASS                         OK         PASS                                  683202106   116840733    52    1485
+three-rest-snap-i4     VIOLATED:I4_NoPhantom        OK         VIOLATED I4_NoPhantom                    543022      167721    19       2
+live-2                 PASS                         OK         PASS                                    1165651      280106    35      23
+canary-Unknown         VIOLATED:Canary_Unknown      REACHED    VIOLATED Canary_Unknown                    2621         947    11       1
+canary-Conflict        VIOLATED:Canary_Conflict     REACHED    VIOLATED Canary_Conflict                   6763        2767    12       1
+canary-RetryCommitted  VIOLATED:Canary_RetryCommitted REACHED    VIOLATED Canary_RetryCommitted            17343        6942    14       1
+canary-CompactCommitted VIOLATED:Canary_CompactCommitted REACHED    VIOLATED Canary_CompactCommitted           4011        1549    13       1
+canary-DeleteCommitted VIOLATED:Canary_DeleteCommitted REACHED    VIOLATED Canary_DeleteCommitted            3685        1436    12       1
+canary-ValidationAbort VIOLATED:Canary_ValidationAbort REACHED    VIOLATED Canary_ValidationAbort          127474       42909    17       2
+canary-CrashedButCommitted VIOLATED:Canary_CrashedButCommitted REACHED    VIOLATED Canary_CrashedButCommitte         3849        1450    11       1
+canary-LateOldAttempt  VIOLATED:Canary_LateOldAttempt REACHED    VIOLATED Canary_LateOldAttempt             6071        2467    12       1
+canary-DuplicateDelivered VIOLATED:Canary_DuplicateDelivered REACHED    VIOLATED Canary_DuplicateDelivered         2608         956    11       1
+canary-OrphanCollected VIOLATED:Canary_OrphanCollected REACHED    VIOLATED Canary_OrphanCollected           11230        4572    13       1
+canary-ReaderPinned    VIOLATED:Canary_ReaderPinned REACHED    VIOLATED Canary_ReaderPinned                 81          69     7       1
+live-3                 PASS                         OK         PASS                                   40580220     8591956    51    1326
+TOTAL mismatches=0

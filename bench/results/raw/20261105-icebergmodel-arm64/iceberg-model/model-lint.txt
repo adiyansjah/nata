@@ -1,0 +1,51 @@
+[TRUNCATED by the recorder: the last 50 of 121 lines]
+  text = open(path).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:85: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/compaction-deletes-live-files/IcebergCommit.tla' mode='w' encoding='UTF-8'>
+  open(path, "w").write(text)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:65: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/icmodel-test-bhbwznh8/compaction-deletes-live-files/IcebergCommit.tla'>
+  return hashlib.sha256(open(path, "rb").read()).hexdigest()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:79: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/accept-stale-base-on-retry/IcebergCommit.tla' mode='r' encoding='UTF-8'>
+  text = open(path).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:85: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/accept-stale-base-on-retry/IcebergCommit.tla' mode='w' encoding='UTF-8'>
+  open(path, "w").write(text)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:65: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/icmodel-test-bhbwznh8/accept-stale-base-on-retry/IcebergCommit.tla'>
+  return hashlib.sha256(open(path, "rb").read()).hexdigest()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:79: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/gc-ignores-active-writers/IcebergCommit.tla' mode='r' encoding='UTF-8'>
+  text = open(path).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:85: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/gc-ignores-active-writers/IcebergCommit.tla' mode='w' encoding='UTF-8'>
+  open(path, "w").write(text)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:65: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/icmodel-test-bhbwznh8/gc-ignores-active-writers/IcebergCommit.tla'>
+  return hashlib.sha256(open(path, "rb").read()).hexdigest()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:79: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/gc-ignores-inflight-requests/IcebergCommit.tla' mode='r' encoding='UTF-8'>
+  text = open(path).read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:85: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-bhbwznh8/gc-ignores-inflight-requests/IcebergCommit.tla' mode='w' encoding='UTF-8'>
+  open(path, "w").write(text)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:65: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/icmodel-test-bhbwznh8/gc-ignores-inflight-requests/IcebergCommit.tla'>
+  return hashlib.sha256(open(path, "rb").read()).hexdigest()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_lint (__main__.Tools.test_lint) ... ok
+test_stage_has_fresh_mtimes (__main__.Tools.test_stage_has_fresh_mtimes) ... ok
+test_two_stagings_in_a_row_both_pass_their_baseline (__main__.Tools.test_two_stagings_in_a_row_both_pass_their_baseline) ... /mnt/work/src/spikes/iceberg-commit/model/mutate_model.py:65: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/icmodel-test-8wkusc8b/stage/IcebergCommit.tla'>
+  return hashlib.sha256(open(path, "rb").read()).hexdigest()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/mnt/work/src/spikes/iceberg-commit/model/test_model_tools.py:51: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/icmodel-test-8wkusc8b/stage/leftover.txt' mode='w' encoding='UTF-8'>
+  open(junk, "w").write("x")
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 10.909s
+
+OK

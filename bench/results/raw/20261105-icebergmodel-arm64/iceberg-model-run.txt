@@ -1,0 +1,11 @@
+[03:29:30] phase tools: start
+PHASE tools PASS (exit 0, 8s, gating=yes)
+[03:29:38] phase model-lint: start
+PHASE model-lint PASS (exit 0, 11s, gating=yes)
+[03:29:49] phase model-parse-and-edits: start
+PHASE model-parse-and-edits PASS (exit 0, 5s, gating=yes)
+MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits and model-full; runs: three-store-ser,three-rest-snap-i4,live-2,canary-Unknown,canary-Conflict,canary-RetryCommitted,canary-CompactCommitted,canary-DeleteCommitted,canary-ValidationAbort,canary-CrashedButCommitted,canary-LateOldAttempt,canary-DuplicateDelivered,canary-OrphanCollected,canary-ReaderPinned,live-3
+limits: 2700s per run, 4500s per three-writer run (three-*, live-3), 9000s in total (each run is cut to the time left); TLC heap 19870 MB, 16 workers
+[03:29:54] phase model-full: start
+PHASE model-full PASS (exit 0, 2848s, gating=yes)
+VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)

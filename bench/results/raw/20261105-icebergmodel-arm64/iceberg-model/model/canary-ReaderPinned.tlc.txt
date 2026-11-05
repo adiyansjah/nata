@@ -1,0 +1,51 @@
+[TRUNCATED by the recorder: the last 50 of 435 lines of this TLC log; the first lines (command, parse, progress) and the counterexample trace are in the local copy only]
+     addedRows |-> {1, 2},
+     delPairs |-> {} ] >>
+/\ resp = <<"none", "none", "none">>
+/\ pc = <<"crashed", "init", "init">>
+/\ pinned = {[id |-> <<0, 0>>, rows |-> {1, 2}]}
+/\ lossLeft = 1
+/\ exp = <<0, 0, 0>>
+/\ net = {}
+/\ frows = ( <<"d", 0, 0>> :> {1, 2} @@
+  <<"d", 1, 0>> :> {3} @@
+  <<"d", 2, 0>> :> {} @@
+  <<"d", 3, 0>> :> {} )
+/\ inflight = {<<"d", 1, 0>>}
+/\ hist = <<>>
+/\ mlog = ( 0 :>
+      [ ver |-> 0,
+        lastSeq |-> 0,
+        snaps |->
+            { [ w |-> 0,
+                id |-> <<0, 0>>,
+                parent |-> <<0, 0>>,
+                op |-> "init",
+                seq |-> 0,
+                files |-> {<<"d", 0, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 0, 0>>,
+                addedRows |-> {1, 2},
+                delPairs |-> {} ] },
+        cur |->
+            [ w |-> 0,
+              id |-> <<0, 0>>,
+              parent |-> <<0, 0>>,
+              op |-> "init",
+              seq |-> 0,
+              files |-> {<<"d", 0, 0>>},
+              del |-> {},
+              dfiles |-> {},
+              man |-> <<"m", 0, 0>>,
+              addedRows |-> {1, 2},
+              delPairs |-> {} ] ] )
+/\ base = <<0, 0, 0>>
+/\ crashLeft = 0
+/\ plan = << [targets |-> {}, inputs |-> {}],
+   [targets |-> {}, inputs |-> {}],
+   [targets |-> {}, inputs |-> {}] >>
+
+81 states generated, 69 distinct states found, 37 states left on queue.
+The depth of the complete state graph search is 7.
+Finished in 00s at (2026-11-05 03:55:16)
