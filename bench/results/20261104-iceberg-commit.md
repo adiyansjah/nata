@@ -311,7 +311,7 @@ Conditional create on a local file system (`PutMode::Create`, an atomic hard lin
 - Independent interop (pyiceberg reading our manifests) did not run.
 - The cost $0.224 is VM time only.
 
-## 9. Plan for the re-run of the unchecked model configurations (job `icebergmodel`; written 2026-11-05, NOT run)
+## 9. Plan for the re-run of the unchecked model configurations (job `icebergmodel`; written 2026-11-05; run the same day, result in section 10)
 
 The job runs only the 15 TLC runs that have no result (section 8), with no Rust build, catalog, spike, interop or mutant phase, on one `n4a-highcpu-16` Spot VM (16 vCPU, 32 GB; one TLC worker per vCPU, TLC heap about 19,800 MB). Description, variables and tests: `scripts/gcp/README.md`, section "`icebergmodel`". The verdict is FAIL if any run is a TIMEOUT, NOT-RUN, ERROR or unexpected result.
 
@@ -330,3 +330,31 @@ The job runs only the 15 TLC runs that have no result (section 8), with no Rust 
 So the 9,000 s budget is a cap, not a prediction: if the unknown runs are cheap the job ends early, and if not, the runs at the end of the order are `NOT-RUN` (a FAIL that names them), to be run in a second `icebergmodel` with `IC_MODEL_ONLY` set to those names.
 
 **Cost** (prices from `scripts/gcp/prices.env`; the `n4a-highcpu-16` price of $0.1968/h is derived from the core and RAM prices of 2026-11-03, not fetched, and must be recomputed before the run): the first run cost $0.224 for 2 h 17 min of VM time on `n4a-highcpu-8` ($0.0984/h). A run that uses the full 9,000 s model budget is about 2 h 35 min of VM time, about $0.51 for the VM. **Proposed cap: `--max-vm-hours 3.0`**, for which `orchestrate.sh plan` prints a worst case of **$0.646** (VM, external IP, disks and the Hyperdisk allowance), so `--approved-usd 0.65`. It needs the owner's explicit yes first.
+
+## 10. GCP run `icebergmodel-arm64`, 2026-11-05: verdict PASS for the model phases it covers
+
+**Run.** Job `icebergmodel` (section 9), one `n4a-highcpu-16` Spot VM (Neoverse-N3, 16 vCPU, 32 GB, Debian 12 ARM64, kernel 6.1.0-54-cloud-arm64), approved cap $0.65 (`plan` worst case $0.646). Started 03:28 UTC, finished 04:19 UTC. The run's own report: finished, 1 incarnation, 0 preemptions, 4 steps completed, 3,028 s of VM time counted, resources left after cleanup: none; VM cost estimate $0.166 (VM time only). I also listed instances and disks afterwards: both lists were empty.
+TLC: tla2tools v1.7.4 (sha256 `936a2622...e050e88`), 16 workers, heap 19,870 MB. `IcebergCommit.tla` sha256 `365cab76...fe54d88763`, the same as in section 8. Limits: 2,700 s per run, 4,500 s per three-writer run (`three-*`, `live-3`), 9,000 s in total.
+
+**Verdict line:** `VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)`; `TOTAL mismatches=0`. Phases: tools, model-lint and model-parse-and-edits PASS (8, 11 and 5 s); `model-full` PASS (2,848 s).
+
+| Run | Expected | Result | Generated | Distinct | Depth | Seconds |
+|---|---|---|---|---|---|---|
+| three-store-ser | PASS | **PASS** | 683,202,106 | 116,840,733 | 52 | 1,485 |
+| three-rest-snap-i4 | VIOLATED:I4_NoPhantom | VIOLATED I4_NoPhantom (expected) | 543,022 | 167,721 | 19 | 2 |
+| live-2 | PASS | **PASS** | 1,165,651 | 280,106 | 35 | 23 |
+| live-3 | PASS | **PASS** | 40,580,220 | 8,591,956 | 51 | 1,326 |
+| 11 canaries (`canary-Unknown`, `-Conflict`, `-RetryCommitted`, `-CompactCommitted`, `-DeleteCommitted`, `-ValidationAbort`, `-CrashedButCommitted`, `-LateOldAttempt`, `-DuplicateDelivered`, `-OrphanCollected`, `-ReaderPinned`) | each VIOLATED:Canary_* | each REACHED | 81 to 127,474 | 69 to 42,909 | 7 to 17 | 1 to 2 each |
+
+**What it shows.**
+- `three-store-ser` (three writers, conditional-create store, serializable) explored the whole reachable state graph with no invariant violated. Its generated, distinct and depth numbers equal those of `three-rest-ser` in section 8 to the last digit, so all three REST/STORE pairs now agree. It took 1,485 s on 16 workers; the 8-worker run timed out at 2,700 s, so the section 9 guess of about 2,750 s on 8 vCPU was consistent with this.
+- `three-rest-snap-i4` ended with I4_NoPhantom violated, as expected: I4 is a live check under snapshot isolation, not a vacuous one.
+- Liveness (`live-2`, `live-3`) passed: no counterexample to termination and progress in the bounded model, with 0 states left on the queue. These are the first liveness results.
+- All 11 coverage canaries were reached, so the situations the model claims to check (unknown outcome, conflict, committed retry, compaction, delete, validation abort, crash-but-committed, late old attempt, duplicate delivery, orphan collection, pinned reader) are reachable in it; the earlier passes were not vacuous for these.
+- TLC fingerprint-collision estimates: `three-store-ser` 3.6E-3 (calculated, optimistic) and 4.9E-4 (from the actual fingerprints); `live-3` 1.5E-5 and 9.5E-6; `live-2` 1.3E-8 and 5.3E-9. These are small but not zero, the same caveat as section 8.
+
+**What this does not show.**
+- It closes the model part of the item 24 gate. It does not show the spike or the product code correct, and the model is not tied to the code by a refinement check.
+- The bounds are the same as in section 8 (at most 3 writers with one operation each, 2 attempts, one crash, one duplicate delivery, one lost request, one pinned reader, one table). Equality deletes and v3 deletion vectors are not modelled.
+- Only the model was re-run, on ARM64 only. The pyiceberg read of our manifests (section 8, skipped) was not re-run; the spike against the REST fixture and the object-store mode were not re-run; x86-64 did not run; no product catalog or real object store was involved.
+- Liveness holds in the bounded model; no fairness or timing claim is made about a real catalog.
