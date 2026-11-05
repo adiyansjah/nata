@@ -1,0 +1,16 @@
+   Compiling spike-parquet-scan v0.0.0 (/mnt/work/src/spikes/parquet-scan)
+    Finished `release` profile [optimized + debuginfo] target(s) in 28.50s
+     Running tests/scan.rs (target/release/deps/scan-bb360abdba89f335)
+
+running 8 tests
+test duckdb_output_is_parsed ... ok
+test engine_types_are_dictionary_strings_and_decimal64 ... ok
+test the_test_files_have_what_they_claim ... ok
+test parts_of_every_row_group_cover_every_row_exactly_once ... ok
+test plain_and_engine_types_return_the_same_result_with_nulls ... ok
+test a_scan_by_quarters_equals_a_scan_by_row_groups_with_and_without_a_page_index ... ok
+test the_number_of_threads_does_not_change_the_result ... ok
+test the_reference_sql_agrees_with_the_scan_on_a_file_with_nulls ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+

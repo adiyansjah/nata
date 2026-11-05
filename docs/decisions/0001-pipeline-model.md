@@ -21,7 +21,7 @@ Hybrid: push-based inside a node, stream-based between fragments.
 - **Early finish travels three ways:** up the pipeline (pending upstream input is dropped), sideways (the other tasks of the pipeline stop and parked ones are woken) and across an exchange (the consumer closes the channel).
 - **Between fragments:** an `Exchange` interface, an async stream of batches with backpressure. On one node it is an in-memory channel; later the same interface is backed by network shuffle and object-storage spill. Batches are compacted (selection applied) before they enter an exchange.
 - **Operators may be fused** inside a pipeline, and pass selection vectors rather than filtered copies (see Consequences, and 0003).
-- Morsel size (a row group or a smaller slice) is decided in the Parquet scan slice.
+- Morsel size (a row group or a smaller slice) is decided in the Parquet scan slice. **Decided 2026-11-05: a whole row group** (see the revision notes).
 
 ## Why
 
@@ -97,7 +97,7 @@ Reproduced from a clean tarball on a Spot VM (ARM64, `bench/results/20261104-arm
 
 - Operators are state machines with local state per worker and a combine step. The operator trait is designed in slice 2 and must express: need more input, has output, finished, blocked (with a waker).
 - **Fusion.** The interface must allow adjacent operators in a pipeline to be fused into one loop, and operators pass **selection vectors** instead of copying filtered data.
-- **Morsel size** may need to be finer than a row group, to avoid the tail effect seen in the spike. To be tested in the scan slice, not assumed.
+- **Morsel size** may need to be finer than a row group, to avoid the tail effect seen in the spike. Tested in the scan slice's baseline (2026-11-05): a quarter of a row group did not help, see the revision notes.
 - **Determinism.** With dynamic morsel assignment the order in which partial results merge differs from run to run, so floating-point sums can differ between runs even at a fixed thread count (static partitioning did not have this). Decimal and integer sums are exact. For floats, `nata-check` uses a tolerance (`portability.md`, section 5), or merges partial results in morsel order.
 - Cancellation and memory checks happen at morsel boundaries.
 - **Concurrency tests include load.** The scheduler and every channel or waker are tested under CPU contention and with injected delays (`way-of-working.md`, section 2); the prototype's first suite missed a hang that appeared only under load.
@@ -146,6 +146,7 @@ Reproduced from a clean tarball on a Spot VM (ARM64, `bench/results/20261104-arm
 - 2026-11-03, operator-protocol prototype: all four hard cases expressed and tested. Changes to the text: blocking is reported by sources and sinks, not operators; `HaveMoreOutput` and `Finished` are the operator results; sources have a `finish()` hook; early finish travels up, sideways and across an exchange; added consequences for parallel finalize, spill I/O, query-level memory and load testing; open check 1 marked done with two follow-ups. The prototype found and fixed a lost-shutdown-notification bug in its own scheduler.
 
 - 2026-11-03, after independent review: corrected the evidence (the 8-thread pull row used 7 threads; the 2-thread row was left out; the two-variables-at-once design; the mixed-session speedup, now 2.9x; "exact sums also faster" was never isolated); lowered the confidence in "push costs little" and withdrew "no measurable cost"; dropped "little differentiation" as a reason against pull; added synchronous operators with `blocked` and a waker, compaction before an exchange, float determinism, and a replacement open check (the operator-trait prototype, plus a corrected comparison); added precedent, then checked it on the web (DuckDB and Velox only through secondary sources; Presto's `Operator` interface confirmed).
+- 2026-11-05, morsel size, from the baseline spike of slice 3 (`bench/results/20261105-parquet-scan-baseline.md`, both CPU types, settled, 25 rounds, rule R3 fixed before measuring): **the morsel is a whole row group.** On the rule's layout (4 row groups of about 1.5 million rows, written by DuckDB, no page index) a quarter of a row group had 0.64 to 0.73x the throughput at 8 threads (0.40 to 0.46x at 1 to 4 threads) and 2.2x the peak memory; the rule asked for at least 1.15x and at most +25% memory. The one-thread cost of 2.2 to 2.5x matches a quarter decoding its row group from the start, which was not shown directly. With a Parquet page index a quarter costs 2 to 4% at 1 to 4 threads and gains 1.55x to 1.80x at 8 threads, only because the file has 4 row groups for 8 threads; that is the case of fewer morsels than threads, still open for few-row-group files on machines with many cores (item 32). Not measured: SF10, 16 and more threads, other writers. The tail effect that the "may need to be finer" bullet feared is not what limited this file at 1 to 4 threads.
 
 ## Amendments
 

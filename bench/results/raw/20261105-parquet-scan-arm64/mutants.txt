@@ -1,0 +1,5 @@
+clean build: tests pass
+CAUGHT   bug-split-off-by-one: parts_of_every_row_group_cover_every_row_exactly_once a_scan_by_quarters_equals_a_scan_by_row_groups_with_and_without_a_page_index the_number_of_threads_does_not_change_the_result result: FAILED. 5 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s 
+CAUGHT   bug-drop-last-thread: the_number_of_threads_does_not_change_the_result result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s 
+CAUGHT   bug-dict-skips-last-key: plain_and_engine_types_return_the_same_result_with_nulls the_reference_sql_agrees_with_the_scan_on_a_file_with_nulls result: FAILED. 6 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s 
+RESULT mutants: all caught

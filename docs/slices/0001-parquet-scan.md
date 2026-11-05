@@ -48,7 +48,8 @@ Decisions it needs: (a) build or reuse the Parquet decoder, (b) the morsel size.
 - Smallest experiment, with its control arm: `spikes/pipeline-model` and `spikes/generic-ops` already decode `lineitem` through `parquet-rs`; add (1) an arm that reads the same projected columns with dictionaries preserved, (2) DuckDB `read_parquet` of the same columns as the reference,
   (3) the twin of arm (1) as the noise control, (4) the three morsel sizes on `big1`. One thread and 1 to 8 threads, 25 rounds, interleaved, settle before each block.
 - Time box and cloud spend: one day of work; two settled VMs for about 30 minutes each, roughly $0.05 in total (worst case about $0.22 at one VM-hour each). **Approved by the owner on 2026-11-05.**
-- Result file: `bench/results/<date>-parquet-scan-baseline.md`.
+- Result file: `bench/results/20261105-parquet-scan-baseline.md` (run 2026-11-05 on `n4a-highcpu-8` and `c3d-highcpu-8`, about $0.03).
+- **Result:** R1 passes on both CPU types, so `parquet-rs` is reused: it returns dictionary arrays without expanding them and takes 0.37 to 0.65 of DuckDB's time for decode plus a cheap consumer (limit 1.25). R3 chooses **a whole row group per morsel**: on `big1` a quarter has 0.64 to 0.73x the 8-thread throughput and 2.2x the memory. With a page index a quarter is 1.55 to 1.80x faster at 8 threads, but only because `big1` has 4 row groups for 8 threads. The 5x-at-8-threads scalability target was not measured (4 morsels cannot use 8 threads); it stays a check of the slice.
 
 ## 5. Closeout (fill in when done)
 
