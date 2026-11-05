@@ -266,9 +266,9 @@ case "$JOB" in
     # arrow-pipeline gate (tests + DuckDB digit-for-digit diff) must pass before its timings are recorded.
     run t-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     settle_before t-compaction
-    run t-compaction bash -c 'cd "$SRC" && spikes/compaction/gcp-check.sh "$RESULTS/compaction" 25 > "$RESULTS/compaction-run.txt" 2>&1'
+    run t-compaction bash -c 'cd "$SRC" && spikes/compaction/gcp-check.sh "$RESULTS/compaction" 25 > "$RESULTS/compaction-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/compaction-exit.txt"; true'
     settle_before t-pushcost
-    run t-pushcost bash -c 'cd "$SRC" && spikes/push-cost/gcp-check.sh "$RESULTS/push-cost" 25 > "$RESULTS/push-cost-run.txt" 2>&1'
+    run t-pushcost bash -c 'cd "$SRC" && spikes/push-cost/gcp-check.sh "$RESULTS/push-cost" 25 > "$RESULTS/push-cost-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/push-cost-exit.txt"; true'
     run t-ap-build bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo build --release'
     run t-ap-tests bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo test --release --no-fail-fast -- --test-threads=1 > "$RESULTS/arrow-pipeline-tests.txt" 2>&1'
     run t-ap-diff bash -c 'cd "$SRC/spikes/arrow-pipeline" && scripts/duckdb_diff.sh "$SRC/data/tpch-sf1/lineitem.parquet" > "$RESULTS/arrow-pipeline-duckdb-diff.txt" 2>&1'

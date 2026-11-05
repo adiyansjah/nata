@@ -47,12 +47,17 @@ pub enum Verdict {
     Faster,
 }
 
-/// From the paired per-round ratios x/y: `Slower` if at least 75% of rounds had x slower (lower quartile above 1),
-/// `Faster` if at least 75% had it faster (upper quartile below 1), otherwise within noise.
+/// The smallest difference the verdict will call a difference: 1% of the time. Without it a systematic bias of a few
+/// nanoseconds (an identical twin measured 2 ns slower in 75% of rounds, found by the first GCP run) is "Slower".
+pub const MIN_EFFECT: f64 = 0.01;
+
+/// From the paired per-round ratios x/y: `Slower` if at least 75% of rounds had x slower by more than `MIN_EFFECT`
+/// (lower quartile above 1.01), `Faster` if at least 75% had it faster by more than that (upper quartile below 0.99),
+/// otherwise within noise.
 pub fn verdict(ratio: &[f64]) -> Verdict {
-    if quantile(ratio, 0.25) > 1.0 {
+    if quantile(ratio, 0.25) > 1.0 + MIN_EFFECT {
         Verdict::Slower
-    } else if quantile(ratio, 0.75) < 1.0 {
+    } else if quantile(ratio, 0.75) < 1.0 - MIN_EFFECT {
         Verdict::Faster
     } else {
         Verdict::Same

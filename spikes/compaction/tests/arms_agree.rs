@@ -252,6 +252,11 @@ fn the_verdict_needs_three_quarters_of_the_rounds() {
     assert_eq!(verdict(&[1.2, 1.3, 1.1, 1.4, 1.25]), Verdict::Slower);
     assert_eq!(verdict(&[0.8, 0.7, 0.9, 0.85, 0.75]), Verdict::Faster);
     assert_eq!(verdict(&[0.9, 1.1, 1.0, 1.2, 0.8, 1.05]), Verdict::Same);
+    // a consistent but tiny bias is not a difference (found by the first GCP run: an identical twin at +0.3% in every round)
+    assert_eq!(verdict(&[1.003, 1.002, 1.004, 1.003, 1.003]), Verdict::Same);
+    assert_eq!(verdict(&[0.997, 0.998, 0.996, 0.997, 0.997]), Verdict::Same);
+    assert_eq!(verdict(&[1.02, 1.03, 1.025, 1.02, 1.03]), Verdict::Slower);
+    assert_eq!(verdict(&[0.98, 0.97, 0.975, 0.98, 0.97]), Verdict::Faster);
     assert!((median(&[3.0, 1.0, 2.0]) - 2.0).abs() < 1e-12);
 }
 
