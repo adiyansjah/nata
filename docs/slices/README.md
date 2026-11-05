@@ -5,4 +5,4 @@ are in `docs/way-of-working.md`, section 2 ("The slice verification card"). Copy
 
 | Card | Slice | Status | ADRs |
 |---|---|---|---|
-| (none yet) | | | |
+| [0001](0001-parquet-scan.md) | Parquet scan with projection pushdown and row-group pruning (local files); slice 3 of the feature map | draft | 0001, 0002, 0003 |
