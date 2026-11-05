@@ -52,7 +52,7 @@ extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|m
 [ -z "$extra" ] && ok "netexchsim runs no step of any other job" || bad "netexchsim runs extra steps: $extra"
 # the VM must be prepared for it as root: the job runs as `nata`
 VS="$HERE/vm-startup.sh"
-grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"
+grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'apt-get update -qq; apt-get install -y -qq iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"
 # icebergspikes: ONE step (ic-spikes) in IC_MODE=spikes (no model); it must not select the full or the model step, nor any step of another job.
 isp=$(steps icebergspikes)
 has ic-spikes "$isp" && echo "$isp" | grep -q '^ICMODE\[ic-spikes\]=spikes$' && ok "icebergspikes runs the one spikes-mode step" || bad "icebergspikes: $(echo "$isp" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"

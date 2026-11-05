@@ -36,7 +36,7 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke|icebergspikes
 # unprivileged `nata`, so it is given passwordless sudo on THIS VM only: the VM is a throwaway with no service account and no scopes
 # (orchestrate.sh creates it with --no-service-account --no-scopes), so root on it reaches nothing outside it.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in netexchsim) ;; *) false ;; esac && {
-  command -v tc > /dev/null && command -v ethtool > /dev/null || apt-get install -y -qq iproute2 ethtool
+  command -v tc > /dev/null && command -v ethtool > /dev/null || { apt-get update -qq; apt-get install -y -qq iproute2 ethtool; }  # a fresh image has no package lists: without the update the first netexchsim run silently had no ethtool
   modprobe sch_netem 2> /dev/null || true
   echo 'nata ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nata-netexch && chmod 440 /etc/sudoers.d/nata-netexch
 }

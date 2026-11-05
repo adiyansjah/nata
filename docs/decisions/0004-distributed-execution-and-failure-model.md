@@ -39,6 +39,9 @@ Each rule is the smallest one that makes the model's invariants and liveness pro
 - **Measured:** nothing on real machines. Model checking results are in `spikes/failure-model/README.md`: the final spec passes safety and liveness
   for 2 tasks with 2 and 3 workers (up to 61.5 M states), all canaries trigger and all 12 mutants are caught, on GCP (ARM64).
 - **Reasoned:** the rules for a write query (Iceberg commit) are separate; the failure of a coordinator in the middle of a commit is item 24.
+- **Measured, stage A, simulated network** (`bench/results/20261105-net-exchange.md`; 4 processes in network namespaces on one ARM64 Spot VM, `tc netem`, 2026-11-05, 24 of 24 checks, 8 of 8 mutants of the transport caught): a failed peer becomes an error on every
+  survivor within 0.02-0.09 s of a kill -9 and within the liveness timer (3.01-3.03 s for a 3 s timer) of a silent partition, never a wrong or partial answer; a cancel reached all four nodes within about 1 ms on a clean network (not measured with delay); buffered bytes stayed within the credit with slow consumers; and a transport bug that loopback hides was found and fixed
+  (a process exiting right after its last frame can make Linux drop the end-of-stream frame; the sender must wait for the receiver to close). This is the stream layer under rules 1-7, not the rules themselves: no task re-run, fencing, coordinator or `release` was run on it. Segmentation offload was on in that run, so its loss profiles are indicative only. Stage B (separate VMs) is not done.
 - **Not covered:** half-read streams; non-deterministic tasks (a re-run that returns different rows); coordinator replacement; network
   partitions that heal (a partitioned worker that returns is modelled as a zombie); several queries sharing workers; memory and spill
   pressure; the real failure detector and its timeouts.
