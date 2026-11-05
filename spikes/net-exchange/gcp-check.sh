@@ -94,12 +94,23 @@ for i in $(seq 0 $((N - 1))); do
     && $SUDO ip netns exec "nx$i" ip link set eth0 up && $SUDO ip netns exec "nx$i" ip link set lo up || ok=0
 done
 if [ "$ok" != 1 ]; then log "SETUP FAILED: could not create the namespaces or the bridge (root? iproute2?)"; log "VERDICT FAIL (setup)"; exit 4; fi
-# Segmentation offload would let netem drop a whole 64 KiB super-segment as ONE packet and make loss unrealistically coarse
-if command -v ethtool >/dev/null 2>&1; then
-  for i in $(seq 0 $((N - 1))); do $SUDO ip netns exec "nx$i" ethtool -K eth0 tso off gso off gro off >/dev/null 2>&1; $SUDO ethtool -K "vx$i" tso off gso off gro off >/dev/null 2>&1; done
-  log "offloads (tso gso gro) switched off on the veth devices"
+# Segmentation offload would let netem drop a whole 64 KiB super-segment as ONE packet and make loss unrealistically coarse.
+# ethtool lives in /usr/sbin, which is NOT on a normal user's PATH (found 2026-11-05: `command -v ethtool` said "not installed" on VMs where it
+# may have been installed), so it is looked for and run through sudo, as `ip` and `tc` are.
+ETHTOOL=0
+$SUDO ethtool --version >/dev/null 2>&1 && ETHTOOL=1
+if [ "$ETHTOOL" = 1 ]; then
+  for i in $(seq 0 $((N - 1))); do
+    $SUDO ip netns exec "nx$i" ethtool -K eth0 tso off gso off gro off >/dev/null 2>&1
+    $SUDO ethtool -K "vx$i" tso off gso off gro off >/dev/null 2>&1
+  done
+  # read the state back: do not claim "off" without having seen it
+  OFFLOAD_STATE=$($SUDO ip netns exec nx0 ethtool -k eth0 2>/dev/null | grep -E "^(tcp-segmentation|generic-segmentation|generic-receive)-offload" | tr -s ' \n' ' ')
+  log "offload state of nx0 eth0 (read back): ${OFFLOAD_STATE:-unreadable}"
+  echo "$OFFLOAD_STATE" | grep -q "offload: off" && ! echo "$OFFLOAD_STATE" | grep -q "offload: on"
+  check offloads-off $? "(tso, gso and gro of the veth devices)"
 else
-  log "WARNING: ethtool not installed: segmentation offload is on, so netem loss applies to super-segments (coarser than real packet loss)"
+  log "WARNING: ethtool is not available (not even through sudo): segmentation offload is on, so netem loss applies to super-segments (coarser than real packet loss)"
 fi
 profile() { # profile NAME "netem args" ; applied to the egress of every node
   PROFILE_NAME=$1
@@ -118,7 +129,7 @@ profile clean ""
 md "# Item 28 stage A: real TCP exchange between $N processes in network namespaces (SIMULATED NETWORK)"
 md ""
 md "Machine: $(grep -m1 'Model name' "$OUT/machine.txt" | sed 's/.*: *//'), $(nproc) vCPU, $(uname -r). Rows per node: $ROWS (16 bytes each), $N nodes, $REPS reps."
-md "Ping RTT without netem: ${r0:-?} ms. Offloads off: $(command -v ethtool >/dev/null 2>&1 && echo yes || echo NO)."
+md "Ping RTT without netem: ${r0:-?} ms. Offloads off (read back): $([ "$ETHTOOL" = 1 ] && echo yes || echo NO)."
 
 # ----------------------------------------------------------------------------------------------------------------- helpers
 declare -a PIDS
