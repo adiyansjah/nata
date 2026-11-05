@@ -39,7 +39,7 @@ mutant's build). Distributed bugs are only worth finding if they can be replayed
 ## Evidence
 
 - **Measured, clean ARM64 and x86-64 VMs:** differential SQL fuzzer: 28 of 28 known-bad engines caught on 3 seeds and 60,000 clean queries per architecture (`spikes/sqlfuzz/`); simulation harness: 20,000 of 20,000 control seeds, 13 of 13 mutants
-  caught with identical replays, trace hashes identical across the two architectures (`bench/results/20261104-sim-harness.md`); loom: 31 exchange models, 16 `stop_depth` models with 13 of 13 mutants; Kani: 100 of 105 harnesses of the real crate and 18 of 18 mutants;
+  caught with identical replays, trace hashes identical across the two architectures, the environment trait itself costing +0.6% / +1.3% on one thread and its fault-point hooks 100-130 ns per very small batch (`bench/results/20261104-sim-harness.md`); loom: 31 exchange models, 16 `stop_depth` models with 13 of 13 mutants; Kani: 100 of 105 harnesses of the real crate and 18 of 18 mutants;
   TLA+: the failure model and the Iceberg commit model with their mutants; mutation checks of the hash-ops, NULL-path, Arrow-pipeline, exchange and planner code.
 - **Reasoned:** that these rules scale to a large code base; that the environment trait costs little (the spike measured the abstraction cost, see its results).
 - **Not covered:** the fuzzer and the simulation have only been run against spikes, not against Nata itself (it does not exist yet); sanitizers (ASan, TSan, Miri) on the real code; continuous integration; a deployed-cluster fault test.
