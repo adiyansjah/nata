@@ -212,6 +212,12 @@ case "$JOB" in
     export IC_WORK="$WORK/iceberg-commit-work" IC_RESUME=1
     [ "$JOB" = iceberg-smoke ] && export IC_TLC_TIMEOUT=300 IC_MODEL_BUDGET=900 IC_MUTANT_TIMEOUT=180 IC_SEEDS=2
     run ic-all bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-commit" > "$RESULTS/iceberg-commit-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-commit-exit.txt"; true' ;;
+  netexchsim)
+    # verification-plan item 28, stage A (spikes/net-exchange): a real TCP exchange between N node processes in Linux network namespaces with
+    # tc netem delay, loss and rate. Unit tests, the mutants, correctness and throughput under 6 profiles, backpressure, a credit sweep, cancel,
+    # kill -9, a partition and the process-exit race. SIMULATED NETWORK on one VM; stage B (separate VMs) is not this job. Needs sudo (vm-startup.sh).
+    # The exit status is recorded and does not stop the job, so the results are kept.
+    run nx-all bash -c 'cd "$SRC" && spikes/net-exchange/gcp-check.sh "$RESULTS/net-exchange" > "$RESULTS/net-exchange-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/net-exchange-exit.txt"; true' ;;
   icebergspikes)
     # verification-plan items 24, 25, 30: the CODE side of the Iceberg commit check (Rust build and tests, the Apache REST reference fixture,
     # the commit spike against it and against conditional create, and the pyiceberg interop that the first run skipped) on another machine,
@@ -294,7 +300,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { bash "$SRC/scripts/gcp/settle.sh" ap-bench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; bash "$SRC/scripts/gcp/settle.sh" ap-membench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|netexchsim) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac

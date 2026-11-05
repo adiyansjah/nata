@@ -1,0 +1,32 @@
+# THROWAWAY SPIKE for ADR 0004 (verification-plan item 28, a gate), stage A: a REAL network exchange over TCP.
+# Framing, credit-based flow control (backpressure), cancellation, ordering, and what happens when a peer dies or goes silent.
+# Std only on purpose (threads and blocking sockets): the question is the protocol, not the async runtime.
+# Own workspace, not part of the main one. Delete once ADR 0004 is accepted; keep the results.
+[package]
+name = "spike-net-exchange"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+
+[[bin]]
+name = "netx"
+path = "src/main.rs"
+
+[features]
+# Deliberate bugs (see mutants/run.sh): each must be caught by the tests. NEVER enable them in a measurement.
+bug-no-credit = []            # the sender ignores its credit
+bug-no-cancel = []            # the sender ignores a Cancel frame
+bug-no-seq-check = []         # the receiver accepts any sequence number
+bug-no-liveness = []          # no timeout for a silent peer
+bug-eof-is-eos = []           # a connection that closes without an end-of-stream frame counts as a complete stream
+bug-credit-not-returned = []  # the consumer never gives credit back
+bug-eos-count-unchecked = []  # the end-of-stream frame's frame count is not checked
+bug-no-size-limit = []        # a frame length above MAX_PAYLOAD is not rejected
+bug-no-linger = []            # the sender does not wait for the receiver to close after Eos (found by the namespace runs only, see gcp-check.sh S1b/S1c)
+
+[lints.rust]
+unexpected_cfgs = { level = "warn" }

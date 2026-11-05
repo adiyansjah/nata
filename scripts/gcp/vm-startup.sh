@@ -31,6 +31,15 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in perf|timing) ;; *) false ;; esac &&
 }
 # The Iceberg commit jobs build a Python venv for the independent-reader check (pyiceberg); the job runs without sudo, so install it here.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke|icebergspikes) python3 -m venv --help > /dev/null 2>&1 && python3 -c "import ensurepip" 2> /dev/null || apt-get install -y -qq python3-venv ;; esac
+# The network-exchange job (verification-plan item 28, spikes/net-exchange/gcp-check.sh) builds Linux network namespaces with `tc netem`: that needs
+# root, iproute2 (ip, tc), ethtool (segmentation offload off, so that netem loss is per packet) and the sch_netem module. The job runs as the
+# unprivileged `nata`, so it is given passwordless sudo on THIS VM only: the VM is a throwaway with no service account and no scopes
+# (orchestrate.sh creates it with --no-service-account --no-scopes), so root on it reaches nothing outside it.
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in netexchsim) ;; *) false ;; esac && {
+  command -v tc > /dev/null && command -v ethtool > /dev/null || apt-get install -y -qq iproute2 ethtool
+  modprobe sch_netem 2> /dev/null || true
+  echo 'nata ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nata-netexch && chmod 440 /etc/sudoers.d/nata-netexch
+}
 # The Kani jobs (and the memory measurements of hashops and timing) record peak memory with GNU time.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani*|timing|hashops) [ -x /usr/bin/time ] || apt-get install -y -qq time ;; esac
 if [ -f "$MNT/START" ] && ! pgrep -u nata -f "scripts/gcp/job.sh" > /dev/null; then

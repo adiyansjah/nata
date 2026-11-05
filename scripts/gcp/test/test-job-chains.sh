@@ -45,6 +45,14 @@ has ic-all "$im" && bad "icebergmodel must not run the full iceberg step ic-all"
 extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-model)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergmodel runs no step of any other job (only the common setup and ic-model)" || bad "icebergmodel runs extra steps: $extra"
 has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
+# netexchsim: ONE step (nx-all) that runs spikes/net-exchange/gcp-check.sh; no settle steps, nothing of another job.
+nx=$(steps netexchsim)
+has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"
+extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|nx-all)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "netexchsim runs no step of any other job" || bad "netexchsim runs extra steps: $extra"
+# the VM must be prepared for it as root: the job runs as `nata`
+VS="$HERE/vm-startup.sh"
+grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"
 # icebergspikes: ONE step (ic-spikes) in IC_MODE=spikes (no model); it must not select the full or the model step, nor any step of another job.
 isp=$(steps icebergspikes)
 has ic-spikes "$isp" && echo "$isp" | grep -q '^ICMODE\[ic-spikes\]=spikes$' && ok "icebergspikes runs the one spikes-mode step" || bad "icebergspikes: $(echo "$isp" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
@@ -59,7 +67,7 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
-for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
 # not settle (the other results are kept; the NOT SETTLED line is the record). The real command is cut out of job.sh and run with a short wait.
