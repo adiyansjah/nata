@@ -1,10 +1,10 @@
 # 0001: Parquet scan with projection pushdown and row-group pruning (local files)
 
-Status: draft (not yet accepted by the owner)
+Status: accepted (by the owner, 2026-11-05, as proposed: the minimal `nata scan` command, the three decision rules with their numbers, and the baseline spike within the stated cost)
 Date: 2026-11-05
 ADRs: 0001 (relies on; this slice decides its open "morsel size"), 0002 (relies on: CPU pool, `crossbeam-deque`), 0003 (relies on: Arrow batches, dictionary columns kept, strict errors)
 
-Rule: `docs/way-of-working.md`, section 2 ("The slice verification card"). Slice 3 of the order in `docs/feature-map.md`. Proposed by the assistant for the owner to change; every number in the decision rules is a proposal.
+Rule: `docs/way-of-working.md`, section 2 ("The slice verification card"). Slice 3 of the order in `docs/feature-map.md`. Drafted by the assistant, accepted by the owner on 2026-11-05 without changes.
 
 ## 1. Goal
 
@@ -14,7 +14,7 @@ reads about a fifth of the row groups and prints exactly DuckDB's rows.
 
 Not in this slice: SQL (slice 4), object stores (slice 11), Iceberg (slice 12), nested types and `MAP`/`LIST` columns, Parquet encryption, writing Parquet.
 
-**Open decision for the owner (it shapes the slice).** There is no SQL yet, but the definition of done needs something runnable and the differential tool `nata-check` drives the engine through `nata sql`. This card ASSUMES a deliberately minimal developer command,
+**Decided by the owner, 2026-11-05: the minimal developer command.** There is no SQL yet, but the definition of done needs something runnable and the differential tool `nata-check` drives the engine through `nata sql`. This card therefore adds a deliberately minimal developer command,
 `nata scan FILE... [--columns a,b] [--filter 'col op literal' ...] [--limit N] --csv`, which `nata-check` can call as a second candidate form (an `-- scan:` directive). The alternative is to merge this slice into slice 4 and verify the scan through SQL only. The first costs a throwaway command; the second delays
 verification of pruning until the parser and binder exist.
 
@@ -47,7 +47,7 @@ Decisions it needs: (a) build or reuse the Parquet decoder, (b) the morsel size.
 - Question: does `parquet-rs` meet R1 on both architectures, and which morsel size does R3 choose?
 - Smallest experiment, with its control arm: `spikes/pipeline-model` and `spikes/generic-ops` already decode `lineitem` through `parquet-rs`; add (1) an arm that reads the same projected columns with dictionaries preserved, (2) DuckDB `read_parquet` of the same columns as the reference,
   (3) the twin of arm (1) as the noise control, (4) the three morsel sizes on `big1`. One thread and 1 to 8 threads, 25 rounds, interleaved, settle before each block.
-- Time box and cloud spend (needs the owner's yes, `way-of-working.md` section 8): one day of work; two settled VMs for about 30 minutes each, roughly $0.05 in total (worst case about $0.22 at one VM-hour each).
+- Time box and cloud spend: one day of work; two settled VMs for about 30 minutes each, roughly $0.05 in total (worst case about $0.22 at one VM-hour each). **Approved by the owner on 2026-11-05.**
 - Result file: `bench/results/<date>-parquet-scan-baseline.md`.
 
 ## 5. Closeout (fill in when done)
