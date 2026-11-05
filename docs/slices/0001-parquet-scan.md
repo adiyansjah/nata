@@ -53,6 +53,7 @@ Decisions it needs: (a) build or reuse the Parquet decoder, (b) the morsel size.
 
 ## 5. Closeout (fill in when done)
 
+- Progress (not the closeout): 2026-11-05, implementation step 1 done: the pruning decision as a pure library function `crates/nata-scan` (`can_skip`: statistics and a predicate to Skip or Keep(reason)), with a soundness property test against a row-by-row oracle (400,000 cases per release run, the oracle checked against DuckDB 2.0.0: 19,925 cases, 0 mismatches), tightness and R2 effectiveness tests (83.7% of the row groups skipped for a one-year range on a model of the SF1 `lineitem` layout), 5 negative controls and 53 mutants, all caught (`bench/results/20261105-scan-pruning.md`). Not yet: the footer decoder, real files from DuckDB, pyarrow and parquet-rs, the reader, `nata scan`, fuzz, resource bounds, the benchmarks. Known difference found: DuckDB 2.0.0 errors on some decimal comparisons that the decimal rules define as exact.
 - Results file:
 - ADR updated (amendment or revision note), confidence and what changed: ADR 0001 (morsel size decided), ADR 0003 (dictionary decode: reused or owned)
 - Benchmark added to the regression set, baseline numbers:

@@ -1,0 +1,13 @@
+[package]
+name = "nata-scan"
+description = "Row-group pruning decision for the Parquet scan: a pure function from statistics and a predicate to Skip or Keep (slice 3)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+# No dependencies on purpose: the decision is pure, and the tests carry their own deterministic generator.
+[dependencies]
+
+[lints]
+workspace = true
