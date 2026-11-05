@@ -855,7 +855,17 @@ async fn serve_inner(
             if until > Instant::now() {
                 tokio::time::sleep_until(tokio::time::Instant::from_std(until)).await;
             }
-            if sent_total >= reset_after {
+            // The reset falls INSIDE this chunk or at its start: send the part before it, then drop the connection. (Testing
+            // the condition only at the start of a chunk meant that a response of 64 KiB or less was always sent whole, so
+            // the fault never fired on footers and other short ranges; found by the first GCP run, 2026-11-05.)
+            if sent_total + n as u64 > reset_after {
+                let k = reset_after.saturating_sub(sent_total).min(n as u64) as usize;
+                if k > 0 {
+                    sock.write_all(&block[off..off + k]).await?;
+                    sock.flush().await?;
+                    st.stats.bytes_sent.fetch_add(k as u64, Relaxed);
+                    out.bytes += k as u64;
+                }
                 return Err(std::io::Error::new(std::io::ErrorKind::ConnectionReset, "injected reset (mid-body)"));
             }
             sock.write_all(&block[off..off + n]).await?;
