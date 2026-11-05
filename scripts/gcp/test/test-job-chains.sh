@@ -62,6 +62,12 @@ nx=$(steps netexchsim)
 has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"
 extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|nx-all)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "netexchsim runs no step of any other job" || bad "netexchsim runs extra steps: $extra"
+# parquetscan: the SF1 generation and ONE check step (ps-all) that runs spikes/parquet-scan/gcp-check.sh; nothing of another job.
+psn=$(steps parquetscan)
+has ps-gen-sf1 "$psn" && has ps-all "$psn" && ok "parquetscan runs the SF1 generation and the one check step" || bad "parquetscan: $(echo "$psn" | grep '^STEP' | tr '\n' ' ')"
+extra=$(echo "$psn" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ps-gen-sf1|ps-all)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "parquetscan runs no step of any other job" || bad "parquetscan runs extra steps: $extra"
+grep -q 'parquetscan' "$HERE/orchestrate.sh" && ok "orchestrate.sh accepts the job parquetscan" || bad "orchestrate.sh does not know parquetscan"
 # the VM must be prepared for it as root: the job runs as `nata`
 VS="$HERE/vm-startup.sh"
 grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'apt-get update -qq; apt-get install -y -qq iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"

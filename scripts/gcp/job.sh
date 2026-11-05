@@ -231,6 +231,12 @@ case "$JOB" in
     # Intended machines: n4a-highcpu-8 and c3d-highcpu-8. The exit status is recorded and does not stop the job, so the results are kept.
     export IC_WORK="$WORK/iceberg-polaris-work" IC_RESUME=1 IC_MODE=polaris
     run ic-polaris bash -c 'cd "$SRC" && spikes/iceberg-commit/gcp-check.sh "$RESULTS/iceberg-polaris" > "$RESULTS/iceberg-polaris-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-polaris-exit.txt"; true' ;;
+  parquetscan)
+    # docs/slices/0001-parquet-scan.md, the baseline spike (decision rules R1 and R3): parquet-rs against DuckDB single-threaded on the projected columns of lineitem, and the morsel
+    # size (a row group or a quarter of one) at 1 to 8 threads and in peak memory, with and without a Parquet page index (spikes/parquet-scan/gcp-check.sh; it settles before each block).
+    # Intended machines: n4a-highcpu-8 and c3d-highcpu-8. The exit status is recorded and does not stop the job, so the results are kept.
+    run ps-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run ps-all bash -c 'cd "$SRC" && spikes/parquet-scan/gcp-check.sh "$RESULTS/parquet-scan" > "$RESULTS/parquet-scan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/parquet-scan-exit.txt"; true' ;;
   icebergspikes)
     # verification-plan items 24, 25, 30: the CODE side of the Iceberg commit check (Rust build and tests, the Apache REST reference fixture,
     # the commit spike against it and against conditional create, and the pyiceberg interop that the first run skipped) on another machine,
@@ -313,7 +319,7 @@ case "$JOB" in
     run t-ap-bench bash -c 'cd "$SRC/spikes/arrow-pipeline" && { bash "$SRC/scripts/gcp/settle.sh" ap-bench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline bench "$SRC/data/tpch-sf1/lineitem.parquet" 25; bash "$SRC/scripts/gcp/settle.sh" ap-membench 0.5 600; echo "load: $(cat /proc/loadavg)"; LINEITEM="$SRC/data/tpch-sf1/lineitem.parquet" target/release/spike-arrow-pipeline membench "$SRC/data/tpch-sf1/lineitem.parquet" 25; } > "$RESULTS/arrow-pipeline-bench.txt" 2>&1' ;;
 
   ci|bench|all) ;;
-  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergpolaris|pushpin|netexchsim) ;;
+  crates|fairness-bench|bridge|cpack|hashtests|armcheck|armcheck-retry|kani-mut-crate|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergpolaris|pushpin|netexchsim|parquetscan) ;;
   hashops|nullpath|perf) ;;   # the blocks above end with ;;& so that the timing bundle chains them; run alone they end here   # the blocks above end with ;;& so that cpack runs all three
   *) fail_job "unknown job $JOB"; exit 1 ;;
 esac
