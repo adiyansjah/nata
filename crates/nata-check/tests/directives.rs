@@ -10,13 +10,24 @@ use std::process::Command;
 
 const REFERENCE: &str = r#"#!/bin/sh
 case "$3" in
+  *SCANARGS5*) printf 'v\n5\n';;
+  *SCANARGS4*) printf 'v\n4\n';;
   *REFFAIL*) echo "reference boom" >&2; exit 1;;
   *REFVAL*) printf 'v\n0.33333333333\n';;
   *) printf 'v\n1\n';;
 esac
 "#;
 
+// With a `-- scan:` directive the candidate is called as `scan <args> --csv`: it answers with its argument count (the first is `scan`).
 const CANDIDATE: &str = r#"#!/bin/sh
+if [ "$1" = scan ]; then
+  case "$*" in
+    *SCANFAIL*) echo "error: not supported yet: scan thing" >&2; exit 2;;
+    *SCANBOOM*) echo "error: scan boom" >&2; exit 1;;
+  esac
+  printf 'v\n%s\n' "$#"
+  exit 0
+fi
 case "$4" in
   *CANDUNSUPPORTED*) echo "error: not supported yet: thing" >&2; exit 2;;
   *CANDFAIL*) echo "error: Division by zero in a / b" >&2; exit 1;;
@@ -145,6 +156,46 @@ fn a_malformed_directive_stops_the_run() {
     assert_eq!(run.code, Some(2));
     assert!(
         run.stderr.contains("bad.sql") && run.stderr.contains("tolerance"),
+        "stderr: {}",
+        run.stderr
+    );
+}
+
+#[test]
+fn the_scan_directive_runs_the_candidate_as_nata_scan() {
+    let run = run_with(
+        "scan",
+        &[
+            // 5 arguments reach the candidate: scan, one, "two words", {data}/x, --csv
+            (
+                "scan_args_ok",
+                "-- scan: one 'two words' {data}/x\nSELECT SCANARGS5",
+            ),
+            // a different count is a mismatch: the directive's arguments really are passed, split and followed by --csv
+            (
+                "scan_args_wrong",
+                "-- scan: one 'two words' {data}/x\nSELECT SCANARGS4",
+            ),
+            ("scan_unsupported", "-- scan: SCANFAIL\nSELECT SCANARGS5"),
+            ("scan_fails", "-- scan: SCANBOOM\nSELECT SCANARGS5"),
+            // without the directive the old form is used
+            ("no_directive", "SELECT 1"),
+        ],
+    );
+    let l = |n: &str| label(&run.stdout, n);
+    assert_eq!(l("scan_args_ok"), "PASS", "{}", run.stdout);
+    assert_eq!(l("scan_args_wrong"), "MISMATCH");
+    assert_eq!(l("scan_unsupported"), "UNSUPPORTED");
+    assert_eq!(l("scan_fails"), "ERROR");
+    assert_eq!(l("no_directive"), "PASS");
+}
+
+#[test]
+fn a_malformed_scan_directive_stops_the_run() {
+    let run = run_with("scanbad", &[("bad", "-- scan: 'oops\nSELECT 1")]);
+    assert_eq!(run.code, Some(2));
+    assert!(
+        run.stderr.contains("bad.sql") && run.stderr.contains("scan"),
         "stderr: {}",
         run.stderr
     );

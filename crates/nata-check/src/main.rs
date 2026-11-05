@@ -7,7 +7,7 @@
 //!
 //! Conventions both engines must follow:
 //! - Reference: `duckdb -csv -c <sql>`
-//! - Candidate: `nata sql --csv -c <sql>`
+//! - Candidate: `nata sql --csv -c <sql>`, or, with a `-- scan:` directive, `nata scan <args> --csv`
 //! - `{data}` in a query is replaced by the absolute data directory.
 //!
 //! Per-query directives, in `--` comment lines at the top of the `.sql` file:
@@ -15,6 +15,12 @@
 //! - `-- expect-error-nata: <text>`: only Nata is run, and it must fail with a
 //!   message containing `<text>` (case-insensitive). For deliberate differences
 //!   from DuckDB (see `docs/decimal-rules.md`).
+//! - `-- scan: <args>`: the candidate is not asked to run the SQL: it runs
+//!   `nata scan <args> --csv` (slice 3, the Parquet scan before SQL exists), while the
+//!   reference still runs the SQL of the file. `<args>` are split like a shell would
+//!   (whitespace, `'single'` and `"double"` quotes; no escapes), after `{data}` is
+//!   replaced. Do not put `--csv` in `<args>`. Example:
+//!   `-- scan: {data}/lineitem.parquet --columns l_orderkey --filter 'l_shipdate >= 1994-01-01'`
 //! - `-- tolerance: <relative>`: cells that parse as numbers are compared within
 //!   `<relative>` of `max(1, |a|, |b|)`; `0` compares values and ignores formatting
 //!   (`3.5` equals `3.500000`). Other cells must match exactly. Rows are sorted as
@@ -88,6 +94,8 @@ struct Directives {
     expect_error: bool,
     expect_error_nata: Option<String>,
     tolerance: Option<f64>,
+    /// The arguments of `nata scan` (before `{data}` is substituted).
+    scan: Option<Vec<String>>,
 }
 
 /// Read the directives from the leading `--` lines and return them with the
@@ -119,6 +127,17 @@ fn parse_directives(sql: &str) -> Result<(Directives, String), String> {
                 }
                 continue;
             }
+            if let Some(rest) = body.strip_prefix("scan:") {
+                if d.scan.is_some() {
+                    return Err("only one `scan:` directive is allowed".into());
+                }
+                let args = shell_split(rest).map_err(|e| format!("bad `scan:` arguments: {e}"))?;
+                if args.is_empty() {
+                    return Err("`scan:` needs the arguments of `nata scan`".into());
+                }
+                d.scan = Some(args);
+                continue;
+            }
             if body.starts_with("expect") || body.starts_with("tolerance") {
                 return Err(format!("unknown directive {body:?}"));
             }
@@ -134,6 +153,42 @@ fn parse_directives(sql: &str) -> Result<(Directives, String), String> {
         return Err("`expect-error` and `expect-error-nata:` cannot be combined".into());
     }
     Ok((d, kept.join("\n")))
+}
+
+/// Split a line into arguments like a shell, without escapes: whitespace separates, `'...'` and `"..."` group (and may touch other text),
+/// an unclosed quote is an error.
+fn shell_split(line: &str) -> Result<Vec<String>, String> {
+    let mut args = Vec::new();
+    let mut current = String::new();
+    let mut started = false;
+    let mut quote: Option<char> = None;
+    for ch in line.chars() {
+        match quote {
+            Some(q) if ch == q => quote = None,
+            Some(_) => current.push(ch),
+            None if ch == '\'' || ch == '"' => {
+                quote = Some(ch);
+                started = true;
+            }
+            None if ch.is_whitespace() => {
+                if started {
+                    args.push(std::mem::take(&mut current));
+                    started = false;
+                }
+            }
+            None => {
+                current.push(ch);
+                started = true;
+            }
+        }
+    }
+    if let Some(q) = quote {
+        return Err(format!("the {q} quote is not closed"));
+    }
+    if started {
+        args.push(current);
+    }
+    Ok(args)
 }
 
 fn main() -> ExitCode {
@@ -169,8 +224,13 @@ fn run(args: Args) -> Result<bool> {
             .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
         let sql =
             std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
-        let (directives, sql) =
+        let (mut directives, sql) =
             parse_directives(&sql).map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
+        if let Some(args) = &mut directives.scan {
+            for a in args.iter_mut() {
+                *a = substitute_data(a, &data);
+            }
+        }
         let sql = substitute_data(&sql, &data);
         let outcome = check_query(&args.reference, &candidate, &sql, &directives);
 
@@ -236,7 +296,15 @@ fn run_engine(program: &Path, args: &[&str]) -> Run {
 }
 
 fn check_query(reference: &Path, candidate: &Path, sql: &str, d: &Directives) -> Outcome {
-    let run_candidate = || run_engine(candidate, &["sql", "--csv", "-c", sql]);
+    let run_candidate = || match &d.scan {
+        Some(scan_args) => {
+            let mut args: Vec<&str> = vec!["scan"];
+            args.extend(scan_args.iter().map(String::as_str));
+            args.push("--csv");
+            run_engine(candidate, &args)
+        }
+        None => run_engine(candidate, &["sql", "--csv", "-c", sql]),
+    };
 
     // Deliberate difference: the reference is not consulted.
     if let Some(wanted) = &d.expect_error_nata {
@@ -554,6 +622,54 @@ mod tests {
         assert!(parse_directives("-- expect-error-nata:\nSELECT 1").is_err());
         assert!(parse_directives("-- expect-eror\nSELECT 1").is_err());
         assert!(parse_directives("-- expect-error\n-- expect-error-nata: x\nSELECT 1").is_err());
+    }
+
+    #[test]
+    fn shell_split_groups_quotes_and_rejects_unclosed_ones() {
+        assert_eq!(
+            shell_split("a  'b c' \"d e\" f'g h'i").expect("valid"),
+            vec!["a", "b c", "d e", "fg hi"]
+        );
+        assert_eq!(shell_split("  ").expect("valid"), Vec::<String>::new());
+        assert_eq!(shell_split("''").expect("valid"), vec![""]);
+        assert_eq!(
+            shell_split("--filter 'x <= 5'").expect("valid"),
+            vec!["--filter", "x <= 5"]
+        );
+        assert!(shell_split("a 'b").is_err());
+        assert!(shell_split("a \"b").is_err());
+    }
+
+    #[test]
+    fn the_scan_directive_is_parsed_and_removed() {
+        let (d, rest) = parse_directives(
+            "-- scan: {data}/t.parquet --filter 'a >= 1'\n-- note\nSELECT * FROM t",
+        )
+        .expect("valid");
+        assert_eq!(
+            d.scan,
+            Some(vec![
+                "{data}/t.parquet".to_string(),
+                "--filter".to_string(),
+                "a >= 1".to_string()
+            ])
+        );
+        assert_eq!(rest, "-- note\nSELECT * FROM t");
+        // it combines with the other directives
+        let (d, _) =
+            parse_directives("-- scan: f.parquet\n-- tolerance: 0\nSELECT 1").expect("valid");
+        assert!(d.scan.is_some() && d.tolerance == Some(0.0));
+    }
+
+    #[test]
+    fn malformed_scan_directives_are_errors() {
+        assert!(parse_directives("-- scan:\nSELECT 1").is_err());
+        assert!(parse_directives("-- scan: 'unclosed\nSELECT 1").is_err());
+        assert!(parse_directives("-- scan: a\n-- scan: b\nSELECT 1").is_err());
+        // a human comment that merely starts with the word is not a directive
+        let (d, rest) = parse_directives("-- scanning notes\nSELECT 1").expect("valid");
+        assert_eq!(d.scan, None);
+        assert!(rest.contains("scanning notes"));
     }
 
     #[test]
