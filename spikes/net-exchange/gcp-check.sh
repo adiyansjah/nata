@@ -147,6 +147,12 @@ kv() { sed -n "s/.*[ ]$2=\\([^ ]*\\).*/\\1/p" "$1" | head -1; }   # kv FILE KEY
 exit_code() { cut -d' ' -f1 "$RUN/node$1.exit" 2>/dev/null || echo 255; }
 exit_ns() { cut -d' ' -f2 "$RUN/node$1.exit" 2>/dev/null || echo 0; }
 load1() { cut -d' ' -f1 /proc/loadavg; }
+# Every measured stage starts on a settled machine (ADR 0006 rule 7): without this the profiles ran back to back and each started while the
+# previous one's work was still in the 1-minute load average (x86-64 start loads of 0.9 to 2.2 on 2026-11-05). NX_SETTLE_MAX seconds at most per
+# stage (default 300; 0 in quick mode, where a development machine is never quiet). The line it prints is in the summary.
+SETTLE_SH="$HERE/../../scripts/gcp/settle.sh"
+if [ "$QUICK" = 1 ]; then NX_SETTLE_MAX=${NX_SETTLE_MAX:-0}; else NX_SETTLE_MAX=${NX_SETTLE_MAX:-300}; fi
+settle_nx() { [ -x "$SETTLE_SH" ] && { "$SETTLE_SH" "$1" 0.5 "$NX_SETTLE_MAX" | tee -a "$SUMMARY"; }; return 0; }
 
 # S1 helper: expected results are a pure function of (N, rows, seed): compute once per size
 declare -A EXPECT_DONE
@@ -189,6 +195,7 @@ for pr in "${PROFILES[@]}"; do
   name=${pr%%|*}; args=${pr#*|}
   profile "$name" "$args" || { check "profile-$name" 1 "(tc failed)"; continue; }
   secs_list=""; mbs_list=""; exact=0; why=""; waits=0
+  settle_nx "s1-$name"
   l0=$(load1)
   for rep in $(seq 1 "$REPS"); do
     t0=$(now_ns)
@@ -247,6 +254,7 @@ profile region "delay 10ms 2ms loss 0.05%"
 VR=${NX_VAR_RUNS:-8}; [ "$QUICK" = 1 ] && VR=${NX_VAR_RUNS:-4}
 VROWS=$((ROWS / 4)); [ "$QUICK" = 1 ] && VROWS=250000
 var_list=""; var_bad=0
+settle_nx s1d
 for r in $(seq 1 "$VR"); do
   launch "s1d-$r" --rows "$VROWS" --credit-bytes "$CREDIT" --dead-ms 20000 --connect-timeout-s 60
   wait_nodes
@@ -266,6 +274,7 @@ profile clean ""
 say "S2. backpressure: slow consumers, small credit, wide-area profile"
 profile region "delay 10ms 2ms loss 0.05%"
 SC=$((256 << 10)); SR=$((ROWS / 4)); [ "$QUICK" = 1 ] && SR=200000
+settle_nx s2
 launch s2 --rows "$SR" --batch-rows $((N * 1024)) --credit-bytes "$SC" --consumer-delay-us 300 --dead-ms 20000 --connect-timeout-s 60
 wait_nodes
 why=$(verify_run "$SR" "$SC"); rc=$?
@@ -283,6 +292,7 @@ md ""; md "## S3. Throughput against credit size (netem delay 10 ms each way, RT
 md "| credit per stream | secs | MB/s moved, all nodes | exact |"; md "|---|---|---|---|"
 SWR=$((ROWS / 2)); [ "$QUICK" = 1 ] && SWR=500000
 for c in 65536 262144 1048576 4194304 16777216; do
+  settle_nx "s3-credit-$c"
   launch "s3-$c" --rows "$SWR" --batch-rows $((N * 1024)) --credit-bytes "$c" --dead-ms 20000 --connect-timeout-s 60
   wait_nodes
   why=$(verify_run "$SWR" "$c"); rc=$?

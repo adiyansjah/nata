@@ -69,7 +69,7 @@ affected by the caveat below.
 
 ## Caveats
 
-- **Segmentation offload state: unconfirmed in all three runs.** Each run printed "ethtool not installed". The first explanation I wrote (the startup script installed
+- **Segmentation offload state: unconfirmed in the first three runs; confirmed OFF in the fourth pair (below).** Each run printed "ethtool not installed". The first explanation I wrote (the startup script installed
   it without refreshing the package lists) was a guess, and a fix for it did not change the message. The defect that is PROVEN: `gcp-check.sh` looked for ethtool with
   `command -v ethtool` as the unprivileged job user, and ethtool lives in `/usr/sbin`, which is not on that user's PATH (checked on the development machine, where it is installed and
   found only through sudo). So it may have been installed on the VMs all along and simply not found, in which case offload was never switched off. With offload on, netem drops a whole
@@ -112,3 +112,30 @@ Same job and code (`6a57bee` plus the startup fix). Both finished with `VERDICT 
 - The cancel took 33 ms on x86-64 against 7 ms on ARM64 (the time the nodes reported after they started; one run each).
 
 Everything in the "What the namespace runs found" list holds on both architectures: exact results, bounded buffering (largest inbound queue 244,432 and 245,872 bytes of 262,144), fast failure detection, the liveness timer firing at its setting, and the exit race with its fix.
+
+## Third pair, with offload read back and the loss spread measured (`netexchsim-arm64-r3`, `netexchsim-x86-r3`, 07:30 to 07:48 UTC)
+
+The detection fix (ethtool looked for through sudo) and a new stage S1d (the region profile repeated 8 times). Both finished `VERDICT PASS`, **26 of 26 checks on each** (24 as before, plus `offloads-off` and
+`s1d-loss-runs-all-exact`); 982 s and 1,002 s of VM time, resources left after cleanup: none, **$0.027** and **$0.019**. (The x86-64 VM could not be created in the first zone, a Spot stockout for `c3d-highcpu-8`;
+the orchestrator found another and the run went on.) **The VMs read back `tcp-segmentation-offload: off generic-segmentation-offload: off generic-receive-offload: off`: this is the first run with a verified per-packet
+loss model.** Mutants 8 of 8 on both; the exit-race stage 0 of 30 with the fix and **11 of 30 (ARM64) and 15 of 30 (x86-64) without it**.
+
+| profile | ARM64 MB/s (load at start) | x86-64 MB/s (load at start) |
+|---|---|---|
+| clean | 2,468 (0.31) | 1,055 (0.20) |
+| lan, 0.2 ms | 2,540 (0.37) | 1,075 (0.91) |
+| zone, 1 ms | 1,039 (0.37) | 824 (0.91) |
+| region, 10 ms + 0.05% loss | 194 (0.58) | 305 (2.20) |
+| wide, 25 ms + 1% loss | 4 (0.45) | 4 (1.94) |
+| capped, 10 ms + 400 mbit | 151 (0.03) | 125 (0.00) |
+
+**S1d, the spread of the region profile with offload off (8 runs of 5,000,000 rows per node, MB/s moved, sorted):**
+- ARM64: 45, 48, 53, 130, 138, 205, 332, 413 (median 130, **max/min 9.2**)
+- x86-64: 42, 115, 161, 196, 205, 221, 360, 384 (median 196, **max/min 9.1**)
+
+**What this settles.** (1) The run-to-run variance of a random-loss profile is real and large (about 9x over 8 runs on both machines) and is NOT caused by segmentation offload: it persists with offload verified off. Any number for a loss
+profile must be quoted with its spread, never as a single figure; the earlier "980 MB/s" for region was one draw from a distribution that runs from about 45 to about 410 MB/s. (2) Delay-bound and rate-bound results (zone, capped, the credit
+sweep) stay reproducible. (3) The x86-64 start loads (0.91 to 2.20 for lan, zone, region and wide) most likely come from the previous profile's own work still being in the 1-minute average, since the profiles run back to back with no
+settle between them (capped follows the idle-waiting wide profile and starts at 0.00; this is a hypothesis, not tested). That is a defect of the script against ADR 0006 rule 7, not of the machine: the script now settles before each profile
+(fix committed after this run; not yet run). The x86-64 clean, lan and zone rows are therefore not comparable with ARM64.
+
