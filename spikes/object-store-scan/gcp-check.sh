@@ -228,7 +228,10 @@ else
     wait_quiet 120
     RSAN=""; awk -v l="$(load1)" 'BEGIN{exit !(l>=2)}' && RSAN="--sanity-only"
     say "throughput and request pattern, REAL store, $ROUNDS rounds"
-    timeout 7000 "$BIN" bench --mode real --data "$DATA/layouts" --expected "$EXP" --out "$OUT/real" --rounds "$ROUNDS" $DUCKFLAG $RSAN 2>&1 \
+    # DuckDB reads a store through its S3 layer, which needs an HMAC key pair; the VM's service account cannot provide one. With KIND=gcs the real-store benchmark
+    # therefore runs WITHOUT the DuckDB reference (correctness is still checked against the expected digests of the local lineitem) and says so.
+    RDUCK="$DUCKFLAG"; if [ "${NATA_OBJSTORE_KIND:-}" = gcs ]; then RDUCK="--no-duck"; note "REAL STORE: no DuckDB reference (it cannot authenticate with the VM's service account); our read path is compared with the simulated store and with itself only"; fi
+    timeout 7000 "$BIN" bench --mode real --data "$DATA/layouts" --expected "$EXP" --out "$OUT/real" --rounds "$ROUNDS" $RDUCK $RSAN 2>&1 \
       | "$BIN" redact | tee "$OUT/real-bench-log.txt" | grep -E '^RESULT|NOT OK|NOT MEASURED' | tee -a "$SUMMARY"
     RB=${PIPESTATUS[0]}
     [ "$RB" -eq 0 ] || { note "real benchmark FAILED (exit $RB)"; fail 3; }
