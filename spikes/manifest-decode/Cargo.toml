@@ -1,0 +1,44 @@
+# THROWAWAY SPIKE for ADR 0005 rule 7 / plan item 26: how should the read path decode Iceberg manifests?
+# Three decoders on the SAME files: (1) the iceberg-plan spike's reader (apache-avro generic value tree), (2) iceberg-rust (`iceberg` crate),
+# (3) a hand-written Avro decoder that writes straight into compact entries. Compared on time and peak memory per million entries, and
+# checked for identical results. Own workspace, not part of the main one. Delete once ADR 0005 is accepted; keep the results.
+[package]
+name = "spike-manifest-decode"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+iceplan = { package = "spike-iceberg-plan", path = "../iceberg-plan" }
+iceberg = "0.11"
+apache-avro = { version = "0.21", features = ["snappy", "zstandard"] }
+serde_json = "1"
+snap = "1"
+zstd = "0.13"
+flate2 = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+overflow-checks = true
+
+[lib]
+name = "mdeclib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mdec"
+path = "src/main.rs"
+
+[features]
+# Deliberate bugs of the hand-written decoder (mutants/run.sh): each must be caught by tests/hand.rs. NEVER enable them in a measurement.
+bug-no-count-guard = []   # no check that an item count fits the data left
+bug-no-sync-check = []    # the block sync marker is not compared
+bug-no-crc = []           # the snappy checksum is not compared
+bug-skip-nan = []         # nan_value_counts are skipped, not kept
+bug-swap-bounds = []      # lower and upper bounds are stored in each other's place
+bug-no-utf8-check = []    # a string that is not valid UTF-8 is accepted

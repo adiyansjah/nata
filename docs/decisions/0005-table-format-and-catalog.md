@@ -23,7 +23,9 @@ format is an external specification that other engines implement, so the cheapes
    bounds that do not cut a UTF-8 character, correct null counts) and turns a statistic off when it cannot be sound.
 6. **Manifests are kept clustered by partition, and rewriting them is a required maintenance operation.** A scattered layout makes every partition filter read every manifest.
 7. **The read path decodes manifests straight into compact entries and streams tasks out.** The generic Avro value tree used by the spike costs about 15 KB of heap per entry; this is a
-   planned improvement, not done. Whether to reuse `iceberg-rust` for this is undecided (no bake-off yet).
+   planned improvement, not done. **Bake-off done 2026-11-05** (`bench/results/20261105-manifest-decode.md`, development machine, not settled): a hand-written schema-compiled decoder is 18 times faster than the generic reader and 41 times faster than `iceberg-rust` 0.11 on one
+   thread (1,010,000 entries: 0.67 s, 12.2 s, 27.7 s) and uses 2.1 and 4.0 times less memory (1.17 GiB, 2.4 GiB, 4.7 GiB), all three agree entry for entry, and it agrees with iceberg-rust on 147 manifests written by pyiceberg. Recommendation: write our own decoder and keep `iceberg-rust` and
+   the generic reader as test oracles (ADR 0006 rule 2). OWNER DECISION pending; not run on Java-written manifests, partition types beyond int/long/date/timestamp not done.
 8. **Catalog and commit protocol: model checked, catalog NOT DECIDED.** The intended interface is the REST catalog with its atomic commit. The formal model of the commit (bounded: at most 3 writers with one operation
    each, 2 attempts, one crash, one duplicate delivery, one lost request, one pinned reader) now has a result for every configuration on GCP (ARM64, 2026-11-05): no invariant violated, liveness holds, all 11 coverage canaries are
    reachable and 9 of 9 mutants are caught (see Evidence). That does not decide any rule here about a product: the spike ran only against the Apache reference fixture and a local conditional create, and the model is not tied to the
@@ -38,7 +40,7 @@ A table format is a contract with other engines. Their readers decide what our f
 ## Alternatives considered
 
 - **Delta Lake or Hudi first:** not evaluated; the owner chose Iceberg.
-- **Reuse `iceberg-rust` for planning and writing:** not compared; no bake-off. pyiceberg (which uses iceberg-rust for parts) was used as a reader only.
+- **Reuse `iceberg-rust` for planning and writing:** only manifest DECODING was compared (rule 7: 41 times slower and 4 times more memory than a hand-written decoder on 1M entries, same results); its planning, writing and catalog parts are not compared. pyiceberg (which uses iceberg-rust for parts) was used as a reader only.
 - **Catalog-less (file-system) commit:** the specification calls it deprecated and unsafe on object stores; a conditional-create variant is modelled but not run.
 
 ## Evidence
