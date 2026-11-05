@@ -47,6 +47,11 @@ extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|m
 has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
 # objscan reads the real store's coordinates from a git-ignored file that travels with the uploaded source (no secret: KIND=gcs uses the VM's service account)
 grep -q 'spikes/object-store-scan/objstore.env' "$HERE/job.sh" && grep -q '^/spikes/object-store-scan/objstore.env$' "$HERE/../../.gitignore" && ok "objscan sources spikes/object-store-scan/objstore.env, which is git-ignored" || bad "objscan config file not wired or not ignored"
+# icebergpolaris: ONE step (ic-polaris) in IC_MODE=polaris; nothing of another job
+ipo=$(steps icebergpolaris)
+has ic-polaris "$ipo" && ok "icebergpolaris runs the one polaris-mode step" || bad "icebergpolaris: $(echo "$ipo" | grep '^STEP' | tr '\n' ' ')"
+extra=$(echo "$ipo" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-polaris)$' | tr '\n' ' ')
+[ -z "$extra" ] && ok "icebergpolaris runs no step of any other job" || bad "icebergpolaris runs extra steps: $extra"
 # netexchsim: ONE step (nx-all) that runs spikes/net-exchange/gcp-check.sh; no settle steps, nothing of another job.
 nx=$(steps netexchsim)
 has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"
@@ -69,7 +74,7 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
-for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
+for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
 # not settle (the other results are kept; the NOT SETTLED line is the record). The real command is cut out of job.sh and run with a short wait.

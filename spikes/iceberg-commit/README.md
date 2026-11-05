@@ -28,3 +28,19 @@ cd .. && ../../scripts/local-heavy.sh cargo check --tests --bins
 
 GCP: see "How to run on GCP" in the results file (the job needs three lines added to `scripts/gcp/job.sh` and one to
 `orchestrate.sh`, which this task was not allowed to edit).
+
+## Modes of `gcp-check.sh` (`IC_MODE`) and the GCP jobs
+
+| mode | job | what runs |
+|---|---|---|
+| `full` (default) | `iceberg` | everything: model, Apache REST fixture suite, object-store suite, interop |
+| `model` | `icebergmodel` | only the TLA+ runs named in `IC_MODEL_ONLY` |
+| `spikes` | `icebergspikes` | everything except the model; the pyiceberg interop is gating |
+| `polaris` | `icebergpolaris` | the commit suite and the pyiceberg interop against **Apache Polaris 1.8.0**, a product catalog |
+
+**Polaris** (`scripts/setup-polaris.sh`, `scripts/polaris.sh`): JDK 21 and the Polaris binary release are downloaded and checked against the checksums in `scripts/tools.env`
+(the PGP signature was not checked), the server is started as a THROWAWAY on loopback with an in-memory metastore and local-disk storage, a catalog is created through its management
+API, and the suite reaches it with OAuth client credentials from the environment (`IC_REST_CLIENT_ID`, `IC_REST_CLIENT_SECRET`, `IC_REST_SCOPE`, `IC_REST_WAREHOUSE`; read by `src/catalog.rs` and
+`scripts/interop_check.py`). Polaris refuses local-disk storage and an in-memory metastore unless told otherwise (`ALLOW_INSECURE_STORAGE_TYPES`, `ignore-severe-issues`); those settings are
+the reason this proves the commit path of the REST protocol against Polaris's implementation and says nothing about a production deployment of it (database metastore, object storage, authorization at
+scale). Tests of the scripts: `scripts/gcp/test/test-icebergpolaris.sh` (against a fake server that checks the credential format, the token request and the order of the management calls).

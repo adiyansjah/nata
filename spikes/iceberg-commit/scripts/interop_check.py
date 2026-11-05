@@ -3,8 +3,9 @@
 files it finds by reading OUR manifest lists and manifests (its own Avro reader, its own v2 schema handling). They must be
 the same files that the spike's own reader found. A mismatch means the Avro we write is not what Iceberg readers expect.
 usage: interop_check.py <catalog-url> <interop.json written by `ic-spike interop-table`>
+Environment (only for a catalog that needs it): IC_REST_CLIENT_ID, IC_REST_CLIENT_SECRET, IC_REST_SCOPE, IC_REST_WAREHOUSE.
 exit 0 pass, 1 mismatch, 3 pyiceberg unavailable or could not run (reported as SKIPPED by gcp-check.sh)"""
-import json, sys
+import json, os, sys
 
 def norm(p):
     for pre in ("file://", "file:"):
@@ -20,7 +21,15 @@ def main():
     except Exception as e:  # not installed
         print("pyiceberg import failed:", e); return 3
     try:
-        cat = load_catalog("rest", **{"uri": url})
+        # a product catalog (Apache Polaris) needs OAuth client credentials and the catalog name: the same environment variables as the Rust client
+        kw = {"uri": url}
+        cid, sec = os.environ.get("IC_REST_CLIENT_ID"), os.environ.get("IC_REST_CLIENT_SECRET")
+        if cid and sec:
+            kw["credential"] = f"{cid}:{sec}"
+            kw["scope"] = os.environ.get("IC_REST_SCOPE", "PRINCIPAL_ROLE:ALL")
+        if os.environ.get("IC_REST_WAREHOUSE"):
+            kw["warehouse"] = os.environ["IC_REST_WAREHOUSE"]
+        cat = load_catalog("rest", **kw)
         table = cat.load_table(("nata", expected["table"]))
     except Exception as e:
         print("pyiceberg could not load the table:", repr(e)); return 3

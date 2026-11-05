@@ -164,6 +164,21 @@ pub struct RestCatalog {
     pub ns: String,
     pub table: String,
     agent: ureq::Agent,
+    /// OAuth2 bearer token, when the catalog needs one (Polaris). Never printed, never part of `describe`.
+    token: Option<String>,
+}
+
+/// application/x-www-form-urlencoded escaping (everything except unreserved characters).
+fn form_enc(s: &str) -> String {
+    let mut o = String::new();
+    for b in s.bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            o.push(b as char);
+        } else {
+            o.push_str(&format!("%{b:02X}"));
+        }
+    }
+    o
 }
 
 fn new_agent(timeout: Duration) -> ureq::Agent {
@@ -172,10 +187,38 @@ fn new_agent(timeout: Duration) -> ureq::Agent {
 
 impl RestCatalog {
     /// Reads /v1/config for the path prefix. Does not create anything.
+    ///
+    /// Product catalogs (Apache Polaris) need two things the reference fixture does not, both taken from the environment so that the suite and its
+    /// call sites are unchanged: `IC_REST_CLIENT_ID` and `IC_REST_CLIENT_SECRET` (OAuth2 client credentials, scope `IC_REST_SCOPE`, default
+    /// `PRINCIPAL_ROLE:ALL`; the token is fetched from `<base>/v1/oauth/tokens` once and sent as a bearer token), and `IC_REST_WAREHOUSE` (the catalog's
+    /// name, sent as `?warehouse=` to /v1/config, whose answer carries the path prefix). Without them nothing changes.
     pub fn connect(base_url: &str, ns: &str, table: &str) -> Res<RestCatalog> {
         let agent = new_agent(Duration::from_secs(60));
         let base_url = base_url.trim_end_matches('/').to_string();
-        let mut resp = agent.get(&format!("{base_url}/v1/config")).call().map_err(|e| format!("GET /v1/config: {e}"))?;
+        let token = match (std::env::var("IC_REST_CLIENT_ID").ok().filter(|v| !v.is_empty()), std::env::var("IC_REST_CLIENT_SECRET").ok().filter(|v| !v.is_empty())) {
+            (Some(id), Some(secret)) => {
+                let scope = std::env::var("IC_REST_SCOPE").unwrap_or_else(|_| "PRINCIPAL_ROLE:ALL".into());
+                let form = format!("grant_type=client_credentials&client_id={}&client_secret={}&scope={}", form_enc(&id), form_enc(&secret), form_enc(&scope));
+                let mut r = agent.post(&format!("{base_url}/v1/oauth/tokens")).header("Content-Type", "application/x-www-form-urlencoded").send(form).map_err(|e| format!("POST /v1/oauth/tokens: {e}"))?;
+                let st = r.status().as_u16();
+                let text = r.body_mut().read_to_string().map_err(|e| e.to_string())?;
+                if st != 200 {
+                    return Err(format!("the token request returned {st} (credentials not shown)"));
+                }
+                let v: Value = serde_json::from_str(&text).map_err(|e| format!("token json: {e}"))?;
+                Some(v["access_token"].as_str().ok_or("the token response has no access_token")?.to_string())
+            }
+            _ => None,
+        };
+        let cfg_url = match std::env::var("IC_REST_WAREHOUSE").ok().filter(|v| !v.is_empty()) {
+            Some(w) => format!("{base_url}/v1/config?warehouse={}", form_enc(&w)),
+            None => format!("{base_url}/v1/config"),
+        };
+        let mut req = agent.get(&cfg_url);
+        if let Some(t) = &token {
+            req = req.header("Authorization", &format!("Bearer {t}"));
+        }
+        let mut resp = req.call().map_err(|e| format!("GET /v1/config: {e}"))?;
         let status = resp.status().as_u16();
         let body = resp.body_mut().read_to_string().map_err(|e| e.to_string())?;
         if status != 200 {
@@ -183,7 +226,7 @@ impl RestCatalog {
         }
         let cfg: Value = serde_json::from_str(&body).map_err(|e| format!("config json: {e}"))?;
         let prefix = cfg["overrides"]["prefix"].as_str().or_else(|| cfg["defaults"]["prefix"].as_str()).unwrap_or("").to_string();
-        Ok(RestCatalog { base_url, prefix, ns: ns.into(), table: table.into(), agent })
+        Ok(RestCatalog { base_url, prefix, ns: ns.into(), table: table.into(), agent, token })
     }
 
     fn root(&self) -> String {
@@ -194,9 +237,22 @@ impl RestCatalog {
     }
 
     fn send(&self, method: &str, url: &str, body: Option<&Value>) -> Result<(u16, String), String> {
+        let auth = self.token.as_ref().map(|t| format!("Bearer {t}"));
         let r = match (method, body) {
-            ("GET", _) => self.agent.get(url).call(),
-            ("POST", Some(b)) => self.agent.post(url).header("Content-Type", "application/json").send(b.to_string()),
+            ("GET", _) => {
+                let mut q = self.agent.get(url);
+                if let Some(a) = &auth {
+                    q = q.header("Authorization", a);
+                }
+                q.call()
+            }
+            ("POST", Some(b)) => {
+                let mut q = self.agent.post(url).header("Content-Type", "application/json");
+                if let Some(a) = &auth {
+                    q = q.header("Authorization", a);
+                }
+                q.send(b.to_string())
+            }
             (m, _) => return Err(format!("unsupported request {m}")),
         };
         let mut resp = r.map_err(|e| e.to_string())?;

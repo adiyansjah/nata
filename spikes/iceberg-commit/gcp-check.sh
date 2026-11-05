@@ -24,6 +24,9 @@
 #   IC_MUTANT_TIMEOUT  seconds per TLC run of a mutant (default 900)
 #   IC_WRITERS         writer processes per stress run (default: 4, 8, 16 in turn); IC_SEEDS stress seeds (default 6)
 #   IC_PORT            port of the catalog (default 8181)
+#   IC_MODE            polaris: the commit suite and the pyiceberg interop against Apache Polaris (a PRODUCT catalog, started by scripts/polaris.sh from the
+#                      pinned release; JDK 21): polaris-tools, rust-build, polaris-start, spike-polaris-suite, interop-pyiceberg-polaris (both gating). No model,
+#                      no Apache fixture, no object-store mode. The catalog is a throwaway on loopback with an in-memory metastore and local-disk storage.
 #   IC_MODE            full (default): every phase.  spikes: everything EXCEPT the TLC model (no model-lint, model-parse-and-edits, model-smoke,
 #                      model-full, model-mutants): tools, rust-build, rust-tests, catalog-build, catalog-start, spike-rest-catalog,
 #                      interop-pyiceberg and spike-object-store, for re-running the code side on another machine without the 2-hour model
@@ -65,7 +68,7 @@ PORT=${IC_PORT:-8181}
 SEEDS=${IC_SEEDS:-6}
 TLC_TIMEOUT=${IC_TLC_TIMEOUT:-2700}
 MODE=${IC_MODE:-full}
-case "$MODE" in full | model | spikes) ;; *) echo "IC_MODE must be full, model or spikes, not '$MODE'" >&2; exit 2 ;; esac
+case "$MODE" in full | model | spikes | polaris) ;; *) echo "IC_MODE must be full, model, spikes or polaris, not '$MODE'" >&2; exit 2 ;; esac
 # The default list of the targeted re-run: the 15 runs that had no result in the first GCP run (iceberg-full-arm64), cheapest guess
 # first is NOT knowable (the costs are unknown), so: the near-complete three-store-ser, then the I4 run, the 2-writer liveness run,
 # the 11 canaries, and the 3-writer liveness run (the most expensive unknown) last.
@@ -113,7 +116,8 @@ need() { # need PHASE...: succeed only if those phases passed (a missing prerequ
 }
 
 CATALOG_RUN="$WORKBASE/catalog-run"
-cleanup() { "$HERE/scripts/catalog.sh" stop "$CATALOG_RUN" > /dev/null 2>&1 || true; }
+POLARIS_RUN="$WORKBASE/polaris-run"
+cleanup() { "$HERE/scripts/catalog.sh" stop "$CATALOG_RUN" > /dev/null 2>&1 || true; "$HERE/scripts/polaris.sh" stop "$POLARIS_RUN" > /dev/null 2>&1 || true; }
 trap cleanup EXIT
 
 # ------------------------------------------------------------------------------------------------ 0. the machine
@@ -220,6 +224,58 @@ ph_model_mutants() {
 
 IC="$WORKBASE/target/release/ic-spike"
 URL=""
+
+# ---- Apache Polaris (IC_MODE=polaris): the same commit suite against a product catalog. Credentials reach the suite and pyiceberg only through the
+# environment file polaris.sh wrote (mode 600); they are never printed.
+ph_polaris_start() { need rust-build && "$HERE/scripts/polaris.sh" start "$TOOLS" "$POLARIS_RUN" "${IC_POLARIS_PORT:-8181}" > "$WORKBASE/polaris-url"; }
+ph_polaris_suite() {
+  need rust-build polaris-start || return 1
+  rm -rf "$WORKBASE/suite-polaris"
+  ( set -a; . "$POLARIS_RUN/polaris.env"; set +a
+    "$IC" suite --backend rest --url "$URL" --work "$WORKBASE/suite-polaris" --seeds "$SEEDS" ${IC_WRITERS:+--writers "$IC_WRITERS"} )
+  local rc=$?
+  tar -czf "$OUT/journals-polaris.tgz" -C "$WORKBASE/suite-polaris" journals 2> /dev/null || true
+  return $rc
+}
+ph_polaris_interop() {
+  need rust-build polaris-start spike-polaris-suite || return 1
+  python3 -m venv "$TOOLS/venv" > /dev/null 2>&1 || { echo "python3 -m venv failed (python3-venv missing, no sudo): SKIPPED"; return 77; }
+  "$TOOLS/venv/bin/pip" install --quiet "pyiceberg[pyarrow]==$PYICEBERG_VERSION" || { echo "pip install pyiceberg==$PYICEBERG_VERSION failed: SKIPPED"; return 77; }
+  ( set -a; . "$POLARIS_RUN/polaris.env"; set +a
+    "$IC" interop-table --backend rest --url "$URL" --work "$WORKBASE/interop-polaris" > "$OUT/interop-polaris.json" || exit 1
+    "$TOOLS/venv/bin/python" "$HERE/scripts/interop_check.py" "$URL" "$OUT/interop-polaris.json" )
+  local rc=$?
+  [ "$rc" -eq 3 ] && return 77
+  return $rc
+}
+if [ "$MODE" = polaris ]; then
+  log "MODE polaris: the commit suite and the pyiceberg interop against Apache Polaris $POLARIS_VERSION (JDK 21), nothing else"
+  phase polaris-tools yes "$HERE/scripts/setup-polaris.sh" "$TOOLS"
+  cp "$TOOLS/POLARIS.txt" "$OUT/polaris-version.txt" 2> /dev/null || true
+  phase rust-build yes ph_rust_build
+  phase polaris-start yes ph_polaris_start
+  URL=$(cat "$WORKBASE/polaris-url" 2> /dev/null || true)
+  phase spike-polaris-suite yes ph_polaris_suite
+  phase interop-pyiceberg-polaris yes ph_polaris_interop
+  "$HERE/scripts/polaris.sh" stop "$POLARIS_RUN" > /dev/null 2>&1 || true
+  cp "$POLARIS_RUN/polaris.log" "$OUT/polaris.log" 2> /dev/null || true
+  {
+    echo
+    echo "---- spike: Apache Polaris REST catalog"
+    tail -n 4 "$OUT/spike-polaris-suite.txt" 2> /dev/null
+    echo "---- interop: pyiceberg reads our manifests through Polaris"
+    tail -n 4 "$OUT/interop-pyiceberg-polaris.txt" 2> /dev/null
+  } >> "$SUMMARY"
+  # the client secret must not be anywhere in the results
+  if [ -f "$POLARIS_RUN/polaris.creds" ] && grep -rqaF "$(cut -d' ' -f2 "$POLARIS_RUN/polaris.creds")" "$OUT" 2> /dev/null; then
+    log "THE POLARIS CLIENT SECRET IS IN THE RESULTS: delete $OUT before it is copied anywhere"; FAILED=$((FAILED + 1))
+  else
+    log "secret scan: the Polaris client secret appears nowhere under the results directory"
+  fi
+  if [ "$FAILED" -eq 0 ]; then log "VERDICT PASS (the commit suite and the pyiceberg interop passed against Apache Polaris $POLARIS_VERSION; not covered: the TLA+ model, other catalogs, a real object store)"; exit 0; fi
+  log "VERDICT FAIL ($FAILED gating phase(s) failed; see the PHASE lines above and the per-phase files in $OUT)"
+  exit 1
+fi
 
 # 1. tools
 phase tools yes "$HERE/scripts/setup-tools.sh" "$TOOLS"
