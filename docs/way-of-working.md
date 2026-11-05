@@ -23,6 +23,37 @@ A slice is not done until all of these hold:
 5. **Documented.** The supported-SQL page lists exactly what works, with an example.
 6. **Fails loudly.** Anything not supported returns a clear `not supported yet: <what>` error. Never a wrong result, never a silent fallback, never a panic.
 7. **Clean.** `cargo fmt`, `cargo clippy -- -D warnings` and all tests pass in CI.
+8. **Verified against its card.** The slice has a verification card (next subsection), every row of it is checked or justified, and the ADR it relies on is current.
+
+### The slice verification card
+
+Every development point has a short card, written **before** the implementation, in `docs/slices/NNNN-name.md` (template: `docs/slices/0000-template.md`). The card is how we decide and how we know we are done. It is accepted by the owner, like an ADR: an agent or a human drafts it, the owner accepts it, and the work starts from the accepted card.
+
+A card has five parts.
+
+1. **Goal and ADR.** What the slice delivers, and the ADR it relies on or creates. If a decision it needs is open, the card says so and names the baseline spike (part 4).
+2. **Quality targets.** One row for each aspect below: the target or budget, the check that will show it (with its oracle), and the baseline to beat or match. A row may say "N/A, because ...". It may not be missing.
+
+   | Aspect | What the row must say |
+   |---|---|
+   | Correctness | the oracle (DuckDB, a scalar reference, two independent readers) and the mutants that show the check can fail |
+   | Performance | a target and a baseline (DuckDB, the previous slice, or a hand-fused loop), measured with a control arm, on both CPU types |
+   | Scalability | the sizes and core counts that matter, and the budget |
+   | Reliability | no hang, no leak, cancel and early finish at every step; the model, stress or loom check that shows it |
+   | Fault tolerance | the stated rule for each failure that can reach this code (ADR 0004), and the injected-fault check |
+   | Resource bounds | memory, open files, disk, tested under the default limits of a fresh machine, not the dev machine's |
+   | Portability | ARM64 and x86-64 on clean VMs |
+   | Compatibility | other engines, clients and file readers, and the known differences, listed |
+   | Security and privacy | no secrets, keys or project identifiers in logs, results or errors; a leak scan where relevant |
+   | Operability | clear errors, and a seed or trace that replays a failure |
+
+3. **Decision rule, fixed before measuring.** The threshold that decides the question, written down first: for example, "build our own kernel only if it is at least 1.5x faster on both CPU types, otherwise reuse the crate". Do not choose the threshold after seeing the numbers.
+4. **Baseline spike, only when needed.** A spike is required when the slice contains a build-versus-reuse choice, a performance number that drives a design, a concurrency or protocol change, a new external format, or a failure behaviour that is not yet stated. Otherwise the card links the existing baseline. A spike is time-boxed, throwaway (section 6), and any cloud spend follows section 8.
+5. **Closeout.** When the slice is done: the results file in `bench/results/`; the ADR updated (a dated amendment if it is accepted, with its confidence and what changed); the benchmark added to the regression set with its baseline numbers; deviations from the card recorded; spike code deleted.
+
+**Proportion.** A small slice gets a short card, and a trivial one may be a single line that says what is checked and against what. The card must never be longer than the work it protects. The rule is not "fill the table"; it is "no slice starts without saying how we will know it is right, fast enough, safe to fail and finished".
+
+**Order of work inside a slice.** Card accepted, then baseline spike if required, then implementation with its tests and mutants in the same change, then the checks on a clean VM on both architectures (the measurement rules of section 6), then closeout.
 
 ## 3. No stubs on main
 
