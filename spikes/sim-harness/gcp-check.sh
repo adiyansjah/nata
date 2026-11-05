@@ -180,7 +180,19 @@ turmoil_hashes() { local i; for i in 1 2 3; do "$TUR" hashes 0 20 | grep '^TURMO
 soft_step turmoil-determinism turmoil_hashes
 
 # ------------------------------------------------------------------------------------------------- bench
+# Wait (at most ten minutes) for the 1-minute load average to fall below 0.5 before a timed step: the seed sweeps just before it use all
+# cores, and the first GCP run measured the benchmark at load 5.0 (TIMING SANITY ONLY).
+settle() {
+  local i l
+  for i in $(seq 1 60); do
+    l=$(loadavg)
+    awk -v l="$l" 'BEGIN { exit !(l + 0 < 0.5) }' && { echo "settled: load $l after $(( (i - 1) * 10 )) s"; return 0; }
+    sleep 10
+  done
+  echo "load did not settle: $l"
+}
 bench() {
+  settle
   echo "load average before: $(cat /proc/loadavg)  [$(loadlabel)]"
   "$REL/simbench"; local rc=$?
   echo "load average after:  $(cat /proc/loadavg)  [$(loadlabel)]"
