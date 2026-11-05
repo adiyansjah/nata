@@ -29,7 +29,7 @@ format is an external specification that other engines implement, so the cheapes
 8. **Catalog and commit protocol: model checked, catalog NOT DECIDED.** The intended interface is the REST catalog with its atomic commit. The formal model of the commit (bounded: at most 3 writers with one operation
    each, 2 attempts, one crash, one duplicate delivery, one lost request, one pinned reader) now has a result for every configuration on GCP (ARM64, 2026-11-05): no invariant violated, liveness holds, all 11 coverage canaries are
    reachable and 9 of 9 mutants are caught (see Evidence). That does not decide any rule here about a product: the spike ran only against the Apache reference fixture and a local conditional create, and the model is not tied to the
-   code by a refinement check. Questions that stay open: operation token versus the REST `Idempotency-Key` for retried commits; which catalog to certify against (the Apache fixture is a test fixture); whether catalog-less commit by
+   code by a refinement check. The commit suite and the pyiceberg interop also pass against **Apache Polaris 1.8.0**, a product catalog, on ARM64 and x86-64 (`bench/results/20261104-iceberg-commit.md` section 12), but only in a test configuration Polaris refuses by default: in-memory metastore, local-disk storage, loopback. Questions that stay open: operation token versus the REST `Idempotency-Key` for retried commits (Polaris 1.8.0 ships an `Idempotency-Key` filter and settings; its behaviour was not tested); the owner chose Polaris as the first catalog to certify against, and a database metastore with a real object store is not tried; whether catalog-less commit by
    conditional put is allowed at all.
 
 ## Why
@@ -57,9 +57,9 @@ A table format is a contract with other engines. Their readers decide what our f
   model of the commit (bounded as in rule 8) TLC found no invariant violation in any unmutated configuration, the largest three at 116.8 million (`three-rest-ser`, `three-store-ser`, identical counts) and 129.2 million (`three-rest-snap`) distinct states; `three-rest-snap-i4` violates
   I4_NoPhantom as expected (I4 is a live check); liveness passes for two writers (`live-2`) and for three (`live-3`, 8.6 million distinct states); all 11 coverage canaries are reached, so the situations the model claims to cover are reachable in it; 9 of 9 mutants of the model are caught. The commit spike passes all its gating checks against the Apache REST reference
   fixture 1.12.0 and against conditional create on a local file system (18 forced interleavings with 5 of 5 known-bad writers caught, 12 crash points, 6 of 6 stress seeds, on each). The code side was re-run on ARM64 and x86-64 (`icebergspikes`, section 11 of that file): the same checks pass on both, and pyiceberg 0.12.0 reads our manifests identically on all 6 snapshots on each. **Not obtained:**
-  the model on x86-64 (it does not depend on the VM); the spike against any product catalog or real object store; a check that ties the model to the code. TLC's fingerprint-collision estimates are small but not zero (3.6E-3 calculated, optimistic, 4.9E-4 from the actual fingerprints for the largest re-run configuration).
+  the model on x86-64 (it does not depend on the VM); the spike against a catalog with a database metastore or an object-store warehouse (Polaris was tried only in a test configuration), or against a real object store for the commit itself; a check that ties the model to the code. TLC's fingerprint-collision estimates are small but not zero (3.6E-3 calculated, optimistic, 4.9E-4 from the actual fingerprints for the largest re-run configuration).
 - **Reasoned:** the maintenance rule for manifests, and that a missing statistic is safe.
-- **Not covered:** format version 3; the commit protocol beyond the bounded results above (one catalog, a fixture; no product catalog, no real S3/GCS/Azure; larger bounds; equality deletes and deletion vectors are not in the model); time travel, branches and tags; nested types; name mapping for files without field ids;
+- **Not covered:** format version 3; the commit protocol beyond the bounded results above (the Apache fixture and Apache Polaris 1.8.0 in a test configuration; no database metastore, no real S3/GCS/Azure for the commit; larger bounds; equality deletes and deletion vectors are not in the model); time travel, branches and tags; nested types; name mapping for files without field ids;
   strict projection and residuals; pruning of delete files by their own metrics; a comparison with `iceberg-rust` or the Java library; real object stores.
 
 ## Confidence
@@ -69,7 +69,8 @@ A table format is a contract with other engines. Their readers decide what our f
 - **Writing data files with sound statistics: medium.** Checked by an independent verifier and DuckDB; other readers not tested.
 - **Planning speed: medium for the numbers, low for the design.** The numbers are from idle VMs but come from one decoder; a hand-written one may change them by a large factor.
 - **Commit protocol as modelled: medium.** Exhaustive within stated bounds, with liveness, reachable canaries and caught mutants; it would drop on a counterexample at larger bounds or on a disagreement between the model and a real catalog.
-- **Commit against real catalogs and object stores: low (no evidence).**
+- **Commit against a product catalog, REST protocol (Apache Polaris 1.8.0, test configuration): medium-low.** The same suite passes as against the reference fixture, on two architectures, and its known-bad writers are caught; it would drop on a failure in a database-backed or object-store-backed deployment.
+- **Commit against production deployments of a catalog, and over real object stores: low (no evidence).**
 
 ## Consequences
 
@@ -78,4 +79,4 @@ product feature, not an afterthought.
 
 ## Revisit when
 
-The commit spike runs against a product catalog or a real object store; the model is tied to the code or its bounds are enlarged; a nested-type or v3 table is needed; the Java library or `iceberg-rust` can be compared; a plan over 100,000 files is on the hot path of a real query.
+The commit spike runs against a product catalog with a database metastore or an object-store warehouse, or the Polaris `Idempotency-Key` behaviour is tested; the model is tied to the code or its bounds are enlarged; a nested-type or v3 table is needed; the Java library or `iceberg-rust` can be compared; a plan over 100,000 files is on the hot path of a real query.

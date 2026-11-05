@@ -382,3 +382,31 @@ TLC: tla2tools v1.7.4 (sha256 `936a2622...e050e88`), 16 workers, heap 19,870 MB.
 
 **What it does not show.** The TLA+ model was not run (its result is section 10, ARM64 only; the model does not depend on the VM). The same limits as section 8 hold: one catalog (the Apache fixture, a test fixture), the object-store mode used a local file system's atomic create and not S3, GCS or Azure, the stress runs are six seeds of at most 16 writers with three operations each, the model is not tied to the code by a refinement check, and pyiceberg reads only what this spike wrote (6 snapshots), not a general set of tables.
 
+## 12. GCP runs `icebergpolaris-arm64` and `icebergpolaris-x86`, 2026-11-05: the commit suite and the pyiceberg interop against Apache Polaris 1.8.0, a product catalog: verdict PASS
+
+**Runs.** Job `icebergpolaris` (`IC_MODE=polaris` of `gcp-check.sh`), one Spot VM each: `n4a-highcpu-8` (Neoverse-N3) and `c3d-highcpu-8` (AMD EPYC 9B14), 13:00 to 13:04 UTC: 205 s and 217 s of VM time, 1 incarnation, 0 preemptions, resources left after cleanup:
+none, **$0.006 and $0.004**. Both: exit status 0, `VERDICT PASS`.
+
+**The catalog.** Apache Polaris 1.8.0 binary release (`polaris-bin-1.8.0.tgz`; sha512 `52b79320...` as published by Apache and sha256 `2d295caf...76d0` both checked against the download; the PGP signature was NOT verified, gpg was not available), run with
+Temurin JDK 21.0.13+9 (checksums from the Adoptium API, verified on each VM). Started by `scripts/polaris.sh` as a THROWAWAY on loopback: in-memory metastore, local-disk (FILE) storage, the default realm, a catalog `spikecat` created through its management API, the root
+principal's role granted `CATALOG_MANAGE_CONTENT`. **Polaris refuses this configuration by default** (`ALLOW_INSECURE_STORAGE_TYPES`, and it aborts at start-up on "severe production readiness issues" unless `polaris.readiness.ignore-severe-issues` is set); both were
+set on purpose, so this is a test configuration and not a production one. The client reaches it with OAuth2 client credentials (random per run, mode 600, not in any log or result: the results were scanned for the secret) and the catalog name as `?warehouse=`.
+
+| Phase | ARM64 | x86-64 |
+|---|---|---|
+| polaris-tools (JDK 21 + Polaris download and verification) | PASS 30 s | PASS 29 s |
+| rust-build | PASS 13 s | PASS 17 s |
+| polaris-start (server up, token, catalog, grants) | PASS 4 s | PASS 3 s |
+| spike-polaris-suite | PASS 27 s | PASS 25 s |
+| interop-pyiceberg-polaris (pyiceberg 0.12.0) | PASS 11 s | PASS 12 s |
+
+**What it shows.** On both architectures: `forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0`, `SUITE PASS`: the same commit suite that passed against the Apache fixture (section 8) passes against a product catalog's implementation of the
+REST protocol: the correct writer survives 18 forced interleavings (lost update, unknown outcome, lost and duplicate requests, delete-then-compact, phantoms, ...), 12 crash points and 6 stress seeds with up to 16 writer processes and SIGKILL; the five known-bad writers are caught,
+so Polaris really does enforce the commit requirements (`assert-ref-snapshot-id`) atomically. pyiceberg 0.12.0 read the table our spike wrote through Polaris and agreed with the spike on all 6 snapshots on each architecture (`INTEROP PASS`).
+
+**The idempotency question (ADR 0005 rule 8).** The Polaris 1.8.0 jars contain an `Idempotency-Key` request filter and an `idempotency-keys` configuration (class and setting names found by scanning the distribution; Iceberg core 1.11 in it also has `idempotency-key-lifetime`). **Not tested:**
+that it works, or whether it is enabled by default. The spike's own retry logic (an operation token) is what ran here.
+
+**What this does not show.** One product catalog, in a test configuration: an in-memory metastore (no database, no restart, no multi-node deployment), local-disk storage on loopback (no S3, GCS or Azure, no credential vending), the default realm, one principal with full rights (no
+authorization at scale). Only the REST protocol's commit path was exercised, six stress seeds of at most 16 writers with three operations each. The model-to-code gap of section 8 is unchanged. No other catalog (Lakekeeper, Nessie, a cloud catalog) was tried.
+
