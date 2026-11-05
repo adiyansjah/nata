@@ -1,0 +1,12 @@
+agg_orderkey engine 4 threads: 151 ms, 1493405 groups, digest 2608ce3766023022, peak RSS 293 MiB
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.18
+	Maximum resident set size (kbytes): 299676
+agg_orderkey fused 4 threads: 108 ms, 1493405 groups, digest 2608ce3766023022, peak RSS 293 MiB
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.17
+	Maximum resident set size (kbytes): 300148
+j3 engine 4 threads: 276 ms, 35 groups, digest 2e6a7791556de808, peak RSS 337 MiB
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.28
+	Maximum resident set size (kbytes): 344988
+j3 fused 4 threads: 230 ms, 35 groups, digest 2e6a7791556de808, peak RSS 478 MiB
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.23
+	Maximum resident set size (kbytes): 489548

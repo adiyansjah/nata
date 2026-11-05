@@ -1,0 +1,402 @@
+
+==== machine ====
+2026-11-05T01:29:41Z
+Linux 6.1.0-54-cloud-arm64 aarch64
+CPU(s):                                  8
+Model name:                              Neoverse-N3
+Thread(s) per core:                      1
+Flags:                                   fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asim
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+RUSTFLAGS=<unset>
+ 01:29:41 up 43 min,  0 user,  load average: 0.49, 1.27, 1.41
+
+==== build (release: overflow-checks = true; nochecks: overflow-checks = false) ====
+warning: `spike-null-path` (bin "spike-null-path") generated 3 warnings
+    Finished `release` profile [optimized + debuginfo] target(s) in 1m 13s
+warning: `spike-null-path` (bin "spike-null-path") generated 3 warnings
+    Finished `nochecks` profile [optimized + debuginfo] target(s) in 1m 13s
+
+==== 1a. unit and property tests (kernels against scalar references; overflow checks on) ====
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+==== 1b. check: no NULLs, generic-ops == hand-fused == every word-wise step, at 1 and 4 threads ====
+ok   q1: generic-ops, hand-fused and all 7 word-wise steps agree at 1 and 4 threads
+== q1
+A,F,37734107.00,56586554400.73,53758257134.8700,1478493
+N,F,991417.00,1487504710.38,1413082168.0541,38854
+N,O,74476040.00,111701729697.74,106118230307.6056,2920374
+R,F,37719753.00,56568041380.90,53741292684.6040,1478870
+ok   q6: generic-ops, hand-fused and all 7 word-wise steps agree at 1 and 4 threads
+== q6
+123141078.2283
+
+==== 1c. nullcheck: 1 3 5 10 25 50 75 95 100% NULLs (8192-row batches) and 5 50% (1000- and 97-row batches) == independent scalar reference, old engine and every step, 1 and 4 threads ====
+ok   q1 with   1% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,36971340.00,55451052927.11,521624107)
+ok   q1 with   3% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,35493745.00,53240193424.31,490654922)
+ok   q1 with   5% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,34051059.00,51082652855.73,461037460)
+ok   q1 with  10% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,30562382.00,45863741224.30,392165548)
+ok   q1 with  25% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,21203323.00,31858671194.36,226791751)
+ok   q1 with  50% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,9425048.00,14160972149.05,6717961314)
+ok   q1 with  75% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,2352587.00,3546272805.55,843104131.7)
+ok   q1 with  95% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,91642.00,143243069.11,5722187.6964,7)
+ok   q1 with 100% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference ()
+ok   q1 with   5% NULLs, 1000-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,34051059.00,51082652855.73,461037460)
+ok   q1 with  50% NULLs, 1000-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,9425048.00,14160972149.05,6717961314)
+ok   q1 with   5% NULLs,   97-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,34051059.00,51082652855.73,461037460)
+ok   q1 with  50% NULLs,   97-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (A,F,9425048.00,14160972149.05,6717961314)
+ok   q6 with   1% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (118312468.6707)
+ok   q6 with   3% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (109079277.7045)
+ok   q6 with   5% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (100171043.8080)
+ok   q6 with  10% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (80665435.4451)
+ok   q6 with  25% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (38775920.0210)
+ok   q6 with  50% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (7707116.0923)
+ok   q6 with  75% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (445554.5112)
+ok   q6 with  95% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (3073.0066)
+ok   q6 with 100% NULLs, 8192-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (NULL)
+ok   q6 with   5% NULLs, 1000-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (100171043.8080)
+ok   q6 with  50% NULLs, 1000-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (7707116.0923)
+ok   q6 with   5% NULLs,   97-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (100171043.8080)
+ok   q6 with  50% NULLs,   97-row batches, old engine and 7 steps x 1,4 threads equal the scalar reference (7707116.0923)
+
+==== 1d. the same two queries in DuckDB, diffed against the engine's output ====
+ok   Q1 and Q6 identical to DuckDB
+
+==== 2. mutation check skipped (SKIP_MUTATION set) ====
+
+==== 3a. ladder, wall clock (25 rounds): old engine and each step, 0% vs 10% NULLs, interleaved. load average: 1.96, 2.13, 1.78 ====
+Engine only, batches in memory; rounds: 25 (+1 warm-up); all arms and both datasets interleaved in rotating order; clock: wall
+
+### q1 , 1 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 62.8 / 63.1 | 136.0 / 136.3 | 2.16 [2.16, 2.16] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 66.4 / 66.5 | 73.5 / 73.6 | 1.11 [1.11, 1.11] | 0.54 | 1.05 |
+| 2 + word-wise project | 73.1 / 73.3 | 73.5 / 73.7 | 1.01 [1.00, 1.01] | 0.54 | 1.16 |
+| 3a + word-wise sink, per-row masks | 63.4 / 63.6 | 64.7 / 64.9 | 1.02 [1.02, 1.02] | 0.48 | 1.01 |
+| 3 + word-wise sink, subtract NULL rows | 53.2 / 53.4 | 60.0 / 60.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 4 + null-rejecting filters | 53.2 / 53.5 | 60.1 / 60.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 5 + deferred overflow flag | 43.9 / 44.1 | 50.4 / 50.7 | 1.15 [1.14, 1.15] | 0.37 | 0.70 |
+| 6 + wrapping sink adds | 41.5 / 41.8 | 46.9 / 47.3 | 1.13 [1.13, 1.13] | 0.35 | 0.66 |
+
+### q1 , 4 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 15.8 / 15.9 | 34.1 / 34.2 | 2.15 [2.14, 2.15] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 16.7 / 16.8 | 18.4 / 18.5 | 1.10 [1.10, 1.11] | 0.54 | 1.05 |
+| 2 + word-wise project | 18.4 / 18.5 | 18.4 / 18.5 | 1.00 [1.00, 1.00] | 0.54 | 1.16 |
+| 3a + word-wise sink, per-row masks | 16.0 / 16.0 | 16.3 / 16.4 | 1.02 [1.02, 1.02] | 0.48 | 1.01 |
+| 3 + word-wise sink, subtract NULL rows | 13.4 / 13.5 | 15.1 / 15.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 4 + null-rejecting filters | 13.4 / 13.5 | 15.1 / 15.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 5 + deferred overflow flag | 11.1 / 11.2 | 12.7 / 12.8 | 1.15 [1.14, 1.15] | 0.37 | 0.70 |
+| 6 + wrapping sink adds | 10.5 / 10.6 | 11.9 / 12.0 | 1.13 [1.13, 1.13] | 0.35 | 0.67 |
+
+### q6 , 1 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 12.5 / 14.2 | 36.9 / 39.6 | 2.80 [2.76, 3.05] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 13.5 / 14.6 | 14.5 / 16.4 | 1.11 [1.06, 1.18] | 0.41 | 1.08 |
+| 2 + word-wise project | 13.5 / 15.2 | 14.8 / 16.4 | 1.08 [1.05, 1.16] | 0.41 | 1.08 |
+| 3a + word-wise sink, per-row masks | 13.5 / 15.2 | 14.4 / 16.3 | 1.07 [1.05, 1.13] | 0.41 | 1.07 |
+| 3 + word-wise sink, subtract NULL rows | 13.7 / 15.4 | 14.0 / 16.3 | 1.05 [1.05, 1.07] | 0.41 | 1.09 |
+| 4 + null-rejecting filters | 13.5 / 15.3 | 14.6 / 16.1 | 1.04 [1.03, 1.08] | 0.40 | 1.08 |
+| 5 + deferred overflow flag | 13.4 / 15.1 | 14.4 / 16.1 | 1.06 [1.03, 1.14] | 0.41 | 1.08 |
+| 6 + wrapping sink adds | 13.6 / 15.4 | 13.9 / 16.1 | 1.05 [1.04, 1.10] | 0.41 | 1.08 |
+
+### q6 , 4 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 3.6 / 3.7 | 9.6 / 9.9 | 2.64 [2.59, 2.67] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 3.9 / 4.0 | 3.9 / 4.1 | 1.02 [1.00, 1.03] | 0.42 | 1.08 |
+| 2 + word-wise project | 3.9 / 4.0 | 3.9 / 4.1 | 1.02 [0.99, 1.05] | 0.41 | 1.07 |
+| 3a + word-wise sink, per-row masks | 3.8 / 4.0 | 3.8 / 4.1 | 1.02 [1.00, 1.04] | 0.42 | 1.07 |
+| 3 + word-wise sink, subtract NULL rows | 3.8 / 4.0 | 3.9 / 4.0 | 1.02 [0.99, 1.04] | 0.41 | 1.06 |
+| 4 + null-rejecting filters | 3.8 / 4.0 | 3.9 / 4.0 | 1.01 [0.99, 1.04] | 0.41 | 1.07 |
+| 5 + deferred overflow flag | 3.8 / 4.0 | 3.9 / 4.0 | 1.01 [1.00, 1.04] | 0.41 | 1.06 |
+| 6 + wrapping sink adds | 3.8 / 4.0 | 3.8 / 4.1 | 1.02 [1.00, 1.05] | 0.41 | 1.06 |
+
+load average: 1.69, 2.04, 1.77
+
+==== 3b. ladder, process CPU time (same arms). load average: 1.69, 2.04, 1.77 ====
+Engine only, batches in memory; rounds: 25 (+1 warm-up); all arms and both datasets interleaved in rotating order; clock: cpu
+
+### q1 , 1 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 62.8 / 63.2 | 136.0 / 136.2 | 2.16 [2.15, 2.16] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 66.4 / 66.6 | 73.4 / 73.7 | 1.10 [1.10, 1.11] | 0.54 | 1.05 |
+| 2 + word-wise project | 73.2 / 73.5 | 73.3 / 73.7 | 1.00 [1.00, 1.01] | 0.54 | 1.16 |
+| 3a + word-wise sink, per-row masks | 63.5 / 63.8 | 64.5 / 65.0 | 1.02 [1.02, 1.02] | 0.48 | 1.01 |
+| 3 + word-wise sink, subtract NULL rows | 53.3 / 53.6 | 59.9 / 60.4 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 4 + null-rejecting filters | 53.3 / 53.6 | 60.0 / 60.3 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 5 + deferred overflow flag | 44.0 / 44.2 | 50.4 / 50.7 | 1.15 [1.15, 1.15] | 0.37 | 0.70 |
+| 6 + wrapping sink adds | 41.6 / 41.9 | 47.0 / 47.4 | 1.13 [1.13, 1.13] | 0.35 | 0.66 |
+
+### q1 , 4 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 63.1 / 63.3 | 136.1 / 136.3 | 2.15 [2.15, 2.16] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 66.6 / 66.7 | 73.6 / 73.8 | 1.11 [1.10, 1.11] | 0.54 | 1.05 |
+| 2 + word-wise project | 73.2 / 73.5 | 73.7 / 73.9 | 1.01 [1.00, 1.01] | 0.54 | 1.16 |
+| 3a + word-wise sink, per-row masks | 63.6 / 63.8 | 64.9 / 65.1 | 1.02 [1.02, 1.02] | 0.48 | 1.01 |
+| 3 + word-wise sink, subtract NULL rows | 53.3 / 53.6 | 60.1 / 60.4 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 4 + null-rejecting filters | 53.3 / 53.6 | 60.2 / 60.4 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 5 + deferred overflow flag | 44.0 / 44.3 | 50.6 / 50.9 | 1.15 [1.15, 1.15] | 0.37 | 0.70 |
+| 6 + wrapping sink adds | 41.8 / 42.0 | 47.2 / 47.6 | 1.13 [1.13, 1.14] | 0.35 | 0.66 |
+
+### q6 , 1 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 12.7 / 14.1 | 37.0 / 39.8 | 2.81 [2.75, 2.89] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 13.8 / 15.3 | 14.3 / 16.3 | 1.07 [1.05, 1.16] | 0.41 | 1.08 |
+| 2 + word-wise project | 13.6 / 15.1 | 14.6 / 16.2 | 1.07 [1.04, 1.08] | 0.41 | 1.07 |
+| 3a + word-wise sink, per-row masks | 13.7 / 15.4 | 14.8 / 16.3 | 1.06 [1.05, 1.13] | 0.41 | 1.08 |
+| 3 + word-wise sink, subtract NULL rows | 13.8 / 15.3 | 14.4 / 16.3 | 1.06 [1.05, 1.07] | 0.41 | 1.08 |
+| 4 + null-rejecting filters | 13.7 / 15.2 | 14.1 / 16.0 | 1.04 [1.00, 1.09] | 0.41 | 1.08 |
+| 5 + deferred overflow flag | 13.8 / 15.5 | 14.2 / 16.2 | 1.04 [1.02, 1.06] | 0.41 | 1.10 |
+| 6 + wrapping sink adds | 13.8 / 15.4 | 14.2 / 16.2 | 1.05 [1.00, 1.12] | 0.41 | 1.08 |
+
+### q6 , 4 thread(s)
+
+| step | no NULLs ms (min / med) | 10% NULLs ms (min / med) | NULL penalty 10%/0% [Q1, Q3] | 10% vs old 10% | 0% vs old 0% |
+|---|---|---|---|---|---|
+| 0 old (generic-ops) | 14.0 / 14.4 | 38.1 / 38.9 | 2.68 [2.66, 2.72] | 1.00 | 1.00 |
+| 1 bitmaps + mask filter | 14.7 / 15.6 | 15.4 / 16.0 | 1.03 [1.01, 1.04] | 0.41 | 1.08 |
+| 2 + word-wise project | 15.1 / 15.5 | 15.0 / 15.8 | 1.02 [1.00, 1.06] | 0.41 | 1.08 |
+| 3a + word-wise sink, per-row masks | 15.0 / 15.4 | 15.0 / 15.8 | 1.02 [1.00, 1.04] | 0.41 | 1.07 |
+| 3 + word-wise sink, subtract NULL rows | 15.1 / 15.5 | 15.3 / 15.8 | 1.02 [1.00, 1.04] | 0.41 | 1.08 |
+| 4 + null-rejecting filters | 14.6 / 15.5 | 15.0 / 15.8 | 1.02 [1.00, 1.04] | 0.41 | 1.07 |
+| 5 + deferred overflow flag | 15.0 / 15.5 | 15.0 / 15.7 | 1.02 [1.00, 1.04] | 0.41 | 1.07 |
+| 6 + wrapping sink adds | 15.0 / 15.4 | 15.0 / 15.7 | 1.01 [1.00, 1.04] | 0.40 | 1.07 |
+
+load average: 1.77, 1.99, 1.76
+
+==== 3c. cost of overflow-checks: release (on) and nochecks (off), alternated A B A B. load average: 1.77, 1.99, 1.76 ====
+--- ./target/release/spike-null-path (rep 1) load average: 1.77, 1.99, 1.76
+### q1 , 1 thread(s)
+| 0 old (generic-ops) | 63.1 / 63.2 | 135.9 / 136.2 | 2.15 [2.15, 2.16] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 53.3 / 53.4 | 60.1 / 60.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 6 + wrapping sink adds | 41.4 / 41.8 | 47.2 / 47.4 | 1.13 [1.13, 1.14] | 0.35 | 0.66 |
+### q1 , 4 thread(s)
+| 0 old (generic-ops) | 15.9 / 16.0 | 34.1 / 34.3 | 2.15 [2.14, 2.15] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 13.5 / 13.5 | 15.2 / 15.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 6 + wrapping sink adds | 10.5 / 10.6 | 11.9 / 12.0 | 1.13 [1.13, 1.13] | 0.35 | 0.66 |
+### q6 , 1 thread(s)
+| 0 old (generic-ops) | 12.7 / 13.5 | 36.7 / 39.6 | 2.83 [2.73, 2.95] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 14.3 / 14.6 | 14.4 / 15.6 | 1.05 [0.98, 1.12] | 0.41 | 1.09 |
+| 6 + wrapping sink adds | 14.3 / 15.2 | 14.1 / 15.2 | 1.03 [0.98, 1.07] | 0.39 | 1.09 |
+### q6 , 4 thread(s)
+| 0 old (generic-ops) | 3.6 / 3.7 | 9.7 / 9.9 | 2.66 [2.64, 2.68] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 3.8 / 3.9 | 4.0 / 4.1 | 1.04 [1.03, 1.04] | 0.42 | 1.07 |
+| 6 + wrapping sink adds | 3.8 / 4.0 | 3.9 / 4.0 | 1.03 [1.01, 1.05] | 0.41 | 1.07 |
+--- ./target/nochecks/spike-null-path (rep 1) load average: 1.55, 1.92, 1.74
+### q1 , 1 thread(s)
+| 0 old (generic-ops) | 60.3 / 60.6 | 132.6 / 132.8 | 2.19 [2.19, 2.20] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 39.1 / 39.6 | 44.8 / 45.3 | 1.15 [1.14, 1.15] | 0.34 | 0.65 |
+| 6 + wrapping sink adds | 39.0 / 39.3 | 44.4 / 44.8 | 1.14 [1.14, 1.14] | 0.34 | 0.65 |
+### q1 , 4 thread(s)
+| 0 old (generic-ops) | 15.2 / 15.3 | 33.3 / 33.4 | 2.18 [2.18, 2.19] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 10.0 / 10.0 | 11.4 / 11.5 | 1.14 [1.14, 1.15] | 0.34 | 0.66 |
+| 6 + wrapping sink adds | 9.9 / 10.0 | 11.3 / 11.4 | 1.14 [1.13, 1.14] | 0.34 | 0.65 |
+### q6 , 1 thread(s)
+| 0 old (generic-ops) | 12.8 / 13.3 | 36.7 / 39.2 | 2.83 [2.74, 2.98] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 14.6 / 16.1 | 14.8 / 16.7 | 1.01 [0.99, 1.12] | 0.42 | 1.15 |
+| 6 + wrapping sink adds | 14.5 / 16.3 | 15.0 / 16.5 | 1.01 [0.93, 1.04] | 0.42 | 1.15 |
+### q6 , 4 thread(s)
+| 0 old (generic-ops) | 3.6 / 3.8 | 9.5 / 9.8 | 2.62 [2.55, 2.69] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 4.0 / 4.2 | 4.0 / 4.2 | 1.00 [0.99, 1.03] | 0.43 | 1.12 |
+| 6 + wrapping sink adds | 4.0 / 4.2 | 4.0 / 4.2 | 1.02 [0.99, 1.04] | 0.43 | 1.10 |
+--- ./target/release/spike-null-path (rep 2) load average: 1.90, 1.97, 1.76
+### q1 , 1 thread(s)
+| 0 old (generic-ops) | 62.9 / 63.3 | 136.0 / 136.3 | 2.16 [2.15, 2.16] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 53.2 / 53.3 | 60.0 / 60.2 | 1.13 [1.13, 1.13] | 0.44 | 0.84 |
+| 6 + wrapping sink adds | 41.5 / 41.8 | 47.1 / 47.3 | 1.13 [1.13, 1.14] | 0.35 | 0.66 |
+### q1 , 4 thread(s)
+| 0 old (generic-ops) | 15.8 / 15.9 | 34.2 / 34.2 | 2.15 [2.15, 2.15] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 13.4 / 13.5 | 15.2 / 15.2 | 1.13 [1.12, 1.13] | 0.44 | 0.85 |
+| 6 + wrapping sink adds | 10.5 / 10.6 | 11.9 / 12.0 | 1.13 [1.13, 1.14] | 0.35 | 0.66 |
+### q6 , 1 thread(s)
+| 0 old (generic-ops) | 12.5 / 13.0 | 37.0 / 39.4 | 3.04 [2.74, 3.12] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 13.6 / 15.3 | 14.1 / 15.9 | 1.04 [1.00, 1.06] | 0.41 | 1.09 |
+| 6 + wrapping sink adds | 13.5 / 14.5 | 14.0 / 16.1 | 1.06 [1.04, 1.16] | 0.41 | 1.07 |
+### q6 , 4 thread(s)
+| 0 old (generic-ops) | 3.6 / 3.7 | 9.7 / 9.9 | 2.66 [2.64, 2.68] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 3.8 / 3.9 | 3.9 / 4.1 | 1.03 [1.01, 1.06] | 0.41 | 1.06 |
+| 6 + wrapping sink adds | 3.8 / 3.9 | 3.9 / 4.1 | 1.03 [1.02, 1.05] | 0.41 | 1.07 |
+--- ./target/nochecks/spike-null-path (rep 2) load average: 1.87, 1.95, 1.76
+### q1 , 1 thread(s)
+| 0 old (generic-ops) | 60.4 / 60.5 | 132.8 / 133.0 | 2.20 [2.20, 2.20] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 39.3 / 39.5 | 45.1 / 45.4 | 1.15 [1.15, 1.15] | 0.34 | 0.65 |
+| 6 + wrapping sink adds | 39.0 / 39.3 | 44.6 / 44.9 | 1.14 [1.14, 1.14] | 0.34 | 0.65 |
+### q1 , 4 thread(s)
+| 0 old (generic-ops) | 15.2 / 15.3 | 33.4 / 33.4 | 2.18 [2.18, 2.19] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 10.0 / 10.1 | 11.4 / 11.5 | 1.14 [1.14, 1.15] | 0.34 | 0.66 |
+| 6 + wrapping sink adds | 9.9 / 10.0 | 11.3 / 11.4 | 1.13 [1.13, 1.14] | 0.34 | 0.65 |
+### q6 , 1 thread(s)
+| 0 old (generic-ops) | 12.5 / 14.3 | 36.5 / 39.1 | 2.74 [2.69, 2.91] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 14.4 / 16.1 | 14.6 / 15.6 | 1.01 [0.94, 1.04] | 0.42 | 1.13 |
+| 6 + wrapping sink adds | 14.5 / 16.1 | 14.5 / 16.4 | 1.02 [1.00, 1.03] | 0.42 | 1.14 |
+### q6 , 4 thread(s)
+| 0 old (generic-ops) | 3.7 / 3.7 | 9.5 / 9.7 | 2.57 [2.54, 2.60] | 1.00 | 1.00 |
+| 3 + word-wise sink, subtract NULL rows | 4.1 / 4.2 | 4.0 / 4.1 | 0.97 [0.97, 1.00] | 0.42 | 1.13 |
+| 6 + wrapping sink adds | 4.1 / 4.2 | 3.9 / 4.1 | 0.97 [0.96, 0.99] | 0.42 | 1.11 |
+
+==== 3d. NULL density 0 / 1 / 10 / 50 / 100%, old engine and the final step, process CPU time. load average: 1.62, 1.89, 1.74 ====
+Engine only, in memory; rounds: 25 (+1 warm-up); clock: cpu
+
+### q1, 1 thread(s)
+
+| arm | % NULLs | ms (min / med) | penalty vs own 0% [Q1, Q3] | vs old arm without NULLs |
+|---|---:|---|---|---|
+| old | 0 | 63.0 / 63.3 | 1.00 [1.00, 1.00] | 1.00 |
+| old | 1 | 144.6 / 145.1 | 2.30 [2.28, 2.30] | 2.30 |
+| old | 10 | 135.8 / 136.2 | 2.15 [2.15, 2.16] | 2.15 |
+| old | 50 | 96.9 / 97.5 | 1.54 [1.54, 1.54] | 1.54 |
+| old | 100 | 25.8 / 26.0 | 0.41 [0.41, 0.41] | 0.41 |
+| step 5 | 0 | 43.7 / 44.0 | 1.00 [1.00, 1.00] | 0.70 |
+| step 5 | 1 | 46.3 / 46.6 | 1.06 [1.05, 1.06] | 0.74 |
+| step 5 | 10 | 50.2 / 50.6 | 1.15 [1.15, 1.15] | 0.80 |
+| step 5 | 50 | 56.3 / 56.5 | 1.28 [1.28, 1.29] | 0.89 |
+| step 5 | 100 | 6.6 / 6.6 | 0.15 [0.15, 0.15] | 0.10 |
+| step 6 | 0 | 41.4 / 41.9 | 1.00 [1.00, 1.00] | 0.66 |
+| step 6 | 1 | 43.8 / 44.2 | 1.06 [1.05, 1.06] | 0.70 |
+| step 6 | 10 | 46.7 / 47.2 | 1.13 [1.12, 1.13] | 0.75 |
+| step 6 | 50 | 51.6 / 51.9 | 1.24 [1.24, 1.25] | 0.82 |
+| step 6 | 100 | 6.5 / 6.6 | 0.16 [0.16, 0.16] | 0.10 |
+
+### q1, 4 thread(s)
+
+| arm | % NULLs | ms (min / med) | penalty vs own 0% [Q1, Q3] | vs old arm without NULLs |
+|---|---:|---|---|---|
+| old | 0 | 63.1 / 63.4 | 1.00 [1.00, 1.00] | 1.00 |
+| old | 1 | 145.2 / 145.4 | 2.29 [2.29, 2.30] | 2.29 |
+| old | 10 | 136.1 / 136.6 | 2.16 [2.15, 2.16] | 2.16 |
+| old | 50 | 97.4 / 97.8 | 1.54 [1.54, 1.54] | 1.54 |
+| old | 100 | 26.4 / 26.5 | 0.42 [0.42, 0.42] | 0.42 |
+| step 5 | 0 | 44.1 / 44.3 | 1.00 [1.00, 1.00] | 0.70 |
+| step 5 | 1 | 46.6 / 46.9 | 1.06 [1.06, 1.06] | 0.74 |
+| step 5 | 10 | 50.5 / 50.8 | 1.15 [1.14, 1.15] | 0.80 |
+| step 5 | 50 | 56.5 / 56.8 | 1.28 [1.28, 1.28] | 0.90 |
+| step 5 | 100 | 7.2 / 7.3 | 0.16 [0.16, 0.17] | 0.12 |
+| step 6 | 0 | 41.8 / 42.0 | 1.00 [1.00, 1.00] | 0.66 |
+| step 6 | 1 | 44.2 / 44.5 | 1.06 [1.06, 1.06] | 0.70 |
+| step 6 | 10 | 47.2 / 47.4 | 1.13 [1.13, 1.13] | 0.75 |
+| step 6 | 50 | 51.9 / 52.2 | 1.24 [1.24, 1.25] | 0.82 |
+| step 6 | 100 | 7.2 / 7.2 | 0.17 [0.17, 0.17] | 0.11 |
+
+### q6, 1 thread(s)
+
+| arm | % NULLs | ms (min / med) | penalty vs own 0% [Q1, Q3] | vs old arm without NULLs |
+|---|---:|---|---|---|
+| old | 0 | 13.1 / 14.2 | 1.00 [1.00, 1.00] | 1.00 |
+| old | 1 | 39.6 / 41.0 | 2.88 [2.85, 2.91] | 2.88 |
+| old | 10 | 37.6 / 39.6 | 2.79 [2.75, 2.82] | 2.79 |
+| old | 50 | 33.8 / 34.0 | 2.39 [2.38, 2.41] | 2.39 |
+| old | 100 | 25.2 / 25.3 | 1.78 [1.77, 1.79] | 1.78 |
+| step 5 | 0 | 15.1 / 15.4 | 1.00 [1.00, 1.00] | 1.08 |
+| step 5 | 1 | 16.2 / 17.2 | 1.11 [1.10, 1.13] | 1.21 |
+| step 5 | 10 | 15.9 / 16.2 | 1.05 [1.04, 1.05] | 1.14 |
+| step 5 | 50 | 11.9 / 12.1 | 0.78 [0.78, 0.79] | 0.85 |
+| step 5 | 100 | 5.8 / 6.0 | 0.39 [0.38, 0.39] | 0.42 |
+| step 6 | 0 | 14.1 / 15.4 | 1.00 [1.00, 1.00] | 1.08 |
+| step 6 | 1 | 15.8 / 17.2 | 1.12 [1.11, 1.14] | 1.21 |
+| step 6 | 10 | 14.7 / 16.2 | 1.05 [1.05, 1.06] | 1.14 |
+| step 6 | 50 | 10.2 / 12.0 | 0.78 [0.78, 0.79] | 0.85 |
+| step 6 | 100 | 5.8 / 5.9 | 0.39 [0.38, 0.39] | 0.42 |
+
+### q6, 4 thread(s)
+
+| arm | % NULLs | ms (min / med) | penalty vs own 0% [Q1, Q3] | vs old arm without NULLs |
+|---|---:|---|---|---|
+| old | 0 | 14.5 / 14.8 | 1.00 [1.00, 1.00] | 1.00 |
+| old | 1 | 40.6 / 41.2 | 2.80 [2.77, 2.81] | 2.80 |
+| old | 10 | 39.6 / 40.0 | 2.71 [2.68, 2.72] | 2.71 |
+| old | 50 | 34.3 / 34.6 | 2.34 [2.32, 2.36] | 2.34 |
+| old | 100 | 25.7 / 25.8 | 1.75 [1.73, 1.76] | 1.75 |
+| step 5 | 0 | 15.9 / 16.1 | 1.00 [1.00, 1.00] | 1.09 |
+| step 5 | 1 | 17.6 / 17.9 | 1.11 [1.11, 1.11] | 1.21 |
+| step 5 | 10 | 16.6 / 16.8 | 1.04 [1.04, 1.05] | 1.13 |
+| step 5 | 50 | 12.4 / 12.6 | 0.78 [0.78, 0.79] | 0.86 |
+| step 5 | 100 | 6.5 / 6.6 | 0.41 [0.41, 0.41] | 0.44 |
+| step 6 | 0 | 15.5 / 15.8 | 1.00 [1.00, 1.00] | 1.06 |
+| step 6 | 1 | 17.4 / 17.7 | 1.12 [1.11, 1.14] | 1.20 |
+| step 6 | 10 | 16.3 / 16.6 | 1.06 [1.05, 1.06] | 1.12 |
+| step 6 | 50 | 12.2 / 12.5 | 0.79 [0.79, 0.80] | 0.85 |
+| step 6 | 100 | 6.5 / 6.5 | 0.42 [0.41, 0.42] | 0.44 |
+
+
+==== 3e. where the time goes: per-stage minimum over passes, one thread, per-row masks (3a) / subtract NULL rows (3) / final (6). load average: 1.52, 1.82, 1.72 ====
+--- q1 step 3a load average: 1.52, 1.82, 1.72
+q1, step 3a, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.3 | 1.3 | 1.2 | 0.9 |
+| op 0 | 5.0 | 4.9 | 4.9 | 4.5 |
+| op 1 | 22.9 | 23.3 | 23.3 | 0.6 |
+| sink | 34.7 | 34.9 | 34.8 | 0.3 |
+| total | 63.0 | 64.3 | 64.2 | 6.3 |
+--- q1 step 3 load average: 1.48, 1.81, 1.72
+q1, step 3, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.3 | 1.2 | 1.2 | 0.9 |
+| op 0 | 5.0 | 4.9 | 4.9 | 4.4 |
+| op 1 | 22.8 | 23.1 | 23.2 | 0.6 |
+| sink | 24.8 | 30.4 | 36.4 | 0.3 |
+| total | 52.9 | 59.5 | 65.7 | 6.2 |
+--- q1 step 6 load average: 1.44, 1.80, 1.72
+q1, step 6, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.3 | 1.2 | 1.2 | 0.9 |
+| op 0 | 4.8 | 4.8 | 4.8 | 4.5 |
+| op 1 | 13.6 | 13.8 | 13.8 | 0.6 |
+| sink | 22.4 | 27.0 | 31.7 | 0.3 |
+| total | 41.1 | 46.7 | 51.6 | 6.3 |
+--- q6 step 3a load average: 1.44, 1.80, 1.72
+q6, step 3a, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.2 | 1.0 | 1.0 | 0.8 |
+| op 0 | 6.3 | 6.1 | 5.5 | 4.5 |
+| op 1 | 3.7 | 4.2 | 3.4 | 0.1 |
+| op 2 | 1.5 | 2.2 | 0.9 | 0.0 |
+| op 3 | 1.7 | 2.0 | 0.8 | 0.3 |
+| sink | 0.1 | 0.2 | 0.1 | 0.0 |
+| total | 13.5 | 15.7 | 11.7 | 5.7 |
+--- q6 step 3 load average: 1.44, 1.80, 1.72
+q6, step 3, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.2 | 1.1 | 1.0 | 0.8 |
+| op 0 | 6.3 | 6.1 | 5.5 | 4.5 |
+| op 1 | 3.7 | 4.3 | 3.5 | 0.1 |
+| op 2 | 1.6 | 2.3 | 0.9 | 0.0 |
+| op 3 | 1.7 | 2.1 | 0.8 | 0.3 |
+| sink | 0.1 | 0.2 | 0.1 | 0.0 |
+| total | 13.6 | 15.9 | 11.8 | 5.7 |
+--- q6 step 6 load average: 1.40, 1.78, 1.71
+q6, step 6, one thread, min over 15 passes, ms
+
+| stage | 0% NULLs | 10% | 50% | 100% |
+|---|---|---|---|---|
+| batch setup (validity words) | 0.2 | 1.0 | 1.0 | 0.8 |
+| op 0 | 6.3 | 6.1 | 5.5 | 4.5 |
+| op 1 | 3.6 | 4.2 | 3.4 | 0.1 |
+| op 2 | 1.5 | 2.2 | 0.9 | 0.0 |
+| op 3 | 1.6 | 1.9 | 0.7 | 0.3 |
+| sink | 0.1 | 0.2 | 0.1 | 0.0 |
+| total | 13.3 | 15.5 | 11.6 | 5.7 |
+
+==== done; logs in /mnt/work/results/nullpath. Load at the start was 0.49. ====

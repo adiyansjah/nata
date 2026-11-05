@@ -1,0 +1,44 @@
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.00s
+     Running unittests src/lib.rs (target/release/deps/spike_push_cost-a69db3c8c8bb781f)
+
+running 16 tests
+test arms::tests::arm_names_are_distinct ... ok
+test arms::tests::spin_takes_at_least_what_it_was_asked ... ok
+test kernels::tests::compact_applies_the_selection ... ok
+test kernels::tests::fused_loops_equal_reference ... ok
+test kernels::tests::medium_kernel_really_filters_and_cheap_does_not ... ok
+test kernels::tests::stage_chain_equals_reference_on_one_morsel ... ok
+test kernels::tests::the_checksum_notices_a_lost_morsel_a_changed_constant_and_a_swapped_kind ... ok
+test selftest::tests::calibration_reports_at_least_the_requested_spin ... ok
+test selftest::tests::judge_accepts_the_right_size_and_rejects_the_wrong_one ... ok
+test selftest::tests::twin_check_flags_a_difference_between_identical_arms ... ok
+test stats::tests::paired_overhead_is_computed_round_by_round ... ok
+test stats::tests::quartiles_of_known_data ... ok
+test stats::tests::verdict_flags_a_difference_smaller_than_its_spread ... ok
+test sys::tests::foreign_cpu_is_machine_busy_minus_own ... ok
+test sys::tests::proc_stat_lines_parse ... ok
+test sys::tests::quiet_is_refused_under_load_or_foreign_use_or_unknown ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/topologies.rs (target/release/deps/topologies-a1a757bc3e433713)
+
+running 9 tests
+test branching_topology_every_arm_equals_the_scalar_reference ... ok
+test branching_topology_survives_many_park_and_wake_cycles ... ok
+test interleaving_rotates_the_starting_arm_and_keeps_every_round ... ok
+test linear_chain_every_arm_equals_the_scalar_reference ... ok
+test linear_chain_with_no_input_gives_the_empty_checksum_in_every_arm ... ok
+test options_parse ... ok
+test the_check_fires_for_a_branching_arm_too - should panic ... ok
+test the_check_fires_when_an_arm_returns_a_wrong_checksum - should panic ... ok
+test the_whole_report_path_runs_on_a_smoke_grid ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.18s
+
+   Doc-tests spike_push_cost
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

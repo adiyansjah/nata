@@ -1,0 +1,39 @@
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (target/release/deps/compaction-bf23b0a412f3adaf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/release/deps/compaction_bench-7ccc27f907b1caf3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/arms_agree.rs (target/release/deps/arms_agree-28f015c8f83c02b7)
+
+running 14 tests
+test a_cell_with_a_wrong_arm_is_refused ... ok
+test a_tiny_grid_runs_end_to_end_and_the_report_has_the_tables ... ok
+test all_arms_agree_for_every_type_shape_selectivity_and_null_density ... ok
+test an_empty_selection_gives_empty_results_in_every_arm ... ok
+test awkward_selections_first_last_word_boundaries_all_and_one ... ok
+test break_even_interpolates_and_reports_never ... ok
+test compaction_keeps_exactly_the_selected_rows_with_their_values_and_nulls ... ok
+test every_arm_checksum_depends_on_the_data ... ok
+test every_kernel_mutant_is_detected_by_the_agreement_check ... ok
+test nulls_are_under_the_selection_and_their_slots_hold_garbage ... ok
+test the_harness_detects_an_injected_cost_by_the_expected_amount ... ok
+test the_harness_interleaves_pairs_rounds_and_reports_reps ... ok
+test the_selection_shapes_are_what_they_say ... ok
+test the_verdict_needs_three_quarters_of_the_rounds ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+   Doc-tests compaction
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
