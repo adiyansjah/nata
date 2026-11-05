@@ -1,0 +1,58 @@
+# 0006: Testing strategy (differential, mutation-checked, deterministic simulation)
+
+Status: proposed (draft written 2026-11-05 from the evidence of the spikes; not accepted)
+Date: 2026-11-05
+
+## Context
+
+The engine reads and writes tables, runs single-node and distributed, and its answers must equal other engines' answers (`docs/way-of-working.md` sections 5 and 6, `docs/decisions/verification-plan.md`).
+The spikes tried five kinds of check; this ADR says which ones become rules. Everything here was run on clean ARM64 and x86-64 Spot VMs of the orchestrator.
+
+## Decision (proposed rules)
+
+1. **A check counts only if it is shown to fail on a known-bad version.** Every property test, differential test, model and proof comes with mutants (deliberate breakages) that it must catch; a mutant it misses, or a run that
+   ends in an error, is not a catch. The mutation script itself is tested: two runs in a row must both pass their baseline, and a copy that keeps old file times must be shown to fail.
+2. **Differential testing against DuckDB is the default correctness oracle,** with a grammar-based fuzzer (NULL, NaN, -0.0, dates and time zones, Unicode, ordering) and a shrinker. Known differences from DuckDB are listed, not hidden.
+   Where DuckDB cannot be the oracle (Iceberg semantics), two independent readers are used and their known differences are recorded.
+3. **Concurrency is model-checked, with the bounds stated:** loom for the scheduler, exchange, bridge and the early finish; the bound, the number of executions and the mutants are part of the result.
+4. **Protocols are specified formally before they are built:** TLA+ models with TLC for the query lifecycle and the Iceberg commit (invariants, liveness, canaries that must be reachable, mutants of the model).
+5. **Kernels are proved, bounded:** Kani proofs of the checked arithmetic and the guards, mutation-checked, with the cover (non-vacuity) checks recorded per harness and the unproved harnesses listed.
+6. **All distributed code is written against a small environment trait and tested under a deterministic simulation:** injected clock, randomness, network, storage and task spawning; a failing seed replays identically; the trace hash of a seed
+   is identical on ARM64 and x86-64, in debug and release, and across processes. Rules for developers: no wall clock, no global counters, no `HashMap` iteration order, no unseeded randomness in node code.
+7. **Nothing counts until it has run on a clean VM, on both architectures.** Timings count only from a settled machine (1-minute load below 0.5, printed next to the result); otherwise they are labelled SANITY ONLY. A job that
+   puts large files in the results directory, or starts a timed step right after a heavy one, is a defect of the job.
+8. **The tooling is tested like the product:** job scripts have stub tests (which steps each job runs, that a failure is not hidden, that a stale file from a previous incarnation is not reused), because most failures of the first clean-VM runs
+   were in the scripts, not in the code under test.
+
+## Why
+
+Each rule answers a failure that actually happened in these spikes. A check that cannot fail gave false comfort several times (a Kani cover counter that always read zero; a "no result" counted as a catch; a mutation run that reused the previous
+mutant's build). Distributed bugs are only worth finding if they can be replayed. Hand-written tests share the author's assumptions; DuckDB does not.
+
+## Alternatives considered
+
+- **Property tests and unit tests alone:** cheap, but they do not show they can fail (rule 1).
+- **Jepsen-style testing of a deployed cluster:** realistic but not replayable; kept as a later layer, not a replacement for simulation.
+- **Adopting a simulation framework (madsim, turmoil, shuttle):** tried on the same toy (`bench/results/20261104-sim-harness.md`): madsim refuses OS threads, so the real scheduler cannot run inside it; turmoil simulates only its own network types;
+  shuttle is useful for thread interleavings and is used next to loom. The small hand-written executor and environment trait are the foundation.
+
+## Evidence
+
+- **Measured, clean ARM64 and x86-64 VMs:** differential SQL fuzzer: 28 of 28 known-bad engines caught on 3 seeds and 60,000 clean queries per architecture (`spikes/sqlfuzz/`); simulation harness: 20,000 of 20,000 control seeds, 13 of 13 mutants
+  caught with identical replays, trace hashes identical across the two architectures (`bench/results/20261104-sim-harness.md`); loom: 31 exchange models, 16 `stop_depth` models with 13 of 13 mutants; Kani: 100 of 105 harnesses of the real crate and 18 of 18 mutants;
+  TLA+: the failure model and the Iceberg commit model with their mutants; mutation checks of the hash-ops, NULL-path, Arrow-pipeline, exchange and planner code.
+- **Reasoned:** that these rules scale to a large code base; that the environment trait costs little (the spike measured the abstraction cost, see its results).
+- **Not covered:** the fuzzer and the simulation have only been run against spikes, not against Nata itself (it does not exist yet); sanitizers (ASan, TSan, Miri) on the real code; continuous integration; a deployed-cluster fault test.
+
+## Confidence
+
+Medium-high that the rules are the right ones for the spike-sized code tried; medium that they hold at product size. It would drop if the environment trait proved too costly in the real engine, or if the oracle (DuckDB) turned out to disagree with the
+chosen semantics too often to be useful.
+
+## Consequences
+
+Easier: every change has a cheap, replayable check and a record of what it can catch. Harder: each feature carries its mutants and its clean-VM run; the environment trait constrains how node code is written from the first line.
+
+## Revisit when
+
+The first slice of the engine exists and the fuzzer runs against it; the abstraction-cost benchmark is available from a quiet machine; CI is set up.
