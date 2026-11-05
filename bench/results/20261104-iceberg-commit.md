@@ -358,3 +358,27 @@ TLC: tla2tools v1.7.4 (sha256 `936a2622...e050e88`), 16 workers, heap 19,870 MB.
 - The bounds are the same as in section 8 (at most 3 writers with one operation each, 2 attempts, one crash, one duplicate delivery, one lost request, one pinned reader, one table). Equality deletes and v3 deletion vectors are not modelled.
 - Only the model was re-run, on ARM64 only. The pyiceberg read of our manifests (section 8, skipped) was not re-run; the spike against the REST fixture and the object-store mode were not re-run; x86-64 did not run; no product catalog or real object store was involved.
 - Liveness holds in the bounded model; no fairness or timing claim is made about a real catalog.
+
+## 11. GCP runs `icebergspikes-arm64-r2` and `icebergspikes-x86-r2`, 2026-11-05: verdict PASS for the code side (the model was not run)
+
+**Runs.** Job `icebergspikes` (`IC_MODE=spikes` of `gcp-check.sh`: every phase except the TLA+ model; `interop-pyiceberg` is GATING in this mode), one Spot VM each: `n4a-highcpu-8` (Neoverse-N3, kernel 6.1.0-54-cloud-arm64) and `c3d-highcpu-8` (AMD EPYC 9B14, kernel 6.1.0-54-cloud-amd64), started 05:05 UTC, both finished at about 05:11 UTC: 357 s and 346 s of VM time, 1 incarnation, 0 preemptions, resources left after cleanup: none, VM cost $0.010 and $0.007. (A first pair of runs, `icebergspikes-arm64` and `-x86`, was stopped after 3 minutes and deleted at a cost of $0.000, because `vm-startup.sh` did not yet install `python3-venv` for this job name: the interop phase would have been skipped, which is a FAIL in this mode. Fixed in `da8ef51` with a test that every job running the interop is listed there.)
+
+**Verdict line (both):** `VERDICT PASS (every phase of the code side passed, including the pyiceberg interop; the TLA+ model was NOT run in this mode: its result is in the model runs, not here)`.
+
+| Phase | ARM64 | x86-64 |
+|---|---|---|
+| tools | PASS 11 s | PASS 4 s |
+| rust-build | PASS 13 s | PASS 17 s |
+| rust-tests | PASS 10 s | PASS 9 s |
+| catalog-build (Apache REST fixture 1.12.0 from the source release) | PASS 179 s | PASS 168 s |
+| catalog-start | PASS 1 s | PASS 1 s |
+| spike-rest-catalog | PASS 19 s | PASS 13 s |
+| interop-pyiceberg (pyiceberg 0.12.0) | **PASS 12 s** | **PASS 14 s** |
+| spike-object-store | PASS 7 s | PASS 4 s |
+
+**What it shows.**
+- On both architectures the commit spike's gating checks pass against the REST fixture and against conditional create on a local file system: `forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0`, `SUITE PASS`, for each backend. Section 8 had this on ARM64 only.
+- **The independent reader now reads our manifests:** pyiceberg 0.12.0 read the table our commit spike wrote and agreed with the spike on all 6 snapshots on each architecture (data file and delete file counts equal, 0 mismatches), `INTEROP PASS`. In section 8 this phase had been skipped (setup defect); this closes that gap for the REST fixture on both architectures.
+
+**What it does not show.** The TLA+ model was not run (its result is section 10, ARM64 only; the model does not depend on the VM). The same limits as section 8 hold: one catalog (the Apache fixture, a test fixture), the object-store mode used a local file system's atomic create and not S3, GCS or Azure, the stress runs are six seeds of at most 16 writers with three operations each, the model is not tied to the code by a refinement check, and pyiceberg reads only what this spike wrote (6 snapshots), not a general set of tables.
+
