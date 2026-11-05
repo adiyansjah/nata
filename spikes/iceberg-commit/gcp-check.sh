@@ -155,7 +155,7 @@ ph_rest_suite() {
 ph_interop() {
   need rust-build catalog-start spike-rest-catalog || return 1
   python3 -m venv "$TOOLS/venv" > /dev/null 2>&1 || { echo "python3 -m venv failed (python3-venv missing, no sudo): SKIPPED"; return 77; }
-  "$TOOLS/venv/bin/pip" install --quiet "pyiceberg==$PYICEBERG_VERSION" || { echo "pip install pyiceberg==$PYICEBERG_VERSION failed: SKIPPED"; return 77; }
+  "$TOOLS/venv/bin/pip" install --quiet "pyiceberg[pyarrow]==$PYICEBERG_VERSION" || { echo "pip install pyiceberg==$PYICEBERG_VERSION failed: SKIPPED"; return 77; }
   "$IC" interop-table --backend rest --url "$URL" --work "$WORKBASE/interop" > "$OUT/interop.json" || return 1
   "$TOOLS/venv/bin/python" "$HERE/scripts/interop_check.py" "$URL" "$OUT/interop.json"
   local rc=$?
