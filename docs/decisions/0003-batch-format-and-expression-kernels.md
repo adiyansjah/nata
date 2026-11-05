@@ -1,6 +1,6 @@
 # 0003: Batch format and expression kernels
 
-Status: proposed
+Status: accepted (by the owner, 2026-11-05)
 Date: 2026-11-03
 
 ## Context
@@ -123,6 +123,13 @@ Kernel crate, lints and guarded expressions (`bench/results/20261104-kernel-lint
 - When arrow-rs releases a new major version, or when a profile of a benchmark query puts an arrow-rs kernel at the top of the self-time list.
 
 ## Revision notes
+
+- 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets):
+  - `overflow-checks` cost on generic-ops is not re-measured on x86-64 [21]; on hash-ops it is measured on both (grouped aggregates up to +24.7%).
+  - NULL-path timing is not assessed on x86-64 (SANITY ONLY) [16]; NULL handling remains the largest known cost.
+  - The exact 64-bit division proofs and the 32-bit primitive are not proved by Kani (5 of 105 harnesses).
+  - DuckDB is faster than the generic engine in 23 and 24 of 28 hash-ops cells (ARM64, x86-64) [15]; the kernels are owned for their semantics, not for a proven speed lead.
+  - `Decimal64` at the client edge is unverified for other Java clients, ODBC, pgjdbc, pgx and ARM64.
 
 - 2026-11-05, timing bundle on settled ARM64 and x86-64 VMs (`bench/results/20261105-timing-arm64.md`, `bench/results/20261105-timing-x86.md`): the cost of `overflow-checks` on the hash join and aggregate is about zero on joins and between +0.9% and +24.7% on grouped aggregates, with the worst aggregate differing by machine; the NULL-path penalty meets 1.3x on ARM64 and is not assessed on x86-64 (SANITY ONLY); the compaction break-evens differ by machine. No decision or status changed.
 

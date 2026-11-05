@@ -1,6 +1,6 @@
 # 0002: Async runtime and threading
 
-Status: proposed
+Status: accepted (by the owner, 2026-11-05)
 Date: 2026-11-03
 
 ## Context
@@ -82,6 +82,12 @@ Nata does two kinds of work: waiting on I/O (object storage, network) and CPU-bo
 Before acceptance: (1) ~~Test the tokio-to-pool bridge~~ done within bounds: `bench/results/20261104-async-bridge.md`; re-run the latency and stress parts on a quiet machine, and on ARM64. (2) ~~Test fairness~~ done within bounds: `bench/results/20261104-fairness.md`. Remaining: the overhead of slicing and the default slice on a quiet machine (x86-64 and ARM64); fairness per query; per-worker queues. (3) The crate checks on ARM64 (`object_store`, `crossbeam-deque`, the compression crates). Later: slice 11 produces the bake-off result, or the hand-off proves to be a bottleneck in profiles.
 
 ## Revision notes
+
+- 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets):
+  - `object_store`, `crossbeam-deque` and the compression crates have not yet built and tested on x86-64 and ARM64 in CI [8]; this was a gate and must pass before the first slice that uses them merges.
+  - Bridge latency and stress, and the overhead of cooperative time slicing, still need a re-run on a quiet machine [6, 22].
+  - The spill-file fix for time slicing (1,024-descriptor limit) is verified locally only; the fresh-VM re-run is pending.
+  - Pool sizing under cgroup CPU limits [9] and the split-design bake-off [10] are not started; the dedicated pool on `crossbeam-deque` stays at low confidence until slice 11.
 
 - 2026-11-04, fairness defect found by the clean-VM run: time slicing makes interleaved tasks hold many spill files open at once and exceeds a 1,024-file limit. Confidence in cooperative slicing is reduced to medium until the fix is verified (the fix is verified locally, 2026-11-04, later; the fresh-VM rerun is pending); operators must not hold unbounded numbers of open files across a yield.
 

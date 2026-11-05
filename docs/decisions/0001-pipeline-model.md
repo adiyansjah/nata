@@ -1,6 +1,6 @@
 # 0001: Pipeline model
 
-Status: proposed
+Status: accepted (by the owner, 2026-11-05)
 Date: 2026-11-03
 
 ## Context
@@ -116,6 +116,13 @@ Reproduced from a clean tarball on a Spot VM (ARM64, `bench/results/20261104-arm
 - At the window function slice (slice 8), the first real test of partitioned parallel windows with spill.
 
 ## Revision notes
+
+- 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets). None of them blocks a single-node slice; each goes on the card of the slice that first depends on it:
+  - Speed of Arrow batches through the protocol scheduler is unmeasured; correctness is done on x86-64 and ARM64 [2].
+  - Push cost with cheaper kernels, static dispatch and branching pipelines: measured on ARM64, x86-64 SANITY ONLY [5].
+  - No fused operator has been built through the protocol.
+  - Loom does not yet cover two tasks finishing at different depths in one pipeline, or several `LIMIT`s in one pipeline.
+  - Window functions, skew, and the operators of item 31 were shown in spikes only; scale (item 32) is not started.
 
 - 2026-11-04 (later), `stop_depth` loom model 16 of 16 with 13 of 13 mutants caught, the exchange suite 31 of 31, and the Arrow pipeline identical to DuckDB on ARM64 after the loom edits; the F1 waker fix was ported to the Arrow copy of the exchange. Still unmodelled: two tasks finishing at different depths in one pipeline, and several LIMITs in one pipeline.
 - 2026-11-04, Arrow batches with selection vectors through the protocol scheduler: Q1 and Q6 identical to DuckDB, `LIMIT` and early finish exact (1,500 random cases), all 33 mutants caught. A real protocol bug found: the pipeline-wide stop flag dropped rows `LIMIT` had admitted; fixed with a per-stage `stop_depth` (now a rule in Consequences). Not yet re-checked under loom; no speed evidence. The main integration risk named in the plan (items 2 and 3) is closed on x86-64.
