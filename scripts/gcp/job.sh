@@ -24,7 +24,7 @@ run setup-rust bash -c 'command -v rustup >/dev/null || curl -sSf https://sh.rus
   cd "$SRC" && { rustup show active-toolchain || rustup toolchain install; }'
 run setup-duckdb bash -c 'mkdir -p "$WORK/bin" && cd "$WORK/bin" && command -v duckdb >/dev/null && exit 0
   case "$(uname -m)" in x86_64) a=amd64;; aarch64) a=arm64;; *) exit 1;; esac
-  curl -sSfL -o duckdb.tar.gz "https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-linux-$a.tar.gz"
+  curl -sSfL --retry 4 --retry-delay 5 -o duckdb.tar.gz "https://github.com/duckdb/duckdb/releases/download/v2.0.0/duckdb-cli-linux-$a.tar.gz"
   tar -xzf duckdb.tar.gz && rm duckdb.tar.gz && duckdb --version'
 # One record per boot: which machine type each step really ran on (a fallback chain may change it).
 run "machine-$BOOT" bash -c '{ date -u; uname -a; nproc; free -g; lscpu | grep -E "Model name|Architecture|^CPU\(s\)|L2|L3"

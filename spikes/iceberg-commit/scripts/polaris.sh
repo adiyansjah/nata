@@ -1,6 +1,7 @@
 #!/bin/bash
 # Starts and stops an Apache Polaris server as a THROWAWAY test catalog on loopback, with a catalog backed by local disk, and prints its REST base URL.
-#   polaris.sh start <tools-dir> <run-dir> [port=8181]   (prints the base URL on stdout; writes <run-dir>/polaris.env with the client credentials)
+#   polaris.sh start <tools-dir> <run-dir> [port=8181]   (prints the base URL on stdout; writes <run-dir>/polaris.env with the client credentials;
+#                                                          POLARIS_EXTRA_PROPERTIES adds lines to the server's properties file)
 #   polaris.sh stop  <run-dir>
 # What is deliberately insecure, because Polaris refuses it by default and a fixture needs it: the in-memory metastore, local-disk (FILE) storage
 # (the setting is called ALLOW_INSECURE_STORAGE_TYPES), the default realm, and `polaris.readiness.ignore-severe-issues`. The server listens on 127.0.0.1 only.
@@ -31,6 +32,8 @@ quarkus.http.port=$PORT
 quarkus.management.port=$MGMT
 quarkus.log.file.enabled=false
 PROPS
+    # extra settings for an experiment (for example polaris.idempotency.enabled=true), one `key=value` per line, appended last so that they win
+    [ -n "${POLARIS_EXTRA_PROPERTIES:-}" ] && printf '%s\n' "$POLARIS_EXTRA_PROPERTIES" >> "$RUN/polaris.properties"
     # The distribution's own launcher (bin/server) is used unchanged; configuration and the secret reach it only through -D options and the environment.
     env JAVA_HOME="$TOOLS/jdk21" "POLARIS_BOOTSTRAP_CREDENTIALS=POLARIS,$cid,$sec" \
         "POLARIS_JAVA_OPTS=-Dquarkus.config.locations=$RUN/polaris.properties -Xmx2g" \

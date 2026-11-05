@@ -208,7 +208,7 @@ Scope decisions the owner may want to revisit: equality deletes and v3 deletion 
 ## 7. Decisions needed from the owner
 
 1. **A yes (or no) to the GCP run** at the cost above, and permission for someone to add the `iceberg` job to `scripts/gcp/job.sh` and `orchestrate.sh` (two small edits outside this task's scope; other agents are editing `job.sh`).
-2. **Dedupe of a retried commit:** the spike and model use an operation token in the snapshot summary (as Flink does). The REST spec now offers `Idempotency-Key` (F12). Which should Nata's writer use, or both? The spike does not exercise the header.
+2. **Dedupe of a retried commit:** the spike and model use an operation token in the snapshot summary (as Flink does). The REST spec now offers `Idempotency-Key` (F12). Which should Nata's writer use, or both? The spike does not exercise the header. (Polaris 1.8.0's implementation was probed by hand: section 13.)
 3. **Which catalog to certify against.** The Apache fixture is the reference, not a product. Once the project picks a catalog (Polaris, Lakekeeper, Nessie, a cloud one), the suite should be re-run against it; that needs its setup (credentials, warehouse) and possibly cost.
 4. **How far to go on the object-store mode.** Local `Create` is faithful for one operation; a run against real S3/GCS/Azure (and `PutMode::Update` for a pointer file) costs money and needs credentials.
 5. **v3 scope.** If Nata targets v3 tables, position delete files are not allowed; deletion vectors and their conflict rule (at most one DV per data file, merge on conflict) need a model extension and writer support. Say whether v3 is in scope for the first slice.
@@ -404,9 +404,37 @@ set on purpose, so this is a test configuration and not a production one. The cl
 REST protocol: the correct writer survives 18 forced interleavings (lost update, unknown outcome, lost and duplicate requests, delete-then-compact, phantoms, ...), 12 crash points and 6 stress seeds with up to 16 writer processes and SIGKILL; the five known-bad writers are caught,
 so Polaris really does enforce the commit requirements (`assert-ref-snapshot-id`) atomically. pyiceberg 0.12.0 read the table our spike wrote through Polaris and agreed with the spike on all 6 snapshots on each architecture (`INTEROP PASS`).
 
-**The idempotency question (ADR 0005 rule 8).** The Polaris 1.8.0 jars contain an `Idempotency-Key` request filter and an `idempotency-keys` configuration (class and setting names found by scanning the distribution; Iceberg core 1.11 in it also has `idempotency-key-lifetime`). **Not tested:**
-that it works, or whether it is enabled by default. The spike's own retry logic (an operation token) is what ran here.
+**The idempotency question (ADR 0005 rule 8).** The Polaris 1.8.0 jars contain an `Idempotency-Key` request filter and an `idempotency-keys` configuration (class and setting names found by scanning the distribution; Iceberg core 1.11 in it also has `idempotency-key-lifetime`). **Not tested in this run:**
+that it works, or whether it is enabled by default; both were tried by hand afterwards, see section 13 (it works within its lifetime, it is off by default and it is not advertised). The spike's own retry logic (an operation token) is what ran here.
 
 **What this does not show.** One product catalog, in a test configuration: an in-memory metastore (no database, no restart, no multi-node deployment), local-disk storage on loopback (no S3, GCS or Azure, no credential vending), the default realm, one principal with full rights (no
 authorization at scale). Only the REST protocol's commit path was exercised, six stress seeds of at most 16 writers with three operations each. The model-to-code gap of section 8 is unchanged. No other catalog (Lakekeeper, Nessie, a cloud catalog) was tried.
+
+## 13. The Polaris `Idempotency-Key` probe (2026-11-05; run by hand on the DEVELOPMENT machine, not on a clean VM; not part of any job)
+
+**Question.** Section 3 and F12 left open whether Nata's writer should dedupe a retried commit with its own operation token (what the model and the spike use) or with the REST `Idempotency-Key` header. Section 12 found the header's code in Polaris 1.8.0 but
+not whether it works. `scripts/idempotency_probe.py` sends one-snapshot commits to fresh empty tables (a commit whose second application must fail) against a real Polaris 1.8.0 (the section 12 setup, JDK 21.0.13, Intel desktop, local disk), once with the
+shipped defaults and once with `polaris.idempotency.enabled=true` and `polaris.idempotency.ttl=PT4S`. From the server's own classes: `enabled` defaults to **false**, `ttl` defaults to `PT5M`, and the header must be a UUID.
+
+| case | shipped defaults | enabled, ttl 4 s |
+|---|---|---|
+| the same commit twice, no key | 200, then 409 | 200, then 409 |
+| **the same commit twice, same key** | 200, then **409** (the header is ignored) | 200, then **200 with the same response; one snapshot** |
+| **the same key for a DIFFERENT commit** | 200, then 409 | 200, then **200, and the second commit was NOT applied** (still one snapshot) |
+| another key for the already applied commit | 200, then 409 | 200, then 409 |
+| a key that is not a UUID | 400 | 400 "Invalid Idempotency-Key header; expected a UUID" |
+| the same key replayed after the ttl (6 s) | - | 200, then **409** |
+| `/v1/config` advertises an `idempotency-key-lifetime` | no | **no** |
+
+**What it shows.**
+- Polaris 1.8.0 implements the mechanism and, when switched on, it works for its main job: a retry with the same key inside the lifetime returns the first response and applies the commit once.
+- **It is off by default** and, switched on, it still does **not advertise** its lifetime in `/v1/config`, which is how the specification recorded in F12 says a server announces support; a client that sends keys only to servers that announce them would not use it on Polaris.
+- **It does not compare the request.** Reusing a key for a different commit returned success and the commit was silently not applied. If the specification requires such a reuse to be rejected (what I recorded in F12 does not say), Polaris deviates; either way a writer that reuses a key by mistake would see a lost
+  commit reported as a success.
+- **After the lifetime it is gone:** the same retry then meets a plain 409, indistinguishable from a real conflict. Only a check of the table (our operation token in the snapshot summary) can tell "this is my own commit" from "someone else won".
+
+**What it means for the choice in ADR 0005 rule 8** (the decision is the owner's): the operation token stays necessary for correctness (it works on every catalog, beyond any lifetime, and after an unknown outcome); `Idempotency-Key` can at most shorten retries where a catalog is known to support it, and a writer that uses it must give every commit its own fresh key.
+
+**What it does not show.** One product, one version, one machine (not a clean VM, so nothing here is evidence in the sense of ADR 0006 rule 7), one run, one commit shape (the first snapshot of an empty table); the replay of a stored 4xx response (F12 says a deterministic 409 is stored) and two writers racing with the same key were not tried; the Java client's use of
+the header was not tried.
 

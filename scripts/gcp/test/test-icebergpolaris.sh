@@ -36,6 +36,7 @@ check "the management port is the API port + 1" "grep -q 'quarkus.management.por
 tok=$(grep -n 'oauth/tokens' "$FAKE_LOG" | head -1 | cut -d: -f1); cat_=$(grep -n 'POST /api/management/v1/catalogs' "$FAKE_LOG" | head -1 | cut -d: -f1)
 gr=$(grep -n 'PUT /api/management/v1/catalogs/spikecat/catalog-roles/catalog_admin/grants' "$FAKE_LOG" | head -1 | cut -d: -f1); as=$(grep -n 'PUT /api/management/v1/principal-roles/service_admin/catalog-roles/spikecat' "$FAKE_LOG" | head -1 | cut -d: -f1)
 check "the calls come in order: token, create catalog, grant, role assignment" "[ -n '$tok' ] && [ -n '$cat_' ] && [ -n '$gr' ] && [ -n '$as' ] && [ '$tok' -lt '$cat_' ] && [ '$cat_' -lt '$gr' ] && [ '$gr' -lt '$as' ]"
+check "without POLARIS_EXTRA_PROPERTIES the properties file has no experiment lines" "! grep -q 'polaris.idempotency' '$RUN/polaris.properties'"
 PID=$(cat "$RUN/polaris.pid" 2>/dev/null)
 check "the server runs after start" "kill -0 '$PID' 2>/dev/null"
 "$TREE/scripts/polaris.sh" start "$TOOLS" "$RUN" $P1 > /dev/null 2>&1; RC=$?
@@ -44,6 +45,10 @@ check "a second start while one runs is refused" "[ $RC -ne 0 ]"
 check "stop ends the server and removes the pid file" "! kill -0 '$PID' 2>/dev/null && [ ! -e '$RUN/polaris.pid' ]"
 "$TREE/scripts/polaris.sh" stop "$RUN" > /dev/null 2>&1; check "stop twice is harmless" "[ $? -eq 0 ]"
 
+RUNX=$T/run-extra; : > "$FAKE_LOG"
+POLARIS_EXTRA_PROPERTIES=$'polaris.idempotency.enabled=true\npolaris.idempotency.ttl=PT4S' "$TREE/scripts/polaris.sh" start "$TOOLS" "$RUNX" 18187 > /dev/null 2>&1; RC=$?
+check "POLARIS_EXTRA_PROPERTIES adds its lines (one per line, after the fixed settings so that they win)" "[ $RC -eq 0 ] && grep -q '^polaris.idempotency.enabled=true\$' '$RUNX/polaris.properties' && grep -q '^polaris.idempotency.ttl=PT4S\$' '$RUNX/polaris.properties' && [ \$(grep -n 'polaris.idempotency.enabled' '$RUNX/polaris.properties' | cut -d: -f1) -gt \$(grep -n 'quarkus.log.file.enabled' '$RUNX/polaris.properties' | cut -d: -f1) ]"
+"$TREE/scripts/polaris.sh" stop "$RUNX" > /dev/null 2>&1
 for w in grants catalogs; do
   RUN2=$T/run-fail-$w; : > "$FAKE_LOG"
   FAKE_FAIL=$w "$TREE/scripts/polaris.sh" start "$TOOLS" "$RUN2" 18183 > "$T/out-f.txt" 2> "$T/err-f.txt"; RC=$?
