@@ -1,0 +1,50 @@
+/\ pc = <<"crashed", "init", "init">>
+/\ pinned = {}
+/\ lossLeft = 0
+/\ exp = <<0, 0, 0>>
+/\ net = {}
+/\ frows = ( <<"d", 0, 0>> :> {1, 2} @@
+  <<"d", 1, 0>> :> {3} @@
+  <<"d", 2, 0>> :> {} @@
+  <<"d", 3, 0>> :> {} )
+/\ inflight = {}
+/\ hist = <<>>
+/\ mlog = ( 0 :>
+      [ ver |-> 0,
+        lastSeq |-> 0,
+        snaps |->
+            { [ w |-> 0,
+                id |-> <<0, 0>>,
+                parent |-> <<0, 0>>,
+                op |-> "init",
+                seq |-> 0,
+                files |-> {<<"d", 0, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 0, 0>>,
+                addedRows |-> {1, 2},
+                delPairs |-> {},
+                delTargets |-> {} ] },
+        cur |->
+            [ w |-> 0,
+              id |-> <<0, 0>>,
+              parent |-> <<0, 0>>,
+              op |-> "init",
+              seq |-> 0,
+              files |-> {<<"d", 0, 0>>},
+              del |-> {},
+              dfiles |-> {},
+              man |-> <<"m", 0, 0>>,
+              addedRows |-> {1, 2},
+              delPairs |-> {},
+              delTargets |-> {} ] ] )
+/\ base = <<0, 0, 0>>
+/\ crashLeft = 0
+/\ plan = << [ver |-> 0, targets |-> {}, inputs |-> {}],
+   [ver |-> 0, targets |-> {}, inputs |-> {}],
+   [ver |-> 0, targets |-> {}, inputs |-> {}] >>
+
+20263 states generated, 8087 distinct states found, 3982 states left on queue.
+The depth of the complete state graph search is 14.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 10 and the 95th percentile is 5).
+Finished in 00s at (2026-11-06 04:31:14)

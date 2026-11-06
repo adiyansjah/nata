@@ -1,0 +1,30 @@
+$ /mnt/work/iceberg-model-work/tools/jdk/bin/java -XX:+UseParallelGC -Xmx19870m -cp /mnt/work/iceberg-model-work/tools/tla2tools.jar tlc2.TLC -config cfg/dc-store.cfg -workers 16 -deadlock -cleanup -metadir /mnt/work/iceberg-model-work/model-work/work-model/states-dc-store.cfg MC
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 130 and seed 4620086105125319419 with 16 workers on 16 cores with 17662MB heap and 64MB offheap memory [pid: 4612] (Linux 6.1.0-54-cloud-arm64 aarch64, Eclipse Adoptium 17.0.21 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /mnt/work/iceberg-model-work/model-work/work-model/MC.tla
+Parsing file /mnt/work/iceberg-model-work/model-work/work-model/IcebergCommit.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /tmp/Naturals.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module IcebergCommit
+Semantic processing of module MC
+Starting... (2026-11-06 04:29:40)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-06 04:29:40.
+Progress(32) at 2026-11-06 04:29:43: 1,022,396 states generated (1,022,396 s/min), 253,527 distinct states found (253,527 ds/min), 16,398 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.2E-8
+  based on the actual fingerprints:  val = 4.7E-9
+1106074 states generated, 269576 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 35.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 15 and the 95th percentile is 4).
+Finished in 03s at (2026-11-06 04:29:43)

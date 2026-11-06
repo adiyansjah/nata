@@ -1,0 +1,29 @@
+model: IcebergCommit.tla sha256 99af2f9444c5b889fa1e0fdbbf6275346683788fb4b5209d4da2b63b7d29c840
+SANY: parses
+run                    expected                     result     detail                                generated    distinct depth    secs
+smoke-rest             PASS                         OK         PASS                                       1782         755    18       1  (resumed)
+appends2-rest          PASS                         OK         PASS                                    1225228      290636    35       4  (resumed)
+appends2-store         PASS                         OK         PASS                                    1225228      290636    35       4  (resumed)
+ad-rest-ser            PASS                         OK         PASS                                    1165651      280106    35       4  (resumed)
+ad-store-ser           PASS                         OK         PASS                                    1165651      280106    35       4  (resumed)
+dc-rest                PASS                         OK         PASS                                    1106074      269576    35       4  (resumed)
+dc-store               PASS                         OK         PASS                                    1106074      269576    35       4  (resumed)
+ddc-rest               PASS                         OK         PASS                                   17123086     4123418    51      54  (resumed)
+live-2                 PASS                         OK         PASS                                    1165651      280106    35      23  (resumed)
+three-rest-snap-i4     VIOLATED:I4_NoPhantom        OK         VIOLATED I4_NoPhantom                    468579      145788    19       2  (resumed)
+canary-Unknown         VIOLATED:Canary_Unknown      REACHED    VIOLATED Canary_Unknown                    2069         774    11       1  (resumed)
+canary-Conflict        VIOLATED:Canary_Conflict     REACHED    VIOLATED Canary_Conflict                   7780        3194    13       1  (resumed)
+canary-RetryCommitted  VIOLATED:Canary_RetryCommitted REACHED    VIOLATED Canary_RetryCommitted            21357        8379    14       1  (resumed)
+canary-CompactCommitted VIOLATED:Canary_CompactCommitted REACHED    VIOLATED Canary_CompactCommitted           5077        1987    13       1  (resumed)
+canary-DeleteCommitted VIOLATED:Canary_DeleteCommitted REACHED    VIOLATED Canary_DeleteCommitted            3725        1412    12       1  (resumed)
+canary-ValidationAbort VIOLATED:Canary_ValidationAbort REACHED    VIOLATED Canary_ValidationAbort          142470       47892    18       2  (resumed)
+canary-CrashedButCommitted VIOLATED:Canary_CrashedButCommitted REACHED    VIOLATED Canary_CrashedButCommitte         4122        1587    12       1  (resumed)
+canary-LateOldAttempt  VIOLATED:Canary_LateOldAttempt REACHED    VIOLATED Canary_LateOldAttempt             4308        1683    11       1  (resumed)
+canary-DuplicateDelivered VIOLATED:Canary_DuplicateDelivered REACHED    VIOLATED Canary_DuplicateDelivered         2567         940    11       1  (resumed)
+canary-OrphanCollected VIOLATED:Canary_OrphanCollected REACHED    VIOLATED Canary_OrphanCollected           20263        8087    14       1  (resumed)
+canary-ReaderPinned    VIOLATED:Canary_ReaderPinned REACHED    VIOLATED Canary_ReaderPinned                 75          67     6       1  (resumed)
+three-rest-ser         PASS                         OK         PASS                                  683202106   116840733    52    1400
+three-store-ser        PASS                         OK         PASS                                  683202106   116840733    52    1517
+three-rest-snap        PASS                         OK         PASS                                  756039330   129194672    52    1554
+live-3                 PASS                         OK         PASS                                   40580220     8591956    51    1194
+TOTAL mismatches=0

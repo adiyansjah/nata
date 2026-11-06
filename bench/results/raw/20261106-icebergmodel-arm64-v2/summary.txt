@@ -1,0 +1,86 @@
+2026-11-06T04:28:58Z
+Linux 6.1.0-54-cloud-arm64 aarch64
+Architecture:                            aarch64
+CPU(s):                                  16
+Model name:                              Neoverse-N3
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          29           0           1          30
+/dev/nvme0n2     30G  624M   28G   3% /mnt/work
+git: unknown
+IC_WORK=/mnt/work/iceberg-model-work IC_TOOLS=/mnt/work/iceberg-model-work/tools
+99af2f9444c5b889fa1e0fdbbf6275346683788fb4b5209d4da2b63b7d29c840  /mnt/work/src/spikes/iceberg-commit/model/IcebergCommit.tla
+4e26fed0aa67655791696af9f298dd34494c78990629c67b1463502764649b4c  /mnt/work/src/spikes/iceberg-commit/model/MC.tla
+66b2b4babb364f37dfb1ac6282f6573465ee4b71923aedeb1e90d7557a9e8075  /mnt/work/src/spikes/iceberg-commit/Cargo.lock
+PHASE tools PASS (exit 0, 4s, gating=yes)
+PHASE model-lint PASS (exit 0, 11s, gating=yes)
+PHASE model-parse-and-edits PASS (exit 0, 5s, gating=yes)
+MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits, model-full and model-mutants; runs: smoke-rest,appends2-rest,appends2-store,ad-rest-ser,ad-store-ser,dc-rest,dc-store,ddc-rest,live-2,three-rest-snap-i4,canary-Unknown,canary-Conflict,canary-RetryCommitted,canary-CompactCommitted,canary-DeleteCommitted,canary-ValidationAbort,canary-CrashedButCommitted,canary-LateOldAttempt,canary-DuplicateDelivered,canary-OrphanCollected,canary-ReaderPinned,three-rest-ser,three-store-ser,three-rest-snap,live-3
+limits: 2700s per run, 4500s per three-writer run (three-*, live-3), 11000s in total (each run is cut to the time left); TLC heap 19870 MB, 16 workers
+2026-11-06T04:47:22Z
+Linux 6.1.0-54-cloud-arm64 aarch64
+Architecture:                            aarch64
+CPU(s):                                  16
+Model name:                              Neoverse-N3
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          29           0           1          30
+/dev/nvme0n2     30G  3.8G   25G  14% /mnt/work
+git: unknown
+IC_WORK=/mnt/work/iceberg-model-work IC_TOOLS=/mnt/work/iceberg-model-work/tools
+99af2f9444c5b889fa1e0fdbbf6275346683788fb4b5209d4da2b63b7d29c840  /mnt/work/src/spikes/iceberg-commit/model/IcebergCommit.tla
+4e26fed0aa67655791696af9f298dd34494c78990629c67b1463502764649b4c  /mnt/work/src/spikes/iceberg-commit/model/MC.tla
+66b2b4babb364f37dfb1ac6282f6573465ee4b71923aedeb1e90d7557a9e8075  /mnt/work/src/spikes/iceberg-commit/Cargo.lock
+PHASE tools PASS (resumed from an earlier boot)
+PHASE model-lint PASS (resumed from an earlier boot)
+PHASE model-parse-and-edits PASS (resumed from an earlier boot)
+MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits, model-full and model-mutants; runs: smoke-rest,appends2-rest,appends2-store,ad-rest-ser,ad-store-ser,dc-rest,dc-store,ddc-rest,live-2,three-rest-snap-i4,canary-Unknown,canary-Conflict,canary-RetryCommitted,canary-CompactCommitted,canary-DeleteCommitted,canary-ValidationAbort,canary-CrashedButCommitted,canary-LateOldAttempt,canary-DuplicateDelivered,canary-OrphanCollected,canary-ReaderPinned,three-rest-ser,three-store-ser,three-rest-snap,live-3
+limits: 2700s per run, 4500s per three-writer run (three-*, live-3), 11000s in total (each run is cut to the time left); TLC heap 19870 MB, 16 workers
+PHASE model-full PASS (exit 0, 5666s, gating=yes)
+PHASE model-mutants PASS (exit 0, 17s, gating=yes)
+
+---- model: unmutated runs
+model: IcebergCommit.tla sha256 99af2f9444c5b889fa1e0fdbbf6275346683788fb4b5209d4da2b63b7d29c840
+SANY: parses
+run                    expected                     result     detail                                generated    distinct depth    secs
+smoke-rest             PASS                         OK         PASS                                       1782         755    18       1  (resumed)
+appends2-rest          PASS                         OK         PASS                                    1225228      290636    35       4  (resumed)
+appends2-store         PASS                         OK         PASS                                    1225228      290636    35       4  (resumed)
+ad-rest-ser            PASS                         OK         PASS                                    1165651      280106    35       4  (resumed)
+ad-store-ser           PASS                         OK         PASS                                    1165651      280106    35       4  (resumed)
+dc-rest                PASS                         OK         PASS                                    1106074      269576    35       4  (resumed)
+dc-store               PASS                         OK         PASS                                    1106074      269576    35       4  (resumed)
+ddc-rest               PASS                         OK         PASS                                   17123086     4123418    51      54  (resumed)
+live-2                 PASS                         OK         PASS                                    1165651      280106    35      23  (resumed)
+three-rest-snap-i4     VIOLATED:I4_NoPhantom        OK         VIOLATED I4_NoPhantom                    468579      145788    19       2  (resumed)
+canary-Unknown         VIOLATED:Canary_Unknown      REACHED    VIOLATED Canary_Unknown                    2069         774    11       1  (resumed)
+canary-Conflict        VIOLATED:Canary_Conflict     REACHED    VIOLATED Canary_Conflict                   7780        3194    13       1  (resumed)
+canary-RetryCommitted  VIOLATED:Canary_RetryCommitted REACHED    VIOLATED Canary_RetryCommitted            21357        8379    14       1  (resumed)
+canary-CompactCommitted VIOLATED:Canary_CompactCommitted REACHED    VIOLATED Canary_CompactCommitted           5077        1987    13       1  (resumed)
+canary-DeleteCommitted VIOLATED:Canary_DeleteCommitted REACHED    VIOLATED Canary_DeleteCommitted            3725        1412    12       1  (resumed)
+canary-ValidationAbort VIOLATED:Canary_ValidationAbort REACHED    VIOLATED Canary_ValidationAbort          142470       47892    18       2  (resumed)
+canary-CrashedButCommitted VIOLATED:Canary_CrashedButCommitted REACHED    VIOLATED Canary_CrashedButCommitte         4122        1587    12       1  (resumed)
+canary-LateOldAttempt  VIOLATED:Canary_LateOldAttempt REACHED    VIOLATED Canary_LateOldAttempt             4308        1683    11       1  (resumed)
+canary-DuplicateDelivered VIOLATED:Canary_DuplicateDelivered REACHED    VIOLATED Canary_DuplicateDelivered         2567         940    11       1  (resumed)
+canary-OrphanCollected VIOLATED:Canary_OrphanCollected REACHED    VIOLATED Canary_OrphanCollected           20263        8087    14       1  (resumed)
+canary-ReaderPinned    VIOLATED:Canary_ReaderPinned REACHED    VIOLATED Canary_ReaderPinned                 75          67     6       1  (resumed)
+three-rest-ser         PASS                         OK         PASS                                  683202106   116840733    52    1400
+three-store-ser        PASS                         OK         PASS                                  683202106   116840733    52    1517
+three-rest-snap        PASS                         OK         PASS                                  756039330   129194672    52    1554
+live-3                 PASS                         OK         PASS                                   40580220     8591956    51    1194
+TOTAL mismatches=0
+
+---- model: mutants
+mutant                             result    violated invariant / reason                                  config             distinct   secs
+no-cas                             CAUGHT    I6_SeqIncreases                                              appends2-rest           559      1
+skip-validation                    CAUGHT    I2_NoLostUpdate                                              dc-rest               19692      2
+blind-retry-after-unknown          CAUGHT    I5_AtMostOnce                                                smoke-rest              715      1
+commit-before-durable              CAUGHT    I1_FilesExist                                                smoke-rest              131      1
+reuse-sequence-number              CAUGHT    I6_SeqIncreases                                              smoke-rest               65      1
+compaction-deletes-live-files      CAUGHT    I1_FilesExist                                                dc-rest                 439      1
+accept-stale-base-on-retry         CAUGHT    I2_NoLostUpdate                                              appends2-rest         25239      2
+compaction-sees-new-pairs-only     CAUGHT    I8_CompactionSawNoDeleteFile                                 ddc-rest             442241      6
+gc-ignores-active-writers          CAUGHT    I1_FilesExist                                                smoke-rest              189      1
+gc-ignores-inflight-requests       CAUGHT    I1_FilesExist                                                smoke-rest              369      1
+
+SUMMARY CAUGHT=10 SURVIVED=0 INVALID=0 DRY-OK=0 of 10 (required mutants: 8)
+
+VERDICT PASS (every requested model run ended as expected; only the model was re-run: the other phases of the full check are NOT covered by this verdict)

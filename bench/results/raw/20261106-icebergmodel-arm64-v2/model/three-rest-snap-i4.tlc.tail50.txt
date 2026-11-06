@@ -1,0 +1,50 @@
+                addedRows |-> {1, 2},
+                delPairs |-> {},
+                delTargets |-> {} ],
+              [ w |-> 1,
+                id |-> <<1, 1>>,
+                parent |-> <<0, 0>>,
+                op |-> "append",
+                seq |-> 1,
+                files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+                del |-> {},
+                dfiles |-> {},
+                man |-> <<"m", 1, 1>>,
+                addedRows |-> {3},
+                delPairs |-> {},
+                delTargets |-> {} ],
+              [ w |-> 2,
+                id |-> <<2, 2>>,
+                parent |-> <<1, 1>>,
+                op |-> "delete",
+                seq |-> 2,
+                files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+                del |-> {<<<<"d", 0, 0>>, 1>>},
+                dfiles |-> {<<"x", 2, 0>>},
+                man |-> <<"m", 2, 2>>,
+                addedRows |-> {},
+                delPairs |-> {<<<<"d", 0, 0>>, 1>>},
+                delTargets |-> {<<<<"d", 0, 0>>, 1>>} ] },
+        cur |->
+            [ w |-> 2,
+              id |-> <<2, 2>>,
+              parent |-> <<1, 1>>,
+              op |-> "delete",
+              seq |-> 2,
+              files |-> {<<"d", 0, 0>>, <<"d", 1, 0>>},
+              del |-> {<<<<"d", 0, 0>>, 1>>},
+              dfiles |-> {<<"x", 2, 0>>},
+              man |-> <<"m", 2, 2>>,
+              addedRows |-> {},
+              delPairs |-> {<<<<"d", 0, 0>>, 1>>},
+              delTargets |-> {<<<<"d", 0, 0>>, 1>>} ] ] )
+/\ base = <<0, 1, 0>>
+/\ crashLeft = 1
+/\ plan = << [ver |-> 0, targets |-> {}, inputs |-> {}],
+   [ver |-> 0, targets |-> {<<<<"d", 0, 0>>, 1>>}, inputs |-> {}],
+   [ver |-> 0, targets |-> {}, inputs |-> {}] >>
+
+468579 states generated, 145788 distinct states found, 58170 states left on queue.
+The depth of the complete state graph search is 19.
+The average outdegree of the complete state graph is 2 (minimum is 0, the maximum 14 and the 95th percentile is 5).
+Finished in 02s at (2026-11-06 04:31:03)

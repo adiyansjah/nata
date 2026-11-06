@@ -1,0 +1,30 @@
+$ /mnt/work/iceberg-model-work/tools/jdk/bin/java -XX:+UseParallelGC -Xmx19870m -cp /mnt/work/iceberg-model-work/tools/tla2tools.jar tlc2.TLC -config cfg/ad-store-ser.cfg -workers 16 -deadlock -cleanup -metadir /mnt/work/iceberg-model-work/model-work/work-model/states-ad-store-ser.cfg MC
+TLC2 Version 2.19 of 08 August 2024 (rev: 5a47802)
+Running breadth-first search Model-Checking with fp 11 and seed 3971833055151690441 with 16 workers on 16 cores with 17662MB heap and 64MB offheap memory [pid: 4472] (Linux 6.1.0-54-cloud-arm64 aarch64, Eclipse Adoptium 17.0.21 x86_64, MSBDiskFPSet, DiskStateQueue).
+Parsing file /mnt/work/iceberg-model-work/model-work/work-model/MC.tla
+Parsing file /mnt/work/iceberg-model-work/model-work/work-model/IcebergCommit.tla
+Parsing file /tmp/TLC.tla
+Parsing file /tmp/Integers.tla
+Parsing file /tmp/FiniteSets.tla
+Parsing file /tmp/Sequences.tla
+Parsing file /tmp/Naturals.tla
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module IcebergCommit
+Semantic processing of module MC
+Starting... (2026-11-06 04:29:32)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-06 04:29:32.
+Progress(32) at 2026-11-06 04:29:35: 1,080,524 states generated (1,080,524 s/min), 264,073 distinct states found (264,073 ds/min), 13,632 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.3E-8
+  based on the actual fingerprints:  val = 1.6E-9
+1165651 states generated, 280106 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 35.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 15 and the 95th percentile is 4).
+Finished in 03s at (2026-11-06 04:29:36)

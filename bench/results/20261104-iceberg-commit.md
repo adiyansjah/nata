@@ -662,7 +662,7 @@ Reading it: removing the model's protection makes its trace replayable, and the 
 
 Reproduce: `cargo build --release` in `spikes/iceberg-commit`, `IC_TRACE=<dir> ./target/release/ic-spike suite --backend store --work <work>`, then `python3 -I model/trace_check.py --jar tla2tools.jar --java java --traces <dir> --out <out>`; the checker's own check: `python3 -I model/mutate_trace_check.py --jar tla2tools.jar --java java --out <out> --model-mutants` (about 15 minutes, 6 jobs).
 
-## 16. Finding 1 resolved in the model (2026-11-06, local; the full re-run on GCP is PENDING)
+## 16. Finding 1 resolved in the model (2026-11-06; full re-run on GCP: PASS, section 17)
 
 **The finding** (section 15): the code aborts a compaction when a delete file committed since its base names one of its input data files, even if that delete file only repeats rows already deleted (two deleters plan the same rows; the second retries and commits a redundant delete file); the model counted only the pairs a snapshot newly deleted (`delPairs`), so it said the compaction must retry.
 
@@ -689,3 +689,26 @@ Reproduce: `cargo build --release` in `spikes/iceberg-commit`, `IC_TRACE=<dir> .
 **Run at a larger scale: PENDING (needs the owner's cost yes).** The three-writer configurations (`three-rest-ser`, `three-store-ser`, `three-rest-snap`, `three-rest-snap-i4` and the three-writer `live-3`) and the 11 canaries were NOT run locally (16 vCPU and 25 to 45 minutes each on GCP); the model changed, so their results in sections 8 and 10 no longer count for the new text until they are repeated. Expected: the same state counts as before and every run as expected. The `icebergmodel` job can now also run the model mutants in the same job (`IC_MODEL_MUTANTS=1` in `icebergmodel.env`, mode `model` of `gcp-check.sh`; tested with the fake `java`). Until that run is done, the model gate for item 24 rests on: the old model's 24 results (sections 8 and 10), the local results above for the 8 smaller runs, and the traces.
 
 **What this does not change.** The model is still bounded (3 writers, one operation each); I8 is checked only on `ddc-rest` (two deleters, one compactor, no fault budget); the trace check still covers only the object-store backend and what the suite drives; the Iceberg rule is cited, not re-read here.
+
+## 17. GCP run `icebergmodel-arm64-v2`, 2026-11-06: the whole changed model, all 25 runs and its mutants: verdict PASS
+
+What ran (job `icebergmodel` with `IC_MODEL_MUTANTS=1`, `n4a-highcpu-16` ARM64 Spot, 16 TLC workers; preempted once at 04:46 and resumed
+on a new VM from the same data disk, runs already done were skipped; 6,930 VM-seconds, $0.379), code `e8c77fc`+ (the model of section 16).
+The env file is in the raw directory. Raw: `bench/results/raw/20261106-icebergmodel-arm64-v2/` (the last 50 lines of each TLC log).
+
+**All 25 runs ended as expected (TOTAL mismatches = 0)**: the 14 configurations PASS (`three-rest-snap-i4` VIOLATED I4_NoPhantom as
+expected) and the 11 canaries are each reached. The new configuration `ddc-rest` (two deleters and a compactor) PASSES: 17,123,086
+states generated, 4,123,418 distinct, depth 51, 54 s. The three-writer runs explore exactly the same state spaces as before the change:
+
+| run | generated | distinct | depth | seconds | before the change (sections 8 and 10) |
+|---|---:|---:|---:|---:|---|
+| three-rest-ser | 683,202,106 | 116,840,733 | 52 | 1,400 | identical counts |
+| three-store-ser | 683,202,106 | 116,840,733 | 52 | 1,517 | identical counts |
+| three-rest-snap | 756,039,330 | 129,194,672 | 52 | 1,554 | identical counts |
+| live-3 | 40,580,220 | 8,591,956 | 51 | 1,194 | identical counts |
+
+**Model mutants: 10 of 10 CAUGHT, 0 SURVIVED, 0 INVALID** (8 required), among them the new `compaction-sees-new-pairs-only` (the old,
+pairs-based rule), caught by I8_CompactionSawNoDeleteFile on `ddc-rest`. Together with section 15: the code (trace validation, 24 of 24
+traces as expected after the change) and the model now agree on the redundant-delete case, and the model gate holds again for the
+changed text, within its bounds. What this does not show: the bounds (at most 3 writers, one operation each, `ddc-rest` with no fault
+budget); the REST backend in traces; a proof of the code.
