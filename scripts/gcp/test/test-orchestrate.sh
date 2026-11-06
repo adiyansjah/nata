@@ -127,6 +127,17 @@ for bad in "default" "123456789-compute@developer.gserviceaccount.com" "x@y.com"
   orch run --job ci --approved-usd 1 --vm-service-account "$bad" > "$T/o" 2>&1; rc=$?
   check "--vm-service-account '$bad' is refused before anything is called" "[ $rc -eq 2 ] && grep -q 'vm-service-account' $T/o && [ ! -e $F/calls.log ]"
 done
+new_world saw
+orch run --job ci --approved-usd 1 --run-id saw --vm-service-account nata-wtest@some-project.iam.gserviceaccount.com --vm-storage-scope read-write > "$T/o" 2>&1; rc=$?
+check "--vm-storage-scope read-write: the VM gets the read-write storage scope and nothing broader" "[ $rc -eq 0 ] && grep 'instances create' $F/calls.log | grep -q -- '--scopes=https://www.googleapis.com/auth/devstorage.read_write' && ! grep 'instances create' $F/calls.log | grep -qE -- 'cloud-platform|full_control|devstorage.read_only'"
+for badscope in "full-control" "cloud-platform" ""; do
+  new_world badscope
+  orch run --job ci --approved-usd 1 --vm-service-account nata-wtest@some-project.iam.gserviceaccount.com --vm-storage-scope "$badscope" > "$T/o" 2>&1; rc=$?
+  check "--vm-storage-scope '$badscope' is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"
+done
+new_world scopenosa
+orch run --job ci --approved-usd 1 --vm-storage-scope read-write > "$T/o" 2>&1; rc=$?
+check "--vm-storage-scope without --vm-service-account is refused before anything is called" "[ $rc -eq 2 ] && grep -q 'needs --vm-service-account' $T/o && [ ! -e $F/calls.log ]"
 new_world saplan
 orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
 check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"

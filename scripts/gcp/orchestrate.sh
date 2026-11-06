@@ -45,6 +45,10 @@ OUT=${OUT:-}
 # service account with the read-only Cloud Storage scope and nothing else, for the jobs that read a real bucket (objscan). The default compute service account
 # (project number + "-compute@developer.gserviceaccount.com") is refused on purpose: it usually holds broad project roles.
 VM_SA=""
+# --vm-storage-scope read-write (only with --vm-service-account) asks for the read-write Cloud Storage scope instead, for the jobs that write to the
+# dedicated write-test bucket (iceberg conditional writes). The scope is only a ceiling: what the VM can really write is what the account's IAM grants
+# (the write-test account has object access on ONE bucket and no project roles).
+VM_SCOPE=read-only
 while [ $# -gt 0 ]; do
   case "$1" in
     --job) JOB=$2; shift 2 ;;
@@ -57,6 +61,7 @@ while [ $# -gt 0 ]; do
     --project) PROJECT=$2; shift 2 ;;
     --out) OUT=$2; shift 2 ;;
     --vm-service-account) VM_SA=$2; shift 2 ;;
+    --vm-storage-scope) VM_SCOPE=$2; shift 2 ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -65,9 +70,15 @@ DISK="$RUN_ID-work"
 if [ -n "$VM_SA" ]; then
   echo "$VM_SA" | grep -qE '^[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]*\.iam\.gserviceaccount\.com$' \
     || { echo "error: --vm-service-account must be a user-created service account (name@project.iam.gserviceaccount.com); the default compute account is refused" >&2; exit 2; }
-  ID_ARGS=("--service-account=$VM_SA" "--scopes=https://www.googleapis.com/auth/devstorage.read_only")
-  ID_TEXT="service account $VM_SA with the read-only Cloud Storage scope only"
+  case "$VM_SCOPE" in
+    read-only)  SCOPE_URL=https://www.googleapis.com/auth/devstorage.read_only ;;
+    read-write) SCOPE_URL=https://www.googleapis.com/auth/devstorage.read_write ;;
+    *) echo "error: --vm-storage-scope must be read-only or read-write" >&2; exit 2 ;;
+  esac
+  ID_ARGS=("--service-account=$VM_SA" "--scopes=$SCOPE_URL")
+  ID_TEXT="service account $VM_SA with the $VM_SCOPE Cloud Storage scope only"
 else
+  [ "$VM_SCOPE" = read-only ] || { echo "error: --vm-storage-scope needs --vm-service-account" >&2; exit 2; }
   ID_ARGS=(--no-service-account --no-scopes)
   ID_TEXT="none (--no-service-account --no-scopes)"
 fi
