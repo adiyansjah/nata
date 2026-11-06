@@ -11,7 +11,7 @@ One file per architecture decision, `NNNN-title.md`, copied from `0000-template.
 | [0005](0005-table-format-and-catalog.md) | Table format and catalog, Iceberg first | accepted in part 2026-11-05 (rules 1-7; rule 8 open) |
 | [0006](0006-testing-strategy.md) | Testing strategy: differential, mutation-checked, deterministic simulation | accepted 2026-11-05 |
 
-0001-0003 and 0006 were accepted on 2026-11-05 with checks still open, and 0005 in part (rules 1-7); each ADR's revision note of that date lists them. 0004 stays proposed. The table below is kept as it stood at acceptance.
+0001-0003 and 0006 were accepted on 2026-11-05 with checks still open, and 0005 in part (rules 1-7); each ADR's revision note of that date lists them. 0004 was accepted on 2026-11-06 by the assistant under the owner's delegation, when stage B of plan item 28 passed (its acceptance condition). The table below is kept as it stood at acceptance.
 
 Before a proposed ADR is accepted (see `way-of-working.md`, section 6):
 
