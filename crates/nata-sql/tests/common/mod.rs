@@ -85,6 +85,9 @@ pub fn src() -> MemSource {
     MemSource::new()
         .file("t.parquet", &t_columns())
         .file("lineitem.parquet", &lineitem_columns())
+        .file("li-1.parquet", &lineitem_columns())
+        .file("li-2.parquet", &lineitem_columns())
+        .glob("li-*.parquet", &["li-1.parquet", "li-2.parquet"])
         .file(
             "nation.parquet",
             &[
