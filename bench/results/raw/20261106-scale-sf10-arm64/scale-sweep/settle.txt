@@ -1,0 +1,24 @@
+SETTLE q1-t1: settled, load 0.47 after 115 s (limit 0.5)
+block q1 threads=1 load at start: 0.47 1.39 0.75
+SETTLE q1-t2: settled, load 0.46 after 15 s (limit 0.5)
+block q1 threads=2 load at start: 0.46 1.30 0.74
+SETTLE q1-t4: settled, load 0.46 after 25 s (limit 0.5)
+block q1 threads=4 load at start: 0.46 1.22 0.73
+SETTLE q1-t8: settled, load 0.49 after 25 s (limit 0.5)
+block q1 threads=8 load at start: 0.49 1.16 0.73
+SETTLE q1-t16: settled, load 0.49 after 0 s (limit 0.5)
+block q1 threads=16 load at start: 0.49 1.16 0.73
+SETTLE q1-t32: settled, load 0.45 after 0 s (limit 0.5)
+block q1 threads=32 load at start: 0.45 1.14 0.72
+SETTLE q6-t1: settled, load 0.45 after 0 s (limit 0.5)
+block q6 threads=1 load at start: 0.45 1.14 0.72
+SETTLE q6-t2: settled, load 0.48 after 10 s (limit 0.5)
+block q6 threads=2 load at start: 0.48 1.12 0.72
+SETTLE q6-t4: settled, load 0.47 after 15 s (limit 0.5)
+block q6 threads=4 load at start: 0.47 1.08 0.72
+SETTLE q6-t8: settled, load 0.45 after 30 s (limit 0.5)
+block q6 threads=8 load at start: 0.45 1.02 0.71
+SETTLE q6-t16: settled, load 0.45 after 0 s (limit 0.5)
+block q6 threads=16 load at start: 0.45 1.02 0.71
+SETTLE q6-t32: settled, load 0.45 after 0 s (limit 0.5)
+block q6 threads=32 load at start: 0.45 1.02 0.71
