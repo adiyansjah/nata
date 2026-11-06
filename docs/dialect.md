@@ -72,6 +72,9 @@ Every error has a class (`syntax`, `bind`, `not supported yet`, `execution`), a 
 about (1-based, in characters of the query text). Messages quote the query, never data values. Where a name is unknown, the message
 suggests the closest existing column name ("did you mean `l_orderkey`?") when one is within an edit distance of 2.
 
+Limits: a query text of at most 1 MB, nesting (parentheses, `CASE`, unary operators) at most 1,000 deep, and at most 10,000 terms in one
+chain of the same binary operator; beyond them, a positioned error before parsing.
+
 ## 9. Where this differs from DuckDB 2.0.0
 
 | case | DuckDB | Nata |

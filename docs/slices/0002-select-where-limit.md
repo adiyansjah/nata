@@ -69,6 +69,19 @@ threshold (a regression larger than the twin's spread fails).
 - Time box and cloud spend: one day, local only (parsing is not a performance-critical number at this size); no GCP needed.
 - Result file: `bench/results/20261106-sql-parser-baseline.md`. Result (2026-11-06): R1 is not triggered, so reuse `sqlparser` 0.63.0 (PostgreSQL dialect, `default-features = false`, behind a conversion layer and a depth guard, parsing on a stack of at least 16 MB): all four criteria passed (22 of 22 TPC-H and 230 of 230 test-set queries parse to the hand parser's AST, 47 of 47 literals keep their text, every error has line and column, no `unsafe` and no refused license without the crate's `recursive-protection` feature), at the price of 10 times the parse time of a hand-written parser (11 us against 1.1 us median, both far under 1 ms) and the close calls listed in the file.
 
+## 4b. Decisions after the baseline spike (2026-11-06, by the assistant under the owner's delegation)
+
+- **R1: reuse `sqlparser`** (`bench/results/20261106-sql-parser-baseline.md`: none of the four criteria failed), with
+  `default-features = false, features = ["std"]` (no `recursive-protection`: its `stacker`/`psm` dependencies bring `unsafe` and assembly)
+  and the **PostgreSQL dialect** (the generic one accepts `SELECT a, FROM`).
+- **Stack:** the parser runs on a dedicated thread with a 16 MB stack (the crate needs 6 to 8 MB for 1,000 nested levels without
+  `stacker`); **a token-level guard runs before the parser** and refuses nesting deeper than 1,000 and an operator chain longer than 10,000
+  terms with a positioned error (a 250,000-term chain aborted the process, even with `stacker`). Both limits are in `docs/dialect.md`.
+- **What the AST hides:** `LIMIT ALL` is dropped by the crate; the layer detects it from the token stream and refuses it (`not supported
+  yet`), with a test; any further construct found to vanish in the AST gets the same treatment and a test.
+- **Errors at the end of the input** get the position of the end of the text (the crate gives none there).
+- The hand-written parser and its corpus stay as a test oracle for the subset until the slice closes; the spike is then deleted.
+
 ## 5. Carried-in improvements (from `docs/improvements.md`)
 
 The open register items on this slice's path (the scan under `nata sql`, its scheduler, CI). Together about a quarter of the slice's work.
