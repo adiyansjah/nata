@@ -348,6 +348,10 @@ pub struct StoreCatalog {
     store: Arc<dyn object_store::ObjectStore>,
     /// Some("gs://bucket/prefix/<table>") when the metadata versions live in a real bucket (NATA_STORE_URL); None: local.
     remote: Option<String>,
+    /// object_store's GCS client needs a Tokio runtime (found on the first real-GCS run: "there is no reactor running"); the
+    /// local store keeps the plain executor it was verified with.
+    #[cfg(feature = "gcs")]
+    rt: Option<tokio::runtime::Runtime>,
 }
 
 fn vpath(n: u64) -> object_store::path::Path {
@@ -364,7 +368,7 @@ impl StoreCatalog {
         match std::env::var("NATA_STORE_URL").ok().filter(|v| !v.is_empty()) {
             None => {
                 let store = object_store::local::LocalFileSystem::new_with_prefix(&root).map_err(|e| e.to_string())?;
-                Ok(StoreCatalog { root, store: Arc::new(store), remote: None })
+                Ok(StoreCatalog { root, store: Arc::new(store), remote: None, #[cfg(feature = "gcs")] rt: None })
             }
             Some(url) => Self::new_remote(root, &url),
         }
@@ -381,12 +385,22 @@ impl StoreCatalog {
         let table_key = table_key.trim_start_matches('/').to_string();
         let gcs = object_store::gcp::GoogleCloudStorageBuilder::from_env().with_bucket_name(bucket).build().map_err(|e| format!("GCS: {e}"))?;
         let store = object_store::prefix::PrefixStore::new(gcs, object_store::path::Path::from(table_key.as_str()));
-        Ok(StoreCatalog { root, store: Arc::new(store), remote: Some(format!("gs://{bucket}/{table_key}")) })
+        let rt = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().map_err(|e| format!("tokio: {e}"))?;
+        Ok(StoreCatalog { root, store: Arc::new(store), remote: Some(format!("gs://{bucket}/{table_key}")), rt: Some(rt) })
     }
 
     #[cfg(not(feature = "gcs"))]
     fn new_remote(_root: PathBuf, url: &str) -> Res<StoreCatalog> {
         Err(format!("NATA_STORE_URL={url} needs the `gcs` feature (cargo build --features gcs)"))
+    }
+
+    /// Runs a future to completion: on the store's Tokio runtime when it has one (GCS), else on the plain executor (local).
+    fn block<F: std::future::Future>(&self, f: F) -> F::Output {
+        #[cfg(feature = "gcs")]
+        if let Some(rt) = &self.rt {
+            return rt.block_on(f);
+        }
+        futures::executor::block_on(f)
     }
 
     /// Copies every metadata version from the bucket to the local root (only for a remote store).
@@ -397,10 +411,10 @@ impl StoreCatalog {
             return Ok(0);
         }
         let prefix = object_store::path::Path::from("metadata");
-        let metas: Vec<_> = futures::executor::block_on(self.store.list(Some(&prefix)).try_collect::<Vec<_>>()).map_err(|e| e.to_string())?;
+        let metas: Vec<_> = self.block(self.store.list(Some(&prefix)).try_collect::<Vec<_>>()).map_err(|e| e.to_string())?;
         for m in &metas {
             let name = m.location.filename().ok_or("metadata object without a name")?.to_string();
-            let bytes = futures::executor::block_on(async {
+            let bytes = self.block(async {
                 let r = self.store.get(&m.location).await.map_err(|e| e.to_string())?;
                 r.bytes().await.map_err(|e| e.to_string())
             })?;
@@ -423,7 +437,7 @@ impl StoreCatalog {
             "sort-orders": [{"order-id": 0, "fields": []}], "default-sort-order-id": 0, "refs": {},
         });
         let payload = PutPayload::from(serde_json::to_vec_pretty(&meta).map_err(|e| e.to_string())?);
-        match futures::executor::block_on(self.store.put_opts(&vpath(1), payload, PutMode::Create.into())) {
+        match self.block(self.store.put_opts(&vpath(1), payload, PutMode::Create.into())) {
             Ok(_) | Err(object_store::Error::AlreadyExists { .. }) => {}
             Err(e) => return Err(format!("create v1: {e}")),
         }
@@ -434,7 +448,7 @@ impl StoreCatalog {
         use futures::TryStreamExt;
         use object_store::ObjectStore;
         let prefix = object_store::path::Path::from("metadata");
-        let metas: Vec<_> = futures::executor::block_on(self.store.list(Some(&prefix)).try_collect::<Vec<_>>()).map_err(|e| e.to_string())?;
+        let metas: Vec<_> = self.block(self.store.list(Some(&prefix)).try_collect::<Vec<_>>()).map_err(|e| e.to_string())?;
         metas
             .iter()
             .filter_map(|m| {
@@ -447,7 +461,7 @@ impl StoreCatalog {
 
     fn read_version(&self, n: u64) -> Res<TableState> {
         use object_store::ObjectStoreExt;
-        let bytes = futures::executor::block_on(async {
+        let bytes = self.block(async {
             let r = self.store.get(&vpath(n)).await.map_err(|e| e.to_string())?;
             r.bytes().await.map_err(|e| e.to_string())
         })?;
@@ -485,7 +499,7 @@ impl Catalog for StoreCatalog {
         let next = base.version + 1;
         // require_cas: create-if-absent. The known-bad writer overwrites.
         let mode = if req.require_cas { PutMode::Create } else { PutMode::Overwrite };
-        match futures::executor::block_on(self.store.put_opts(&vpath(next), PutPayload::from(bytes), mode.into())) {
+        match self.block(self.store.put_opts(&vpath(next), PutPayload::from(bytes), mode.into())) {
             Ok(_) => self.read_version(next).map_err(CommitError::Unknown),
             Err(object_store::Error::AlreadyExists { .. }) | Err(object_store::Error::Precondition { .. }) => {
                 Err(CommitError::Conflict(format!("v{next}.metadata.json already exists")))
@@ -621,7 +635,7 @@ mod store_url_tests {
     #[test]
     fn a_local_store_has_no_remote_and_mirrors_nothing() {
         let d = std::env::temp_dir().join(format!("ic-url3-{}", std::process::id()));
-        let c = StoreCatalog { root: d.clone(), store: Arc::new(object_store::memory::InMemory::new()), remote: None };
+        let c = StoreCatalog { root: d.clone(), store: Arc::new(object_store::memory::InMemory::new()), remote: None, #[cfg(feature = "gcs")] rt: None };
         assert_eq!(c.mirror_metadata().ok(), Some(0));
         let _ = std::fs::remove_dir_all(&d);
     }
