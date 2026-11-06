@@ -128,16 +128,16 @@ One agent at a time on the development VM; GCP runs in parallel. After each loca
 | # | Step | Feeds |
 |---|---|---|
 | B1 | Settle inside the NULL-path, push-cost and Arrow scripts | done 2026-11-05 (`2084acb`) |
-| B2 | Kani: step-6 sum bound; the five unproved crate harnesses | C3 |
-| B3 | Hash-join spill benchmark in the hash-ops spike | C4 |
+| B2 | Kani: step-6 sum bound (done: proved, negative control and 3 mutants caught, `7993b28`); the five division proofs retried with other solvers | C3 |
+| B3 | Hash-join spill benchmark (done, in the operators-beyond spike, `b8cedbe`) | C4 |
 | B4 | Slice 3 scan benchmark job (R2 pruning on sorted `lineitem`, 1 to 8 threads, SF1 and SF10, twin control, settle) | C5 |
 | B5 | Orchestrator: write-scope option for the dedicated service account (done, `bde03b8`); the proof that it cannot write outside its bucket is part of run C6 | C6 |
 | | **ASK: cost plan for wave C** | |
-| B6 | Plan reconciliation (rows 1, 2, 6, 22) and a "not yet verified" register | - |
-| B7 | Item 31 protocol check against ADR 0001 (end-of-input hook, shared sink finalized twice) | slices 6 to 8 |
-| B8 | Item 9 cgroup pool sizing (the decoder bake-off was done on 2026-11-05) | ADR 0002 |
+| B6 | Plan reconciliation: rows 1, 2, 6, 22 done (`106b59b`); the register is this file | - |
+| B7 | Item 31 protocol findings decided in ADR 0001 amendment A1 (done, `6c9a197`) | slices 6 to 9 |
+| B8 | Item 9 cgroup pool sizing, on the slice 3 scheduler once step 2b lands (the decoder bake-off was done on 2026-11-05) | ADR 0002 |
 | B9 | Iceberg commit refinement test (code against the model) | item 24 code gate |
-| B10 | Orchestrator: `recover --run-id`; large-disk path; multi-VM mode (all tested with the fake `gcloud`) | phase E |
+| B10 | Orchestrator: `recover --run-id` (`022d617`), `--data-gb` (`7f885ba`), multi-VM `--peers` (`f85c32a`): done, tested with the fake `gcloud` | phase E |
 
 B6 to B10 run while wave C runs on GCP.
 
@@ -145,13 +145,15 @@ B6 to B10 run while wave C runs on GCP.
 | # | Run | Machine | Rough cost |
 |---|---|---|---|
 | C1 | Timing rerun with settling | done 2026-11-05 (`0f5fac4`, `bench/results/20261105-timing-settled-rerun.md`) | - |
-| C2 | Generic-ops with `overflow-checks`: the `verify` job on x86-64 (also a clean-machine reproduction of the verification), from a clean worktree of `d021df7` | `c3d-highcpu-8` | cap $0.20, running |
-| C3 | Kani step-6 and crate harnesses | `n4a-highmem-8` | about $0.45 |
-| C4 | Hash-join spill | `n4a-highmem-8` | about $0.2 to $0.3 |
+| C2 | Generic-ops with `overflow-checks` on x86-64: done (`bench/results/20261106-verify-x86-settled.md`, $0.052 with the unsettled first run) | `c3d-highcpu-8` | - |
+| C3 | Kani step-6 (PASS, `bench/results` pending) and the 5 division proofs with kissat, z3, cvc5 (running; first attempt failed on Debian 12, retried on Debian 13) | `n4a-highmem-8` | cap $0.52 |
+| C4 | Hash-join spill: done on both CPU types (`bench/results/20261106-spill-bench.md`, $0.041) | `n4a-highcpu-8`, `c3d-highcpu-8` | - |
 | C5 | Slice 3 benchmarks | `n4a-highcpu-8`, `c3d-highcpu-8` | about $0.1 to $0.3 |
-| C6 | Iceberg conditional writes on the real bucket (the item 24 real-store gap) | `n4a-highcpu-8` | about $0.05 |
+| C6 | Iceberg conditional writes on the real bucket: PASS (`bench/results/20261104-iceberg-commit.md` section 14, $0.012 with the failed first attempt) | `n4a-highcpu-8` | - |
 
 Total about $1.1 to $1.4, replaced by the planner's worst case before the yes.
+
+Added during the wave: C7, the fairness overhead and the bridge on settled machines (done, `bench/results/20261106-fairness-bridge-settled.md`, $0.042).
 
 ### Phase D: record wave C and close slice 3
 | # | Step |
@@ -163,10 +165,10 @@ Total about $1.1 to $1.4, replaced by the planner's worst case before the yes.
 ### Phase E: Group 3, after B10 (each run its own approval)
 | # | Run or step | Rough cost |
 |---|---|---|
-| E1 | `scale-sf10` on `n4a-highcpu-32` with spill and a 1,024-descriptor limit; ASK | about $0.43 |
+| E1 | `scale-sf10` on `n4a-highcpu-32` with spill and a 1,024-descriptor limit (running, cap $0.85) | about $0.43 |
 | E2 | `scale-sf100` on `n4a-highcpu-32`, 300 GB disk, only if E1 passes; ASK | about $2.1 |
 | E3 | Q1/Q6 core-count scaling at 32 and 64 vCPUs; ASK | about $0.45 |
-| E4 | Network exchange stage B on 4 separate VMs (multi-VM mode); ASK | about $0.2 to $0.3 |
+| E4 | Network exchange stage B on 4 separate VMs: every scenario passed on the first run; its leftover-process check self-matched, rerunning | about $0.2 to $0.3 |
 | E5 | Engineering checks (`eng-checks`: ASan, TSan, Miri, UBSan, `cargo-deny`, `cargo-audit`, `cargo-geiger`, regression harness) once slice 4 has real code; ASK | about $0.16 |
 | E6 | Record E1 to E5; update plan items 28, 32, 34. PUSH |
 
