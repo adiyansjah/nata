@@ -5,6 +5,8 @@
 #   orchestrate.sh run     [options]   do it (needs --approved-usd, at least the printed bound)
 #   orchestrate.sh status  --run-id ID list the resources a run labelled
 #   orchestrate.sh cleanup --run-id ID delete everything a run labelled
+#   orchestrate.sh recover --run-id ID [--force]  after the orchestrator died: look, pull before delete, delete only when the job
+#                                      has ended (or with --force), report the VM cost since creation (README "When the machine ...")
 #
 # Design: the VM and its boot disk are disposable; a small separate data disk keeps the toolchain, the build
 # cache, the step markers and the results. If Google reclaims the VM, this script (which runs on your
@@ -53,7 +55,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --job) JOB=$2; shift 2 ;;
     --approved-usd) APPROVED_USD=$2; shift 2 ;;
-    --run-id) RUN_ID=$2; shift 2 ;;
+    --run-id) RUN_ID=$2; RUN_ID_GIVEN=1; shift 2 ;;
+    --force) FORCE=1; shift ;;
     --machines) MACHINES=$2; shift 2 ;;
     --zones) ZONES=$2; shift 2 ;;
     --max-vm-hours) MAX_VM_HOURS=$2; shift 2 ;;
@@ -281,6 +284,64 @@ on_exit() {
   exit "$rc"
 }
 
+# ----------------------------------------------------------------------------------------- recover
+# The orchestrator of a run died (its machine rebooted, its session was killed): nothing pulls the results or deletes the VM and
+# the data disk. recover does the README's manual steps: 1 look (the run's labelled resources), 2 pull state, results and logs
+# from a running VM BEFORE anything is deleted, 3 read the job's state, 4 delete only when the job has ended or --force is given,
+# 5 write report-recover.txt with the VM cost from each VM's creation time. A data disk without a VM may hold the only copy of
+# the results (it cannot be read without attaching it to a VM), so it is kept unless --force.
+do_recover() {
+  [ "${RUN_ID_GIVEN:-0}" = 1 ] || die "recover needs --run-id ID (the id of the run whose orchestrator died)"
+  [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
+  mkdir -p "$OUT"; touch "$OUT/gcloud.log"
+  local inst disks job=no-vm pulled=no cost=0 secs_total=0 name zone created machine rate secs keep=""
+  inst=$(list_labelled instances); disks=$(list_labelled disks)
+  log "recover $RUN_ID: instances: ${inst:-none}; disks: ${disks:-none}" 2>&1 | tr '\t\n' '  ' >&2; echo >&2
+  if [ -z "$inst$disks" ]; then log "nothing is labelled nata-run=$RUN_ID: nothing to recover"; return 0; fi
+  while IFS=$'\t' read -r name zone; do
+    [ -n "$name" ] || continue
+    VM=$name; ZONE=$zone
+    created=$(G compute instances describe "$VM" --zone "$ZONE" --format='value(creationTimestamp)' 2>/dev/null)
+    machine=$(G compute instances describe "$VM" --zone "$ZONE" --format='value(machineType.basename())' 2>/dev/null)
+    rate=$(rate_of "$machine"); secs=0
+    [ -n "$created" ] && secs=$(( $(date +%s) - $(date -d "$created" +%s 2>/dev/null || date +%s) ))
+    secs_total=$((secs_total + secs)); cost=$(awk -v c="$cost" -v s="$secs" -v r="${rate:-0}" 'BEGIN { printf "%.3f", c + s/3600*r }')
+    [ "$(vm_status)" = RUNNING ] || { log "$VM is not running"; continue; }
+    VM_IP=$(G compute instances describe "$VM" --zone "$ZONE" --format='value(networkInterfaces[0].accessConfigs[0].natIP)' 2>/dev/null)
+    if [ -f "$OUT/key" ] && pull_state; then
+      pulled=yes; log "pulled state, results and logs from $VM into $OUT"
+      if [ -f "$OUT/state/job.finished" ]; then job=finished; elif [ -f "$OUT/state/job.failed" ]; then job=failed; else job=running; fi
+    else
+      log "could not pull from $VM (no key in $OUT, or ssh failed)"; job=unknown
+    fi
+  done <<< "$inst"
+  case "$job" in
+    finished|failed) ;;
+    running) keep="the job is still running on the VM" ;;
+    unknown) keep="the results could not be pulled from the VM" ;;
+    no-vm) keep="a data disk without a VM may hold the only copy of the results (attach it to a VM to read it)" ;;
+  esac
+  local verdict
+  if [ -n "$keep" ] && [ "${FORCE:-0}" != 1 ]; then
+    verdict="nothing deleted: $keep; run recover again later, or with --force to delete anyway"
+    log "$verdict"; LEFT="$( { list_labelled instances; list_labelled disks; } | tr '\n' ' ')"
+  else
+    delete_labelled; LEFT="$( { list_labelled instances; list_labelled disks; } | tr '\n' ' ')"
+    if [ -z "${LEFT// /}" ]; then LEFT=none; verdict="deleted everything labelled nata-run=$RUN_ID (verified)"; else verdict="WARNING: still left after delete: $LEFT"; fi
+    log "$verdict"
+  fi
+  {
+    echo "recover of run $RUN_ID ($(date -u +%FT%TZ))"
+    echo "job state: $job   results pulled: $pulled   force: ${FORCE:-0}"
+    echo "$verdict"
+    echo "resources left: ${LEFT:-unknown}"
+    echo "VM cost estimate since creation of the VMs still present ($secs_total VM-seconds x their prices.env rate): \$$cost (a lower bound: earlier VMs of the run that are already gone are not counted)"
+  } > "$OUT/report-recover.txt"
+  log "report: $OUT/report-recover.txt"
+  [ -z "$keep" ] || [ "${FORCE:-0}" = 1 ] || return 5
+  return 0
+}
+
 # ----------------------------------------------------------------------------------------- run
 do_run() {
   check_machines
@@ -356,6 +417,7 @@ do_run() {
 case "$MODE" in
   plan) do_plan ;;
   run) do_run ;;
+  recover) do_recover ;;
   status|cleanup)
     [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
     mkdir -p "$OUT"; : > "$OUT/gcloud.log"

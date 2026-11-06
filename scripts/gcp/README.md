@@ -152,7 +152,11 @@ What to do, in this order (all of it was done by hand once, for the run `nata-11
 Two related defects found the same day and fixed: the orchestrator pulls `state`, `results` and `logs` every two minutes, so
 a job must NEVER put large files under `$RESULTS` (a 3.7 GB results directory made the pull time out, the orchestrator called a
 healthy VM `stuck` and recreated it); and the run id now carries a random suffix because runs started in the same second
-shared one directory and one label. Open improvement: a `recover --run-id <id>` subcommand that does steps 1-4 itself.
+shared one directory and one label. `scripts/gcp/orchestrate.sh recover --run-id <id>` (added 2026-11-06) does steps 1 to 5 itself: it lists the run's resources,
+pulls state, results and logs from a running VM into `bench/gcp-runs/<id>/` BEFORE anything is deleted, reads the job's state, deletes
+only when the job has ended (a running job, a VM it cannot pull from, or a data disk without a VM is kept, exit 5; `--force` deletes
+anyway), and writes `report-recover.txt` with a VM cost estimate from each VM's creation time (a lower bound: VMs of the run that are
+already gone are not counted). Tested with the fake `gcloud` in `test/test-orchestrate.sh`.
 
 ## Start `run` detached, never as a child of an interactive session (found 2026-11-04, run `failmodel-arm64`)
 

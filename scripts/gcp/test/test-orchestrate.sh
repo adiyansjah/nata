@@ -143,6 +143,41 @@ orch plan --job kani-solvers --machines n4a-highmem-8 > "$T/o" 2>&1
 check "a kani job defaults to Debian 13 (Kani's bundle needs glibc 2.39)" "grep -q 'image family: debian-13-arm64' $T/o"
 orch plan --job ci --machines n4a-highcpu-8 > "$T/o" 2>&1
 check "other jobs keep Debian 12" "grep -q 'image family: debian-12-arm64' $T/o"
+# ---------------------------------------------------------------- recover: the orchestrator of a run died
+# a "dead run": its VM and data disk exist (made by hand through the fake), its key is in the run directory
+dead_run() { # name steps_done finished(0/1)
+  new_world "$1"; mkdir -p "$F/disks/$1-work" "$F/vms/$1-vm1" "$F/disks/$1-work/state"
+  echo "us-central1-a nata-run=$1" > "$F/disks/$1-work.meta"
+  printf 'us-central1-a\n' > "$F/vms/$1-vm1/zone"; echo "$1-work" > "$F/vms/$1-vm1/disk"; echo n4a-highcpu-8 > "$F/vms/$1-vm1/machine"
+  echo 7 > "$F/vms/$1-vm1/idx"; echo 0 > "$F/vms/$1-vm1/polls"; echo "nata-run=$1" > "$F/vms/$1-vm1/labels"
+  date -u -d "-3600 seconds" +%FT%T.000-00:00 > "$F/vms/$1-vm1/created"
+  for i in $(seq 1 "$2"); do touch "$F/disks/$1-work/state/step-$i.done"; done
+  [ "$3" = 1 ] && touch "$F/disks/$1-work/state/job.finished"
+  mkdir -p "$F/disks/$1-work/results"; echo "result-of-$1" > "$F/disks/$1-work/results/r.txt"
+  touch "$O/key"
+}
+dead_run recdone 6 1
+orch recover --run-id recdone > "$T/o" 2>&1; rc=$?
+check "recover of a finished job: pulls the results before it deletes, then deletes everything" "[ $rc -eq 0 ] && grep -q result-of-recdone $O/results/r.txt && [ \$(left) -eq 0 ] && grep -q 'job state: finished   results pulled: yes' $O/report-recover.txt"
+check "recover pulls before it deletes (order of the calls)" "[ \$(grep -n 'tar -czf' $F/calls.log | head -1 | cut -d: -f1) -lt \$(grep -n 'instances delete' $F/calls.log | head -1 | cut -d: -f1) ]"
+check "recover writes a cost estimate from the VM's creation time (about 1 h of n4a-highcpu-8)" "grep -qE 'VM cost estimate .*: \\\$0\.(09|10)[0-9]' $O/report-recover.txt"
+dead_run recrun 3 0
+orch recover --run-id recrun > "$T/o" 2>&1; rc=$?
+check "recover of a job that is still running: pulls, deletes NOTHING, exit 5" "[ $rc -eq 5 ] && grep -q result-of-recrun $O/results/r.txt && [ \$(left) -eq 2 ] && grep -q 'nothing deleted: the job is still running' $O/report-recover.txt"
+orch recover --run-id recrun --force > "$T/o" 2>&1; rc=$?
+check "recover --force of a running job deletes everything" "[ $rc -eq 0 ] && [ \$(left) -eq 0 ]"
+dead_run recdisk 2 0; rm -rf "$F/vms/recdisk-vm1"
+orch recover --run-id recdisk > "$T/o" 2>&1; rc=$?
+check "recover of a data disk without a VM keeps the disk (it may be the only copy), exit 5" "[ $rc -eq 5 ] && [ -d $F/disks/recdisk-work ] && grep -q 'only copy' $O/report-recover.txt"
+dead_run recnokey 6 1; rm -f "$O/key"
+orch recover --run-id recnokey > "$T/o" 2>&1; rc=$?
+check "recover without the run's key cannot pull, so it deletes nothing" "[ $rc -eq 5 ] && [ \$(left) -eq 2 ] && grep -q 'could not be pulled' $O/report-recover.txt"
+new_world recnone
+orch recover --run-id recnone > "$T/o" 2>&1; rc=$?
+check "recover of a run with nothing labelled does nothing and says so" "[ $rc -eq 0 ] && grep -q 'nothing to recover' $T/o && ! grep -q delete $F/calls.log 2>/dev/null"
+new_world recnoid
+orch recover > "$T/o" 2>&1; rc=$?
+check "recover without --run-id is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"
 new_world saplan
 orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
 check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"

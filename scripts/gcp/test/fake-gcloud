@@ -50,7 +50,7 @@ case "$1 $2 $3" in
     n=$(( $(cat "$FAKE/incarnation" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$FAKE/incarnation"
     mkdir -p "$FAKE/vms/$name"; echo "$zone" > "$FAKE/vms/$name/zone"; echo "$disk" > "$FAKE/vms/$name/disk"
     echo "$machine" > "$FAKE/vms/$name/machine"; echo "$n" > "$FAKE/vms/$name/idx"; echo 0 > "$FAKE/vms/$name/polls"
-    echo "$(arg --labels "$@")" > "$FAKE/vms/$name/labels"; exit 0 ;;
+    echo "$(arg --labels "$@")" > "$FAKE/vms/$name/labels"; date -u -d "-${FAKE_VM_AGE_SECONDS:-0} seconds" +%FT%T.000-00:00 > "$FAKE/vms/$name/created"; exit 0 ;;
   "compute instances delete")
     rm -rf "$FAKE/vms/$4"; exit 0 ;;
   "compute instances list")
@@ -63,6 +63,8 @@ case "$1 $2 $3" in
     [ -d "$v" ] || { echo "ERROR: The resource '$name' was not found" >&2; exit 1; }
     idx=$(cat "$v/idx")
     if has natIP; then echo "10.0.0.$idx"; exit 0; fi
+    if has creationTimestamp; then cat "$v/created"; exit 0; fi
+    if has machineType; then cat "$v/machine"; exit 0; fi
     polls=$(( $(cat "$v/polls") + 1 )); echo "$polls" > "$v/polls"
     limit=$(echo "${FAKE_PREEMPT_AFTER:-}" | awk -v i="$idx" '{ print $i + 0 }')
     if [ "$limit" -gt 0 ] && [ "$polls" -ge "$limit" ]; then rm -rf "$v"; echo "ERROR: not found (preempted)" >&2; exit 1; fi
