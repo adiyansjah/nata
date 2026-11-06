@@ -364,6 +364,7 @@ fn a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_r
             assert_ne!(out.stdout, good.stdout, "silently other values");
         }
     }
+    let _ = std::fs::remove_dir_all(&d);
 }
 
 #[test]

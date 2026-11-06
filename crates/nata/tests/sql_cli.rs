@@ -537,7 +537,8 @@ fn ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_
             10,
         );
     }
-    let q = format!("SELECT id FROM '{}/f*.parquet' LIMIT 5", d.display());
+    // no row can match, so there is no LIMIT to end the query early: every footer of the 4,000 files has to be read, at bind time or in the scan
+    let q = format!("SELECT id FROM '{}/f*.parquet' WHERE id < 0", d.display());
     // the default (the binder reads one footer, the scan reads the others as it reaches them: register item P10) and the binder that reads every
     // footer before the query starts (`--bind-all-footers`: the interruptible source of the binder)
     for extra in [
@@ -569,13 +570,13 @@ fn ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_
                         text(&out.stderr)
                     );
                     assert!(
-                        out.stdout.is_empty(),
-                        "nothing was printed: the footers were still being read"
+                        out.stdout.is_empty() || text(&out.stdout) == "id\n",
+                        "no row was printed: the footers were still being read"
                     );
                 }
                 Some(0) => {
                     finished += 1;
-                    assert_eq!(text(&out.stdout).lines().count(), 6);
+                    assert_eq!(text(&out.stdout), "id\n");
                 }
                 // a SIGINT before the handler is installed (the first milliseconds of the process) ends it by the signal itself, as for any program
                 None if delay_ms <= 20
@@ -588,6 +589,8 @@ fn ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_
             "{extra:?}: no interrupt came in time ({finished} runs finished first): the glob is too small for this machine"
         );
     }
+    // 4,000 files: /tmp is a small RAM disk, do not leave them behind
+    let _ = std::fs::remove_dir_all(&d);
 }
 
 #[test]
