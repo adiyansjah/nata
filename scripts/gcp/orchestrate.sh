@@ -90,7 +90,12 @@ nap() { sleep "$1" & wait $!; }
 le() { awk -v a="$1" -v b="$2" 'BEGIN { exit !(a <= b) }'; }
 
 disk_class() { case "$1" in c4a-*|n4a-*|c4d-*|c4-*|n4-*) echo hyperdisk-balanced ;; *) echo pd-balanced ;; esac; }
-image_family() { case "$1" in c4a-*|n4a-*|t2a-*) echo debian-12-arm64 ;; *) echo debian-12 ;; esac; }
+# Debian 12 by default; the Kani jobs need Debian 13, because the Kani release bundle's binaries need glibc 2.39 (found
+# again on 2026-11-06: a kani-solvers run on debian-12 failed every harness with "GLIBC_2.39 not found").
+image_family() {
+  local v=12; case "$JOB" in kani*) v=13 ;; esac
+  case "$1" in c4a-*|n4a-*|t2a-*) echo "debian-$v-arm64" ;; *) echo "debian-$v" ;; esac
+}
 rate_of() { local v="RATE_${1//-/_}"; echo "${!v:-}"; }
 
 # Validate the machine chain: every machine has a price and the chain uses one disk class.

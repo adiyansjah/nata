@@ -138,6 +138,11 @@ done
 new_world scopenosa
 orch run --job ci --approved-usd 1 --vm-storage-scope read-write > "$T/o" 2>&1; rc=$?
 check "--vm-storage-scope without --vm-service-account is refused before anything is called" "[ $rc -eq 2 ] && grep -q 'needs --vm-service-account' $T/o && [ ! -e $F/calls.log ]"
+new_world kimg
+orch plan --job kani-solvers --machines n4a-highmem-8 > "$T/o" 2>&1
+check "a kani job defaults to Debian 13 (Kani's bundle needs glibc 2.39)" "grep -q 'image family: debian-13-arm64' $T/o"
+orch plan --job ci --machines n4a-highcpu-8 > "$T/o" 2>&1
+check "other jobs keep Debian 12" "grep -q 'image family: debian-12-arm64' $T/o"
 new_world saplan
 orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
 check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"
