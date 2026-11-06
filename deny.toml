@@ -12,6 +12,8 @@ confidence-threshold = 0.9
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# path dependencies between the unpublished workspace crates carry no version; they are not wildcards from a registry
+allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"

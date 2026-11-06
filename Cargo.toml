@@ -4,6 +4,8 @@ members = ["crates/nata", "crates/nata-bench", "crates/nata-check", "crates/nata
 exclude = ["spikes"]
 
 [workspace.package]
+# not published to crates.io: lets cargo-deny accept the path dependencies between workspace crates (allow-wildcard-paths)
+publish = false
 version = "0.0.0"
 edition = "2024"
 license = "Apache-2.0"

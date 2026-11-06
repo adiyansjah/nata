@@ -27,6 +27,17 @@ jobs:
       - run: scripts/check-leaks.sh --tree
       - run: scripts/test-check-leaks.sh
 
+  deps:
+    # cargo-deny (licenses, bans, sources, advisories; deny.toml) and cargo-audit (RustSec), plan item 34
+    name: dependency checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+      - name: cargo audit
+        run: cargo install --locked cargo-audit && cargo audit
+
   check:
     name: check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
