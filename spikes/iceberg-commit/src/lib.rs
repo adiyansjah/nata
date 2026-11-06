@@ -7,12 +7,14 @@
 //! * `checker` - replays every snapshot and the metadata history and checks the invariants I1..I7
 //! * `mock`    - a test double of the REST catalog (NOT evidence about Iceberg; the evidence is the reference fixture)
 //! * `suite`   - the scenarios that `gcp-check.sh` runs against the real catalog
+//! * `trace`   - abstract-event traces of the object-store runs for the trace-validation check against the TLA+ model (`IC_TRACE=<dir>`; off by default)
 pub mod avro;
 pub mod catalog;
 pub mod checker;
 pub mod ice;
 pub mod mock;
 pub mod suite;
+pub mod trace;
 pub mod writer;
 
 use std::path::{Path, PathBuf};

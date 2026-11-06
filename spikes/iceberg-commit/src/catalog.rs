@@ -159,6 +159,11 @@ pub trait Catalog: Send + Sync {
     fn prepare_check(&self) -> Res<()> {
         Ok(())
     }
+    /// The trace sink when this catalog is traced (`IC_TRACE`, see `trace.rs`); the writers and the fault injector record
+    /// their abstract events through it. Default: not traced.
+    fn tracer(&self) -> Option<Arc<crate::trace::Sink>> {
+        None
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------- REST
@@ -584,18 +589,30 @@ impl Catalog for FaultyCatalog {
     fn prepare_check(&self) -> Res<()> {
         self.inner.prepare_check()
     }
+    fn tracer(&self) -> Option<Arc<crate::trace::Sink>> {
+        self.inner.tracer()
+    }
     fn commit(&self, req: &CommitReq) -> Result<TableState, CommitError> {
         let n = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
         if let Some(ms) = self.plan.delay_ms.get(&n) {
             std::thread::sleep(Duration::from_millis(*ms));
         }
         if self.plan.drop_request.contains(&n) {
+            // The model's Drop(q): the request leaves the network without reaching the catalog.
+            if let Some(t) = self.inner.tracer() {
+                let s = |k: &str| req.snapshot.summary.get(k).cloned().unwrap_or_default();
+                t.emit(serde_json::json!({"a": "drop", "op": s("nata.op"), "att": s("nata.attempt").parse::<u32>().unwrap_or(0)}));
+            }
             return Err(CommitError::Unknown(format!("injected: request {n} lost before reaching the catalog")));
         }
+        let dup = self.plan.duplicate.contains(&n);
+        crate::trace::set_delivery(if dup { 1 } else { 0 });
         let first = self.inner.commit(req);
-        if self.plan.duplicate.contains(&n) {
+        if dup {
+            crate::trace::set_delivery(2);
             let _second = self.inner.commit(req);
         }
+        crate::trace::set_delivery(0);
         if self.plan.drop_response.contains(&n) {
             return Err(CommitError::Unknown(format!("injected: response of commit {n} lost after the catalog handled it ({})", match &first {
                 Ok(_) => "applied".to_string(),

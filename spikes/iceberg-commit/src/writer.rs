@@ -226,11 +226,34 @@ impl Writer {
         self.journal.log(v);
     }
 
+    /// An abstract event for the trace-validation check (see `trace.rs`); nothing unless `IC_TRACE` is set.
+    fn tev(&self, a: &str, extra: Value) {
+        if let Some(t) = self.catalog.tracer() {
+            t.emit(merge(json!({"a": a, "op": self.cfg.token()}), extra));
+        }
+    }
+
+    /// The same, placed at the position of this thread's last read of the table: the model takes a decision (plan, recover)
+    /// atomically with the read of the current metadata, and the decision is only known after the files were looked at.
+    fn tev_at(&self, anchor: Option<(u64, u64)>, a: &str, extra: Value) {
+        if let (Some(t), Some((seq, ver))) = (self.catalog.tracer(), anchor) {
+            t.emit_at(seq, 2, merge(json!({"a": a, "op": self.cfg.token(), "ver": ver}), extra));
+        }
+    }
+
+    /// The rows an append adds (ids are derived from the writer, the ordinal and the position).
+    fn append_rows(&self) -> Vec<Row> {
+        (0..self.cfg.rows)
+            .map(|i| Row { id: self.cfg.id as i64 * 1_000_000 + self.cfg.ordinal as i64 * 1000 + i as i64, key: self.cfg.keys[i % self.cfg.keys.len()].clone() })
+            .collect()
+    }
+
     /// A crash point. Logged first, then the process dies (or the caller is told to stop).
     fn crash_point(&self, step: &str, attempt: u32) -> Result<(), Outcome> {
         if let Some((s, a)) = &self.cfg.crash {
             if s == step && (*a == 0 || *a == attempt) {
                 self.log("crash", json!({"step": step, "attempt": attempt}));
+                self.tev("crash", json!({"step": step, "att": attempt}));
                 if self.cfg.hard_exit {
                     std::process::exit(137);
                 }
@@ -252,6 +275,7 @@ impl Writer {
             Outcome::Failed(m) => ("failed", json!({"detail": m})),
         };
         self.log("result", merge(json!({"res": res}), extra));
+        self.tev("outcome", json!({"res": res}));
         out
     }
 
@@ -261,6 +285,12 @@ impl Writer {
             Ok(s) => s,
             Err(e) => return Outcome::Failed(format!("load: {e}")),
         };
+        // The model's PlanOp: the read of the table that the operation is based on.
+        self.tev_at(crate::trace::last_load(), "plan", json!({
+            "kind": self.cfg.kind.name(), "mode": self.cfg.mode.name(), "isolation": self.cfg.isolation.name(),
+            "max_attempts": self.cfg.max_attempts, "keys": self.cfg.keys,
+            "rows": if self.cfg.kind == Kind::Append { self.append_rows().iter().map(|r| json!([r.id, r.key])).collect::<Vec<_>>() } else { vec![] },
+        }));
         let view = match view_of(&base0) {
             Ok(v) => v,
             Err(e) => return Outcome::Failed(format!("read base snapshot: {e}")),
@@ -277,6 +307,9 @@ impl Writer {
         };
         self.log("planned", json!({"rows_added": plan.rows_added.iter().map(|r| r.id).collect::<Vec<_>>(),
                                    "delete_targets": plan.targets.len(), "compact_inputs": plan.in_data.len()}));
+        // What the writer planned, in the numbers the model also computes (it plans from its own picture of the table).
+        self.tev("planned", json!({"targets": plan.targets.len(), "inputs": plan.in_data.len(),
+                                   "rows": if self.cfg.kind == Kind::Delete { 0 } else { plan.rows_added.len() }}));
         if let Err(o) = self.write_files(&base0, &mut plan) {
             return o;
         }
@@ -315,6 +348,7 @@ impl Writer {
             if let Err(e) = ice::write_manifest_list(&list_path, snapshot_id, parent, seq, &list, self.prng.next()) {
                 return Outcome::Failed(format!("write manifest list: {e}"));
             }
+            self.tev("build", json!({"att": attempt, "base": carry_from.version}));
             if let Err(o) = self.crash_point("after-list", attempt) {
                 return o;
             }
@@ -330,6 +364,7 @@ impl Writer {
             let snap = NewSnapshot { id: snapshot_id, parent, seq, manifest_list: list_path, summary };
             self.log("attempt", json!({"attempt": attempt, "snapshot": snapshot_id, "seq": seq, "parent": parent}));
             let req = CommitReq { base: &base, snapshot: snap, require_cas: self.cfg.mode != Mode::BadNoCas };
+            self.tev("send", json!({"att": attempt, "exp": base.version}));
             let result = self.catalog.commit(&req);
             self.log("answer", json!({"attempt": attempt, "snapshot": snapshot_id, "answer": match &result { Ok(_) => "ok".to_string(), Err(e) => e.to_string() }}));
             if let Err(o) = self.crash_point("after-commit", attempt) {
@@ -340,29 +375,44 @@ impl Writer {
                     s.done();
                 }
             }
+            match &result {
+                Ok(_) => self.tev("receive", json!({"att": attempt, "res": "ok"})),
+                Err(CommitError::Conflict(_)) => self.tev("receive", json!({"att": attempt, "res": "conflict"})),
+                Err(CommitError::Unknown(_)) => self.tev("timeout", json!({"att": attempt})),
+                Err(CommitError::Rejected(c, _)) => self.tev("rejected", json!({"att": attempt, "code": c})),
+            }
             match result {
                 Ok(_) => return Outcome::Acked(snapshot_id),
                 Err(CommitError::Rejected(code, msg)) => return Outcome::Rejected(code, msg),
                 Err(err) => {
                     let unknown = matches!(err, CommitError::Unknown(_));
+                    let from = if unknown { "unknown" } else { "conflict" };
                     let fresh = match self.catalog.load() {
                         Ok(s) => s,
                         Err(e) => return Outcome::Failed(format!("reload after {err}: {e}")),
                     };
+                    let anchor = crate::trace::last_load();
                     let blind = unknown && self.cfg.mode == Mode::BadBlindRetry;
                     if !blind {
                         // Did one of my attempts commit (the answer was lost, or a late request landed)?
                         if let Some(s) = fresh.snaps.iter().find(|s| s.op() == token) {
+                            self.tev_at(anchor, "recover-done", json!({"att": attempt, "from": from}));
                             return Outcome::Recovered(s.id);
                         }
                     }
                     if !blind && self.cfg.mode != Mode::BadSkipValidation {
                         match self.validate(&plan, &base, &fresh) {
                             Ok(None) => {}
-                            Ok(Some(reason)) => return Outcome::Aborted(reason),
+                            Ok(Some(reason)) => {
+                                self.tev_at(anchor, "recover-abort", json!({"att": attempt, "from": from}));
+                                return Outcome::Aborted(reason);
+                            }
                             Err(e) => return Outcome::Failed(format!("validate: {e}")),
                         }
                     }
+                    // The model's RecoverRetry (another attempt follows) or RecoverFail (the attempts are used up).
+                    let next = if attempt < self.cfg.max_attempts { "recover-retry" } else { "recover-fail" };
+                    self.tev_at(anchor, next, json!({"att": attempt, "from": from}));
                     // The plan is kept: it is re-applied to the new base (Iceberg's retry), not recomputed. The files and
                     // manifests are reused; only the manifest list is rewritten on the next attempt.
                     base = fresh;
@@ -386,11 +436,7 @@ impl Writer {
         };
         let _ = base;
         match self.cfg.kind {
-            Kind::Append => {
-                for i in 0..self.cfg.rows {
-                    plan.rows_added.push(Row { id: self.cfg.id as i64 * 1_000_000 + self.cfg.ordinal as i64 * 1000 + i as i64, key: self.cfg.keys[i % self.cfg.keys.len()].clone() });
-                }
-            }
+            Kind::Append => plan.rows_added = self.append_rows(),
             Kind::Delete => {
                 let key = &self.cfg.keys[0];
                 for df in &view.data {
@@ -431,7 +477,9 @@ impl Writer {
         match self.cfg.kind {
             Kind::Append | Kind::Compact => {
                 let path = format!("{data_dir}/{token}.data.avro");
+                self.tev("upload-begin", json!({}));
                 let size = ice::write_data_file(&path, &plan.rows_added, self.prng.next()).map_err(fail)?;
+                self.tev("upload-finish", json!({}));
                 plan.new_data_file = Some((path.clone(), plan.rows_added.len() as i64, size));
                 self.log("file", json!({"step": "data", "path": path}));
                 self.crash_point("after-data", 0)?;
@@ -449,7 +497,9 @@ impl Writer {
             }
             Kind::Delete => {
                 let path = format!("{data_dir}/{token}.deletes.avro");
+                self.tev("upload-begin", json!({}));
                 let size = ice::write_posdel_file(&path, &plan.targets, self.prng.next()).map_err(fail)?;
+                self.tev("upload-finish", json!({}));
                 plan.new_delete_file = Some((path.clone(), plan.targets.len() as i64, size));
                 self.log("file", json!({"step": "deletes", "path": path}));
                 let entries = vec![Entry::added(ice::CONTENT_POS_DELETES, &path, plan.targets.len() as i64, size)];
@@ -457,6 +507,8 @@ impl Writer {
                 plan.new_manifests.push(m);
             }
         }
+        // Everything this operation uploads (data or delete file, then its manifests) is durable and the writer goes on.
+        self.tev("upload-await", json!({}));
         Ok(())
     }
 

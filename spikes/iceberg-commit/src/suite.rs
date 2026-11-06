@@ -7,6 +7,7 @@
 //!              random step and writers killed with SIGKILL; the correct writer must PASS the checker on every seed.
 use crate::Prng;
 use crate::catalog::{Catalog, FaultPlan, FaultyCatalog, RestCatalog, StoreCatalog};
+use crate::trace::TracedCatalog;
 use crate::checker::{self, Report};
 use crate::writer::{Isolation, Journal, Kind, Mode, Outcome, SyncCfg, Writer, WriterCfg};
 use std::path::{Path, PathBuf};
@@ -50,21 +51,23 @@ pub fn new_table(backend: &Backend, work: &Path, label: &str) -> Result<Table, S
             let c = RestCatalog::connect(url, "nata", &name)?;
             c.ensure_namespace()?;
             c.create_table()?;
-            Ok(Table { catalog: Arc::new(c), journal_dir, backend: backend.clone(), name, dir: PathBuf::new() })
+            let c: Arc<dyn Catalog> = TracedCatalog::wrap(Arc::new(c), &name, false)?;
+            Ok(Table { catalog: c, journal_dir, backend: backend.clone(), name, dir: PathBuf::new() })
         }
         Backend::Store => {
             let dir = work.join("store").join(&name);
             let c = StoreCatalog::new(dir.clone())?;
             c.create_table()?;
-            Ok(Table { catalog: Arc::new(c), journal_dir, backend: backend.clone(), name, dir })
+            let catalog = TracedCatalog::wrap(Arc::new(c), &name, true)?;
+            Ok(Table { catalog, journal_dir, backend: backend.clone(), name, dir })
         }
     }
 }
 
 fn open_for_child(backend: &Backend, name: &str, dir: &Path) -> Result<Arc<dyn Catalog>, String> {
     match backend {
-        Backend::Rest(url) => Ok(Arc::new(RestCatalog::connect(url, "nata", name)?)),
-        Backend::Store => Ok(Arc::new(StoreCatalog::new(dir.to_path_buf())?)),
+        Backend::Rest(url) => TracedCatalog::wrap(Arc::new(RestCatalog::connect(url, "nata", name)?), name, false),
+        Backend::Store => TracedCatalog::wrap(Arc::new(StoreCatalog::new(dir.to_path_buf())?), name, true),
     }
 }
 
@@ -72,6 +75,13 @@ pub fn writer_cfg(id: u32, ordinal: u32, kind: Kind, mode: Mode, iso: Isolation,
     WriterCfg {
         id, ordinal, kind, mode, isolation: iso, keys: keys.iter().map(|k| k.to_string()).collect(), rows,
         max_attempts: 8, seed, crash: None, hard_exit: false, sync: None,
+    }
+}
+
+/// Names the run in its trace (scenario, writer mode, what the suite expects of it). Nothing unless `IC_TRACE` is set.
+pub fn trace_meta(t: &Table, scenario: &str, mode: Mode, expect: &str) {
+    if let Some(s) = t.catalog.tracer() {
+        s.emit(serde_json::json!({"a": "meta", "table": t.name, "scenario": scenario, "mode": mode.name(), "expect": expect}));
     }
 }
 
@@ -200,9 +210,11 @@ impl ScenarioResult {
 }
 
 pub fn run_forced(backend: &Backend, work: &Path, sc: &Forced, mode: Mode, expect: Expect) -> ScenarioResult {
+    let expect_s = if matches!(expect, Expect::Pass) { "pass" } else { "detect" };
     let mut res = ScenarioResult { name: sc.name.to_string(), backend: backend.name(), mode, expect, report: Report::default(), outcomes: vec![], error: None };
     let go = || -> Result<(Report, Vec<Outcome>), String> {
         let t = new_table(backend, work, &format!("{}-{}", sc.name, mode.name()))?;
+        trace_meta(&t, sc.name, mode, expect_s);
         seed_table(&t, 6)?;
         let n = sc.writers.len() as u32;
         let sync_dir = work.join("sync").join(&t.name);
@@ -219,6 +231,7 @@ pub fn run_forced(backend: &Backend, work: &Path, sc: &Forced, mode: Mode, expec
             handles.push(std::thread::spawn(move || Writer::new(cfg, cat, journal).run()));
         }
         let outcomes: Vec<Outcome> = handles.into_iter().map(|h| h.join().unwrap_or(Outcome::Failed("writer thread panicked".into()))).collect();
+        crate::trace::final_state(t.catalog.as_ref());
         Ok((checker::check(t.catalog.as_ref(), &t.journal_dir), outcomes))
     };
     match go() {
@@ -257,6 +270,7 @@ pub fn run_crash_matrix(backend: &Backend, work: &Path) -> Vec<ScenarioResult> {
             let mut res = ScenarioResult { name: name.clone(), backend: backend.name(), mode: Mode::Correct, expect: Expect::Pass, report: Report::default(), outcomes: vec![], error: None };
             let go = || -> Result<(Report, Vec<Outcome>), String> {
                 let t = new_table(backend, work, &name)?;
+                trace_meta(&t, &name, Mode::Correct, "pass");
                 seed_table(&t, 6)?;
                 let j1 = Arc::new(Journal::open(&t.journal_dir, "w1")?);
                 let mut cfg = writer_cfg(1, 0, kind, Mode::Correct, Isolation::Serializable, &["a"], 2, 11);
@@ -270,6 +284,7 @@ pub fn run_crash_matrix(backend: &Backend, work: &Path) -> Vec<ScenarioResult> {
                     let cfg = writer_cfg(id, 0, k, Mode::Correct, Isolation::Serializable, &["b"], 2, 20 + id as u64);
                     outcomes.push(Writer::new(cfg, t.catalog.clone(), j).run());
                 }
+                crate::trace::final_state(t.catalog.as_ref());
                 Ok((checker::check(t.catalog.as_ref(), &t.journal_dir), outcomes))
             };
             match go() {
@@ -310,6 +325,7 @@ pub struct StressResult {
 pub fn run_stress(backend: &Backend, work: &Path, exe: &Path, cfg: &StressCfg) -> StressResult {
     let go = || -> Result<StressResult, String> {
         let t = new_table(backend, work, &format!("stress-{}-{}", cfg.mode.name(), cfg.seed))?;
+        trace_meta(&t, &format!("stress-{}", cfg.seed), cfg.mode, if cfg.mode == Mode::Correct { "pass" } else { "informational" });
         seed_table(&t, 12)?;
         let mut rng = Prng::new(cfg.seed);
         let mut children = Vec::new();
@@ -369,6 +385,7 @@ pub fn run_stress(backend: &Backend, work: &Path, exe: &Path, cfg: &StressCfg) -
             let tail: String = err.lines().rev().take(2).collect::<Vec<_>>().join(" | ");
             exits.push((id, format!("{st} {tail}")));
         }
+        crate::trace::final_state(t.catalog.as_ref());
         Ok(StressResult { report: checker::check(t.catalog.as_ref(), &t.journal_dir), exits, error: None })
     };
     go().unwrap_or_else(|e| StressResult { report: Report::default(), exits: vec![], error: Some(e) })
