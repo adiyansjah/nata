@@ -1,0 +1,12 @@
+unmutated copy: the cli suite passes (12s)
+table-numbers-left-aligned                           CAUGHT   csv_and_the_aligned_table, rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so (11s)
+data-error-exits-with-2                              CAUGHT   missing_truncated_and_damaged_files_are_errors_naming_the_file (11s)
+partial-result-not-announced                         CAUGHT   random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process, rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so (3s)
+closed-stdout-is-an-error                            CAUGHT   a_closed_stdout_ends_the_query_quietly_with_exit_code_zero, random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process (2s)
+sigint-exits-with-1                                  CAUGHT   random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process (2s)
+caret-under-the-wrong-column                         CAUGHT   ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130, exit_codes_and_the_rendering_of_errors (12s)
+explain-analyze-counts-the-wrong-rows                CAUGHT   explain_and_explain_analyze_have_golden_output (13s)
+explain-analyze-project-rows-are-the-filters-rows    CAUGHT   explain_and_explain_analyze_have_golden_output (12s)
+
+8 mutants: 8 CAUGHT, 0 SURVIVED, 0 INVALID
+FINISHED

@@ -1,0 +1,48 @@
+== test_sqlfuzz.py
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..............
+----------------------------------------------------------------------
+Ran 14 tests in 47.088s
+
+OK
+== prove (28 faults, seed 1)
+control (faithful rendering vs oracle): 2000 queries, 0 differences -> ok
+caught   join-left-as-inner                 after     4 queries (join-left); shrunk to 49 chars, 8 rows -> fault-join-left-as-inner.sql
+caught   join-right-as-inner                after    19 queries (join-right); shrunk to 52 chars, 2 rows -> fault-join-right-as-inner.sql
+caught   join-full-as-left                  after    43 queries (join-full); shrunk to 50 chars, 14 rows -> fault-join-full-as-left.sql
+caught   join-null-keys-match               after     4 queries (join-left); shrunk to 106 chars, 4 rows -> fault-join-null-keys-match.sql
+caught   semi-null-matches                  after    28 queries (semi-anti); shrunk to 77 chars, 4 rows -> fault-semi-null-matches.sql
+caught   anti-as-not-in                     after    13 queries (semi-anti); shrunk to 81 chars, 8 rows -> fault-anti-as-not-in.sql
+caught   sort-nulls-flipped                 after    12 queries (aggregate); shrunk to 99 chars, 2 rows -> fault-sort-nulls-flipped.sql
+caught   sort-desc-ignored                  after    77 queries (window); shrunk to 136 chars, 2 rows -> fault-sort-desc-ignored.sql
+caught   limit-off-by-one                   after    10 queries (project); shrunk to 63 chars, 3 rows -> fault-limit-off-by-one.sql
+caught   count-col-counts-nulls             after   180 queries (aggregate); shrunk to 76 chars, 1 rows -> fault-count-col-counts-nulls.sql
+caught   avg-divides-by-rows                after   252 queries (aggregate); shrunk to 43 chars, 3 rows -> fault-avg-divides-by-rows.sql
+caught   sum-null-is-zero                   after    78 queries (aggregate); shrunk to 93 chars, 3 rows -> fault-sum-null-is-zero.sql
+caught   int-div-truncates                  after    55 queries (setop); shrunk to 35 chars, 1 rows -> fault-int-div-truncates.sql
+caught   string-compare-case-insensitive    after   420 queries (aggregate); shrunk to 62 chars, 4 rows -> fault-string-compare-case-insensitive.sql
+caught   length-in-bytes                    after    15 queries (project); shrunk to 45 chars, 1 rows -> fault-length-in-bytes.sql
+caught   upper-ascii-only                   after    15 queries (project); shrunk to 87 chars, 1 rows -> fault-upper-ascii-only.sql
+caught   trim-leading-only                  after  1584 queries (aggregate); shrunk to 87 chars, 3 rows -> fault-trim-leading-only.sql
+caught   substr-zero-based                  after   289 queries (project); shrunk to 72 chars, 1 rows -> fault-substr-zero-based.sql
+caught   nan-is-ieee                        after   447 queries (project); shrunk to 45 chars, 22 rows -> fault-nan-is-ieee.sql
+caught   between-exclusive                  after     5 queries (project); shrunk to 68 chars, 1 rows -> fault-between-exclusive.sql
+caught   like-case-insensitive              after    27 queries (project); shrunk to 48 chars, 1 rows -> fault-like-case-insensitive.sql
+caught   union-distinct-as-all              after    32 queries (setop); shrunk to 72 chars, 7 rows -> fault-union-distinct-as-all.sql
+caught   setop-distinct-as-all              after    30 queries (setop); shrunk to 99 chars, 7 rows -> fault-setop-distinct-as-all.sql
+caught   rank-as-row-number                 after    70 queries (window); shrunk to 109 chars, 7 rows -> fault-rank-as-row-number.sql
+caught   lag-default-zero                   after   168 queries (window); shrunk to 132 chars, 1 rows -> fault-lag-default-zero.sql
+caught   int-overflow-yields-null           after    34 queries (aggregate); shrunk to 113 chars, 10 rows -> fault-int-overflow-yields-null.sql
+caught   decimal-via-double                 after    25 queries (window); shrunk to 91 chars, 1 rows -> fault-decimal-via-double.sql
+caught   timezone-wrong                     after     5 queries (project); shrunk to 88 chars, 1 rows -> fault-timezone-wrong.sql
+28 of 28 faults caught; control clean
+== prove-subset (seed 1)
+control (faithful rendering vs oracle): 2000 queries, 0 differences -> ok
+caught   nan-is-ieee                        after    33 queries: SELECT d AS c0 FROM t2 WHERE ((w <= w) AND ((c > CAST('-2.5' AS DOUBLE)) AND NOT isnan(c) AND NOT is
+caught   between-exclusive                  after     7 queries: SELECT ti AS c0 FROM t2 WHERE (((r IS NOT NULL) OR f) AND (s > 'é' AND s < 'true'))
+caught   limit-off-by-one                   after     2 queries: SELECT CAST(NULL AS DECIMAL(10,2)) AS c0, CAST('2024-02-29' AS DATE) AS c1, s AS c2 FROM t2 LIMIT 4 
+caught   int-overflow-yields-null           after   109 queries: SELECT TRY_CAST((CAST(TRY_CAST((CAST(a AS BIGINT) - CAST(-2147483648 AS BIGINT)) AS INTEGER) AS BIGI
+caught   decimal-via-double                 after    32 queries: SELECT CAST((CAST(w AS DOUBLE) + CAST((CASE WHEN (b IS NULL) THEN d ELSE 0.10 END) AS DOUBLE)) AS DE
+caught   string-compare-case-insensitive    after  3238 queries: SELECT r AS c0, r AS c1, (d % d) AS c2, s AS c3 FROM t2 WHERE (lower(s) = lower('Ab'))
+6 of 6 subset faults caught; control clean
+finished

@@ -23,7 +23,7 @@ query and never a value from the data. A failure that comes from a file names th
 
 ## What works
 
-Every example runs: `check/queries/sql/` runs 251 of them against DuckDB (`nata-check`), `check/queries/sql-differences/` the 33 deliberate differences.
+Every example runs: `check/queries/sql/` runs 251 of them against DuckDB (`nata-check`), `check/queries/sql-differences/` the 37 deliberate differences.
 
 | construct | example |
 |---|---|

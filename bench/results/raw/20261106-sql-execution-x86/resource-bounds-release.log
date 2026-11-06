@@ -1,0 +1,22 @@
+   Compiling nata-exec v0.0.0 (/home/dev/src/nata/crates/nata-exec)
+   Compiling nata v0.0.0 (/home/dev/src/nata/crates/nata)
+    Finished `release` profile [optimized] target(s) in 13.51s
+     Running tests/sql_resource_bounds.rs (target/release/deps/sql_resource_bounds-ac8d4f18eb602dcf)
+
+running 2 tests
+nata sql, 10k files, ulimit -n 256, threads 1: scan: files=10000 row_groups=10000 skipped=0 read=10000 not_read=0 rows_read=30000 rows_returned=30000 bytes_read=590000 columns_read=1 morsel=row-group pruning=none(no filter) files_opened=10000 abandoned=0 threads=1 order=ordered window=2 peak_inflight_bytes=360 largest_task_bytes=240 peak_open_files=1 peak_footers=1 peak_rss_kib=13196
+
+nata sql, 10k files, ulimit -n 256, threads 8: scan: files=10000 row_groups=10000 skipped=0 read=10000 not_read=0 rows_read=30000 rows_returned=30000 bytes_read=590000 columns_read=1 morsel=row-group pruning=none(no filter) files_opened=10000 abandoned=0 threads=8 order=ordered window=16 peak_inflight_bytes=2160 largest_task_bytes=240 peak_open_files=5 peak_footers=6 peak_rss_kib=13640
+
+nata sql, 10k files, ulimit -n 256, limit 25: scan: files=10000 row_groups=20 skipped=0 read=20 not_read=0 rows_read=60 rows_returned=25 bytes_read=1180 columns_read=1 morsel=row-group pruning=none(no filter) files_opened=20 abandoned=0 threads=8 order=ordered window=16 peak_inflight_bytes=2040 largest_task_bytes=240 peak_open_files=2 peak_footers=1 peak_rss_kib=13380
+
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+nata sql ["--threads", "4"]: peak RSS 58128 KiB <= bound 99209 KiB; accounted peak 21206240 B, largest task 3110948 B, independent M 2391600 B, base 10388 KiB
+nata sql ["--threads", "4", "--unordered"]: peak RSS 64632 KiB <= bound 99209 KiB; accounted peak 21206260 B, largest task 3110948 B, independent M 2391600 B, base 10388 KiB
+nata sql ["--threads", "1"]: peak RSS 21296 KiB <= bound 57169 KiB; accounted peak 5695984 B, largest task 3110948 B, independent M 2391600 B, base 10388 KiB
+nata sql, unbounded window: peak RSS 254304 KiB, the bound for window 4 is 71182 KiB
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operators_above_the_scan ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.10s
+
+FINISHED

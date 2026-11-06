@@ -1,0 +1,21 @@
+== process scenarios, plain, seed 1, 2000
+
+running 1 test
+process scenarios: seed 1, count 2000, only None (replay: NATA_PROC_SEED=1 NATA_PROC_ONLY=<n>)
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process has been running for over 60 seconds
+process scenarios outcome classes: {"complete": 182, "data-error": 347, "limit": 167, "sigint-before-the-handler": 5, "sigint-stopped": 466, "sigint-too-late": 188, "stdout-closed": 645}
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 320.04s
+
+== process scenarios, busy loop on every core, seed 2, 2000
+
+running 1 test
+process scenarios: seed 2, count 2000, only None (replay: NATA_PROC_SEED=2 NATA_PROC_ONLY=<n>)
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process has been running for over 60 seconds
+process scenarios outcome classes: {"complete": 180, "data-error": 316, "limit": 168, "sigint-before-the-handler": 6, "sigint-stopped": 640, "sigint-too-late": 5, "stdout-closed": 685}
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 793.37s
+
+finished

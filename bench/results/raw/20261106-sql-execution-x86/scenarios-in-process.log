@@ -1,0 +1,19 @@
+== in-process scenarios, plain, seed 1, 3000
+
+running 1 test
+scenarios: seed 1, count 3000, only None (replay one with NATA_SCENARIO_SEED=1 NATA_SCENARIO_ONLY=<n>)
+scenarios run: 3000; outcome classes: [("cancel-too-late", 238), ("cancelled", 385), ("complete", 596), ("data-error", 203), ("fault-error", 346), ("fault-panic", 76), ("not-reached", 423), ("sink-failed", 489), ("sink-not-reached", 110), ("unordered-limit-with-fault", 134)]
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.97s
+
+== in-process scenarios, busy loop on every core, seed 2, 3000
+
+running 1 test
+scenarios: seed 2, count 3000, only None (replay one with NATA_SCENARIO_SEED=2 NATA_SCENARIO_ONLY=<n>)
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind has been running for over 60 seconds
+scenarios run: 3000; outcome classes: [("cancel-too-late", 102), ("cancelled", 484), ("complete", 627), ("data-error", 185), ("fault-error", 374), ("fault-panic", 78), ("not-reached", 432), ("sink-failed", 486), ("sink-not-reached", 101), ("unordered-limit-with-fault", 131)]
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 100.92s
+

@@ -1,0 +1,64 @@
+=== seed 20261106
+seed 20261106  queries 20000  oracle-errors 3387 (16%)  rows-compared 47495  optimizer-dependent-in-duckdb 481  nata-not-supported 22  listed-by-message 1  differences-to-classify 19  [146s]
+  class (by message) listed: CASE of decimals beyond 38 digits is a bind error (decimal-rules 9): 1
+  class (by message) nata-error: execution error: 8
+  class (by message) oracle-error-nata-answered: 10
+  class (by message) value: 1
+  not supported:    20  error: not supported yet: a CASE whose results
+  not supported:     1  error: not supported yet: // on decimals (DECIMAL(19,0)
+  not supported:     1  error: not supported yet: the remainder of DECIMAL(36,7)
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261106 batch=28 query=38: SELECT (- CAST(9223372036854775807 AS INTEGER)) AS c1 FROM t2
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=20261106 batch=37 query=10: SELECT 0 AS c0 FROM t2 WHERE (CAST(NULL AS INTEGER) >= CAST('99999999.995' AS DECIMAL(10,2)))
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261106 batch=119 query=12: SELECT (- CAST('9999999999' AS INTEGER)) AS c0 FROM t1 WHERE NULL
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=20261106 batch=177 query=9: SELECT (CAST(NULL AS BIGINT) - (- b)) AS c0 FROM t2
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261106 batch=379 query=14: SELECT sm AS c0 FROM t1 WHERE ((d + 0.00001) BETWEEN 1.50000 AND (w * b))
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261106 batch=466 query=32: SELECT ((dt > dt) AND (DATE '2000-01-01' >= CAST('2023-02-29' AS DATE))) AS c0 FROM t1
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=20261106 batch=483 query=33: SELECT CAST((0.01 % 12345678901234567890.12345) AS VARCHAR) AS c1 FROM t1
+  e.g. [listed: DuckDB evaluates a constant expression of a CASE con...] seed=20261106 batch=487 query=31: SELECT (CASE WHEN (s <> (CASE WHEN (ti IS NOT NULL) THEN CAST(NULL AS VARCHAR) WHEN true THEN 'z' ELSE CAST(NULL AS VARCHAR) END)) THEN r WHEN true THEN r ELSE r END) AS c2 FROM t1
+  FINAL CLASS listed: DuckDB evaluates a constant expression of a CASE condition when planning; Nata only for the rows that reach it (dialect 9b): 1
+  FINAL CLASS listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b): 2
+  FINAL CLASS listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b): 8
+  FINAL CLASS listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9): 1
+  FINAL CLASS listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b): 7
+exit 0
+=== seed 3
+seed 3  queries 20000  oracle-errors 3468 (17%)  rows-compared 49416  optimizer-dependent-in-duckdb 483  nata-not-supported 29  listed-by-message 0  differences-to-classify 18  [148s]
+  class (by message) nata-error: execution error: 9
+  class (by message) oracle-error-nata-answered: 7
+  class (by message) value: 2
+  not supported:    29  error: not supported yet: a CASE whose results
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=3 batch=18 query=19: SELECT r AS c1 FROM t1 WHERE (CAST(NULL AS BIGINT) = (b // b))
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=3 batch=36 query=33: SELECT 0 AS c2 FROM t1 WHERE ((CAST(f AS VARCHAR) BETWEEN ' a ' AND CAST(d AS VARCHAR)) AND (CAST('2023-02-29' AS DATE) = dt))
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=3 batch=66 query=32: SELECT ((w > a) OR ((w % a) < ti)) AS c1 FROM t1
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=3 batch=95 query=31: SELECT (- CAST(4294967296 AS INTEGER)) AS c0 FROM t2
+  e.g. [listed: the tight result type of a decimal % is narrower tha...] seed=3 batch=136 query=0: SELECT 0.0 AS c0 FROM t1 WHERE ((d * (b % d)) IN (0.10, 99999999.99, 99999999.99, 0.20))
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=3 batch=136 query=24: SELECT (CAST(NULL AS DECIMAL(25,5)) - (b + b)) AS c0 FROM t2
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=3 batch=210 query=15: SELECT ((c >= c) OR (dt <> CAST('2023-02-29' AS DATE))) AS c0 FROM t2
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=3 batch=219 query=36: SELECT CAST(0.00000 AS VARCHAR) AS c0 FROM t2
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=3 batch=229 query=26: SELECT CAST(0.00001 AS VARCHAR) AS c0 FROM t2
+  FINAL CLASS listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b): 3
+  FINAL CLASS listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b): 8
+  FINAL CLASS listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9): 2
+  FINAL CLASS listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b): 4
+  FINAL CLASS listed: the tight result type of a decimal % is narrower than DuckDB's, so a later operation can overflow where DuckDB's does not (decimal-rules 9): 1
+exit 0
+=== seed 4
+seed 4  queries 20000  oracle-errors 3366 (16%)  rows-compared 48053  optimizer-dependent-in-duckdb 464  nata-not-supported 24  listed-by-message 0  differences-to-classify 24  [146s]
+  class (by message) nata-error: execution error: 13
+  class (by message) oracle-error-nata-answered: 9
+  class (by message) value: 2
+  not supported:    24  error: not supported yet: a CASE whose results
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=4 batch=29 query=15: SELECT (NULL + CAST(b AS INTEGER)) AS c0 FROM t1
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=4 batch=32 query=10: SELECT 0 AS c2 FROM t1 WHERE (CAST(NULL AS BOOLEAN) >= (CAST(w AS DECIMAL(10,2)) IN (0.20)))
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=4 batch=65 query=16: SELECT (- CAST(-4294967296 AS INTEGER)) AS c0 FROM t1 WHERE NULL
+  e.g. [listed: DuckDB evaluates a constant expression of a CASE con...] seed=4 batch=109 query=3: SELECT (CASE WHEN NULL THEN (- (5 + 2147483647)) WHEN true THEN a ELSE 0 END) AS c2 FROM t1
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=4 batch=146 query=19: SELECT (- CAST(-9223372036854775808 AS INTEGER)) AS c2 FROM t2 LIMIT 0
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=4 batch=205 query=4: SELECT CAST((0.10 % b) AS VARCHAR) AS c3 FROM t1 LIMIT 6 OFFSET 4
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=4 batch=258 query=29: SELECT CAST(0.10 AS VARCHAR) AS c0 FROM t2
+  e.g. [listed: DuckDB evaluates a constant expression of a CASE con...] seed=4 batch=496 query=28: SELECT (CASE WHEN (CAST(4294967296 AS INTEGER) IN (1, -5, 5, -2147483648)) THEN ti WHEN true THEN ti ELSE ti END) AS c0 FROM t1 LIMIT 0
+  FINAL CLASS listed: DuckDB evaluates a constant expression of a CASE condition when planning; Nata only for the rows that reach it (dialect 9b): 2
+  FINAL CLASS listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b): 13
+  FINAL CLASS listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9): 2
+  FINAL CLASS listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b): 7
+exit 0
+finished
