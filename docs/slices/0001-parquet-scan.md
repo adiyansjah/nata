@@ -1,6 +1,6 @@
 # 0001: Parquet scan with projection pushdown and row-group pruning (local files)
 
-Status: accepted (by the owner, 2026-11-05, as proposed: the minimal `nata scan` command, the three decision rules with their numbers, and the baseline spike within the stated cost)
+Status: closed 2026-11-06 (accepted by the owner, 2026-11-05, as proposed: the minimal `nata scan` command, the three decision rules with their numbers, and the baseline spike within the stated cost)
 Date: 2026-11-05
 ADRs: 0001 (relies on; this slice decides its open "morsel size"), 0002 (relies on: CPU pool, `crossbeam-deque`), 0003 (relies on: Arrow batches, dictionary columns kept, strict errors)
 
@@ -69,8 +69,27 @@ Decisions it needs: (a) build or reuse the Parquet decoder, (b) the morsel size.
 - Progress (not the closeout): 2026-11-05, implementation step 1 done: the pruning decision as a pure library function `crates/nata-scan` (`can_skip`: statistics and a predicate to Skip or Keep(reason)), with a soundness property test against a row-by-row oracle (400,000 cases per release run, the oracle checked against DuckDB 2.0.0: 19,925 cases, 0 mismatches), tightness and R2 effectiveness tests (83.7% of the row groups skipped for a one-year range on a model of the SF1 `lineitem` layout), 5 negative controls and 53 mutants, all caught (`bench/results/20261105-scan-pruning.md`). Not yet: the footer decoder, real files from DuckDB, pyarrow and parquet-rs, the reader, `nata scan`, fuzz, resource bounds, the benchmarks. Known difference found: DuckDB 2.0.0 errors on some decimal comparisons that the decimal rules define as exact.
 - Progress (not the closeout): 2026-11-06, implementation step 2a done, single thread: `crates/nata-parquet` (footer statistics adapter, filter parser, exact row filter with DuckDB semantics, row-group tasks, report) and `nata scan FILE... [--columns] [--filter] [--limit] --csv` with the `-- scan:` directive of `nata-check`; about 9,260 cases equal to DuckDB 2.0.0 in order on files from DuckDB, parquet-rs (14 styles) and pyarrow, 12,000 random file predicates with 0 differences, 600 damaged files without a panic or hang, 95 of 95 mutants caught (5 survivors found and fixed on the way); DuckDB's own NaN row-group skipping found unsound on pyarrow files (`bench/results/20261105-scan-reader.md`). Not yet: parallel morsels, `LIMIT` cancellation, memory and file-handle bounds, the 3,000-case fuzz, cloud benchmarks.
 - Progress (not the closeout): 2026-11-06, implementation step 2b done, local only: parallel, ordered (bounded reorder window; `--unordered` optional), cancellable (limit, closed stdout, error, external cancel) and handle- and memory-bounded scan: new `crates/nata-sched` (one FIFO under one lock behind a `sync` facade; `crossbeam-deque` NOT used, see the record), lazy footers, `nata scan --threads/--unordered/--window`; 10 of 10 DuckDB differential rows at threads 1,2,3,4,8 x ordered/unordered, 16 loom models (1.1 million executions, preemption bound 2) and 23 scheduler mutants all caught (19 by loom), 15 parallel-driver mutants caught, 5,000 random cancel/error scenarios with nothing left alive, 15,000 fuzz cases at 1 and 4 threads (20.5% decode to different rows, 57 caught panics inside `parquet`/`arrow`), 10,000 files under `ulimit -n 256` and RSS under `base + 3 x window x largest row group + 32 MiB` (empirical constants; the card's literal formula does not hold for RSS) with an unbounded control at 4x the bound (`bench/results/20261106-scan-parallel.md`). Not yet: any timing or scaling number, cloud and ARM64, object stores, footer prefetch.
-- Results file:
-- ADR updated (amendment or revision note), confidence and what changed: ADR 0001 (morsel size decided), ADR 0003 (dictionary decode: reused or owned)
-- Benchmark added to the regression set, baseline numbers:
+- **Closed 2026-11-06** (by the assistant under the owner's delegation). Every row of part 2 is checked or its deviation is stated below.
+- Results files: `bench/results/20261105-parquet-scan-baseline.md` (R1, R3), `bench/results/20261105-scan-pruning.md` (step 1),
+  `bench/results/20261105-scan-reader.md` (step 2a), `bench/results/20261106-scan-parallel.md` (step 2b), `bench/results/20261106-scan-bench.md`
+  (R2 and scalability on both CPU types), `bench/results/20261106-cgroup-pool-size.md` (pool sizing).
+- ADR updated: ADR 0001, revision note of 2026-11-05: the morsel is a whole row group (R3; confidence high on the layout tested). ADR 0003,
+  revision note of 2026-11-05: dictionary and decimal decode reuse the `parquet` crate (R1 met on both CPU types). ADR 0002, revision notes of
+  2026-11-06: the scan scheduler is one FIFO under one lock, not `crossbeam-deque`; the pool follows cgroup quotas and affinity masks.
+- Benchmark added to the regression set, baseline numbers: there is no regression harness yet (verification-plan item 34, introduced on the
+  slice 4 card); `crates/nata-bench/scan-bench.sh` is the benchmark it will run. Baseline (8 threads, window 16, settled VMs): SF10 Q1
+  columns 0.149 s on `n4a-highcpu-8` and 0.303 s on `c3d-highcpu-8`; R2 16.4% of the bytes and 41 of 49 row groups skipped on both.
 - Deviations from this card, and why:
-- Spike code deleted:
+  1. **Scalability on SF1 is 3.1x to 3.3x at 8 threads, not 5x** (SF10: 9.0x ARM64, 5.8x x86-64, met). A whole SF1 scan takes 40 to 210 ms
+     and a serial part of about 25 ms per run (process start, opening the file and reading its footer one file at a time, the last row
+     groups) bounds it. Follow-up for the slice that reads many files or small inputs: measure inside one process, read footers in parallel.
+  2. **The memory row's formula is replaced by the measured bound** (section 4b): `peak_inflight_bytes <= window x largest_task_bytes` by
+     construction, `RSS <= base + 3 x window x M + 32 MiB` empirical. The default window became 2 x threads (1.4x faster at 8 threads on
+     SF10 on both machines), so the default memory is twice that of window = threads.
+  3. **"Never a panic"** is met as "no panic reaches the user": 57 of 15,000 fuzz cases panic inside `parquet`/`arrow` 60.1.0 and are turned
+     into an error naming the file and the row group (section 4b).
+  4. **The fuzz** classifies 20.5% of damaged files as "different rows" (a flipped value byte in an unchecksummed page decodes to another
+     valid value), as the card foresaw; it is reported, not hidden.
+  5. **Not covered**, as the card already said or found: a Java-written file, nested types, page index and bloom filters, `OR`/`IN`/`LIKE`
+     pushdown, object storage (slice 11), float pruning on `>`, `>=`, `<>` (Parquet has no NaN count).
+- Spike code deleted: `spikes/parquet-scan` and its `parquetscan` job (2026-11-06); the results stay in `bench/results/`.

@@ -6,7 +6,8 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
-# Same arrow and parquet versions as spikes/parquet-scan (the baseline spike of the slice).
+# Same arrow and parquet versions as the baseline spike of the slice (spikes/parquet-scan, deleted at the closeout; its results are in
+# bench/results/20261105-parquet-scan-baseline.md).
 [dependencies]
 nata-scan = { path = "../nata-scan" }
 nata-sched = { path = "../nata-sched" }
