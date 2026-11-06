@@ -53,9 +53,12 @@ enum Command {
         /// Stop after this many rows.
         #[arg(long)]
         limit: Option<u64>,
-        /// Print the result as CSV (the only output format yet).
+        /// Print the result as CSV.
         #[arg(long)]
         csv: bool,
+        /// Print only the number of result rows (one line), not the rows: measures the scan without CSV rendering.
+        #[arg(long, conflicts_with = "csv")]
+        count: bool,
         /// Do not use row-group statistics to skip row groups (for checking the pruning; the filter still applies).
         #[arg(long)]
         no_prune: bool,
@@ -89,6 +92,7 @@ fn peak_rss_kib() -> Option<u64> {
 }
 
 struct ScanArgs {
+    count: bool,
     files: Vec<PathBuf>,
     columns: Option<Vec<String>>,
     filters: Vec<String>,
@@ -101,6 +105,7 @@ struct ScanArgs {
 
 fn scan(a: ScanArgs) -> ExitCode {
     let ScanArgs {
+        count,
         files,
         columns,
         filters,
@@ -137,13 +142,23 @@ fn scan(a: ScanArgs) -> ExitCode {
         let stdout = std::io::stdout();
         let mut out = BufWriter::new(stdout.lock());
         let io_error = |e: std::io::Error| ScanError::new(ErrorKind::Io(e.to_string()));
-        csv::write_header(&mut out, &names).map_err(io_error)?;
         let cfg = ParallelConfig {
             threads,
             window: window.unwrap_or(threads),
             ordered: !unordered,
         };
-        let report = run_parallel(plan, cfg, limit, |batch| csv::write_batch(&mut out, batch))?;
+        let report = if count {
+            let mut rows: u64 = 0;
+            let report = run_parallel(plan, cfg, limit, |batch| {
+                rows = rows.saturating_add(u64::try_from(batch.num_rows()).unwrap_or(u64::MAX));
+                Ok(())
+            })?;
+            writeln!(out, "{rows}").map_err(io_error)?;
+            report
+        } else {
+            csv::write_header(&mut out, &names).map_err(io_error)?;
+            run_parallel(plan, cfg, limit, |batch| csv::write_batch(&mut out, batch))?
+        };
         out.flush().map_err(io_error)?;
         Ok::<_, ScanError>(report)
     })();
@@ -178,16 +193,18 @@ fn main() -> ExitCode {
             filters,
             limit,
             csv,
+            count,
             no_prune,
             threads,
             unordered,
             window,
         } => {
-            if !csv {
-                eprintln!("error: not supported yet: output other than --csv");
+            if !csv && !count {
+                eprintln!("error: not supported yet: output other than --csv or --count");
                 return ExitCode::from(2);
             }
             return scan(ScanArgs {
+                count,
                 files,
                 columns,
                 filters,

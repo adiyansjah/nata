@@ -238,3 +238,48 @@ fn errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_
     let out = nata(&["scan", "--csv"]);
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// `--count` (the benchmark's output) prints exactly the number of rows `--csv` prints, for every thread count, with a filter that prunes,
+/// with a limit and with nothing matching; `--count` with `--csv` is a usage error.
+#[test]
+fn count_equals_the_number_of_csv_rows() {
+    let d = dir("count");
+    let (a, b) = (d.join("a.parquet"), d.join("b.parquet"));
+    write(&a, 0, 95);
+    write(&b, 1000, 37);
+    let (pa, pb) = (a.to_str().expect("p"), b.to_str().expect("p"));
+    let cases: [&[&str]; 4] = [
+        &[],
+        &["--filter", "id >= 40", "--filter", "id < 1010"],
+        &["--limit", "23"],
+        &["--filter", "id > 5000"],
+    ];
+    for extra in cases {
+        for t in ["1", "3", "8"] {
+            let mut csv_args = vec!["scan", pa, pb, "--csv", "--threads", t];
+            csv_args.extend_from_slice(extra);
+            let mut count_args = vec!["scan", pa, pb, "--count", "--threads", t];
+            count_args.extend_from_slice(extra);
+            let csv = nata(&csv_args);
+            let cnt = nata(&count_args);
+            assert!(
+                csv.status.success() && cnt.status.success(),
+                "{extra:?} threads {t}: {}",
+                text(&cnt.stderr)
+            );
+            let csv_rows = text(&csv.stdout).lines().count().saturating_sub(1);
+            assert_eq!(
+                text(&cnt.stdout).trim(),
+                csv_rows.to_string(),
+                "{extra:?} threads {t}"
+            );
+        }
+    }
+    let both = nata(&["scan", pa, "--csv", "--count"]);
+    assert_eq!(
+        both.status.code(),
+        Some(2),
+        "--csv with --count must be refused"
+    );
+    let _ = std::fs::remove_dir_all(&d);
+}
