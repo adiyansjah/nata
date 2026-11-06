@@ -18,7 +18,7 @@ run() { step "$@" || { fail_job "$1"; exit 1; }; }
 # ten minutes) until the 1-minute load is below 0.5; it is a no-op in the other jobs, whose steps are not timing.
 # scripts/gcp/settle.sh prints one SETTLE line (settled, or NOT SETTLED with the load); the job carries on either way so that its other
 # results are kept, and the line is the record that the block after a NOT SETTLED is SANITY ONLY.
-settle_before() { case "$JOB" in timing|perf|nullpath) run "settle-$1" bash -c 'bash "$SRC/scripts/gcp/settle.sh" "$0" 0.5 600; true' "$1" ;; esac; }
+settle_before() { case "$JOB" in timing|perf|nullpath|fairness-bench|bridge|cpack) run "settle-$1" bash -c 'bash "$SRC/scripts/gcp/settle.sh" "$0" 0.5 600; true' "$1" ;; esac; }
 
 run setup-rust bash -c 'command -v rustup >/dev/null || curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
   cd "$SRC" && { rustup show active-toolchain || rustup toolchain install; }'
@@ -156,6 +156,7 @@ case "$JOB" in
     # RECORDED, not gating: a failure here is a finding (the first run found one: spill files held open across yields) and
     # must not stop the overhead measurement that follows.
     run f-compat bash -c 'cd "$SRC/spikes/fairness" && { echo "ulimit -n: $(ulimit -n)"; RUSTFLAGS= cargo test --release --test protocol --test shutdown --test spill_fds --test spill_fd_limit -- --test-threads=1 --nocapture; echo "exit status: $?"; } > "$RESULTS/fairness-compat.txt" 2>&1; true'
+    settle_before f-overhead
     run f-overhead bash -c 'cd "$SRC/spikes/fairness" && { echo "load: $(cat /proc/loadavg)"; NATA_NOTE="quiet GCP run" ./target/release/examples/overhead --rounds 20; } > "$RESULTS/fairness-overhead.txt" 2>&1' ;;&
   bridge|cpack)
     # The tokio-to-CPU-pool bridge (ADR 0002): stress with weak memory ordering (ARM64), then the I/O latency under a
@@ -164,6 +165,7 @@ case "$JOB" in
     run b-tests bash -c 'cd "$SRC/spikes/async-bridge" && RUSTFLAGS= cargo test --release > "$RESULTS/bridge-tests.txt" 2>&1'
     run b-stress bash -c 'cd "$SRC/spikes/async-bridge" && ./run_stress.sh > "$RESULTS/bridge-stress.txt" 2>&1'
     for m in "latency --rounds 30" "memory" "idle --rounds 6"; do
+      settle_before "b-measure-${m%% *}"
       run "b-measure-${m%% *}" bash -c 'cd "$SRC/spikes/async-bridge" && { echo "load: $(cat /proc/loadavg)"; ./target/release/examples/measure '"$m"'; } > "$RESULTS/bridge-measure-'"${m%% *}"'.txt" 2>&1'
     done ;;&
   hashtests)

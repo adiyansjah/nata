@@ -127,11 +127,11 @@ One agent at a time on the development VM; GCP runs in parallel. After each loca
 ### Phase B: Group 1, local preparation (in this order)
 | # | Step | Feeds |
 |---|---|---|
-| B1 | Settle inside the NULL-path, push-cost and Arrow scripts | C1 |
+| B1 | Settle inside the NULL-path, push-cost and Arrow scripts | done 2026-11-05 (`2084acb`) |
 | B2 | Kani: step-6 sum bound; the five unproved crate harnesses | C3 |
 | B3 | Hash-join spill benchmark in the hash-ops spike | C4 |
 | B4 | Slice 3 scan benchmark job (R2 pruning on sorted `lineitem`, 1 to 8 threads, SF1 and SF10, twin control, settle) | C5 |
-| B5 | Orchestrator: write-scope option for the dedicated service account, and a test that it cannot write outside its bucket | C6 |
+| B5 | Orchestrator: write-scope option for the dedicated service account (done, `bde03b8`); the proof that it cannot write outside its bucket is part of run C6 | C6 |
 | | **ASK: cost plan for wave C** | |
 | B6 | Plan reconciliation (rows 1, 2, 6, 22) and a "not yet verified" register | - |
 | B7 | Item 31 protocol check against ADR 0001 (end-of-input hook, shared sink finalized twice) | slices 6 to 8 |
@@ -144,8 +144,8 @@ B6 to B10 run while wave C runs on GCP.
 ### Phase C: Group 2, one parallel GCP wave (after B1 to B5 and one approval)
 | # | Run | Machine | Rough cost |
 |---|---|---|---|
-| C1 | Timing rerun with settling | `n4a-highcpu-8`, `c3d-highcpu-8` | about $0.2 |
-| C2 | Generic-ops with `overflow-checks` | `c3d-highcpu-8` | about $0.1 |
+| C1 | Timing rerun with settling | done 2026-11-05 (`0f5fac4`, `bench/results/20261105-timing-settled-rerun.md`) | - |
+| C2 | Generic-ops with `overflow-checks`: the `verify` job on x86-64 (also a clean-machine reproduction of the verification), from a clean worktree of `d021df7` | `c3d-highcpu-8` | cap $0.20, running |
 | C3 | Kani step-6 and crate harnesses | `n4a-highmem-8` | about $0.45 |
 | C4 | Hash-join spill | `n4a-highmem-8` | about $0.2 to $0.3 |
 | C5 | Slice 3 benchmarks | `n4a-highcpu-8`, `c3d-highcpu-8` | about $0.1 to $0.3 |

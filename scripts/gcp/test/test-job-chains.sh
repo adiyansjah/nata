@@ -85,6 +85,16 @@ for pair in "settle-h-bench-ov-on:h-bench-ov-on" "settle-h-membench-ov-off:h-mem
   s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$t"); b=$(idx $r "$t")
   [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "timing: $s comes before $r" || bad "timing: $s ($a) must come before $r ($b)"
 done
+# cpack (and fairness-bench, bridge alone): every quiet-machine measurement waits for a settled machine first (rows 6 and 22 of the plan: the
+# first runs started at a 1-minute load of 4 to 8)
+for j in cpack fairness-bench bridge; do
+  tj=$(steps $j)
+  for pair in "settle-f-overhead:f-overhead" "settle-b-measure-latency:b-measure-latency" "settle-b-measure-memory:b-measure-memory" "settle-b-measure-idle:b-measure-idle"; do
+    s=${pair%%:*}; r=${pair##*:}; a=$(idx $s "$tj"); b=$(idx $r "$tj")
+    case "$j:$r" in fairness-bench:b-*|bridge:f-*) continue ;; esac
+    [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "$j: $s comes before $r" || bad "$j: $s ($a) must come before $r ($b)"
+  done
+done
 for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris pushpin netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
