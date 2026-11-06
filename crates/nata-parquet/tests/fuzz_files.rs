@@ -661,6 +661,11 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
         }
         table.push((name, errors, same, different, panics, different_in_pages));
     }
+    // a joined thread leaves /proc a moment after its join returns (seen once under heavy load: 3 threads against 2): wait a little before judging
+    let leave_by = std::time::Instant::now() + Duration::from_secs(5);
+    while thread_count() != threads_before && std::time::Instant::now() < leave_by {
+        std::thread::sleep(Duration::from_millis(20));
+    }
     assert_eq!(
         thread_count(),
         threads_before,
