@@ -18,7 +18,7 @@ run() { step "$@" || { fail_job "$1"; exit 1; }; }
 # ten minutes) until the 1-minute load is below 0.5; it is a no-op in the other jobs, whose steps are not timing.
 # scripts/gcp/settle.sh prints one SETTLE line (settled, or NOT SETTLED with the load); the job carries on either way so that its other
 # results are kept, and the line is the record that the block after a NOT SETTLED is SANITY ONLY.
-settle_before() { case "$JOB" in timing|perf|nullpath|fairness-bench|bridge|cpack) run "settle-$1" bash -c 'bash "$SRC/scripts/gcp/settle.sh" "$0" 0.5 600; true' "$1" ;; esac; }
+settle_before() { case "$JOB" in timing|perf|nullpath|fairness-bench|bridge|cpack|verify) run "settle-$1" bash -c 'bash "$SRC/scripts/gcp/settle.sh" "$0" 0.5 600; true' "$1" ;; esac; }
 
 run setup-rust bash -c 'command -v rustup >/dev/null || curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
   cd "$SRC" && { rustup show active-toolchain || rustup toolchain install; }'
@@ -82,6 +82,7 @@ case "$JOB" in
     done
     run v-genops-check-ov-true bash -c 'cd "$SRC" && B="$WORK/target-go-true/release/spike-generic-ops" && "$B" check data/tpch-sf1/lineitem.parquet > "$RESULTS/genops-check-ov-true.txt" && "$B" nullcheck data/tpch-sf1/lineitem.parquet >> "$RESULTS/genops-check-ov-true.txt"'
     for i in 1 2; do for ov in false true; do for m in membench bench; do
+      settle_before "v-genops-$m-ov-$ov-$i"
       run "v-genops-$m-ov-$ov-$i" bash -c 'cd "$SRC" && { echo "load: $(cat /proc/loadavg)"; "$WORK/target-go-'"$ov"'/release/spike-generic-ops" '"$m"' data/tpch-sf1/lineitem.parquet 25; } > "$RESULTS/genops-'"$m"'-ov-'"$ov"'-'"$i"'.txt"'
     done; done; done ;;
   hashops|timing)

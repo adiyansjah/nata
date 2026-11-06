@@ -98,6 +98,10 @@ done
 # kani-solvers: exactly its own four steps after the common setup, in order, nothing of kani-crate's phases
 ks=$(steps kani-solvers | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
 [ "$ks" = "STEP k-install STEP kw-proofs STEP kw-mutants STEP kc-solvers " ] && ok "kani-solvers runs k-install, kw-proofs, kw-mutants, kc-solvers only" || bad "kani-solvers steps: $ks"
+# verify: the generic-ops timings with overflow-checks on and off each wait for a settled machine (the first x86-64 run started them at load 2.3-3.5)
+tv=$(steps verify)
+for r in v-genops-bench-ov-false-1 v-genops-membench-ov-true-2; do a=$(idx "settle-$r" "$tv"); b=$(idx "$r" "$tv")
+  [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "verify: settle-$r comes before $r" || bad "verify: settle-$r ($a) must come before $r ($b)"; done
 for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris pushpin netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
