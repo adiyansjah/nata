@@ -1,6 +1,6 @@
 # Clean-machine reproduction of the verification on x86-64, and the cost of `overflow-checks` on generic-ops (2026-11-06)
 
-Run `verify-x86-settled` (job `verify`, one `c3d-highcpu-8` Spot VM, AMD EPYC 9B14, 4 cores x 2 threads), source `d021df7` with the
+Run `verify-x86-settled` ($0.030 VM time; job `verify`, one `c3d-highcpu-8` Spot VM, AMD EPYC 9B14, 4 cores x 2 threads), source `d021df7` with the
 scripts of `c59602c` (the job now settles before each timed block). A first run the same day (`verify-x86`, $0.022) passed every gate but
 started all eight timed blocks at a 1-minute load of 2.3 to 3.5, so its timings were sanity only and are not used. Raw outputs:
 `bench/results/raw/20261106-verify-x86-settled/`.

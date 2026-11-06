@@ -293,6 +293,21 @@ case "$JOB" in
     # verification-plan item 28, STAGE B: the TCP exchange between SEPARATE VMs (spikes/net-exchange/real-check.sh). Needs a multi-VM run:
     # orchestrate.sh run --job netexchreal --peers 3 (4 nodes); this VM is the driver and starts the nodes on the peers over the private network.
     run nr-all bash -c 'cd "$SRC/spikes/net-exchange" && ./real-check.sh "$RESULTS/net-exchange-real" > "$RESULTS/net-exchange-real-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/net-exchange-real-exit.txt"; true' ;;
+  scale-sf10|scale-sf100|scale-cores)
+    # verification-plan item 32: the existing pipelines at a large scale. The Arrow pipeline's Q1/Q6 thread sweep against DuckDB, digit for
+    # digit (spikes/arrow-pipeline/scale-sweep.sh), and the operators-beyond DuckDB check in its SPILL modes under a 1,024-descriptor limit.
+    #   scale-sf10   n4a-highcpu-32, --data-gb 80: SF10, threads 1-32, all spill modes (budget 1 GB, 128 partitions)
+    #   scale-sf100  n4a-highcpu-32, --data-gb 300: SF100 (generated in steps on disk), threads 8-32, spill modes only (budget 4 GB, 512 partitions)
+    #   scale-cores  n4a-highcpu-64, --data-gb 80: SF10, Q1/Q6 at 1 to 64 threads (no operators check)
+    case "$JOB" in scale-sf100) SF=100 ;; *) SF=10 ;; esac
+    run sc-gen bash -c 'cd "$SRC" && scripts/gen-tpch.sh '"$SF"' data/tpch-sf'"$SF"' > "$RESULTS/gen-sf'"$SF"'.txt" 2>&1'
+    run sc-build bash -c 'cd "$SRC/spikes/arrow-pipeline" && RUSTFLAGS= cargo build --release && cd "$SRC/spikes/operators-beyond" && RUSTFLAGS= cargo build --release'
+    case "$JOB" in scale-sf10) TH="1 2 4 8 16 32"; RN=5 ;; scale-sf100) TH="8 16 32"; RN=3 ;; scale-cores) TH="1 8 16 32 48 64"; RN=5 ;; esac
+    run sc-sweep bash -c 'cd "$SRC/spikes/arrow-pipeline" && { ./scale-sweep.sh "$SRC/data/tpch-sf'"$SF"'/lineitem.parquet" "$RESULTS/scale-sweep" "'"$TH"'" '"$RN"'; echo "exit status: $?"; } > "$RESULTS/scale-sweep-run.txt" 2>&1; true'
+    if [ "$JOB" != scale-cores ]; then
+      case "$JOB" in scale-sf100) MEM=4096; GR=512 ;; *) MEM=1024; GR=128 ;; esac
+      run sc-ob bash -c 'ulimit -n 1024; cd "$SRC/spikes/operators-beyond" && { echo "ulimit -n: $(ulimit -n)"; OB_SPILL_ONLY='"$([ "$JOB" = scale-sf100 ] && echo 1 || echo 0)"' OB_THREADS=32 OB_MEM_MB='"$MEM"' OB_GRACE='"$GR"' ./check.sh "$SRC/data/tpch-sf'"$SF"'" "$WORK/ob-scale"; echo "exit status: $?"; } > "$RESULTS/operators-scale-run.txt" 2>&1; cp "$WORK/ob-scale/summary.txt" "$RESULTS/operators-scale-summary.txt" 2>/dev/null; rm -rf "$WORK/ob-scale"; true'
+    fi ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;

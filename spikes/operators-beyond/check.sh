@@ -35,7 +35,9 @@ check() { # name tag cols args...
   log "ok   $tag: $no rows, $(sed -e 's/.*secs=\([0-9.]*\).*spilled_mb=\([0-9]*\).*spill_files=\([0-9]*\) max_open_files=\([0-9]*\).*/\1 s, spilled \2 MB in \3 files, most open \4/' <<<"$line")"
 }
 T=${OB_THREADS:-4}
-for mode in default; do
+# OB_SPILL_ONLY=1 (the scale runs, where the in-memory modes do not fit): only the spill modes below
+[ "${OB_SPILL_ONLY:-0}" = 1 ] && log "OB_SPILL_ONLY=1: the in-memory modes are skipped"
+for mode in $([ "${OB_SPILL_ONLY:-0}" = 1 ] || echo default); do
   check q18 q18 "o_totalprice,o_orderdate" --threads $T
   check q21 q21 "numwait,s_name" --threads $T
   check q13 q13-mem "custdist,c_count" --threads $T
@@ -53,7 +55,7 @@ check sort sort-spill "l_shipdate,l_orderkey,l_linenumber" --threads $T --mem-mb
 check sort sort-spill-1task "l_shipdate,l_orderkey,l_linenumber" --threads 1 --tasks 1 --mem-mb $MEM --fanin 2
 check window-peers window-peers-spill - --threads $T --mem-mb $MEM --fanin 3
 check window-unique window-unique-spill - --threads $T --mem-mb $MEM --fanin 3
-if [ "$QUICK" != --quick ]; then
+if [ "$QUICK" != --quick ] && [ "${OB_SPILL_ONLY:-0}" != 1 ]; then
   for t in 1 2 8; do check q21 q21-t$t "numwait,s_name" --threads $t --tasks $t; check q18 q18-t$t "o_totalprice,o_orderdate" --threads $t --tasks $t; done
 fi
 [ $FAILED = 0 ] && log "VERDICT: all comparisons passed" || log "VERDICT: FAILED"
