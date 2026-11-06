@@ -171,3 +171,18 @@ jobs:
         run: |
           echo "SEED $NATA_FUZZ_SEED, $NATA_FUZZ_CASES cases per shape; replay one case with NATA_FUZZ_SEED=$NATA_FUZZ_SEED NATA_FUZZ_ONLY=<shape>:<case>"
           cargo test --release -p nata-parquet --features page-crc --test fuzz_files -- --nocapture
+
+  fuzz-pgwire:
+    name: Postgres wire decoder corpus
+    needs: seeds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: One million cases per corpus (seed printed)
+        env:
+          NATA_PGWIRE_SEED: ${{ needs.seeds.outputs.seed }}
+          NATA_PGWIRE_CASES: "1000000"
+        run: cargo test -p nata-pgwire --test codec seeded_decoder_fuzz -- --nocapture

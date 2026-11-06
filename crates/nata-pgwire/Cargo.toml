@@ -1,0 +1,22 @@
+[package]
+name = "nata-pgwire"
+description = "Bounded Postgres wire codec and simple-query server"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+nata-sql = { path = "../nata-sql" }
+nata-exec = { path = "../nata-exec" }
+nata-parquet = { path = "../nata-parquet", default-features = false }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
+getrandom = "0.3"
+
+[dev-dependencies]
+arrow-array = "60"
+parquet = "60"
+
+[lints]
+workspace = true
