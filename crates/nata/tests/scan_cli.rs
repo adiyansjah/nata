@@ -368,10 +368,10 @@ fn a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_r
 }
 
 #[test]
-fn the_default_build_of_the_binary_verifies_page_checksums() {
-    // as in nata-parquet/tests/checksums.rs: the build without the verification is chosen on purpose (NATA_NO_CRC_BUILD=1 with `--no-default-features`)
+fn page_checksums_of_the_binary_are_opt_in() {
+    // As in nata-parquet/tests/checksums.rs: enabled tests explicitly set NATA_CRC_BUILD=1.
     assert_eq!(
         cfg!(feature = "page-crc"),
-        std::env::var("NATA_NO_CRC_BUILD").is_err()
+        std::env::var("NATA_CRC_BUILD").is_ok()
     );
 }

@@ -148,3 +148,7 @@ The same script runs locally (functional only) with `BLOCKS="late footers crc" N
 - **One equivalent mutant retired** (`late-output-read-even-when-no-row-passes`), with its evidence.
 - **Local machine only, x86-64**: no ARM64 run of anything here.
 - **Scratch hygiene:** `/tmp` was 100% full from earlier runs; 3,328 directories named `nata-*` older than three hours (owned by this user) were deleted from it. The `nata` CLI tests still leave small directories there (`std_file`/`dir` helpers of `sql_cli.rs` and `scan_cli.rs`); the two large ones (4,000 files) now clean up.
+
+## Step-4b follow-up (2026-11-06)
+
+The measured closeout is `bench/results/20261106-slice4-bench.md`. P1 stays off; P2 now defaults to 8 (set 1 to disable); P10 stays enabled. R4 failed the ARM64 cost rule and is now an option, **off by default** in both crates. The commands above describe the then-default verifying build. For reproduction after step 4b, add `--features page-crc` to the first `cargo build --release -p nata`; keep the second build without the feature. The `slice4bench` job now does this explicitly. Enable verification for normal CLI use with `cargo build --release -p nata --features page-crc`. The step-4a default-on tests and mutant names above are historical; current opt-in guards use `NATA_CRC_BUILD=1` for explicitly enabled test runs.

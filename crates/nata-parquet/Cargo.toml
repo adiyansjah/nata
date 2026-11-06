@@ -19,11 +19,11 @@ arrow-select = "60"
 bytes = "1"
 parquet = "60"
 
-# R4 (register item, slice 4): verify the CRC of a Parquet page when the page has one. parquet-rs 60.1.0 does this only when it is COMPILED with its `crc`
-# feature (no run-time switch), so the choice is a cargo feature: on by default; `--no-default-features` builds the reader without it (the cost arm of the
-# benchmark, and the known-bad build of the fuzz test).
+# R4: page CRC verification is opt-in after the slice-4 ARM64 cost exceeded the 5% budget.
+# Enable with `cargo build --release -p nata --features page-crc` (CLI) or `--features nata-parquet/page-crc` (reader).
+# parquet-rs 60.1.0 has no runtime switch; see bench/results/20261106-slice4-bench.md.
 [features]
-default = ["page-crc"]
+default = []
 page-crc = ["parquet/crc"]
 
 [lints]

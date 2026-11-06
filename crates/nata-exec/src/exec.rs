@@ -42,10 +42,10 @@ pub struct ExecConfig {
     /// Where file handles come from; `None` opens real files. Tests substitute the fault opener of slice 3.
     pub opener: Option<Arc<dyn Opener>>,
     /// Late materialization in the scan (register item P1): decode the columns of the pushed filter first, the others only for the rows that pass.
-    /// Same rows as without; off by default until the benchmark of step 4b decides.
+    /// Same rows as without; off by default: the slice-4 benchmark failed the 1.2x gain and 1.05x slowdown rules.
     pub late_materialization: bool,
-    /// Footers read ahead (register item P2): how many files may be pending at once. 1 is slice 3's behaviour (one file at a time); off by default until
-    /// the benchmark of step 4b decides.
+    /// Footers read ahead (register item P2): how many files may be pending at once. 1 is slice 3's behaviour (one file at a time); default 8 after the
+    /// slice-4 benchmark cleared 1.3x on both CPU types.
     pub footers_ahead: usize,
 }
 
@@ -58,7 +58,7 @@ impl ExecConfig {
             ordered: true,
             opener: None,
             late_materialization: false,
-            footers_ahead: 1,
+            footers_ahead: 8,
         }
     }
 }

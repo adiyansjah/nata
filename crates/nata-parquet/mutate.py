@@ -182,9 +182,9 @@ M = {
  "par-strict-schema-kinds-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((bn, _))) => a.name != *bn,"),
  "par-strict-schema-names-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((_, bk))) => a.kind != *bk,"),
  "par-strict-schema-extra-columns-allowed": (R, "if all.len() == first.len() && !(0..all.len()).any(differs) {", "if !(0..all.len().min(first.len())).any(differs) {"),
- # --- step 4a: page checksums (R4). The two defaults decide whether the product verifies; the build without the feature is also the known-bad build of the fuzz test
- "crc-off-by-default-in-nata-parquet": ("Cargo.toml", 'default = ["page-crc"]', 'default = []'),
- "crc-off-by-default-in-the-nata-binary": ("../nata/Cargo.toml", 'default = ["page-crc"]', 'default = []'),
+ # --- step 4a: page checksums (R4). The measured default is off; these mutants must fail the explicit opt-in guards. The no-feature fuzz build still exposes silent corruption.
+ "crc-on-by-default-in-nata-parquet": ("Cargo.toml", 'default = []', 'default = ["page-crc"]'),
+ "crc-on-by-default-in-the-nata-binary": ("../nata/Cargo.toml", 'default = []', 'default = ["page-crc"]'),
 }
 
 

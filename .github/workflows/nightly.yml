@@ -170,4 +170,4 @@ jobs:
           NATA_FUZZ_CASES: ${{ github.event.inputs.file_cases || '30000' }}
         run: |
           echo "SEED $NATA_FUZZ_SEED, $NATA_FUZZ_CASES cases per shape; replay one case with NATA_FUZZ_SEED=$NATA_FUZZ_SEED NATA_FUZZ_ONLY=<shape>:<case>"
-          cargo test --release -p nata-parquet --test fuzz_files -- --nocapture
+          cargo test --release -p nata-parquet --features page-crc --test fuzz_files -- --nocapture

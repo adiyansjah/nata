@@ -38,7 +38,7 @@ pub struct ParallelConfig {
     /// Footers read ahead (register item P2): how many files may be pending at once (their footer being read, read and waiting for an earlier file, or
     /// with row groups not yet started). `1` is slice 3's behaviour: one file at a time, and the next only when no row group is queued. With `K` the
     /// workers read the next files' footers while earlier row groups run, and the footers in memory stay bounded by `K` plus the files whose row groups
-    /// are running. Off (1) by default until the benchmark of step 4b decides.
+    /// are running. Default 8: the slice-4 benchmark cleared 1.3x on both CPU types; set 1 to disable.
     pub footers_ahead: usize,
 }
 
@@ -49,7 +49,7 @@ impl ParallelConfig {
             threads,
             window: threads,
             ordered: true,
-            footers_ahead: 1,
+            footers_ahead: 8,
         }
     }
 }

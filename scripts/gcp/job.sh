@@ -316,7 +316,7 @@ case "$JOB" in
     # checksummed copy of lineitem written by pyarrow in a venv). Intended machines: n4a-highcpu-8 and c3d-highcpu-8, one run each; the owner approves the cost first.
     run s4-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run s4-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
-    run s4-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata && CARGO_TARGET_DIR="$WORK/target-nocrc" cargo build --release -p nata --no-default-features'
+    run s4-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata --features page-crc && CARGO_TARGET_DIR="$WORK/target-nocrc" cargo build --release -p nata --no-default-features'
     run s4-pyarrow bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet pyarrow && "$WORK/venv/bin/python" -c "import pyarrow; print(pyarrow.__version__)"'
     run s4-bench bash -c 'cd "$SRC" && { BLOCKS="late footers crc" NATA_NOCRC="$WORK/target-nocrc/release/nata" PYARROW_PYTHON="$WORK/venv/bin/python" SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/slice4-bench" 5; echo "exit status: $?"; } > "$RESULTS/slice4-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
   cgroupcheck)

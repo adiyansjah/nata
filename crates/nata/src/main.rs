@@ -52,11 +52,11 @@ enum Command {
         #[arg(long)]
         report: bool,
         /// Decode the filter columns first and the other columns only for the rows that pass the pushed filter (register item P1). Same rows as without.
-        /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
+        /// Developer option, off by default (the slice-4 benchmark failed the keep rule); also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
         #[arg(long)]
         late_materialization: bool,
-        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). 1 (the default until the benchmark decides)
-        /// is one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
+        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). Default 8; set 1
+        /// for one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
         #[arg(long)]
         footers_ahead: Option<usize>,
         /// Check the schema of EVERY file of a glob before the query starts (what the binder did before register item P10), instead of reading only the first
@@ -99,11 +99,11 @@ enum Command {
         #[arg(long)]
         window: Option<usize>,
         /// Decode the filter columns first and the other columns only for the rows that pass the filter (register item P1). Same rows as without.
-        /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
+        /// Developer option, off by default (the slice-4 benchmark failed the keep rule); also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
         #[arg(long)]
         late_materialization: bool,
-        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). 1 (the default until the benchmark decides)
-        /// is one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
+        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). Default 8; set 1
+        /// for one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
         #[arg(long)]
         footers_ahead: Option<usize>,
     },
@@ -132,14 +132,14 @@ pub(crate) fn late_materialization(flag: bool) -> bool {
     flag || std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
 }
 
-/// `--footers-ahead`, else `NATA_FOOTERS_AHEAD`, else 1 (one file at a time, as in slice 3).
+/// `--footers-ahead`, else `NATA_FOOTERS_AHEAD`, else 8 (slice-4 benchmark; set 1 for one file at a time).
 pub(crate) fn footers_ahead_of(flag: Option<usize>) -> usize {
     flag.or_else(|| {
         std::env::var("NATA_FOOTERS_AHEAD")
             .ok()
             .and_then(|v| v.parse().ok())
     })
-    .unwrap_or(1)
+    .unwrap_or(8)
 }
 
 struct ScanArgs {

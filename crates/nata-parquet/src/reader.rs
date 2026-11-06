@@ -62,7 +62,7 @@ pub struct ScanOptions {
     pub prune: bool,
     /// Late materialization (register item P1, `docs/slices/0002-select-where-limit.md` part 5): decode the columns the pushed filter needs first, evaluate
     /// the exact row filter on them, and decode the output columns only for the rows that pass (a Parquet row selection). Same rows, same order, same
-    /// errors as the default (decode every column of the row group, then filter). Off by default until the benchmark of step 4b decides. Has no effect
+    /// errors as the default (decode every column of the row group, then filter). Off by default: the step-4b benchmark failed the keep rule. Has no effect
     /// without a filter.
     pub late_materialization: bool,
     /// Require every file to have the first file's whole schema: the same top-level columns, in the same order, with the same types. A file that does not

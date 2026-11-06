@@ -6,7 +6,7 @@
 //!
 //! Plain Parquet pages have no checksum by default, so a flipped value byte can decode to a different valid value: outcomes are CLASSIFIED (error /
 //! same rows / different rows) and the counts are printed, not hidden. Three more shapes are files WRITTEN WITH page checksums (R4: `tests/fixtures/`, made by
-//! pyarrow; parquet-rs cannot write them): with the verification compiled in (cargo feature `page-crc`, the default) the damage that stays inside the page region
+//! pyarrow; parquet-rs cannot write them): with the verification compiled in (opt-in cargo feature `page-crc`) the damage that stays inside the page region
 //! must never read as other rows (class 0); the damage that touches the footer is not covered by a page checksum and is counted apart. Built WITHOUT the
 //! feature (`--no-default-features`) the same damage MUST give a non-zero class: that is the known-bad build, the proof that this check can fail. `NATA_FUZZ_CASES` (default 3000 per shape), `NATA_FUZZ_SEED` (default
 //! 20261106); a failure prints `shape, case, seed` and the mutation, and `NATA_FUZZ_ONLY=<shape>:<case>` replays it.
@@ -513,8 +513,8 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
         "fuzz: seed {seed}, {cases} cases per shape, {} shapes, 1 and 4 threads (replay: NATA_FUZZ_SEED={seed} NATA_FUZZ_ONLY=<shape>:<case>)",
         SHAPES.len()
     );
-    // The damaged copy is rewritten for every case (a few hundred KB, one at a time): a RAM disk keeps this from being limited by a busy disk, and the
-    // directory is removed at the end.
+    // The damaged copy is rewritten for every case (a few hundred KB, one at a time). Scratch may be on disk; unlink the previous case before
+    // recreating it below, so truncation does not wait for its dirty pages to be written back. The directory is removed at the end.
     let dir = std::env::temp_dir().join(format!("nata-fuzz-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).expect("mkdir");
@@ -572,6 +572,9 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
                 ^ (name.len() as u64) << 40);
             let (bytes, how) = damage(&clean, &mut rng);
             let path = dir.join(format!("{name}-case.parquet"));
+            if path.exists() {
+                std::fs::remove_file(&path).expect("unlink previous case");
+            }
             std::fs::write(&path, &bytes).expect("write");
             let what = format!("shape {name}, case {case}, seed {seed}: {how}");
             let mut outcomes = vec![];

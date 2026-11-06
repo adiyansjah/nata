@@ -1,6 +1,6 @@
 //! R4, page checksums (register item R4, `docs/slices/0002-select-where-limit.md` part 5): a Parquet page may carry a CRC-32 of its (compressed) payload; the reader
 //! verifies it when it has one, and a mismatch is an error that names the file and the row group. parquet-rs 60.1.0 can do this only when it is compiled with its
-//! `crc` feature (our cargo feature `page-crc`, on by default); it cannot WRITE checksums, so the files here come from pyarrow (`tests/fixtures/make_checksummed.py`,
+//! `crc` feature (our cargo feature `page-crc`, off by default); it cannot WRITE checksums, so the files here come from pyarrow (`tests/fixtures/make_checksummed.py`,
 //! committed).
 //!
 //! The tests state both builds: with `page-crc` a damaged page of a checksummed file is an error; WITHOUT it (`cargo test -p nata-parquet --no-default-features`) the
@@ -182,22 +182,12 @@ fn every_flipped_byte_of_the_pages_of_a_checksummed_file_is_an_error_or_harmless
 }
 
 #[test]
-fn the_default_build_verifies_page_checksums() {
-    // The tests above state both builds, so they would pass for a build that LOST the default. This one does not: a plain `cargo test` must have the
-    // verification on. The build without it is chosen on purpose, with NATA_NO_CRC_BUILD=1 set next to `--no-default-features`.
+fn page_checksums_are_opt_in() {
+    // Default builds omit verification; enabled test runs explicitly set NATA_CRC_BUILD=1.
+    // This catches either accidentally enabling the default or losing the opt-in feature.
     assert_eq!(
         cfg!(feature = "page-crc"),
-        std::env::var("NATA_NO_CRC_BUILD").is_err(),
-        "the feature `page-crc` is {} but NATA_NO_CRC_BUILD is {}",
-        if cfg!(feature = "page-crc") {
-            "on"
-        } else {
-            "off"
-        },
-        if std::env::var("NATA_NO_CRC_BUILD").is_err() {
-            "not set"
-        } else {
-            "set"
-        }
+        std::env::var("NATA_CRC_BUILD").is_ok(),
+        "set NATA_CRC_BUILD=1 alongside --features page-crc for the opt-in test run"
     );
 }

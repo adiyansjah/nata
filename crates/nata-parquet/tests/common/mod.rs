@@ -582,12 +582,12 @@ pub fn late_default() -> bool {
     std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
 }
 
-/// Footers read ahead (P2) for every parallel scan the tests open through their helpers: 1 (slice 3's behaviour), unless `NATA_FOOTERS_AHEAD=<k>`.
+/// Footers read ahead (P2) for every parallel scan the tests open through their helpers: 8 (the measured default), unless `NATA_FOOTERS_AHEAD=<k>`.
 /// Running the suites with it set checks that the rows, their order and the errors do not depend on it.
 pub fn ahead_default() -> usize {
     std::env::var("NATA_FOOTERS_AHEAD")
         .ok()
         .and_then(|v| v.parse().ok())
         .filter(|k| *k >= 1)
-        .unwrap_or(1)
+        .unwrap_or(8)
 }

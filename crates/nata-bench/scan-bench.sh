@@ -16,9 +16,9 @@
 #      and 4 and 16 (information), twin of the 1; and `nata sql` over the same glob with the slice-4 binder (`--bind-all-footers`, ahead 1) against the
 #      P10 binder (first footer only, ahead 8). Rule: a scan of 1,000 small files at least 1.3x faster at 8 threads.
 #   5. (BLOCKS=crc) R4 page checksums, the cost: SF1 (and SF10) `lineitem` copied by pyarrow WITH page checksums (crates/nata-bench/checksum-copy.py; needs
-#      PYARROW_PYTHON, a python that has pyarrow), scanned by two builds of the same code, `nata` (verification on, the default) and NATA_NOCRC (built with
+#      PYARROW_PYTHON, a python that has pyarrow), scanned by two builds of the same code, `nata` (verification on, built with --features page-crc) and NATA_NOCRC (built with
 #      `cargo build --release -p nata --no-default-features`), alternating, plus a twin of the verifying build; and the same two builds on the original file
-#      WITHOUT checksums (the control: the verification costs nothing where there is no checksum). Rule: on a file with checksums the verifying build must
+#      WITHOUT checksums (the control: the verification costs nothing where there is no checksum). Rule: on a file with checksums the explicitly CRC-enabled build must
 #      be at most 1.05x the other, or the verification becomes an option.
 #   BLOCKS (default "r2 scale") selects the blocks: any of r2, scale, late, footers, crc. Exit 1 if a count differs from DuckDB's.
 # Every block waits for a settled machine first (scripts/gcp/settle.sh; its SETTLE line is the record). Wall time of the process; the
