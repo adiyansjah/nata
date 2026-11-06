@@ -91,7 +91,8 @@ def stage(work):
     for dep in ["nata-parquet", "nata-scan", "nata-sched"]:
         os.symlink(os.path.join(ROOT, "crates", dep), os.path.join(base, "crates", dep))
     dst = os.path.join(base, "crates", "nata-sql")
-    shutil.copytree(HERE, dst, ignore=shutil.ignore_patterns("target", "mutate.py", "__pycache__"))
+    # copy2 would keep the old modification times, and cargo would trust the artifacts of an earlier (mutated) build
+    shutil.copytree(HERE, dst, ignore=shutil.ignore_patterns("target", "mutate.py", "__pycache__"), copy_function=shutil.copy)
     return base, dst
 
 
