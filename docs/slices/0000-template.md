@@ -41,10 +41,19 @@ external format, or a failure behaviour not yet stated. Otherwise write "none ne
 - Time box and cloud-spend estimate (needs the owner's yes, `way-of-working.md` section 8):
 - Result file: `bench/results/...`
 
-## 5. Closeout (fill in when done)
+## 5. Carried-in improvements (from `docs/improvements.md`)
+
+Every open register item on this slice's code path: **taken in** (decision rule fixed before measuring, and its check) or **deferred**
+(reason, and the slice that takes it). Taken-in items: at most about a quarter of the slice's work.
+
+| Register item | Taken in or deferred | Decision rule / reason | Check |
+|---|---|---|---|
+
+## 6. Closeout (fill in when done)
 
 - Results file:
 - ADR updated (amendment or revision note), confidence and what changed:
 - Benchmark added to the regression set, baseline numbers:
 - Deviations from this card, and why:
 - Spike code deleted:
+- Improvement register updated (items done, new findings added):

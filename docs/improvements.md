@@ -1,0 +1,29 @@
+# Improvement register (performance and reliability)
+
+Every improvement found by a slice, a spike or a GCP run, in one place, so that the next slice on the same code path can take it in
+(`way-of-working.md`, section 2, card part 5 "Carried-in improvements"). An item is closed by the slice that does it, with a link to its
+result; an item is never deleted.
+
+Columns: **Path** is the code the improvement touches; **Fits** is the first slice whose work goes through that path.
+
+| ID | Improvement | Evidence | Path | Fits | State |
+|---|---|---|---|---|---|
+| P1 | Late materialization: decode the `WHERE` columns first, then the projected columns only for the rows that pass (parquet-rs row filter and row selection) | Every projected column is decoded in full and filtered after (`crates/nata-parquet`); the 1994 example keeps about 14% of the rows | scan | 4 | open |
+| P2 | Read footers ahead within the window (the next files' footers while earlier row groups run) | Footers are read one file at a time; SF1 reaches 3.1-3.3x at 8 threads against 9.0x / 5.8x on SF10, a serial part of about 25 ms per run (`bench/results/20261106-scan-bench.md`) | scan, scheduler | 4 | open |
+| P3 | Parallel, partitioned hash build (no single global build in `finalize`) | The spike's in-memory join barely scales (0.53 s at 1 thread, 0.42 s at 8); its grace join is 0.14-0.60x of it even while spilling; DuckDB is 3-25x faster (`bench/results/20261106-spill-bench.md`) | hash join | 7 | open |
+| P4 | Fuse the projection into the aggregation (no separate projection pass) | Q1: 56% in the grouped-sum kernel, 27% in the projection pass; generic engine 1.4-2.4x of the fused loop (`bench/results/20261105-perf-v2.md`, timing records) | aggregate | 5 | open |
+| P5 | Remove overflow checks where a Kani proof shows they cannot fire (as for the step-6 sums) | `overflow-checks` costs +2% to +25% on grouped aggregates, about 0% on joins (`bench/results/20261105-timing-*.md`); the step-6 bound is proved (`bench/results/20261106-kani-wrap-bound.md`) | aggregate kernels | 5 | open |
+| P6 | Object-store read policy: 16 requests in flight, merged ranges for many row groups | 2.3-13.5x faster than one at a time; merging wins on 293 row groups (0.7 s against 2.7 s); DuckDB still faster than our best policy (`bench/results/20261105-object-store-real.md`) | scan on object storage | 11 | open |
+| P7 | Iceberg planning: the own compact manifest decoder, manifest clustering and rewrite | Own decoder 18x faster than the generic reader and 41x than iceberg-rust; 1M files plan in 0.2 s when partitions prune, 14-22 s on 1 thread otherwise (`bench/results/20261105-manifest-decode.md`, `bench/results/20261104-iceberg-plan.md`) | Iceberg planning | 12 | open |
+| P8 | Exchange batch size of at least 8,192 rows | 2-4 microseconds per batch (+29%) with 1,024-row batches and a small queue; gone at 8,192 rows (`bench/results/20261105-timing-*.md` section 5) | exchange | first distributed slice | open |
+| P9 | Find Q18's serial step | 35 s at 1 thread, 15 s at 8, 13 s at 32 (`bench/results/20261106-scale-sf10.md`); not profiled | aggregate / join | 5 or 7 (profile when the code exists) | open |
+| R1 | A query memory manager (fair shares, a request to spill made to another operator) | Each spilling operator takes a fixed budget (`spikes/operators-beyond`); ADR 0001 amendment A1 item 5 | operators, scheduler | before 5 | open |
+| R2 | Recursive repartitioning in the grace join | A 64 MB budget fails loudly at SF10: 8 partitions in flight need 31 MB each (`bench/results/20261106-spill-bench.md`) | hash join | 7 | open |
+| R3 | Cap the open partition files of the grace join | 512 files open at SF100, half of the 1,024 limit (`bench/results/20261106-scale-sf100.md`) | hash join, spill | 7 | open |
+| R4 | Verify Parquet page checksums (CRC) when a file has them | 20.5% of damaged files decode to other valid values, the only silent-wrong-answer path found (`bench/results/20261106-scan-parallel.md`) | scan | 4 | open |
+| R5 | Write a NaN count in the statistics we write (Iceberg has `nan_count`) | Float `>`, `>=`, `<>` cannot prune without it; DuckDB's own pruning is unsound for NaN on pyarrow files (`bench/results/20261105-scan-reader.md`) | Parquet / Iceberg writer | the write slice | open |
+| R6 | Report the `parquet`/`arrow` 60.1.0 panics on corrupt pages upstream (mostly `delta_byte_array.rs:101`); keep catching them | 57 of 15,000 fuzz cases; caught at the task boundary and turned into errors (`bench/results/20261106-scan-parallel.md`) | scan | 4 (needs the owner's yes: a public issue) | open |
+| R7 | The task-level failure rules of ADR 0004 (task re-run, fencing, coordinator, `release`) in code | Checked as a TLA+ model only; no code may depend on them yet (ADR 0004) | distributed runtime | first distributed slice | open |
+| R8 | Iceberg operations: orphan-file garbage collection; certify a production REST catalog; S3 and Azure conditional writes | The spike has no GC; Polaris ran in a test configuration only; only GCS was tested for conditional writes (`bench/results/20261104-iceberg-commit.md` sections 12-14) | Iceberg write path | the write slice | open |
+| R9 | Nightly CI for the deep checks: loom at preemption bound 3, a longer fuzz run with a saved corpus | The scheduler's loom suite runs at bound 2 to finish in minutes (`bench/results/20261106-scan-parallel.md`); fuzzers run only in their jobs | CI | 4 | open |
+| R10 | The five 64-bit division proofs (an accepted trust point today) | They do not finish with CaDiCaL, kissat, z3 or cvc5 (`bench/results/20261106-kani-wrap-bound.md` section 2) | kernels | when a bit-vector solver (e.g. Bitwuzla) is packaged; not planned | open (trust point) |

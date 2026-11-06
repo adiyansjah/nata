@@ -69,10 +69,25 @@ threshold (a regression larger than the twin's spread fails).
 - Time box and cloud spend: one day, local only (parsing is not a performance-critical number at this size); no GCP needed.
 - Result file: `bench/results/<date>-sql-parser-baseline.md`.
 
-## 5. Closeout (fill in when done)
+## 5. Carried-in improvements (from `docs/improvements.md`)
+
+The open register items on this slice's path (the scan under `nata sql`, its scheduler, CI). Together about a quarter of the slice's work.
+
+| Register item | Taken in or deferred | Decision rule (fixed before measuring) / reason | Check |
+|---|---|---|---|
+| P1 late materialization | taken in | Keep it only if, on SF1 and SF10 and both CPU types, it is at least 1.2x faster than decoding every projected column at 10% selectivity and no slower than 1.05x at 100%; otherwise leave it off (default) and record why | paired benchmark, late against early, twin control, settled; same rows as DuckDB in both modes; mutants: a projected column decoded for the wrong rows, a selection applied twice |
+| P2 footers read ahead within the window | taken in | Keep it if a scan of 1,000 small files is at least 1.3x faster at 8 threads and the open-file and footer bounds of slice 3 still hold under the `ulimit` test | the 10,000-file test and a many-small-files benchmark; peak open files and footers from the report |
+| R4 Parquet page checksums | taken in | Verify a page's CRC when the file has one (on by default; a corrupt page is an error naming the file and row group); its cost must stay under 5% on a file with checksums, or it becomes an option | the fuzz test on files written WITH checksums: its "different rows" class must be 0 for them; the cost measured with a control arm |
+| R9 nightly CI for the deep checks | taken in | - | the nightly job must go red on one known-bad scheduler mutant (it can fail) and green on main |
+| R6 report the dependency panics upstream | deferred | a public issue under the owner's account: the owner's decision; the panics stay caught | - |
+| P5 overflow-check elision | deferred to slice 5 | this slice's arithmetic is per-row projection, where the checks cost about 0-5% | - |
+| R1 memory manager | deferred, written before slice 5 | this slice's operators stream; no operator holds memory beyond the scan's window | - |
+
+## 6. Closeout (fill in when done)
 
 - Results file:
 - ADR updated (amendment or revision note), confidence and what changed: ADR 0007 written (dialect and strictness)
 - Benchmark added to the regression set, baseline numbers:
 - Deviations from this card, and why:
 - Spike code deleted:
+- Improvement register updated (items done, new findings added):

@@ -29,7 +29,7 @@ A slice is not done until all of these hold:
 
 Every development point has a short card, written **before** the implementation, in `docs/slices/NNNN-name.md` (template: `docs/slices/0000-template.md`). The card is how we decide and how we know we are done. It is accepted by the owner, like an ADR: an agent or a human drafts it, the owner accepts it, and the work starts from the accepted card.
 
-A card has five parts.
+A card has six parts.
 
 1. **Goal and ADR.** What the slice delivers, and the ADR it relies on or creates. If a decision it needs is open, the card says so and names the baseline spike (part 4).
 2. **Quality targets.** One row for each aspect below: the target or budget, the check that will show it (with its oracle), and the baseline to beat or match. A row may say "N/A, because ...". It may not be missing.
@@ -49,11 +49,16 @@ A card has five parts.
 
 3. **Decision rule, fixed before measuring.** The threshold that decides the question, written down first: for example, "build our own kernel only if it is at least 1.5x faster on both CPU types, otherwise reuse the crate". Do not choose the threshold after seeing the numbers.
 4. **Baseline spike, only when needed.** A spike is required when the slice contains a build-versus-reuse choice, a performance number that drives a design, a concurrency or protocol change, a new external format, or a failure behaviour that is not yet stated. Otherwise the card links the existing baseline. A spike is time-boxed, throwaway (section 6), and any cloud spend follows section 8.
-5. **Closeout.** When the slice is done: the results file in `bench/results/`; the ADR updated (a dated amendment if it is accepted, with its confidence and what changed); the benchmark added to the regression set with its baseline numbers; deviations from the card recorded; spike code deleted.
+5. **Carried-in improvements** (added 2026-11-06 at the owner's request, to pay down technical debt as we go). The card lists every open item
+   of the improvement register (`docs/improvements.md`) whose code path this slice touches, and for each says either **taken in** (with its
+   own decision rule fixed before measuring, and its check, exactly like the slice's own targets) or **deferred** (with the reason and the
+   slice that will take it). Taken-in items are capped at about a quarter of the slice's work: the slice's own goal comes first, and what
+   does not fit stays in the register for the next slice on that path. An improvement that changes a decision is still an ADR amendment.
+6. **Closeout.** When the slice is done: the results file in `bench/results/`; the ADR updated (a dated amendment if it is accepted, with its confidence and what changed); the benchmark added to the regression set with its baseline numbers; deviations from the card recorded; spike code deleted; **the improvement register updated**: taken-in items marked done with their result, and every new performance or reliability finding of the slice added (with its evidence, the code path and the slice it fits).
 
 **Proportion.** A small slice gets a short card, and a trivial one may be a single line that says what is checked and against what. The card must never be longer than the work it protects. The rule is not "fill the table"; it is "no slice starts without saying how we will know it is right, fast enough, safe to fail and finished".
 
-**Order of work inside a slice.** Card accepted, then baseline spike if required, then implementation with its tests and mutants in the same change, then the checks on a clean VM on both architectures (the measurement rules of section 6), then closeout.
+**Order of work inside a slice.** Card accepted (with its carried-in improvements chosen), then baseline spike if required, then implementation with its tests and mutants in the same change (carried-in items alongside, each with its own check), then the checks on a clean VM on both architectures (the measurement rules of section 6), then closeout (including the register).
 
 ## 3. No stubs on main
 
