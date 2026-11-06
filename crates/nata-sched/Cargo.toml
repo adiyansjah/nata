@@ -1,0 +1,14 @@
+[package]
+name = "nata-sched"
+description = "Ordered, windowed, cancellable execution of row-group tasks on worker threads (slice 3, step 2b); all synchronisation behind src/sync.rs so that loom checks the real code"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+# The model checker is only built with RUSTFLAGS="--cfg nata_loom" (not `loom`: other crates react to that name). Same convention as spikes/exchange-loom.
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[lints]
+workspace = true

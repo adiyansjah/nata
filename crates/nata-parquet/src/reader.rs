@@ -6,8 +6,15 @@
 //!     RowGroupTask::run()          reads ONE row group with its own file handle, applies the exact row filter, projects, returns the batches
 //! ```
 //!
-//! A task shares nothing mutable with the others (an `Arc` of the file's metadata and a fresh file handle), so a later step can hand the tasks of
-//! `tasks()` to worker threads unchanged. This step runs them one after the other in [`run_serial`].
+//! A task shares nothing mutable with the others (an `Arc` of the file's metadata and a fresh file handle). [`run_serial`] runs them one after the other
+//! (the reference implementation); `crate::parallel::run_parallel` hands them to worker threads (`nata-sched`).
+//!
+//! # Footers are read lazily
+//!
+//! `ScanPlan::open` reads the footer of the FIRST file only (it fixes the columns, the filter types and the pruning terms for all the others) and
+//! closes the file. The footer of file `i` is read by `ScanPlan::open_file(i)` when the scheduler reaches it: open, read the footer, close; the
+//! metadata lives in the `Arc<FileScan>` that its tasks hold and is freed when the last of them is dropped. A scan of 10,000 files therefore holds
+//! at most the footers of the files whose row groups are in flight, and at most one handle per worker thread.
 //!
 //! # What a task returns
 //!
@@ -20,8 +27,8 @@ use std::fs::File;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use arrow_array::{BooleanArray, RecordBatch};
 use arrow_schema::{Field, Schema, SchemaRef};
@@ -37,7 +44,9 @@ use parquet::file::reader::{ChunkReader, Length};
 use crate::adapter;
 use crate::error::{ErrorKind, ScanError, redact};
 use crate::filter::{self, Term};
+use crate::opener::{FsOpener, OpenFile, OpenFor, Opener};
 use crate::schema::{Kind, Leaf, leaves};
+use crate::stats::{Counted, Reservation, ScanStats};
 
 /// Rows per batch handed out by the Arrow reader.
 pub const BATCH_ROWS: usize = 8192;
@@ -72,6 +81,9 @@ pub struct FileScan {
     out_columns: Vec<String>,
     terms: Arc<Vec<Term>>,
     row_groups: Vec<RowGroupInfo>,
+    ctx: Arc<Ctx>,
+    /// Counts this footer as held in memory until the file is dropped (the last of its tasks is gone).
+    _held: Counted,
 }
 
 impl FileScan {
@@ -82,6 +94,26 @@ impl FileScan {
     pub fn row_groups(&self) -> &[RowGroupInfo] {
         &self.row_groups
     }
+
+    /// The row groups that must be read, in row-group order.
+    pub fn tasks(self: &Arc<Self>) -> Vec<RowGroupTask> {
+        self.row_groups
+            .iter()
+            .enumerate()
+            .filter(|(_, rg)| rg.skipped.is_none())
+            .map(|(i, _)| RowGroupTask {
+                file: Arc::clone(self),
+                row_group: i,
+            })
+            .collect()
+    }
+}
+
+/// What every file and task of one plan shares: where handles come from and where the counts go.
+#[derive(Debug)]
+pub struct Ctx {
+    pub opener: Arc<dyn Opener>,
+    pub stats: Arc<ScanStats>,
 }
 
 /// How pruning was set up, for the report.
@@ -95,13 +127,17 @@ pub struct PruningInfo {
     pub pushed: usize,
 }
 
-/// A plan: the files, opened.
+/// A plan: the file list, the columns and filters fixed by the first file, and the first file's footer (kept until the scan reaches it).
 #[derive(Debug)]
 pub struct ScanPlan {
-    files: Vec<Arc<FileScan>>,
+    paths: Vec<PathBuf>,
+    options: ScanOptions,
+    spec: Spec,
+    first: Mutex<Option<Arc<FileScan>>>,
     out_schema: Vec<(String, Kind)>,
     pruning: PruningInfo,
     read_column_count: usize,
+    ctx: Arc<Ctx>,
 }
 
 /// One row group to read: the unit of work (the morsel of ADR 0001).
@@ -121,6 +157,16 @@ pub struct TaskOutput {
     pub rows_returned: u64,
     /// Bytes requested from the file for the data of the row group (the column chunks read; the footer is not counted).
     pub bytes_read: u64,
+    /// The bytes of `batches` on the scan's memory gauge; released when this value is dropped (so a result waiting for the consumer counts).
+    pub mem: Reservation,
+}
+
+/// How a task that did not fail ended.
+#[derive(Debug)]
+pub enum TaskResult {
+    Done(TaskOutput),
+    /// Stopped between two batches (or before starting) because the scan was cancelled; nothing is returned, the handle and the buffers are gone.
+    Cancelled,
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------ opening
@@ -163,6 +209,7 @@ fn guarded<T>(
 }
 
 /// What the first file fixes for all the others.
+#[derive(Debug, Clone)]
 struct Spec {
     out: Vec<(String, Kind)>,
     /// (name, kind) of every column that is read (output and filter), unique.
@@ -249,40 +296,69 @@ fn e_text(e: &ScanError) -> String {
 }
 
 impl ScanPlan {
-    /// Open every file (footer only), check that they agree on the columns that are used, type the filters, decide the pruning.
+    /// Read the footer of the first file (it fixes the output columns, the filter types and the pruning terms) and close it; the other files are read
+    /// by [`ScanPlan::open_file`] when the scan reaches them. Errors of the first file, and every usage or filter error, are returned here.
     pub fn open(paths: &[PathBuf], options: &ScanOptions) -> Result<ScanPlan, ScanError> {
-        if paths.is_empty() {
+        ScanPlan::open_with(paths, options, Arc::new(FsOpener))
+    }
+
+    /// As [`ScanPlan::open`], with the handles made by `opener` (tests count them and make them fail).
+    pub fn open_with(
+        paths: &[PathBuf],
+        options: &ScanOptions,
+        opener: Arc<dyn Opener>,
+    ) -> Result<ScanPlan, ScanError> {
+        let Some(first_path) = paths.first() else {
             return Err(ScanError::usage("no file given"));
-        }
+        };
+        let ctx = Arc::new(Ctx {
+            opener,
+            stats: Arc::new(ScanStats::default()),
+        });
         let mut spec: Option<Spec> = None;
-        let mut files = Vec::with_capacity(paths.len());
-        let mut pushed = 0usize;
-        for path in paths {
-            let (file, p) = guarded(path, None, || open_file(path, options, &mut spec))?;
-            pushed = p;
-            files.push(Arc::new(file));
-        }
+        let (first, pushed) = guarded(first_path, None, || {
+            read_file(first_path, 0, options, &mut spec, &ctx)
+        })?;
         let spec = spec.ok_or_else(|| ScanError::usage("no file given"))?;
         let applied = options.prune && pushed > 0;
         Ok(ScanPlan {
-            files,
-            out_schema: spec.out,
+            paths: paths.to_vec(),
+            options: options.clone(),
+            out_schema: spec.out.clone(),
+            read_column_count: spec.read.len(),
             pruning: PruningInfo {
                 applied,
                 terms: options.filters.len(),
                 pushed,
             },
-            read_column_count: spec.read.len(),
+            spec,
+            first: Mutex::new(Some(Arc::new(first))),
+            ctx,
         })
+    }
+
+    /// Drop the first file's footer if the scan never reached it (a scan that ends before it, `limit` 0, an error).
+    pub(crate) fn release_first_footer(&self) {
+        let _ = self
+            .first
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+    }
+
+    /// Number of files in the plan.
+    pub fn file_count(&self) -> usize {
+        self.paths.len()
+    }
+
+    /// The counters of this scan (shared with every task).
+    pub fn stats(&self) -> &Arc<ScanStats> {
+        &self.ctx.stats
     }
 
     /// The output columns (name and kind), in output order.
     pub fn out_schema(&self) -> &[(String, Kind)] {
         &self.out_schema
-    }
-
-    pub fn files(&self) -> &[Arc<FileScan>] {
-        &self.files
     }
 
     pub fn pruning(&self) -> PruningInfo {
@@ -294,33 +370,53 @@ impl ScanPlan {
         self.read_column_count
     }
 
-    /// Row groups in all, and how many the statistics skipped.
-    pub fn row_group_counts(&self) -> (u64, u64) {
-        let mut total = 0u64;
-        let mut skipped = 0u64;
-        for f in &self.files {
-            for rg in &f.row_groups {
-                total += 1;
-                if rg.skipped.is_some() {
-                    skipped += 1;
-                }
+    /// Open file `index`: its footer is read and checked against the first file, the handle is closed, and the pruning is decided. File 0 was read by
+    /// `open` and is handed out once from there (a second call reads it again). The returned file frees its metadata when the last `Arc` of it,
+    /// held by the tasks, is dropped.
+    pub fn open_file(&self, index: usize) -> Result<Arc<FileScan>, ScanError> {
+        let Some(path) = self.paths.get(index) else {
+            return Err(ScanError::new(ErrorKind::Internal(
+                "a file number beyond the plan was asked for".into(),
+            )));
+        };
+        let cached = if index == 0 {
+            self.first
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take()
+        } else {
+            None
+        };
+        let file = match cached {
+            Some(f) => f,
+            None => {
+                // the plan's spec is read-only after `open`; `read_file` takes it by value (a few column names and literals)
+                let mut spec = Some(self.spec.clone());
+                guarded(path, None, || {
+                    read_file(path, index, &self.options, &mut spec, &self.ctx)
+                })
+                .map(|(f, _)| Arc::new(f))?
             }
-        }
-        (total, skipped)
+        };
+        let st = &self.ctx.stats;
+        ScanStats::add(&st.files_opened, 1);
+        let skipped = file
+            .row_groups
+            .iter()
+            .filter(|r| r.skipped.is_some())
+            .count() as u64;
+        ScanStats::add(&st.row_groups_total, file.row_groups.len() as u64);
+        ScanStats::add(&st.row_groups_skipped, skipped);
+        Ok(file)
     }
 
-    /// The row groups that must be read, in the order of the file list and then of the row groups of each file.
-    pub fn tasks(&self) -> impl Iterator<Item = RowGroupTask> + '_ {
-        self.files.iter().flat_map(|f| {
-            f.row_groups
-                .iter()
-                .enumerate()
-                .filter(|(_, rg)| rg.skipped.is_none())
-                .map(move |(i, _)| RowGroupTask {
-                    file: Arc::clone(f),
-                    row_group: i,
-                })
-        })
+    /// The tasks of every file, in order. OPENS EVERY FILE NOW and holds all footers: for tests and small plans. The drivers do not use it.
+    pub fn tasks(&self) -> Result<Vec<RowGroupTask>, ScanError> {
+        let mut all = Vec::new();
+        for i in 0..self.paths.len() {
+            all.extend(self.open_file(i)?.tasks());
+        }
+        Ok(all)
     }
 }
 
@@ -359,15 +455,27 @@ fn check_magic(file: &mut File, path: &Path) -> Result<(), ScanError> {
     Ok(())
 }
 
-fn open_file(
+/// Open one file, read its footer, CLOSE it, and decide its pruning.
+fn read_file(
     path: &Path,
+    index: usize,
     options: &ScanOptions,
     spec: &mut Option<Spec>,
+    ctx: &Arc<Ctx>,
 ) -> Result<(FileScan, usize), ScanError> {
-    let mut file = File::open(path).map_err(|e| io_error(&e, path))?;
-    check_magic(&mut file, path)?;
-    let plain = ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
-        .map_err(|e| parquet_error(&e, path, None))?;
+    let plain = {
+        let OpenFile {
+            mut file, _guard, ..
+        } = ctx
+            .opener
+            .open(path, OpenFor::Footer(index))
+            .map_err(|e| io_error(&e, path))?;
+        let _count = Counted::new(&ctx.stats.handles);
+        check_magic(&mut file, path)?;
+        ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
+            .map_err(|e| parquet_error(&e, path, None))?
+        // the handle is closed here
+    };
     let metadata = Arc::clone(plain.metadata());
     let descr = metadata.file_metadata().schema_descr();
     let all = leaves(descr).map_err(|m| ScanError::not_supported(m).in_file(path))?;
@@ -476,6 +584,8 @@ fn open_file(
             out_columns: spec_ref.out.iter().map(|(n, _)| n.clone()).collect(),
             terms: Arc::new(spec_ref.terms.clone()),
             row_groups,
+            ctx: Arc::clone(ctx),
+            _held: Counted::new(&ctx.stats.footers),
         },
         pushed,
     ))
@@ -558,19 +668,30 @@ mod tests {
     }
 }
 
-/// A file handle that counts the bytes requested through it (the reader asks for column chunks; the footer was read before).
+/// A file handle that counts the bytes requested through it (the reader asks for column chunks; the footer was read before), and can be made to fail.
 struct CountingFile {
     file: File,
     bytes: Arc<AtomicU64>,
+    fail_after: Option<u64>,
 }
 
 struct CountingRead<R> {
     inner: R,
     bytes: Arc<AtomicU64>,
+    fail_after: Option<u64>,
+}
+
+fn injected_error() -> std::io::Error {
+    std::io::Error::other("injected I/O error")
 }
 
 impl<R: Read> Read for CountingRead<R> {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if let Some(limit) = self.fail_after
+            && self.bytes.load(Ordering::Relaxed) >= limit
+        {
+            return Err(injected_error());
+        }
         let n = self.inner.read(buf)?;
         self.bytes.fetch_add(n as u64, Ordering::Relaxed);
         Ok(n)
@@ -590,13 +711,33 @@ impl ChunkReader for CountingFile {
         Ok(CountingRead {
             inner: self.file.get_read(start)?,
             bytes: Arc::clone(&self.bytes),
+            fail_after: self.fail_after,
         })
     }
 
     fn get_bytes(&self, start: u64, length: usize) -> parquet::errors::Result<bytes::Bytes> {
+        if let Some(limit) = self.fail_after
+            && self.bytes.load(Ordering::Relaxed) >= limit
+        {
+            return Err(ParquetError::External(Box::new(injected_error())));
+        }
         let b = self.file.get_bytes(start, length)?;
         self.bytes.fetch_add(b.len() as u64, Ordering::Relaxed);
         Ok(b)
+    }
+}
+
+/// Adds what a task did to the scan's counters when it ends, however it ends (done, cancelled, failed, panicked).
+struct Tally<'a> {
+    stats: &'a ScanStats,
+    rows: u64,
+    bytes: Arc<AtomicU64>,
+}
+
+impl Drop for Tally<'_> {
+    fn drop(&mut self) {
+        ScanStats::add(&self.stats.rows_read, self.rows);
+        ScanStats::add(&self.stats.bytes_read, self.bytes.load(Ordering::Relaxed));
     }
 }
 
@@ -620,19 +761,53 @@ impl RowGroupTask {
     /// Read this row group: decode, filter exactly, project. Any failure is an error that names the file and this row group; no rows are returned
     /// from a row group that failed.
     pub fn run(&self) -> Result<TaskOutput, ScanError> {
-        let (path, rg) = (&self.file.path, self.row_group);
-        guarded(path, Some(rg), || self.run_unguarded())
+        match self.run_cancellable(&|| false)? {
+            TaskResult::Done(o) => Ok(o),
+            TaskResult::Cancelled => Err(ScanError::new(ErrorKind::Internal(
+                "a task that cannot be cancelled was cancelled".into(),
+            ))),
+        }
     }
 
-    fn run_unguarded(&self) -> Result<TaskOutput, ScanError> {
+    /// As [`RowGroupTask::run`], looking at `cancel` before the handle is opened and between two batches. When it answers true the task drops its reader,
+    /// its handle and the batches it holds, and returns `Cancelled`.
+    pub fn run_cancellable(&self, cancel: &dyn Fn() -> bool) -> Result<TaskResult, ScanError> {
+        let (path, rg) = (&self.file.path, self.row_group);
+        guarded(path, Some(rg), || self.run_unguarded(cancel))
+    }
+
+    fn run_unguarded(&self, cancel: &dyn Fn() -> bool) -> Result<TaskResult, ScanError> {
         let f = &*self.file;
+        let stats = &*f.ctx.stats;
         let (path, rg) = (&f.path, self.row_group);
         let at = |kind: ErrorKind| ScanError::new(kind).in_file(path).in_row_group(rg);
-        let handle = File::open(path).map_err(|e| io_error(&e, path).in_row_group(rg))?;
+        let abandoned = || {
+            ScanStats::add(&stats.row_groups_abandoned, 1);
+            Ok(TaskResult::Cancelled)
+        };
+        if cancel() {
+            return abandoned();
+        }
+        let OpenFile {
+            file: handle,
+            fail_reads_after,
+            _guard,
+        } = f
+            .ctx
+            .opener
+            .open(path, OpenFor::RowGroup(rg))
+            .map_err(|e| io_error(&e, path).in_row_group(rg))?;
+        let _open = Counted::new(&stats.handles);
         let bytes = Arc::new(AtomicU64::new(0));
+        let mut tally = Tally {
+            stats,
+            rows: 0,
+            bytes: Arc::clone(&bytes),
+        };
         let source = CountingFile {
             file: handle,
             bytes: Arc::clone(&bytes),
+            fail_after: fail_reads_after,
         };
         let reader = ParquetRecordBatchReaderBuilder::new_with_metadata(source, f.meta.clone())
             .with_projection(f.mask.clone())
@@ -646,14 +821,24 @@ impl RowGroupTask {
             rows_read: 0,
             rows_returned: 0,
             bytes_read: 0,
+            mem: Reservation::new(&stats.memory),
         };
+        let mut task_peak = 0u64;
         for batch in reader {
+            if cancel() {
+                return abandoned();
+            }
             let batch = batch.map_err(|e| {
                 ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
                     .in_file(path)
                     .in_row_group(rg)
             })?;
             out.rows_read += batch.num_rows() as u64;
+            tally.rows += batch.num_rows() as u64;
+            // the decoded batch is held while it is filtered: counted until the end of this turn
+            let mut transient = Reservation::new(&stats.memory);
+            transient.grow(batch.get_array_memory_size() as u64);
+            task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
             // the types the pipeline relies on (dictionary strings, Decimal64) must be what came out
             if !column_types_are_as_requested(&batch, &f.read_columns) {
                 return Err(at(ErrorKind::Internal(
@@ -692,6 +877,8 @@ impl RowGroupTask {
                 let projected = b
                     .project(&indices)
                     .map_err(|e| at(ErrorKind::Internal(redact(&e.to_string()))))?;
+                out.mem.grow(projected.get_array_memory_size() as u64);
+                task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
                 out.rows_returned += projected.num_rows() as u64;
                 out.batches.push(projected);
             }
@@ -704,28 +891,80 @@ impl RowGroupTask {
             ))));
         }
         out.bytes_read = bytes.load(Ordering::Relaxed);
-        Ok(out)
+        ScanStats::add(&stats.row_groups_read, 1);
+        stats.largest_task.fetch_max(task_peak, Ordering::SeqCst);
+        Ok(TaskResult::Done(out))
     }
 }
 
-// ------------------------------------------------------------------------------------------------------------------------------ the serial driver
+// ------------------------------------------------------------------------------------------------------------------------------ the report
 
-/// What a scan did. Printed by `nata scan` on stderr (see [`ScanReport::line`]).
+/// What a scan did. Printed by `nata scan` on stderr (see [`ScanReport::line`]). Row-group counts are those of the files that were OPENED: a scan
+/// that stops early (`--limit`, an error) has not read the footers of the files it never reached (`files_opened < files`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScanReport {
     pub files: usize,
+    pub files_opened: usize,
     pub row_groups_total: u64,
     pub row_groups_skipped: u64,
+    /// Row groups decoded to the end.
     pub row_groups_read: u64,
+    /// Row groups that were started or claimed and stopped by the cancellation.
+    pub row_groups_abandoned: u64,
+    /// Rows decoded, also by tasks that were cancelled halfway.
     pub rows_read: u64,
+    /// Rows handed to the sink.
     pub rows_returned: u64,
+    /// Bytes requested from the files by the row-group tasks (counted at the handle; cancelled tasks included; the footers are not counted).
     pub bytes_read: u64,
     pub columns_read: usize,
     pub pruning: PruningInfo,
+    pub threads: usize,
+    pub window: usize,
+    pub ordered: bool,
+    /// The highest number of decoded bytes held at once by running tasks and by results waiting for or held by the consumer (own accounting).
+    pub peak_inflight_bytes: u64,
+    /// The highest number of bytes any single task held at once.
+    pub largest_task_bytes: u64,
+    /// The highest number of file handles open at once.
+    pub peak_open_files: u64,
+    /// The highest number of footers held in memory at once.
+    pub peak_footers: u64,
 }
 
 impl ScanReport {
-    /// One line of `key=value` pairs. `not_read` = row groups that were neither skipped by the statistics nor read (the scan stopped early at `--limit`).
+    pub(crate) fn from_stats(
+        plan: &ScanPlan,
+        rows_returned: u64,
+        threads: usize,
+        window: usize,
+        ordered: bool,
+    ) -> ScanReport {
+        let st = &plan.ctx.stats;
+        ScanReport {
+            files: plan.file_count(),
+            files_opened: ScanStats::get(&st.files_opened) as usize,
+            row_groups_total: ScanStats::get(&st.row_groups_total),
+            row_groups_skipped: ScanStats::get(&st.row_groups_skipped),
+            row_groups_read: ScanStats::get(&st.row_groups_read),
+            row_groups_abandoned: ScanStats::get(&st.row_groups_abandoned),
+            rows_read: ScanStats::get(&st.rows_read),
+            rows_returned,
+            bytes_read: ScanStats::get(&st.bytes_read),
+            columns_read: plan.columns_read(),
+            pruning: plan.pruning(),
+            threads,
+            window,
+            ordered,
+            peak_inflight_bytes: st.memory.peak(),
+            largest_task_bytes: ScanStats::get(&st.largest_task),
+            peak_open_files: st.handles.peak(),
+            peak_footers: st.footers.peak(),
+        }
+    }
+
+    /// One line of `key=value` pairs. `not_read` = row groups that were neither skipped by the statistics nor decoded to the end (the scan stopped
+    /// early at `--limit`, or they were abandoned).
     pub fn line(&self) -> String {
         let pruning = if self.pruning.applied {
             format!(
@@ -740,7 +979,7 @@ impl ScanReport {
             "off(--no-prune)".to_string()
         };
         format!(
-            "scan: files={} row_groups={} skipped={} read={} not_read={} rows_read={} rows_returned={} bytes_read={} columns_read={} morsel=row-group pruning={}",
+            "scan: files={} row_groups={} skipped={} read={} not_read={} rows_read={} rows_returned={} bytes_read={} columns_read={} morsel=row-group pruning={} files_opened={} abandoned={} threads={} order={} window={} peak_inflight_bytes={} largest_task_bytes={} peak_open_files={} peak_footers={}",
             self.files,
             self.row_groups_total,
             self.row_groups_skipped,
@@ -752,62 +991,87 @@ impl ScanReport {
             self.rows_returned,
             self.bytes_read,
             self.columns_read,
-            pruning
+            pruning,
+            self.files_opened,
+            self.row_groups_abandoned,
+            self.threads,
+            if self.ordered { "ordered" } else { "unordered" },
+            self.window,
+            self.peak_inflight_bytes,
+            self.largest_task_bytes,
+            self.peak_open_files,
+            self.peak_footers
         )
     }
 }
 
-/// Run every task of the plan, one after the other, in order, and hand the batches to `sink`. With `limit`, stop as soon as that many rows have been
-/// handed over (the last batch is cut); `limit = Some(0)` reads nothing. (Cancelling in-flight work belongs to the parallel step.)
+// ------------------------------------------------------------------------------------------------------------------------------ the serial driver
+
+/// Cut batches at a limit and count the rows that reach the sink; shared by the serial and the parallel driver.
+pub(crate) struct Limiter {
+    pub remaining: Option<u64>,
+    pub returned: u64,
+}
+
+impl Limiter {
+    /// Hand `batch` (cut if needed) to `sink`. `Ok(true)` = the limit is reached, nothing more is wanted.
+    pub(crate) fn feed(
+        &mut self,
+        batch: &RecordBatch,
+        sink: &mut impl FnMut(&RecordBatch) -> Result<(), ScanError>,
+    ) -> Result<bool, ScanError> {
+        let take = match self.remaining {
+            Some(r) => usize::try_from(r)
+                .unwrap_or(usize::MAX)
+                .min(batch.num_rows()),
+            None => batch.num_rows(),
+        };
+        if take == 0 {
+            return Ok(true);
+        }
+        if take < batch.num_rows() {
+            sink(&batch.slice(0, take))?;
+        } else {
+            sink(batch)?;
+        }
+        self.returned += take as u64;
+        if let Some(r) = self.remaining.as_mut() {
+            *r -= take as u64;
+            return Ok(*r == 0);
+        }
+        Ok(false)
+    }
+}
+
+/// Run every task of the plan, one after the other, in order, on this thread, and hand the batches to `sink`. The footer of each file is read when the
+/// loop reaches it. With `limit`, stop as soon as that many rows have been handed over (the last batch is cut); `limit = Some(0)` reads nothing.
+/// This is the reference implementation: `run_parallel` must produce the same rows in the same order.
 pub fn run_serial(
     plan: &ScanPlan,
     limit: Option<u64>,
     mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
 ) -> Result<ScanReport, ScanError> {
-    let (total, skipped) = plan.row_group_counts();
-    let mut report = ScanReport {
-        files: plan.files.len(),
-        row_groups_total: total,
-        row_groups_skipped: skipped,
-        row_groups_read: 0,
-        rows_read: 0,
-        rows_returned: 0,
-        bytes_read: 0,
-        columns_read: plan.columns_read(),
-        pruning: plan.pruning(),
+    let mut lim = Limiter {
+        remaining: limit,
+        returned: 0,
     };
-    let mut remaining = limit;
-    'tasks: for task in plan.tasks() {
-        if remaining == Some(0) {
+    'files: for index in 0..plan.file_count() {
+        if lim.remaining == Some(0) {
             break;
         }
-        let out = task.run()?;
-        report.row_groups_read += 1;
-        report.rows_read += out.rows_read;
-        report.bytes_read += out.bytes_read;
-        for batch in &out.batches {
-            let take = match remaining {
-                Some(r) => usize::try_from(r)
-                    .unwrap_or(usize::MAX)
-                    .min(batch.num_rows()),
-                None => batch.num_rows(),
-            };
-            if take == 0 {
-                break 'tasks;
+        let file = plan.open_file(index)?;
+        for task in file.tasks() {
+            if lim.remaining == Some(0) {
+                break 'files;
             }
-            if take < batch.num_rows() {
-                sink(&batch.slice(0, take))?;
-            } else {
-                sink(batch)?;
-            }
-            report.rows_returned += take as u64;
-            if let Some(r) = remaining.as_mut() {
-                *r -= take as u64;
-                if *r == 0 {
-                    break 'tasks;
+            let out = task.run()?;
+            for batch in &out.batches {
+                if lim.feed(batch, &mut sink)? {
+                    break 'files;
                 }
             }
         }
     }
-    Ok(report)
+    plan.release_first_footer();
+    Ok(ScanReport::from_stats(plan, lim.returned, 1, 1, true))
 }

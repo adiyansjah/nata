@@ -6,10 +6,46 @@ use std::process::{Command, Stdio};
 use std::sync::OnceLock;
 
 pub mod data;
+pub mod faults;
+pub mod genfiles;
 pub mod writers;
 
+use std::cell::Cell;
+use std::sync::Arc;
+
 use nata_parquet::csv;
-use nata_parquet::{ScanError, ScanOptions, ScanPlan, ScanReport, run_serial};
+use nata_parquet::{
+    ParallelConfig, ScanError, ScanOptions, ScanPlan, ScanReport, run_parallel, run_serial,
+};
+
+/// How `scan` runs. `threads == 0`: the single-thread reference (`run_serial`). Otherwise `run_parallel` with that many workers.
+#[derive(Clone, Copy, Debug)]
+pub struct Mode {
+    pub threads: usize,
+    pub unordered: bool,
+}
+
+thread_local! {
+    static MODE: Cell<Option<Mode>> = const { Cell::new(None) };
+}
+
+/// The mode of this test thread: set by [`with_mode`], else from `NATA_SCAN_THREADS` (a number; 0 or unset = serial) and `NATA_SCAN_UNORDERED=1`.
+pub fn mode() -> Mode {
+    MODE.get().unwrap_or_else(|| Mode {
+        threads: std::env::var("NATA_SCAN_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0),
+        unordered: std::env::var("NATA_SCAN_UNORDERED").is_ok_and(|v| v == "1"),
+    })
+}
+
+pub fn with_mode<R>(m: Mode, f: impl FnOnce() -> R) -> R {
+    let old = MODE.replace(Some(m));
+    let r = f();
+    MODE.set(old);
+    r
+}
 
 pub fn find_duckdb() -> Option<String> {
     static FOUND: OnceLock<Option<String>> = OnceLock::new();
@@ -114,7 +150,18 @@ pub fn scan(
     let mut out: Vec<u8> = Vec::new();
     let names: Vec<String> = plan.out_schema().iter().map(|(n, _)| n.clone()).collect();
     csv::write_header(&mut out, &names).expect("header");
-    let report = run_serial(&plan, limit, |b| csv::write_batch(&mut out, b))?;
+    let m = mode();
+    let report = if m.threads == 0 {
+        run_serial(&plan, limit, |b| csv::write_batch(&mut out, b))?
+    } else {
+        let cfg = ParallelConfig {
+            ordered: !m.unordered,
+            ..ParallelConfig::new(m.threads)
+        };
+        run_parallel(Arc::new(plan), cfg, limit, |b| {
+            csv::write_batch(&mut out, b)
+        })?
+    };
     Ok(Scan {
         csv: String::from_utf8(out).expect("csv is utf-8"),
         report,
@@ -424,7 +471,14 @@ pub fn check_cases(duck: &str, files: &[&Path], specs: &[Spec]) -> Vec<ScanRepor
         let ctx = format!("{}: {}  [scan filters {texts:?}]", s.what, sqls[3 * i]);
         let pruned = scan(files, cols.as_deref(), &texts, true, None)
             .unwrap_or_else(|e| panic!("{ctx}\nscan failed: {e}"));
-        if let Some(d) = diff_ordered(want, &pruned.csv) {
+        let diff = |a: &str, b: &str| {
+            if mode().unordered {
+                diff_unordered(a, b)
+            } else {
+                diff_ordered(a, b)
+            }
+        };
+        if let Some(d) = diff(want, &pruned.csv) {
             panic!(
                 "{ctx}\npruned scan differs from DuckDB: {d}\nreport: {}",
                 pruned.report.line()
@@ -432,7 +486,7 @@ pub fn check_cases(duck: &str, files: &[&Path], specs: &[Spec]) -> Vec<ScanRepor
         }
         let full = scan(files, cols.as_deref(), &texts, false, None)
             .unwrap_or_else(|e| panic!("{ctx}\nunpruned scan failed: {e}"));
-        if let Some(d) = diff_ordered(want, &full.csv) {
+        if let Some(d) = diff(want, &full.csv) {
             panic!("{ctx}\nunpruned scan differs from DuckDB: {d}");
         }
         let (r, u) = (&pruned.report, &full.report);

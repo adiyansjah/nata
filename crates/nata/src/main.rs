@@ -8,10 +8,11 @@
 use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use nata_parquet::csv;
-use nata_parquet::{ErrorKind, ScanError, ScanOptions, ScanPlan, run_serial};
+use nata_parquet::{ErrorKind, ParallelConfig, ScanError, ScanOptions, ScanPlan, run_parallel};
 
 #[derive(Parser)]
 #[command(
@@ -58,6 +59,15 @@ enum Command {
         /// Do not use row-group statistics to skip row groups (for checking the pruning; the filter still applies).
         #[arg(long)]
         no_prune: bool,
+        /// Worker threads (default: the available parallelism). Memory is bounded by the window (default: this number) times the largest row group.
+        #[arg(long)]
+        threads: Option<usize>,
+        /// Print rows as row groups finish, in no promised order (default: the order of the files, row groups and rows, for any thread count).
+        #[arg(long)]
+        unordered: bool,
+        /// Row groups in flight at once, running or finished and waiting for the writer (default: the thread count). Developer option.
+        #[arg(long)]
+        window: Option<usize>,
     },
 }
 
@@ -71,19 +81,50 @@ fn exit_code(e: &ScanError) -> ExitCode {
     }
 }
 
-fn scan(
+/// Highest resident memory of this process so far, from `/proc` (Linux); `None` elsewhere.
+fn peak_rss_kib() -> Option<u64> {
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    let line = status.lines().find(|l| l.starts_with("VmHWM:"))?;
+    line.split_whitespace().nth(1)?.parse().ok()
+}
+
+struct ScanArgs {
     files: Vec<PathBuf>,
     columns: Option<Vec<String>>,
     filters: Vec<String>,
     limit: Option<u64>,
     no_prune: bool,
-) -> ExitCode {
+    threads: Option<usize>,
+    unordered: bool,
+    window: Option<usize>,
+}
+
+fn scan(a: ScanArgs) -> ExitCode {
+    let ScanArgs {
+        files,
+        columns,
+        filters,
+        limit,
+        no_prune,
+        threads,
+        unordered,
+        window,
+    } = a;
+    if threads == Some(0) || window == Some(0) {
+        let _ = writeln!(
+            std::io::stderr(),
+            "error: --threads and --window must be at least 1"
+        );
+        return ExitCode::from(2);
+    }
+    let threads = threads
+        .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, std::num::NonZero::get));
     // a panic must not print its message (it could hold a value from a file): location only
     std::panic::set_hook(Box::new(|info| {
         let at = info
             .location()
             .map_or_else(String::new, |l| format!(" at {}:{}", l.file(), l.line()));
-        eprintln!("error: internal error{at}");
+        let _ = writeln!(std::io::stderr(), "error: internal error{at}");
     }));
     let options = ScanOptions {
         columns,
@@ -91,19 +132,26 @@ fn scan(
         prune: !no_prune,
     };
     let result = (|| {
-        let plan = ScanPlan::open(&files, &options)?;
+        let plan = Arc::new(ScanPlan::open(&files, &options)?);
         let names: Vec<String> = plan.out_schema().iter().map(|(n, _)| n.clone()).collect();
         let stdout = std::io::stdout();
         let mut out = BufWriter::new(stdout.lock());
         let io_error = |e: std::io::Error| ScanError::new(ErrorKind::Io(e.to_string()));
         csv::write_header(&mut out, &names).map_err(io_error)?;
-        let report = run_serial(&plan, limit, |batch| csv::write_batch(&mut out, batch))?;
+        let cfg = ParallelConfig {
+            threads,
+            window: window.unwrap_or(threads),
+            ordered: !unordered,
+        };
+        let report = run_parallel(plan, cfg, limit, |batch| csv::write_batch(&mut out, batch))?;
         out.flush().map_err(io_error)?;
         Ok::<_, ScanError>(report)
     })();
     match result {
         Ok(report) => {
-            eprintln!("{}", report.line());
+            // writeln, not eprintln: a closed stderr must not be a panic
+            let rss = peak_rss_kib().map_or(String::new(), |k| format!(" peak_rss_kib={k}"));
+            let _ = writeln!(std::io::stderr(), "{}{rss}", report.line());
             ExitCode::SUCCESS
         }
         // `nata scan ... | head`: the reader went away, which is not a failure of the scan
@@ -113,7 +161,7 @@ fn scan(
             ..
         }) if m.contains("Broken pipe") => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {e}");
+            let _ = writeln!(std::io::stderr(), "error: {e}");
             exit_code(&e)
         }
     }
@@ -131,12 +179,24 @@ fn main() -> ExitCode {
             limit,
             csv,
             no_prune,
+            threads,
+            unordered,
+            window,
         } => {
             if !csv {
                 eprintln!("error: not supported yet: output other than --csv");
                 return ExitCode::from(2);
             }
-            return scan(files, columns, filters, limit, no_prune);
+            return scan(ScanArgs {
+                files,
+                columns,
+                filters,
+                limit,
+                no_prune,
+                threads,
+                unordered,
+                window,
+            });
         }
     };
     eprintln!("error: not supported yet: {what}");

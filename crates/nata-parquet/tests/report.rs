@@ -204,7 +204,7 @@ fn tasks_are_independent_row_group_morsels() {
         prune: true,
     };
     let plan = ScanPlan::open(&[PathBuf::from(&f)], &options).expect("plan");
-    let tasks: Vec<_> = plan.tasks().collect();
+    let tasks = plan.tasks().expect("tasks");
     assert_eq!(
         tasks.iter().map(|t| t.row_group()).collect::<Vec<_>>(),
         [0, 1, 2]
@@ -226,6 +226,8 @@ fn tasks_are_independent_row_group_morsels() {
             .collect::<Vec<_>>(),
         [1000, 1000, 500]
     );
+    // the counters belong to the plan: a serial run needs its own
+    let plan = ScanPlan::open(&[PathBuf::from(&f)], &options).expect("plan");
     let serial = run_serial(&plan, None, |_| Ok(())).expect("serial");
     assert_eq!(serial.rows_returned, 2500);
     assert_eq!(

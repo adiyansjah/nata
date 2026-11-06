@@ -10,8 +10,16 @@ pub mod civil;
 pub mod csv;
 pub mod error;
 pub mod filter;
+pub mod opener;
+pub mod parallel;
 pub mod reader;
 pub mod schema;
+pub mod stats;
 
 pub use error::{ErrorKind, ScanError};
-pub use reader::{RowGroupTask, ScanOptions, ScanPlan, ScanReport, TaskOutput, run_serial};
+pub use opener::{FsOpener, OpenFile, OpenFor, Opener};
+pub use parallel::{ParallelConfig, run_parallel};
+pub use reader::{
+    RowGroupTask, ScanOptions, ScanPlan, ScanReport, TaskOutput, TaskResult, run_serial,
+};
+pub use stats::ScanStats;

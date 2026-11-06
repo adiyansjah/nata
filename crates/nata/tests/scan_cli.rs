@@ -101,7 +101,16 @@ fn limit_columns_and_default_columns() {
     let d = dir("limit");
     let a = d.join("a.parquet");
     write(&a, 0, 30);
-    let out = nata(&["scan", a.to_str().expect("p"), "--limit", "3", "--csv"]);
+    // one thread: the window is one row group, so exactly one is read (with more threads some are read ahead and dropped)
+    let out = nata(&[
+        "scan",
+        a.to_str().expect("p"),
+        "--limit",
+        "3",
+        "--threads",
+        "1",
+        "--csv",
+    ]);
     assert_eq!(text(&out.stdout), "id,txt\n0,t0\n1,t1\n2,t2\n");
     assert!(
         text(&out.stderr).contains("read=1 not_read=2"),
@@ -126,7 +135,7 @@ fn limit_columns_and_default_columns() {
 }
 
 #[test]
-fn errors_name_the_file_print_nothing_on_stdout_and_exit_non_zero() {
+fn errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_zero() {
     let d = dir("err");
     let a = d.join("a.parquet");
     write(&a, 0, 30);
@@ -182,16 +191,6 @@ fn errors_name_the_file_print_nothing_on_stdout_and_exit_non_zero() {
             2,
             "not supported yet: output other than --csv",
         ),
-        (
-            vec![
-                "scan",
-                a.to_str().expect("p"),
-                bad.to_str().expect("p"),
-                "--csv",
-            ],
-            1,
-            "bad.parquet",
-        ),
     ] {
         let out = nata(&args);
         assert_eq!(
@@ -209,6 +208,30 @@ fn errors_name_the_file_print_nothing_on_stdout_and_exit_non_zero() {
         assert!(
             err.starts_with("error: ") && err.contains(want),
             "{args:?}: {err}"
+        );
+    }
+    // Footers are read when the scan reaches the file (step 2b): a bad file AFTER a good one is found after the good file's rows were printed, for
+    // every thread count; the order is the one of the file list, so the output is the same each time.
+    for threads in ["1", "4"] {
+        let out = nata(&[
+            "scan",
+            a.to_str().expect("p"),
+            bad.to_str().expect("p"),
+            "--threads",
+            threads,
+            "--csv",
+        ]);
+        assert_eq!(out.status.code(), Some(1));
+        let want_rows: String = std::iter::once("id,txt".to_string())
+            .chain((0..30).map(|i| format!("{i},t{i}")))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        assert_eq!(text(&out.stdout), want_rows, "threads {threads}");
+        let err = text(&out.stderr);
+        assert!(
+            err.starts_with("error: ") && err.contains("bad.parquet"),
+            "{err}"
         );
     }
     // no file at all is a usage error of clap

@@ -9,6 +9,7 @@ rust-version.workspace = true
 # Same arrow and parquet versions as spikes/parquet-scan (the baseline spike of the slice).
 [dependencies]
 nata-scan = { path = "../nata-scan" }
+nata-sched = { path = "../nata-sched" }
 arrow-array = "60"
 arrow-buffer = "60"
 arrow-schema = "60"
