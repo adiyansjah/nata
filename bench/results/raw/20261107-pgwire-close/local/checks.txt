@@ -1,0 +1,11 @@
+TMPDIR=$HOME/tmp-4b5 (on disk); AI_AGENT unset; CODEX_CI also unset for final DuckDB CLI checks.
+Before implementation commit: fmt exit 0; workspace clippy -D warnings exit 0; workspace tests 403 PASS, exit 0; cargo deny exit 0; staged leak scan exit 0.
+Final closing gate: fmt exit 0; workspace clippy --all-targets -D warnings exit 0; workspace tests 403 PASS, exit 0; cargo deny exit 0.
+Final nata-check: scan 5/5; sql 251/251; sql-differences 37/37, exit 0 for each.
+Job chains: PASS; syntactically valid missing pgwirebench step control: FAIL, exit 1.
+Regression comparator pass/slowdown/missing/invalid controls: exit 0 for test-regress.sh (intentional invalid-input trace retained).
+Mutation toolchain control: old runner with no default: exit 2; fixed runner: baseline PASS, wrong-type-OID CAUGHT, exit 0.
+Local full benchmark smoke: PASS, explicitly SANITY ONLY (settle bypassed); not used as cloud timing evidence.
+Local full client corpus: 221 successful queries, same structured results as both clean VMs.
+One closing trial shared its build cache with the private mutation probe and failed rustdoc with E0463 missing crate metadata. Probe completed; the fresh full gate rebuilt original workspace crates and passed all 403 tests/doctests. That failed trial is not counted as a passing gate.
+No push.

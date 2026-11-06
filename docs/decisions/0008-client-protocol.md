@@ -305,3 +305,42 @@ shares on both architectures; no performance claim follows from functional load.
 parent on 0.42.1 and master `12b7569` for short Parse/Bind/Describe/Execute/Close
 bodies. Revisit reuse when that fix is **released**, then rerun all R1 checks;
 a merged fix alone is insufficient. Production still has no pgwire dependency.
+
+## Amendment, 2026-11-07 (step 5 and item 35 closeout)
+
+Retain the step-4 protocol and fixed admission shares. The paired clean-VM
+measurements and exact client matrix are in
+[closeout](../../bench/results/20261107-pgwire-close.md), including every failed
+target and the superseded first-run job defects. The 20% streaming budget is
+unchanged: the implementation misses it by a large margin. Raw/psql similarity
+on ARM64 isolates a substantial common server cost; per-row packet allocation,
+bounded-channel transfer, async write and timeout setup are **reasoned** contributors,
+not a profile proving their individual shares. Batch bounded wire output before
+claiming the performance target; preserve cancellation and bounded backpressure.
+Queue instrumentation reports time around semaphore acquisition and the fixed
+configured worker share; it is not a CPU-utilization measurement.
+
+Default ADBC PostgreSQL 1.13.0 queries pg_catalog.pg_attribute with ORDER BY during
+connection setup and receives 0A000. No default ADBC operation reaches execution,
+COPY or binary results after that failed bootstrap. Record those as blocked,
+not as tested COPY failures. Adding a fake catalog or weakening query refusals
+would widen this slice. Binary results already supported by step 4 do not make
+ADBC's catalog/COPY path compatible. Revisit ADBC after the catalog/metadata slice;
+then test COPY explicitly against its own decision.
+
+Psql's SQL PREPARE is 0A000; it has no client API for wire Parse/Bind, so repeated
+simple queries do not certify SQL preparation. pgjdbc/psycopg/pgcli default wire
+preparation is measured separately. psql exposes display strings, whereas pgcli
+intentionally installs a text loader for DATE. These are known client differences,
+not a change to the R2 OID map. Boolean and float-special spellings differ from
+CLI CSV; exact text mismatches stay visible alongside typed value comparisons.
+
+**Confidence:** high for the tested values/errors and large streaming miss;
+medium for sampled lifecycle/resource bounds and concurrency timings (twins and
+min/max expose noise). **Not covered:** exceptional Date32 domains, arbitrary
+cell-width memory bounds, full sanitizer certification (R15), or the original
+SF10 SQL allocator gap (R16). R13's session-versus-signal audit is complete; keep
+the standard CLI signal dependency. R15/R16 remain explicit closeout deviations
+within the carried-in improvement budget; do not enlarge stack/scan allowances
+to disguise a miss. TLS/auth, SQL/suspended cursors, nondefault transaction
+semantics, catalog emulation and COPY remain out of scope.

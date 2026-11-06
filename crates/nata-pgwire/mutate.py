@@ -151,7 +151,7 @@ def main():
     ws = a.work/'ws'
     shutil.rmtree(ws, ignore_errors=True)
     ws.mkdir(parents=True)
-    for f in ['Cargo.toml', 'Cargo.lock']:
+    for f in ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml']:
         shutil.copy(ROOT/f, ws/f)
     shutil.copytree(ROOT/'crates', ws/'crates', ignore=shutil.ignore_patterns('target', '__pycache__'), copy_function=shutil.copy)
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.work/'target'), CARGO_TERM_COLOR='never')

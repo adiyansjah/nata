@@ -1,0 +1,51 @@
+connections64/concurrent: min=0.065080165 median=0.066164555 max=0.078551985 spread=20.3611%
+connections64/concurrent: queue_wait_us median=9258.0 max=23051 configured_worker_shares=[1]
+connections64/concurrent-twin: min=0.065902446 median=0.067798636 max=0.069201605 spread=4.8661%
+connections64/concurrent-twin: queue_wait_us median=9090.0 max=19534 configured_worker_shares=[1]
+connections64/sequential: min=0.050893027 median=0.051448819 max=0.095158523 spread=86.0379%
+connections64/sequential: queue_wait_us median=0.0 max=3 configured_worker_shares=[1]
+connections64/sequential-twin: min=0.091635654 median=0.093969523 max=0.095796563 spread=4.4279%
+connections64/sequential-twin: queue_wait_us median=0.0 max=3 configured_worker_shares=[1]
+preparation100/named-binary: min=4.399828891 median=4.403785497 max=4.407763127 spread=0.1802%
+preparation100/named-binary: queue_wait_us median=0.0 max=3 configured_worker_shares=[1]
+preparation100/named-binary-twin: min=4.399666022 median=4.403805427 max=4.407949818 spread=0.1881%
+preparation100/named-binary-twin: queue_wait_us median=0.0 max=2 configured_worker_shares=[1]
+preparation100/named-text: min=4.399624171 median=4.399678965 max=4.399721251 spread=0.0022%
+preparation100/named-text: queue_wait_us median=0.0 max=3 configured_worker_shares=[1]
+preparation100/named-text-twin: min=4.399697202 median=4.403686827 max=4.407791088 spread=0.1838%
+preparation100/named-text-twin: queue_wait_us median=1.0 max=6 configured_worker_shares=[1]
+preparation100/parse-text: min=4.398128559 median=4.399683847 max=4.403792171 spread=0.1287%
+preparation100/parse-text: queue_wait_us median=0.0 max=7 configured_worker_shares=[1]
+preparation100/parse-text-twin: min=4.399753446 median=4.399812230 max=4.407768645 spread=0.1822%
+preparation100/parse-text-twin: queue_wait_us median=0.0 max=7 configured_worker_shares=[1]
+share1-of8/raw: min=2.135999365 median=2.251716836 max=2.379932835 spread=10.8332%
+share1-of8/raw: queue_wait_us median=1 max=2 configured_worker_shares=[1]
+share1-of8/raw-twin: min=2.260012326 median=2.319957984 max=2.352566260 spread=3.9895%
+share1-of8/raw-twin: queue_wait_us median=2 max=2 configured_worker_shares=[1]
+stream/1/cli: min=0.037222938 median=0.037576844 max=0.048193213 spread=29.1942%
+stream/1/cli-twin: min=0.037153243 median=0.037279394 max=0.037873717 spread=1.9326%
+stream/1/psql: min=2.415453696 median=2.457725391 max=2.459081057 spread=1.7751%
+stream/1/psql: queue_wait_us median=3 max=3 configured_worker_shares=[1]
+stream/1/psql-twin: min=2.409383132 median=2.428043209 max=2.476426227 spread=2.7612%
+stream/1/psql-twin: queue_wait_us median=2 max=3 configured_worker_shares=[1]
+stream/1/raw: min=2.397716366 median=2.409377091 max=2.549142631 spread=6.2849%
+stream/1/raw: queue_wait_us median=3 max=3 configured_worker_shares=[1]
+stream/1/raw-twin: min=2.430276377 median=2.462856494 max=2.493621609 spread=2.5720%
+stream/1/raw-twin: queue_wait_us median=3 max=3 configured_worker_shares=[1]
+stream/8/cli: min=0.039053872 median=0.039099403 max=0.039122413 spread=0.1753%
+stream/8/cli-twin: min=0.038948343 median=0.039353421 max=0.039653815 spread=1.7927%
+stream/8/psql: min=2.400916233 median=2.407296157 max=2.478335413 spread=3.2160%
+stream/8/psql: queue_wait_us median=2 max=3 configured_worker_shares=[8]
+stream/8/psql-twin: min=2.396423236 median=2.432797132 max=2.476143430 spread=3.2769%
+stream/8/psql-twin: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+stream/8/raw: min=2.403657533 median=2.489231828 max=2.513549380 spread=4.4147%
+stream/8/raw: queue_wait_us median=1 max=3 configured_worker_shares=[8]
+stream/8/raw-twin: min=2.444265409 median=2.479108964 max=2.509476045 spread=2.6304%
+stream/8/raw-twin: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+VERDICT streaming/1/raw: 64.118666x <= 1.20x: NOT MET
+VERDICT streaming/1/psql: 65.405317x <= 1.20x: NOT MET
+VERDICT first-DataRow/1: first/scan-end/total=[(0.0011921110000230328, 2.397277, 2.3977163659999974), (0.0013430899999775647, 2.424595, 2.424920036000003), (0.0013083700000038334, 2.401562, 2.40192566799999), (0.0013036799999781579, 2.54805, 2.549142630999995), (0.0013036689999808004, 2.409008, 2.4093770909999535)]: MET; scan-end is producer completion including bounded-bridge backpressure
+VERDICT streaming/8/raw: 63.664190x <= 1.20x: NOT MET
+VERDICT streaming/8/psql: 61.568617x <= 1.20x: NOT MET
+VERDICT first-DataRow/8: first/scan-end/total=[(0.0011925790000191228, 2.50115, 2.501670718000014), (0.0012630690000037248, 2.488767, 2.4892318279999586), (0.0012467689999766662, 2.403244, 2.4036575330000005), (0.0014329390000398234, 2.513075, 2.513549380000029), (0.0011368190000098366, 2.459924, 2.460482837000029)]: MET; scan-end is producer completion including bounded-bridge backpressure
+VERDICT concurrency: elapsed concurrent/sequential=1.286027 <= 2.0: MET

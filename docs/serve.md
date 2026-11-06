@@ -165,3 +165,23 @@ RowDescription follows ADR 0008; NULL length -1 differs from empty string length
 zero. Date32 outside years 1–9999 and text with embedded zero fail explicitly.
 Query-worker logs contain session id, duration, rows and SQLSTATE, never SQL,
 cell values or cancel secrets. No TLS/auth, COPY, SQL cursors or catalog compatibility.
+
+## Item 35 client notes
+
+The [slice closeout](../bench/results/20261107-pgwire-close.md) records clean-VM
+versions, the full successful SQL corpus, native types/NULLs, ten executions,
+positioned errors, cancellation and frontend session chatter. Ordinary default
+pgjdbc/psycopg and noninteractive pgcli use the existing protocol surface; pgcli's
+DATE loader deliberately returns strings. psql returns display text and SQL
+`PREPARE` remains `0A000` (wire preparation is a different interface).
+
+ADBC PostgreSQL 1.13.0 fails during its default catalog bootstrap:
+`pg_catalog.pg_attribute` with `ORDER BY` returns `0A000`. This prevents default
+connection creation, so query/COPY/Arrow fetch, type readback, preparation and
+cancel are blocked, rather than certified. No catalog or COPY emulation is
+provided. PostgreSQL boolean and special-float text spellings differ from CLI
+CSV; the closeout retains exact differences and checks typed values separately.
+
+The streaming performance budget is **not met**. Use the recorded timings when
+choosing this interface for large exports; first rows stream and slow clients
+exert bounded backpressure, but that does not imply CLI-equivalent throughput.

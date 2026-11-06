@@ -1,0 +1,23 @@
+connections64/concurrent: min=0.061567594 median=0.064269332 max=0.073703493 spread=18.8829%
+connections64/concurrent-twin: min=0.062412696 median=0.063599387 max=0.064814476 spread=3.7764%
+connections64/sequential: min=0.044357970 median=0.046428750 max=0.086690232 spread=91.1768%
+connections64/sequential-twin: min=0.085544175 median=0.086094896 max=0.087185679 spread=1.9066%
+stream/1/cli: min=0.036376450 median=0.036703690 max=0.037359875 spread=2.6794%
+stream/1/cli-twin: min=0.036437787 median=0.036639024 max=0.036840578 spread=1.0993%
+stream/1/psql: min=2.458531706 median=2.482406795 max=2.530029518 spread=2.8802%
+stream/1/psql-twin: min=2.428439698 median=2.483229762 max=2.539866683 spread=4.4872%
+stream/1/raw: min=2.410533785 median=2.459272815 max=2.531021374 spread=4.8993%
+stream/1/raw-twin: min=2.441899870 median=2.453256981 max=2.470515683 spread=1.1664%
+stream/8/cli: min=0.038099191 median=0.038483973 max=0.039392825 spread=3.3615%
+stream/8/cli-twin: min=0.038250725 median=0.038323412 max=0.039089771 spread=2.1894%
+stream/8/psql: min=2.426559590 median=2.475740083 max=2.502247202 spread=3.0572%
+stream/8/psql-twin: min=2.435747531 median=2.454288753 max=2.501811448 spread=2.6918%
+stream/8/raw: min=2.476953039 median=2.480982924 max=2.510901927 spread=1.3684%
+stream/8/raw-twin: min=2.435692263 median=2.501093614 max=2.534278755 spread=3.9417%
+VERDICT streaming/1/raw: 67.003422x <= 1.20x: NOT MET
+VERDICT streaming/1/psql: 67.633712x <= 1.20x: NOT MET
+VERDICT first-DataRow/1: first/total=[(0.0008466269999871656, 2.459272814999963), (0.0009940649999862217, 2.4502579549999837), (0.0008556669999961741, 2.4694115359999955), (0.0010020349999990685, 2.5310213740000336), (0.0008237540000095578, 2.410533785000041)]: MET; total includes wire delivery, not isolated scan execution
+VERDICT streaming/8/raw: 64.467952x <= 1.20x: NOT MET
+VERDICT streaming/8/psql: 64.331718x <= 1.20x: NOT MET
+VERDICT first-DataRow/8: first/total=[(0.0008888010000305258, 2.4769530390000227), (0.001180550000015046, 2.4809829240000454), (0.0009127139999804967, 2.4778459849999876), (0.0010579490000282021, 2.5109019270000204), (0.0010809089999952448, 2.5014636889999906)]: MET; total includes wire delivery, not isolated scan execution
+VERDICT concurrency: elapsed concurrent/sequential=1.384257 <= 2.0: MET

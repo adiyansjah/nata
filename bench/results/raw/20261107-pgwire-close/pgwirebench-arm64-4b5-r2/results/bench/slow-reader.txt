@@ -1,0 +1,14 @@
+   Compiling nata-pgwire v0.0.0 (/mnt/work/src/crates/nata-pgwire)
+    Finished `release` profile [optimized] target(s) in 2.57s
+     Running tests/reliability.rs (/mnt/work/target-ws/release/deps/reliability-d40d9d0b57b076bb)
+
+running 1 test
+nata serve listening=127.0.0.1:42485 max_connections=64 query_admission=2 workers=2
+scan_end_us=656
+session=2 duration_us=752 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2008256
+session=1 duration_us=2008509 rows=0 state=57014 queue_wait_us=1 worker_share=1
+SLOW_READER PASS result_rows=1048576 width=1024 bytes_read=1893 produced=2567 rss_baseline_peak_kib=13652,19260 bound_delta_kib=131072
+test one_byte_per_millisecond_reader_is_bounded ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 2.28s

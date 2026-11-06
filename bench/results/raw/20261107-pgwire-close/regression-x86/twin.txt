@@ -1,0 +1,13 @@
+pgwire/connections64/concurrent: 0.980x (limit 1.200x): PASS
+pgwire/connections64/sequential: 1.005x (limit 1.200x): PASS
+pgwire/preparation100/named-binary: 1.000x (limit 1.200x): PASS
+pgwire/preparation100/named-text: 1.000x (limit 1.200x): PASS
+pgwire/preparation100/parse-text: 0.999x (limit 1.200x): PASS
+pgwire/share1-of8/raw: 0.961x (limit 1.200x): PASS
+pgwire/stream/1/cli: 1.004x (limit 1.200x): PASS
+pgwire/stream/1/psql: 1.015x (limit 1.200x): PASS
+pgwire/stream/1/raw: 0.992x (limit 1.200x): PASS
+pgwire/stream/8/cli: 0.996x (limit 1.200x): PASS
+pgwire/stream/8/psql: 0.981x (limit 1.200x): PASS
+pgwire/stream/8/raw: 1.001x (limit 1.200x): PASS
+exit 0

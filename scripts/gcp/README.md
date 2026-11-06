@@ -242,3 +242,11 @@ boolean/float spellings and native client formatting from incorrect values.
 Default ADBC catalog bootstrap failures are recorded without emulating catalogs
 or introducing COPY. Neither job launches cloud resources itself; plan each
 architecture before an explicitly approved run.
+
+The pgwire benchmark writes `bench/medians.csv`. Compare it with the same CPU's
+`crates/nata-bench/baselines/pgwire-arm64.csv` or `pgwire-x86.csv` using `regress.sh`
+and the unchanged 20% tolerance. Closeout retains the primary/twin comparison and
+a planted 30%-lower baseline; a noisy twin failure is retained as a failure.
+The compatibility corpus uses TPC-H SF0.01 plus the full SQL fixtures so that
+multi-million-row CSV scratch never enters pulled results. This is separate from
+the benchmark's exact one-million-row fixture.

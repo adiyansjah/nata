@@ -1,6 +1,6 @@
 # 0003: A minimal Postgres-wire server for slice 4's queries ("4b"), and real-client compatibility (plan item 35)
 
-Status: accepted (by the assistant under the owner's delegation, 2026-11-07; step 1 design/baseline accepted, implementation checks remain)
+Status: closed with deviations, 2026-11-07 (streaming budget, ADBC compatibility, ARM64 mutants and carried-in certification gaps recorded below)
 Date: 2026-11-06
 ADRs: 0001, 0002, 0007 (relies on); creates ADR 0008 "client protocol" (which protocol first, and how types map)
 
@@ -66,18 +66,54 @@ executor resource boundaries; budget at most about a quarter of this slice. No c
 | R6b next arrow-rs release | deferred, except a dependency upgrade needed by the selected fixes | R15/R16 take priority within the improvement budget. Keep the current panic catch; upgrade only if needed by those fixes and after checking the upstream release contains the fix. `cargo search parquet --limit 1` returned 60.1.0 at closeout (2026-11-06 19:28 UTC); re-check during this slice. | Workspace, damaged-file fuzz and differential suites on both architectures; record release and upstream fix. |
 | R12 shared strict kernels; R17 nearest-double conversion; P11 vectorization | deferred to slice 5 | R17 is a Miri-exposed portability failure in the existing conversion fast path; native differential tests pass on both CPUs. Reworking arithmetic/conversions and proving kernels stays with slice 5, while this slice takes the session/stack/RSS risks within its quarter budget. Preserve the R17 failure and nearest-double contract. | Existing differential suite remains gating. |
 
-## 6. Closeout (fill in when done)
+## 6. Closeout (2026-11-07)
 
-- Progress 2026-11-07: step 4 built and certified locally: bounded named statements/portals, default pgjdbc 42.7.7 and psycopg 3.3.8 preparation and scalar formats, explicit fetch-limit refusal with rollback recovery; 2,000 seeded lifecycle scenarios under eight-core contention/file delays, 10,000 live fuzz cases, 64 concurrent correct queries and one-byte/ms backpressure/RSS bounds. All 45 mutants CAUGHT (all 30 previous retained); workspace gates pass. ADR 0008 records limits, SQLSTATEs, rowless Execute and upstream issue 481. Evidence: `bench/results/20261107-pgwire-reliability.md`. Larger nightly and GCP replay job prepared, no GCP run or push. Step 5 two-CPU performance and R15/R16 certification remain open; this is not slice closeout.
-
-- Progress 2026-11-07: step 3 built locally: unnamed extended/text literals, Sync recovery, driver session layer, positioned Nata diagnostics/SQLSTATEs, bounded concurrent admission and stalled-reader timeout. ADR 0008 records named/fetch-limit refusals and exact client settings; default-driver limits are measured, not hidden. Checks, mutants and local clients: `bench/results/20261107-pgwire-extended.md`. Step 4 reliability/fuzz/leak certification next; no GCP or push.
-
-- Progress 2026-11-07: step 2 built and checked locally: codec, SIMPLE server, bounded admission/streaming, cancel/disconnect, protocol/corpus/mutants; R13 audited, R15 local ASan depth fix passes, R16 diagnosis recorded and remains open. Results: `bench/results/20261107-pgwire-server.md`. No two-CPU, full sanitizer or real-client certification; step 3 next.
-- Progress: step 1 done; steps: 2 server core (startup, simple query, errors, cancel, limits) with carried-in R13/R15/R16; 3 extended protocol and session chatter; 4 reliability, fuzz and leak checks; 5 benchmarks on both CPUs; 6 item 35 real-client job.
-- Results file: step 1: `bench/results/20261107-pgwire-baseline.md`; slice closeout pending
-- ADR updated: ADR 0008 accepted 2026-11-07 under the owner's delegation
-- Benchmark added to the regression set, baseline numbers:
-- Deviations from this card, and why:
-- Spike code deleted: none in step 1; `spikes/pgwire-bakeoff` kept outside workspace members for the parent to replay the decoder failure and resource mutants; delete when step 4 replaces it with permanent checks
-- Improvement register updated:
-- Plan item 35 status: pending step 6; local smoke probes are not the real-client job
+- Results: `bench/results/20261107-pgwire-close.md` is the consolidated per-target
+  verdict, CPU measurements, client/version matrix, raw-evidence index and cloud
+  accounting/cleanup record. Earlier stages remain in `20261107-pgwire-baseline.md`,
+  `20261107-pgwire-server.md`, `20261107-pgwire-extended.md` and
+  `20261107-pgwire-reliability.md`; their local-only limits remain explicit.
+- ADR written/amended: ADR 0008 accepted 2026-11-07; dated step-2/3/4 amendments
+  and final step-5/item-35 amendment record implementation, format/preparation
+  extensions, fixed shares, known differences, confidence and revisit triggers.
+- Regression benchmark: `crates/nata-bench/pgwire-bench.py`, clean-VM
+  `pgwirebench` job; five settled alternating primary/twin rounds. Baselines:
+  `crates/nata-bench/baselines/pgwire-arm64.csv` and `pgwire-x86.csv`, exact
+  `metric,median_secs` values in those files and the closeout table. Existing
+  `regress.sh` retains its 20% tolerance; paired and planted-gate outputs retained.
+  Eight-worker CLI/raw/psql baseline seconds: ARM64 0.039099403 / 2.489231828 /
+  2.407296157; x86-64 0.050884172 / 3.628683744 / 2.902415501.
+- Deviations: step 4 extended the original unnamed/text-only goal with bounded
+  named preparation and mapped scalar binary input/results, under ADR 0008
+  amendments, because default driver preparation otherwise failed. COPY, extra
+  SQL types and suspended cursors were not added. Streaming overhead exceeds
+  the fixed 20% ceiling (NOT MET, P14).
+  PostgreSQL/client text spellings differ from CLI CSV; exact differences retained,
+  typed values match. Default ADBC is blocked by its catalog bootstrap (R18),
+  without adding catalog/COPY support. SQL PREPARE and suspended/SQL cursors are
+  explicitly unsupported; default driver wire preparation works. Ordinary type
+  probes do not certify exceptional Date32 domains (R19). ARM64 replay passes
+  release/2,000 lifecycle/10,000 live-fuzz checks but its mutation baseline cannot
+  choose cargo because the private copy lacked the toolchain pin; fixed and
+  mutation-checked locally, full ARM64 sweep NOT MET (R20), no third VM after the
+  permitted retry. R15's local stack repair is retained; full sanitizer
+  certification and R16's original SF10 RSS repair exceed the bounded carried-in
+  work and remain open. No budget, SQL limit or memory allowance is relaxed.
+- Spike code: **kept**, `spikes/pgwire-bakeoff` outside workspace members, because
+  permanent production tests replace the hand-codec checks but do not reproduce
+  pgwire's reuse-candidate panic/resource behavior. ADR 0008's released-fix
+  revisit rule still needs that independent candidate/control. Historical results
+  stay even when a future reuse recheck permits deleting this code.
+- Improvement register: R13 bounded session/signal audit done (standard CLI
+  dependency retained); R15/R16 remain explicit certification/resource deviations.
+  P14/P15 and R18/R19/R20 record new findings and their next work. R6b/R12/R17,
+  P11/P12/P13 and R14 stay open without scope expansion.
+- Plan item 35: **measured on clean ARM64 and x86-64**, all five clients installed
+  and versioned; psql/pgjdbc/psycopg/pgcli ordinary values and supported default
+  behavior checked, exact text differences listed; ADBC default connection and
+  dependent operations fail/block explicitly. This is completed compatibility
+  characterization with a NOT MET ADBC target, not universal client support.
+- Local gates: fmt, workspace clippy with warnings denied, workspace tests on
+  disk TMPDIR, cargo-deny, scan/SQL/differences nata-check with AI_AGENT unset,
+  job-chain canary, toolchain-control mutant and leak scans; exact final outcomes
+  and limitations are in the closeout. No push.

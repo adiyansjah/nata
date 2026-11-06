@@ -1,0 +1,7 @@
+query: 1.000x (limit 1.200x): PASS
+query: 1.300x (limit 1.200x): FAIL
+query: infx (limit 1.200x): FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 17, in <module>
+  File "<stdin>", line 15, in read
+ValueError: empty, duplicate or invalid medians

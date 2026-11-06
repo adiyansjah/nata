@@ -1,0 +1,2826 @@
+[
+  {
+    "query": "edge_all_null_expressions.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 5,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "NULL",
+          "NULL",
+          "true",
+          "0",
+          "NULL"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "NULL",
+          "NULL",
+          "t",
+          "0",
+          "NULL"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_dups_cmp_everything.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 7,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "e",
+          "g",
+          "h"
+        ],
+        [
+          "2",
+          "true",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "e",
+          "g",
+          "h"
+        ],
+        [
+          "2",
+          "t",
+          "f",
+          "t",
+          "t",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_dups_expressions.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 7,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "2",
+          "2",
+          "2.50",
+          "false",
+          "1",
+          "1.5"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "2",
+          "2",
+          "2.50",
+          "f",
+          "1",
+          "1.5"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_dups_star.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 7,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "2",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1.5",
+          "1.5",
+          "1.50",
+          "1.500",
+          "1.5000000000",
+          ".500",
+          "a",
+          "1994-01-01",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "2",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1.5",
+          "1.5",
+          "1.50",
+          "1.500",
+          "1.5000000000",
+          ".500",
+          "a",
+          "1994-01-01",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_one_row_cmp_everything.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 1,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "e",
+          "g",
+          "h"
+        ],
+        [
+          "2",
+          "true",
+          "false",
+          "true",
+          "true",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "e",
+          "g",
+          "h"
+        ],
+        [
+          "2",
+          "t",
+          "f",
+          "t",
+          "t",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_one_row_expressions.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 1,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "2",
+          "2",
+          "2.50",
+          "false",
+          "1",
+          "1.5"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "2",
+          "2",
+          "2.50",
+          "f",
+          "1",
+          "1.5"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "edge_one_row_star.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 1,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "2",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1.5",
+          "1.5",
+          "1.50",
+          "1.500",
+          "1.5000000000",
+          ".500",
+          "a",
+          "1994-01-01",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "2",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1.5",
+          "1.5",
+          "1.50",
+          "1.500",
+          "1.5000000000",
+          ".500",
+          "a",
+          "1994-01-01",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s1_star.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0.0",
+          "0.0",
+          "0.00",
+          "0.000",
+          "0.0000000000",
+          ".000",
+          "",
+          "1970-01-01",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "ti",
+          "si",
+          "i",
+          "b",
+          "r",
+          "d",
+          "dec52",
+          "dec183",
+          "dec3810",
+          "dec33",
+          "s",
+          "dt",
+          "f"
+        ],
+        [
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0.0",
+          "0.0",
+          "0.00",
+          "0.000",
+          "0.0000000000",
+          ".000",
+          "",
+          "1970-01-01",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s3_boolean_literals.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 1,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "a",
+          "b"
+        ],
+        [
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "a",
+          "b"
+        ],
+        [
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_and_or_not_truth_table.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "g"
+        ],
+        [
+          "1",
+          "false",
+          "false",
+          "true",
+          "true",
+          "NULL",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "g"
+        ],
+        [
+          "1",
+          "f",
+          "f",
+          "t",
+          "t",
+          "NULL",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_between.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "false",
+          "true",
+          "true",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "f",
+          "t",
+          "t",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_between_doubles.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_between_expressions.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_between_null_bounds.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "NULL",
+          "false",
+          "NULL"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "NULL",
+          "f",
+          "NULL"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_between_reversed.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b"
+        ],
+        [
+          "1",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b"
+        ],
+        [
+          "1",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_across_scales_exact.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        [
+          "1",
+          "true",
+          "true",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        [
+          "1",
+          "t",
+          "t",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_bool_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_columns.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "false",
+          "true",
+          "false",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "f",
+          "t",
+          "f",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_date_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_dec_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_decimal_with_wide_and_narrow.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "true",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "t",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_double_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v",
+          "w"
+        ],
+        [
+          "1",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_int_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_real_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_bang.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_eq.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_ge.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_gt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_le.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_lt.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_cmp_str_ne.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "v"
+        ],
+        [
+          "1",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_in_list.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "false",
+          "true",
+          "false",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "f",
+          "t",
+          "f",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_in_list_mixed_numeric.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "c"
+        ],
+        [
+          "1",
+          "false",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "c"
+        ],
+        [
+          "1",
+          "f",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_in_list_null.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        [
+          "1",
+          "NULL",
+          "NULL",
+          "NULL",
+          "NULL"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d"
+        ],
+        [
+          "1",
+          "NULL",
+          "NULL",
+          "NULL",
+          "NULL"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_is_null.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 14,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "false",
+          "true",
+          "false",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "d",
+          "e"
+        ],
+        [
+          "1",
+          "f",
+          "t",
+          "f",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_nan_semantics.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "dd"
+        ],
+        [
+          "1",
+          "false",
+          "false",
+          "true",
+          "false"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c",
+          "dd"
+        ],
+        [
+          "1",
+          "f",
+          "f",
+          "t",
+          "f"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_negative_zero.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 2,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "true",
+          "false",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b",
+          "c"
+        ],
+        [
+          "1",
+          "t",
+          "f",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s5_not_null.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 15,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a",
+          "b"
+        ],
+        [
+          "1",
+          "NULL",
+          "true"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a",
+          "b"
+        ],
+        [
+          "1",
+          "NULL",
+          "t"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s6_cast_from_varchar.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 1,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h"
+        ],
+        [
+          "12",
+          "-7",
+          "1.01",
+          "2024-02-29",
+          "true",
+          "100.0",
+          "-1.5",
+          "nan"
+        ]
+      ],
+      "actual": [
+        [
+          "a",
+          "b",
+          "c",
+          "d",
+          "e",
+          "f",
+          "g",
+          "h"
+        ],
+        [
+          "12",
+          "-7",
+          "1.01",
+          "2024-02-29",
+          "t",
+          "100.0",
+          "-1.5",
+          "NaN"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  },
+  {
+    "query": "s6_cast_real_to_double.sql",
+    "status": "TEXT DIFFERENCE",
+    "values": "PASS",
+    "rows": 9,
+    "cause": "client/PG type text representation",
+    "example": {
+      "expected": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "0.0"
+        ]
+      ],
+      "actual": [
+        [
+          "id",
+          "a"
+        ],
+        [
+          "1",
+          "0.0"
+        ]
+      ]
+    },
+    "known_difference": true,
+    "bug": false
+  }
+]
