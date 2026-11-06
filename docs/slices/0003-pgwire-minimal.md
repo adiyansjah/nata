@@ -1,6 +1,6 @@
 # 0003: A minimal Postgres-wire server for slice 4's queries ("4b"), and real-client compatibility (plan item 35)
 
-Status: draft (by the assistant, 2026-11-06; accepted when slice 4 closes: it depends on slice 4's SQL path)
+Status: accepted (by the assistant under the owner's delegation, 2026-11-07; step 1 design/baseline accepted, implementation checks remain)
 Date: 2026-11-06
 ADRs: 0001, 0002, 0007 (relies on); creates ADR 0008 "client protocol" (which protocol first, and how types map)
 
@@ -17,7 +17,7 @@ ADR 0008, `CommandComplete`, `ErrorResponse` with SQLSTATE codes and the error p
 real drivers send on connect (`SET` of the parameters drivers send, `SHOW`, `SELECT version()`, `current_setting`): answered when harmless,
 otherwise a clear error. Not in this slice: TLS, passwords, binary format, COPY, transactions beyond auto-commit no-ops, `information_schema`.
 
-Decision it needs: reuse the `pgwire` crate or write the protocol (rule R1 below, a bake-off).
+Decision (ADR 0008, local baseline 2026-11-07): write the supported message codec; unchanged pgwire 0.42.1 fails R1(iii).
 
 ## 2. Quality targets
 
@@ -27,11 +27,11 @@ Decision it needs: reuse the `pgwire` crate or write the protocol (rule R1 below
 | Performance | Result streaming adds at most 20% to `nata sql --csv` for 1 million rows over loopback, and the first row arrives before the scan ends | Paired benchmark, `psql` and a raw-protocol client, both CPU types | `nata sql --csv` |
 | Scalability | 64 concurrent connections each running a small query; throughput within 2x of 64 sequential runs on 8 vCPUs | Load test with a fixed seed | - |
 | Reliability | A client that disconnects mid-result, a cancel request, a killed client: the query stops, its tasks end, memory and handles are released, other sessions are not affected | The slice 3 leak counters across sessions; scenarios with disconnect and cancel at random points; under CPU contention | slice 3 cancel |
-| Fault tolerance | A malformed or truncated protocol message is an `ErrorResponse` and a closed connection, never a panic or a hang; a message larger than a stated limit is refused before allocating | A fuzz of the protocol decoder (10,000 cases) and a test per limit | - |
-| Resource bounds | A stated maximum of connections; memory per session bounded by the scan's window; a slow client exerts backpressure (the server does not buffer a whole result) | Tests with a client that reads slowly; peak RSS | slice 3 bounds |
+| Fault tolerance | A malformed or truncated protocol message is an `ErrorResponse` and a closed connection, never a panic or a hang; a message above 1,114,112 bytes (length included, tag excluded; startup 10,000 bytes) is refused before allocating | A fuzz of the protocol decoder (10,000 cases) and a test per limit | - |
+| Resource bounds | 64 session slots plus 8 bounded pre-startup/cancel slots (72 sockets total, five-second startup deadline); memory per session bounded by the scan's window; a slow client exerts backpressure (the server does not buffer a whole result) | Tests with a client that reads slowly; peak RSS | slice 3 bounds |
 | Portability | ARM64 and x86-64, clean VMs | `orchestrate.sh` jobs on both | - |
 | Compatibility | Real clients, each with its version recorded: `psql`, pgjdbc (JDBC), psycopg 3, the ADBC PostgreSQL driver, and one BI-style client (DBeaver's driver is pgjdbc; `pgcli`). Known differences listed. | The item 35 job (one VM, about 1 hour, about $0.12) | - |
-| Security and privacy | Loopback only in this slice (refuses other addresses unless an explicit flag, documented as unsafe until TLS and auth exist); errors carry no cell values; no secrets in logs | Tests; leak scan | - |
+| Security and privacy | Loopback only in this slice (refuses other addresses unless `--unsafe-listen`, documented as unsafe until TLS and auth exist); errors carry no cell values; no secrets in logs | Tests; leak scan | - |
 | Operability | Each session's queries are visible in a log line with session id and duration; `EXPLAIN` works through the protocol | Tests | slice 4 `EXPLAIN` |
 
 ## 3. Decision rules (fixed before measuring)
@@ -46,7 +46,12 @@ Decision it needs: reuse the `pgwire` crate or write the protocol (rule R1 below
 ## 4. Baseline spike
 
 Required (a build-versus-reuse choice): the `pgwire` crate against a hand-written codec for the supported messages, on R1's four criteria,
-with `psql` and pgjdbc against both; local; result file `bench/results/<date>-pgwire-baseline.md`.
+with `psql` and pgjdbc against both; local; result file [20261107-pgwire-baseline.md](../../bench/results/20261107-pgwire-baseline.md).
+
+Step 1 measured pgwire 0.42.1 with `default-features = false, features = ["server-api"]`. R1(i), (ii), (iv) pass within the local
+probe; R1(iii) fails (2,015 panics in 10,000 regular-frame cases). The checked hand decoder has no panic in 10,000 regular and
+10,000 startup cases, and its guard-removal mutant is caught. Select the hand codec exactly by R1; see ADR 0008 for the R2 type map,
+threading, security, limits and cancel contract. Resource probes are not R16 certification; the production limits are reasoned defaults.
 
 ## 5. Carried-in improvements (from `docs/improvements.md`)
 
@@ -63,10 +68,11 @@ executor resource boundaries; budget at most about a quarter of this slice. No c
 
 ## 6. Closeout (fill in when done)
 
-- Results file:
-- ADR updated: ADR 0008 written
+- Progress: step 1 done; steps: 2 server core (startup, simple query, errors, cancel, limits) with carried-in R13/R15/R16; 3 extended protocol and session chatter; 4 reliability, fuzz and leak checks; 5 benchmarks on both CPUs; 6 item 35 real-client job.
+- Results file: step 1: `bench/results/20261107-pgwire-baseline.md`; slice closeout pending
+- ADR updated: ADR 0008 accepted 2026-11-07 under the owner's delegation
 - Benchmark added to the regression set, baseline numbers:
 - Deviations from this card, and why:
-- Spike code deleted:
+- Spike code deleted: none in step 1; `spikes/pgwire-bakeoff` kept outside workspace members for the parent to replay the decoder failure and resource mutants; delete when step 4 replaces it with permanent checks
 - Improvement register updated:
-- Plan item 35 status:
+- Plan item 35 status: pending step 6; local smoke probes are not the real-client job

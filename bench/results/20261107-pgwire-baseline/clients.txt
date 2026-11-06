@@ -1,0 +1,55 @@
+hand all million rows PASS
+hand extended ['1', '2', 'T', 'D', 'C', 'Z']
+hand psql simple 0 '0\n' ''
+hand psql bind 0 '0\n' ''
+hand psql cancel 1 Cancel request sent
+ERROR:  spike query failed
+
+hand jdbc 0 simple query PASS
+simple cancel SQLSTATE=57014
+
+hand jdbc 0 extended query PASS
+extended cancel SQLSTATE=57014
+
+hand jdbc types 0 b Boolean true
+ti String 127
+si Integer -32768
+i Integer 2147483647
+bi Long 9223372036854775807
+f Float 1.25
+d Double 0.0
+n BigDecimal 123.450
+s String a,b
+dt Date 2024-02-29
+
+hand psycopg types 0 psycopg 3.3.8
+oids [16, 25, 21, 23, 20, 700, 701, 1700, 25, 1082]
+[('bool', 'True'), ('str', '127'), ('int', '-32768'), ('int', '2147483647'), ('int', '9223372036854775807'), ('float', '1.25'), ('float', '0.0'), ('Decimal', '123.450'), ('str', 'a,b'), ('date', '2024-02-29')]
+
+pg all million rows PASS
+pg extended ['1', '2', 'T', 'D', 'C', 'Z']
+pg psql simple 0 '0\n' ''
+pg psql bind 0 '0\n' ''
+pg psql cancel 1 Cancel request sent
+ERROR:  spike query failed
+
+pg jdbc 0 simple query PASS
+simple cancel SQLSTATE=57014
+
+pg jdbc 0 extended query PASS
+extended cancel SQLSTATE=57014
+
+pg jdbc types 0 b Boolean true
+ti String 127
+si Integer -32768
+i Integer 2147483647
+bi Long 9223372036854775807
+f Float 1.25
+d Double 0.0
+n BigDecimal 123.450
+s String a,b
+dt Date 2024-02-29
+
+pg psycopg types 0 psycopg 3.3.8
+oids [16, 25, 21, 23, 20, 700, 701, 1700, 25, 1082]
+[('bool', 'True'), ('str', '127'), ('int', '-32768'), ('int', '2147483647'), ('int', '9223372036854775807'), ('float', '1.25'), ('float', '0.0'), ('Decimal', '123.450'), ('str', 'a,b'), ('date', '2024-02-29')]

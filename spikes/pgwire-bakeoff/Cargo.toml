@@ -1,0 +1,21 @@
+[package]
+name = "pgwire-bakeoff"
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+[workspace]
+[dependencies]
+pgwire = { version = "=0.42.1", default-features = false, features = ["server-api"] }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "sync", "macros", "time"] }
+futures = "0.3"
+async-trait = "0.1"
+bytes = "1"
+tokio-util = { version = "0.7", features = ["codec"] }
+nata-sql = { path = "../../crates/nata-sql" }
+nata-exec = { path = "../../crates/nata-exec" }
+nata-parquet = { path = "../../crates/nata-parquet" }
+[profile.dev]
+debug = 0
+[profile.dev.package."*"]
+opt-level = 2

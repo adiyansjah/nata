@@ -1,0 +1,6 @@
+seed=322661912839
+startup=false pg=false cases=10000 panic=0 rejected=9334 accepted=666
+startup=false pg=true cases=10000 panic=2015 rejected=4000 accepted=3985
+startup=true pg=false cases=10000 panic=0 rejected=9990 accepted=10
+startup=true pg=true cases=10000 panic=0 rejected=9028 accepted=972
+minimal_parse pg_panic=true hand_reject=true
