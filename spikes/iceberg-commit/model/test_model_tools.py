@@ -122,7 +122,7 @@ class RunModelTargeted(unittest.TestCase):
     def test_list_names_every_run(self):
         p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "run_model.py"), "--list"], capture_output=True, text=True)
         names = p.stdout.split()
-        self.assertEqual(len(names), 24)
+        self.assertEqual(len(names), 25)
         for n in self.DEFAULT_RERUN + ["canary-Unknown", "canary-ReaderPinned"]:
             self.assertIn(n, names)
         self.assertEqual(sum(n.startswith("canary-") for n in names), 11)

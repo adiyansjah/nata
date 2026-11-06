@@ -51,6 +51,10 @@ MUTANTS = {
  "accept-stale-base-on-retry": ("on retry, refresh only the expected version and keep building on the stale base",
     [("NewBaseOnRetry(w) == CurVer", "NewBaseOnRetry(w) == base[w]")],
     ["appends2-rest", "appends2-store", "three-rest-ser"], ["I2_NoLostUpdate", "I6_SeqIncreases", "I7_NoSnapshotLost"]),
+ "compaction-sees-new-pairs-only": ("a compaction conflicts only with a delete that removes rows not yet deleted (the pairs rule of the first model), not with any delete file naming its inputs",
+    [("\\A s \\in inter : \\A p \\in s.delTargets : p[1] \\notin plan[w].inputs",
+      "\\A s \\in inter : \\A p \\in s.delPairs : p[1] \\notin plan[w].inputs")],
+    ["ddc-rest"], ["I8_CompactionSawNoDeleteFile"]),
  "gc-ignores-active-writers": ("orphan collection also deletes files of writers that are still running",
     [("GCOwnerDead(f) == pc[Owner(f)] \\in Terminal", "GCOwnerDead(f) == TRUE")],
     ["smoke-rest", "appends2-rest"], ["I1_FilesExist"]),
@@ -59,7 +63,8 @@ MUTANTS = {
     ["smoke-rest", "appends2-rest"], ["I1_FilesExist"]),
 }
 REQUIRED = ["no-cas", "skip-validation", "blind-retry-after-unknown", "commit-before-durable",
-            "reuse-sequence-number", "compaction-deletes-live-files", "accept-stale-base-on-retry"]
+            "reuse-sequence-number", "compaction-deletes-live-files", "accept-stale-base-on-retry",
+            "compaction-sees-new-pairs-only"]
 
 def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()

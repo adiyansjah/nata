@@ -28,6 +28,7 @@ RUNS = [
  ("ad-store-ser",      "ad-store-ser",      "PASS"),
  ("dc-rest",           "dc-rest",           "PASS"),
  ("dc-store",          "dc-store",          "PASS"),
+ ("ddc-rest",          "ddc-rest",          "PASS"),
  ("three-rest-ser",    "three-rest-ser",    "PASS"),
  ("three-store-ser",   "three-store-ser",   "PASS"),
  ("three-rest-snap",   "three-rest-snap",   "PASS"),

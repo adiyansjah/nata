@@ -30,4 +30,10 @@ MdcDel == (1 :> "a") @@ (2 :> "-")
 M3Op  == (1 :> "append") @@ (2 :> "delete") @@ (3 :> "compact")
 M3App == (1 :> {3}) @@ (2 :> {}) @@ (3 :> {})
 M3Del == (1 :> "-") @@ (2 :> "a") @@ (3 :> "-")
+
+\* Two delete-where key a (both plan the same pair) and a compaction: the second deleter retries and
+\* commits a REDUNDANT delete file; a compaction that planned in between must still conflict with it.
+MddcOp  == (1 :> "delete") @@ (2 :> "delete") @@ (3 :> "compact")
+MddcApp == (1 :> {}) @@ (2 :> {}) @@ (3 :> {})
+MddcDel == (1 :> "a") @@ (2 :> "a") @@ (3 :> "-")
 =============================================================================

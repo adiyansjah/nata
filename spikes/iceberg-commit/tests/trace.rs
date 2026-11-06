@@ -111,14 +111,15 @@ fn traced_runs_behave_as_untraced_runs_and_leave_well_formed_traces() {
 /// A deterministic run of the one place where the code and the model were found to differ (see the record, section on trace
 /// validation): two deleters of the same rows commit one after the other, the second one a redundant delete file; a
 /// compaction that planned between the two finds a delete on its input files and aborts. The code aborts (Iceberg's
-/// validateNoNewDeletesForDataFiles does the same); the model's `delPairs` counts only pairs that were not yet deleted, so
-/// it demands a retry. The trace of this run is the fixture `model/testdata/traces/finding_redundant_delete.jsonl`.
+/// validateNoNewDeletesForDataFiles does the same). The first model counted only pairs that were not yet deleted and demanded
+/// a retry; since 2026-11-06 the model conflicts with any delete file naming an input (`delTargets`), so the trace of this run,
+/// the fixture `model/testdata/traces/finding_redundant_delete.jsonl`, is VALID (expectation `pass`).
 #[test]
 fn redundant_delete_makes_the_compaction_abort() {
     let w = work("finding");
     let tr = trace_dir().clone();
     let t = suite::new_table(&Backend::Store, &w, "finding-redundant-delete").unwrap();
-    suite::trace_meta(&t, "finding-redundant-delete", Mode::Correct, "known-mismatch");
+    suite::trace_meta(&t, "finding-redundant-delete", Mode::Correct, "pass");
     suite::seed_table(&t, 6).unwrap();
     let (dir_a, dir_b) = (w.join("sync-a"), w.join("sync-b"));
     let sync = |dir: &Path, rank: u32| Some(SyncCfg { dir: dir.to_path_buf(), rank, n: 2, timeout: Duration::from_secs(20) });

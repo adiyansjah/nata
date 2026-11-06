@@ -24,10 +24,12 @@
 (*     re-reads, first looks for its own snapshot (the operation token),   *)
 (*     then VALIDATES against the snapshots committed since its base       *)
 (*     (Iceberg's rules: replace and delete must find their files still    *)
-(*     in the table, a compaction must find no new deletes on its inputs,  *)
-(*     a delete under serializable isolation must find no new matching     *)
-(*     rows), then rebuilds on the new base and retries, a bounded number  *)
-(*     of times.                                                           *)
+(*     in the table, a compaction must find no delete FILE committed since *)
+(*     its base that names one of its inputs, whether or not that file     *)
+(*     deletes rows nobody had deleted yet (Iceberg's rewrite validation,  *)
+(*     validateNoNewDeletesForDataFiles), a delete under serializable      *)
+(*     isolation must find no new matching rows), then rebuilds on the new *)
+(*     base and retries, a bounded number of times.                        *)
 (*   - Faults: a writer can crash at ANY step (budget); a request can be   *)
 (*     lost or delivered twice (budgets); a response is never "lost" but a *)
 (*     writer can time out at any moment while waiting (so the request can *)
@@ -110,10 +112,13 @@ Terminal == {"done", "aborted", "failed", "crashed"}
 
 \* A snapshot: id = <<writer, attempt>>; w = the operation token (summary property);
 \* files = live data files; del = position deletes (file, row) pairs; dfiles = delete files
-\* referenced; man = manifest list. addedRows / delPairs = what this snapshot changed.
+\* referenced; man = manifest list. addedRows / delPairs = what this snapshot changed (delPairs:
+\* the pairs newly deleted; it feeds the ghost history). delTargets = the (file, row) pairs the
+\* delete file this snapshot added NAMES, including pairs that were already deleted (a redundant
+\* delete): it decides which data files the delete file applies to (compaction validation).
 S0 == [id |-> <<0, 0>>, parent |-> <<0, 0>>, op |-> "init", w |-> 0, seq |-> 0,
        files |-> {F0}, del |-> {}, dfiles |-> {}, man |-> M0,
-       addedRows |-> InitRows, delPairs |-> {}]
+       addedRows |-> InitRows, delPairs |-> {}, delTargets |-> {}]
 Meta0 == [ver |-> 0, lastSeq |-> 0, snaps |-> {S0}, cur |-> S0]
 NoMeta == [ver |-> -1, lastSeq |-> -1, snaps |-> {}, cur |-> S0]
 
@@ -127,8 +132,9 @@ ReadRows(s) == {r \in Rows : \E f \in s.files : f \in durable /\ r \in frows[f] 
 (* ------------------------------------------------------------------------ *)
 (* What a writer plans and builds                                           *)
 (* ------------------------------------------------------------------------ *)
-PlanFor(w, b) ==
-    [targets |-> IF OpOf[w] = "delete"
+PlanFor(w, b, v) ==
+    [ver     |-> IF OpOf[w] = "compact" THEN v ELSE 0,   \* the version the plan was read at (compaction only: I8)
+     targets |-> IF OpOf[w] = "delete"
                    THEN {p \in b.files \X Rows :
                             p[2] \in frows[p[1]] /\ KeyOf[p[2]] = DelKey[w] /\ p \notin b.del}
                    ELSE {},
@@ -148,16 +154,17 @@ BuildSnap(w, k) ==
     IN  CASE OpOf[w] = "append" ->
               [id |-> <<w, k>>, parent |-> b.id, op |-> "append", w |-> w, seq |-> NextSeq(bm),
                files |-> b.files \cup {Data(w)}, del |-> b.del, dfiles |-> b.dfiles,
-               man |-> Man(w, k), addedRows |-> AppendRows[w], delPairs |-> {}]
+               man |-> Man(w, k), addedRows |-> AppendRows[w], delPairs |-> {}, delTargets |-> {}]
           [] OpOf[w] = "delete" ->
               [id |-> <<w, k>>, parent |-> b.id, op |-> "delete", w |-> w, seq |-> NextSeq(bm),
                files |-> b.files, del |-> b.del \cup pl.targets, dfiles |-> b.dfiles \cup {Del(w)},
-               man |-> Man(w, k), addedRows |-> {}, delPairs |-> pl.targets \ b.del]
+               man |-> Man(w, k), addedRows |-> {}, delPairs |-> pl.targets \ b.del,
+               delTargets |-> pl.targets]
           [] OpOf[w] = "compact" ->
               [id |-> <<w, k>>, parent |-> b.id, op |-> "compact", w |-> w, seq |-> NextSeq(bm),
                files |-> (b.files \ pl.inputs) \cup {Data(w)},
                del |-> {p \in b.del : p[1] \notin pl.inputs}, dfiles |-> b.dfiles,
-               man |-> Man(w, k), addedRows |-> {}, delPairs |-> {}]
+               man |-> Man(w, k), addedRows |-> {}, delPairs |-> {}, delTargets |-> {}]
 
 \* The metadata a STORE writer puts at the next version (REST: a placeholder, the server builds it).
 FullMeta(w, s) ==
@@ -169,6 +176,14 @@ FullMeta(w, s) ==
 (* Conflict validation on retry (Iceberg: "Commit Conflict Resolution and   *)
 (* Retry"; serializable vs snapshot isolation is a table property).         *)
 (* ------------------------------------------------------------------------ *)
+\* A compaction conflicts with ANY delete file committed after its base that names one of its input
+\* data files, even a redundant one that deletes no row that was not already deleted (Iceberg's
+\* validateNoNewDeletesForDataFiles asks whether a delete file applies to a file being rewritten,
+\* not whether it removes new rows). Stricter than "no newly deleted pair": it may abort a
+\* compaction needlessly, never lets one lose or resurrect a row.
+CompactionSeesNoDeleteFile(w, inter) ==                          \* MUTATION POINT: compaction vs delete files
+    \A s \in inter : \A p \in s.delTargets : p[1] \notin plan[w].inputs
+
 Valid(w, cm) ==
     LET inter == cm.snaps \ mlog[base[w]].snaps      \* snapshots committed since my base
     IN  CASE OpOf[w] = "append" -> TRUE
@@ -178,7 +193,7 @@ Valid(w, cm) ==
                        ~(\E s \in inter : \E r \in s.addedRows : KeyOf[r] = DelKey[w])) )
           [] OpOf[w] = "compact" ->
                ( (plan[w].inputs \subseteq cm.cur.files)
-                 /\ (\A s \in inter : \A p \in s.delPairs : p[1] \notin plan[w].inputs) )
+                 /\ CompactionSeesNoDeleteFile(w, inter) )
 
 Validated(w) == Valid(w, CurMeta)                                \* MUTATION POINT: conflict validation
 Mine(w) == \E s \in CurMeta.snaps : s.w = w                      \* MUTATION POINT: look for my own snapshot (token)
@@ -204,7 +219,7 @@ Init ==
     /\ att = [w \in Writers |-> 0]
     /\ base = [w \in Writers |-> 0]
     /\ exp = [w \in Writers |-> 0]
-    /\ plan = [w \in Writers |-> [targets |-> {}, inputs |-> {}]]
+    /\ plan = [w \in Writers |-> [ver |-> 0, targets |-> {}, inputs |-> {}]]
     /\ snap = [w \in Writers |-> S0]
     /\ pinned = {}
     /\ crashLeft = CrashBudget
@@ -218,7 +233,7 @@ PlanOp(w) ==
     /\ pc[w] = "init"
     /\ base' = [base EXCEPT ![w] = CurVer]
     /\ exp' = [exp EXCEPT ![w] = CurVer]
-    /\ plan' = [plan EXCEPT ![w] = PlanFor(w, CurMeta.cur)]
+    /\ plan' = [plan EXCEPT ![w] = PlanFor(w, CurMeta.cur, CurVer)]
     /\ frows' = IF OpOf[w] = "delete" THEN frows
                 ELSE [frows EXCEPT ![Data(w)] = ContentFor(w, CurMeta.cur)]
     /\ att' = [att EXCEPT ![w] = 1]
@@ -436,6 +451,20 @@ I7_NoSnapshotLost ==
     \A v \in DOMAIN mlog :
         v > 0 => ( mlog[v-1].snaps \subseteq mlog[v].snaps
                    /\ mlog[v].cur.parent = mlog[v-1].cur.id )
+
+\* I8: a compaction commits only if no delete file naming one of its input files was committed
+\* between its plan and its own commit, whether or not that file deleted new rows (the rule of
+\* CompactionSeesNoDeleteFile, stated on the history of versions instead of on the validation
+\* step: plan[w].ver is the version the plan was read at). Not a safety property of the table (a
+\* looser rule loses no row: I2 holds under it); it pins the conservative rule of the code and of
+\* Iceberg. It can only be violated with two deleters and a compaction (cfg ddc-rest).
+I8_CompactionSawNoDeleteFile ==
+    \A v \in DOMAIN mlog :
+        (v > 0 /\ mlog[v].cur.op = "compact") =>
+            LET w == mlog[v].cur.w IN
+            \A u \in DOMAIN mlog :
+                (u > plan[w].ver /\ u < v) =>
+                    \A p \in mlog[u].cur.delTargets : p[1] \notin plan[w].inputs
 
 (* ------------------------------------------------------------------------ *)
 (* Liveness (needs the fairness in Spec)                                    *)
