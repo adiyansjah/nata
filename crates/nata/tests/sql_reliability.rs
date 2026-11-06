@@ -122,6 +122,7 @@ fn kill_int(child: &Child) {
 
 struct Done {
     code: Option<i32>,
+    signal: Option<i32>,
     stdout_bytes: usize,
     stdout_head: Vec<u8>,
     stdout_lines: usize,
@@ -212,6 +213,7 @@ fn run(file: &str, s: &Scenario) -> Done {
     let (stdout_bytes, stdout_lines, stdout_head) = out_reader.join().expect("reader");
     Done {
         code: status.code(),
+        signal: std::os::unix::process::ExitStatusExt::signal(&status),
         stdout_bytes,
         stdout_head,
         stdout_lines,
@@ -270,9 +272,21 @@ fn random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process() {
         let what = format!("process scenario {n} of seed {seed}: {s:?}");
         let d = run(file, &s);
         let err = &d.stderr;
+        // A SIGINT that arrives before the process has installed its handler (the first milliseconds: the fork, the exec, the start of `main`) does what
+        // Ctrl-C does to any program: the process dies of the signal (a shell reports 130), nothing had been started, nothing is left. Found by this test
+        // (scenario 646 of seed 1: a signal 0 ms after the spawn); it is a class of its own, allowed only for a signal sent in the first 30 ms.
+        if let (Disturbance::Sigint(ms), Some(2)) = (&s.disturbance, d.signal) {
+            assert!(
+                *ms < 30,
+                "{what}: killed by SIGINT after {ms} ms: the handler must be installed by then\n{err}"
+            );
+            *classes.entry("sigint-before-the-handler").or_insert(0) += 1;
+            continue;
+        }
         assert!(
             d.code.is_some(),
-            "{what}: the process was killed by a signal\n{err}"
+            "{what}: the process was killed by a signal ({:?})\n{err}",
+            d.signal
         );
         assert!(
             !err.contains("panicked") && !err.contains("internal error"),

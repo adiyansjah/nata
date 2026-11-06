@@ -177,18 +177,11 @@ fn run_query(
         return ExitCode::from(130);
     }
     if planned.mode == ExplainMode::Plan {
+        // a closed stdout is not a failure of the query: the result of the write is not looked at
         let text = planned.plan.explain_text();
         let mut out = std::io::stdout().lock();
-        return if out
-            .write_all(text.as_bytes())
-            .and_then(|()| out.flush())
-            .is_ok()
-        {
-            ExitCode::SUCCESS
-        } else {
-            // a closed stdout is not a failure
-            ExitCode::SUCCESS
-        };
+        let _ = out.write_all(text.as_bytes()).and_then(|()| out.flush());
+        return ExitCode::SUCCESS;
     }
     let threads = a
         .threads

@@ -36,8 +36,6 @@ def classify(why, target_error="", rows=None):
     """The class of a difference, for the report."""
     for k, name in LISTED:
         if k in why: return name
-    if why.startswith("oracle raised an error") and rows == 0:
-        return "listed: DuckDB raises an error for an expression no row reaches (it folds constants when planning); Nata only for a selected row"
     if why.startswith("target raised an error"):
         msg = why.split(": ", 1)[-1]
         for k in ("internal error", "target failed", "bind error", "syntax error", "execution error", "cannot", "decimal"):
@@ -79,6 +77,7 @@ def run_batch(args, seed, batch, faults=()):
         if why == "SKIP":
             st["skipped"] += 1; st["skip_reasons"][" ".join(rt[i].error.split()[:8])[:80]] += 1
         elif why:
+            if why.startswith("oracle raised an error") and rt[i].ok and not rt[i].rows: why += " [Nata answered with 0 rows]"
             cls = classify(why, rows=len(rt[i].rows) if rt[i].ok else None)
             st["classes"][cls] += 1
             if cls.startswith("listed"): st["listed"] += 1; continue
@@ -110,6 +109,15 @@ def checker(args, faults, cls):
     return still_fails
 
 
+COLUMNS = re.compile(r"\b(?:id|a|b|ti|sm|c|r|d|w|s|f|dt)\b")
+
+
+def constant_select_list(sql):
+    """True when the select list of the (shrunk) query names no column: it is made of literals."""
+    m = re.match(r"SELECT (.*?) FROM ", sql)
+    return bool(m) and not COLUMNS.search(re.sub(r"'(?:[^']|'')*'", "''", m.group(1)))
+
+
 def shrunk_class(why, sql):
     """The class of a difference from the SHRUNK query (what is left once everything that does not matter is gone). `listed:` classes are differences that
     docs/dialect.md section 9 or docs/decimal-rules.md section 9 lists and that are consequences of one rule of Nata: errors are raised only for the rows an
@@ -126,6 +134,8 @@ def shrunk_class(why, sql):
             return "listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b)"
         return "BUG? nata-error: " + classify(why)
     if why.startswith("oracle raised an error"):
+        if "[Nata answered with 0 rows]" in why and constant_select_list(sql):
+            return "listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b)"
         if " OR " in up or " AND " in up:
             return "listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b)"
         if "CASE" in up:

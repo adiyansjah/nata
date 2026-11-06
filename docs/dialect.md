@@ -128,7 +128,8 @@ executor evaluates:
 - **an operand next to a NULL:** both operands of `+ - * % // =` and the rest are evaluated for the selected rows; DuckDB does not evaluate the other
   operand when one is a constant NULL (`(a * -1) + CAST(NULL AS INTEGER)` is NULL there, an overflow error here for `a = -2147483648`).
 - **constant expressions:** `CAST('abc' AS INTEGER)` as a `CASE` condition fails only for a row that reaches that condition; DuckDB evaluates it when it plans the
-  query and fails even if every row takes an earlier branch (in a result, a select item or with no row selected DuckDB does not fail either).
+  query and fails even if every row takes an earlier branch. A select list made only of literals that fails (`4294967296 * -4294967296`, a bad cast) fails in
+  DuckDB over its own tables even when no row is selected; over a Parquet file DuckDB agreed with Nata in the cases tried (`WHERE id < 0`, `WHERE 1 = 2`).
 
 These are consequences of one rule (a row that does not reach an operation cannot make it fail), so each is a difference in which errors appear, never in a value.
 

@@ -17,7 +17,7 @@ nata sql < query.sql         ... or stdin (at most 1 MiB)
 
 Exit codes: `0` success (also when the reader of stdout went away: `nata sql ... | head` is quiet); `1` a data or I/O error (a missing, truncated or damaged
 file, a division by zero or an overflow in the data); `2` `not supported yet`, a syntax or bind error, a wrong use of the command; `130` interrupted
-(Ctrl-C: the query stops, every thread is joined, every handle and buffer is released). If rows were printed before an error, the exit code is not 0 and
+(Ctrl-C: the query stops, every thread is joined, every handle and buffer is released; a Ctrl-C in the first milliseconds, before the handler is installed, or while the query is read from stdin, ends the process by the signal itself, which a shell also reports as 130). If rows were printed before an error, the exit code is not 0 and
 the message says that the output is INCOMPLETE. Errors name the class, the message, the line and column, and put a caret under the position; they quote the
 query and never a value from the data. A failure that comes from a file names the file and the row group.
 

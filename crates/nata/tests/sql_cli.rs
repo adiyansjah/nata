@@ -515,3 +515,58 @@ fn every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_s
         assert!(err.contains("line 1, column"), "{q}: {err}");
     }
 }
+
+#[test]
+fn ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130() {
+    let d = dir("sigint_footers");
+    let n = 4000i64;
+    for i in 0..n {
+        let id: ArrayRef = Arc::new(Int64Array::from_iter_values([i, i + n]));
+        write_batch(
+            &d.join(format!("f{i:05}.parquet")),
+            &RecordBatch::try_from_iter([("id", id)]).expect("batch"),
+            10,
+        );
+    }
+    let q = format!("SELECT id FROM '{}/f*.parquet' LIMIT 5", d.display());
+    let (mut stopped, mut finished) = (0, 0);
+    for delay_ms in [5u64, 10, 20, 40, 80, 160] {
+        let child = Command::new(env!("CARGO_BIN_EXE_nata"))
+            .args(["sql", "--csv", "-c", &q])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn");
+        std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+        let _ = Command::new("kill")
+            .args(["-INT", &child.id().to_string()])
+            .status();
+        let out = child.wait_with_output().expect("wait");
+        match out.status.code() {
+            Some(130) => {
+                stopped += 1;
+                assert!(
+                    text(&out.stderr).contains("interrupted"),
+                    "{}",
+                    text(&out.stderr)
+                );
+                assert!(
+                    out.stdout.is_empty(),
+                    "nothing was printed: the footers were still being read"
+                );
+            }
+            Some(0) => {
+                finished += 1;
+                assert_eq!(text(&out.stdout).lines().count(), 6);
+            }
+            // a SIGINT before the handler is installed (the first milliseconds of the process) ends it by the signal itself, as for any program
+            None if delay_ms <= 20
+                && std::os::unix::process::ExitStatusExt::signal(&out.status) == Some(2) => {}
+            c => panic!("delay {delay_ms} ms: exit {c:?}: {}", text(&out.stderr)),
+        }
+    }
+    assert!(
+        stopped >= 1,
+        "no interrupt came in time ({finished} runs finished first): the glob is too small for this machine"
+    );
+}
