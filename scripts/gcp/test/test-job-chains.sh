@@ -110,5 +110,8 @@ out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/busy" SETTLE_POLL
 sb=$(steps slice4bench | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
 [ "$sb" = "STEP s4-gen-sf1 STEP s4-gen-sf10 STEP s4-build STEP s4-pyarrow STEP s4-bench " ] && ok "slice4bench runs s4-gen-sf1, s4-gen-sf10, s4-build, s4-pyarrow, s4-bench only, in that order" || bad "slice4bench steps: $sb"
 grep -q -- '--no-default-features' "$HERE/job.sh" && grep -q 'BLOCKS="late footers crc"' "$HERE/job.sh" && ok "slice4bench builds the build without the page checksum and runs the late, footers and crc blocks" || bad "slice4bench is missing the no-default-features build or a block"
+sc=$(steps slice4close | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+[ "$sc" = "STEP s4c-gen-sf1 STEP s4c-gen-sf10 STEP s4c-build STEP s4c-fixtures STEP s4c-python STEP s4c-correct STEP s4c-contention STEP s4c-process STEP s4c-diff STEP s4c-bench STEP s4c-scan-bench STEP s4c-leaks " ] && ok "slice4close selects all checks before timing" || bad "slice4close: $sc"
+grep -q 'icebergpolaris|slice4bench|slice4close) python3' "$VS" && ok "startup installs slice4close venv support" || bad "slice4close startup missing"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

@@ -171,3 +171,21 @@ the log or the process; the recovery steps in the section above apply if one die
 The project allows 96 vCPUs in total across all regions (`CPUS_ALL_REGIONS`). Runs started in parallel share it: with a 64-vCPU run and an
 8-vCPU run going, a 32-vCPU VM is refused ("Quota 'CPUS_ALL_REGIONS' exceeded. Limit: 96.0 globally"), in every zone. Plan a wave so that
 its machines (peers of a multi-VM run included) add up to at most 96 vCPUs, or start the large run after the others have ended.
+
+## `slice4close`: SQL slice closeout
+
+Run on `n4a-highcpu-8` and `c3d-highcpu-8`: SF1/SF10, all SQL/front-end/executor/CLI
+release tests, 3,000 injected fault/delay scenarios and 2,000 process scenarios under
+CPU contention, the scan/SQL/differences differential sets, then `sql-bench.py` and the
+leak scan. Every timed block settles independently. Scratch is on the data disk;
+resource probes preserve the fresh VM's descriptor limit. Large fixtures stay outside
+results. See `crates/nata-bench/sql-bench.py` for the alternating arms and included costs.
+`eng-checks` additionally covers SQL, execution and CLI sanitizers, SQL pushdown and
+executor scalar tests under Miri, dependency checks, unsafe inventory and leak scan.
+Miri does not run process/signal/file-decoding tests; ASan and TSan cover those.
+
+`crates/nata-bench/regress.sh BASELINE NEW [fraction=0.20]` compares machine-specific
+`metric,median_secs` CSVs. Missing metrics and invalid samples fail. There is deliberately
+no CI job: shared CI runner noise makes it unsuitable for this performance gate.
+The stored baseline, observed twin spread and fail/pass demonstrations belong beside
+results. `test-regress.sh` exercises passing, slowdown, missing and invalid inputs.

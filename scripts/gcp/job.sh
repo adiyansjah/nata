@@ -2,7 +2,10 @@
 # The job that runs on the Spot VM. Every unit of work is a resumable step (see lib.sh), so the job can be
 # started again after a preemption and carries on where it stopped. State lives on the data disk ($WORK).
 set -u
+unset AI_AGENT
 export WORK=${WORK:-/mnt/work}
+export TMPDIR="$WORK/tmp"
+mkdir -p "$TMPDIR"
 HERE=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=lib.sh
 source "$HERE/lib.sh"
@@ -319,6 +322,19 @@ case "$JOB" in
     run s4-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata --features page-crc && CARGO_TARGET_DIR="$WORK/target-nocrc" cargo build --release -p nata --no-default-features'
     run s4-pyarrow bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet pyarrow && "$WORK/venv/bin/python" -c "import pyarrow; print(pyarrow.__version__)"'
     run s4-bench bash -c 'cd "$SRC" && { BLOCKS="late footers crc" NATA_NOCRC="$WORK/target-nocrc/release/nata" PYARROW_PYTHON="$WORK/venv/bin/python" SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/slice4-bench" 5; echo "exit status: $?"; } > "$RESULTS/slice4-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  slice4close)
+    run s4c-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run s4c-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
+    run s4c-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata -p nata-bench -p nata-check && CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-sql -p nata-exec -p nata --no-run'
+    run s4c-fixtures bash -c 'cd "$SRC" && scripts/gen-sql-check-data.sh data/tpch-sf1'
+    run s4c-python bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet duckdb==2.0.0'
+    run s4c-correct bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-sql -p nata-exec -p nata > "$RESULTS/s4c-tests.txt" 2>&1'
+    run s4c-contention bash -c 'cd "$SRC" && NATA_COMPETITORS=1 NATA_SCENARIOS=3000 CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-exec --test scenarios -- --nocapture > "$RESULTS/s4c-contention.txt" 2>&1'
+    run s4c-process bash -c 'cd "$SRC" && NATA_COMPETITORS=1 NATA_PROC_SCENARIOS=2000 CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata --test sql_reliability -- --nocapture > "$RESULTS/s4c-process.txt" 2>&1'
+    run s4c-diff bash -c 'cd "$SRC" && for q in scan sql sql-differences; do "$WORK/target-ws/release/nata-check" --candidate "$WORK/target-ws/release/nata" --data data/tpch-sf1 --queries check/queries/"$q" || exit; done > "$RESULTS/s4c-diff.txt" 2>&1'
+    run s4c-bench bash -c 'cd "$SRC" && "$WORK/venv/bin/python" crates/nata-bench/sql-bench.py "$WORK/target-ws/release/nata" "$WORK/target-ws/release/sql-plan" data/tpch-sf1 data/tpch-sf10 "$WORK/sql-work" "$RESULTS/slice4-close" > "$RESULTS/s4c-bench.txt" 2>&1'
+    run s4c-scan-bench bash -c 'cd "$SRC" && SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-close" 5 > "$RESULTS/s4c-scan-bench.txt" 2>&1'
+    run s4c-leaks bash -c 'cd "$SRC" && git init --bare "$WORK/leak-index" >/dev/null && export GIT_DIR="$WORK/leak-index" GIT_WORK_TREE="$SRC" && git add --all && scripts/check-leaks.sh --tree > "$RESULTS/s4c-leaks.txt" 2>&1' ;;
   cgroupcheck)
     # verification-plan item 9: the scan's default pool size under cgroup CPU quotas and affinity masks (scripts/cgroup-check.sh, needs
     # sudo for systemd-run --scope; vm-startup.sh grants it on this throwaway VM for this job only).
@@ -332,12 +348,15 @@ case "$JOB" in
     run ec-tools bash -c 'rustup toolchain install '"$NIGHTLY"' --profile minimal --component rust-src,miri > /dev/null && cargo install --locked cargo-deny cargo-audit > /dev/null 2>&1; cargo deny --version; cargo audit --version; rustup run '"$NIGHTLY"' rustc --version'
     run ec-deny bash -c 'cd "$SRC" && { cargo deny check 2>&1; echo "exit status: $?"; } > "$RESULTS/eng-deny.txt"; tail -1 "$RESULTS/eng-deny.txt" > "$RESULTS/eng-deny-exit.txt"; true'
     run ec-audit bash -c 'cd "$SRC" && { cargo audit 2>&1; echo "exit status: $?"; } > "$RESULTS/eng-audit.txt"; tail -1 "$RESULTS/eng-audit.txt" > "$RESULTS/eng-audit-exit.txt"; true'
-    run ec-unsafe bash -c 'cd "$SRC" && { for p in nata nata-parquet nata-sched nata-scan nata-kernels; do echo "== $p"; python3 -I scripts/unsafe-inventory.py "$p" 2>&1 | tail -n 15; done; } > "$RESULTS/eng-unsafe.txt" 2>&1; true'
+    run ec-unsafe bash -c 'cd "$SRC" && { for p in nata nata-parquet nata-sched nata-scan nata-kernels nata-sql nata-exec; do echo "== $p"; python3 -I scripts/unsafe-inventory.py "$p" 2>&1 | tail -n 15; done; } > "$RESULTS/eng-unsafe.txt" 2>&1; true'
     T=$(rustc -vV | sed -n "s/^host: //p")
     for san in address thread; do
-      run "ec-$san" bash -c 'cd "$SRC" && { RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' -p nata-sched -p nata-parquet -p nata-scan -p nata-kernels --lib --tests 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
+      run "ec-$san" bash -c 'cd "$SRC" && { RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' -p nata-sched -p nata-parquet -p nata-scan -p nata-kernels -p nata-sql -p nata-exec -p nata --lib --tests 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
     done
     run ec-miri bash -c 'cd "$SRC" && { MIRIFLAGS=-Zmiri-disable-isolation CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-scan --test rules 2>&1 | tail -n 30; r1=${PIPESTATUS[0]}; CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-kernels --lib 2>&1 | tail -n 30; r2=${PIPESTATUS[0]}; echo "exit status: $(( r1 | r2 ))"; } > "$RESULTS/eng-miri.txt"; tail -1 "$RESULTS/eng-miri.txt" > "$RESULTS/eng-miri-exit.txt"; true'
+    run ec-miri-sql bash -c 'cd "$SRC" && { CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-sql --test pushdown 2>&1 | tail -n 30; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-miri-sql.txt"; tail -1 "$RESULTS/eng-miri-sql.txt" > "$RESULTS/eng-miri-sql-exit.txt"'
+    run ec-miri-exec bash -c 'cd "$SRC" && { CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-exec --lib 2>&1 | tail -n 30; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-miri-exec.txt"; tail -1 "$RESULTS/eng-miri-exec.txt" > "$RESULTS/eng-miri-exec-exit.txt"'
+    run ec-leaks bash -c 'cd "$SRC" && git init --bare "$WORK/leak-index" >/dev/null && export GIT_DIR="$WORK/leak-index" GIT_WORK_TREE="$SRC" && git add --all && scripts/check-leaks.sh --tree > "$RESULTS/eng-leaks.txt" 2>&1'
     run ec-summary bash -c 'cd "$RESULTS" && for f in eng-*-exit.txt; do echo "${f%-exit.txt}: $(cat "$f")"; done > eng-summary.txt; cat eng-summary.txt' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
