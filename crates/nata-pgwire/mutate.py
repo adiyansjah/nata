@@ -16,6 +16,14 @@ MUTANTS = {
     'decoder-guard-removed': (CODEC, 'if n > self.0.len() {', 'if false {', 'codec'),
     'wrong-type-oid': (CODEC, 'Integer => (23, 4, -1)', 'Integer => (25, 4, -1)', 'codec'),
     'null-as-empty-string': (CODEC, 'None => b.extend((-1i32).to_be_bytes())', 'None => b.extend(0i32.to_be_bytes())', 'codec'),
+    'lost-command-complete': (SERVER, "b'C', format!(", "b'N', format!(", 'protocol'),
+    'rows-from-another-session': (SERVER, 'let q = sql.clone();', 'let q = { static LAST: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None); let mut previous = LAST.lock().expect("lock"); previous.replace(sql.clone()).unwrap_or_else(|| sql.clone()) };', 'protocol'),
+    'wrong-cancel-key-accepted': (SERVER, 's.secret == secret', 's.secret == secret || s.secret != secret', 'protocol'),
+    'generic-cancel-error': (SERVER, 'canceling statement due to user request', 'spike query failed', 'protocol'),
+    'unbounded-bridge': (SERVER, 'mpsc::channel(32)', 'mpsc::channel(1_100_000)', 'protocol'),
+    'max-connections-ignored': (SERVER, 'Semaphore::new(config.max_connections)', 'Semaphore::new(1024)', 'protocol'),
+    'startup-cap-removed': (CODEC, 'let max = if startup { MAX_STARTUP } else { MAX_FRAME };', 'let max = MAX_FRAME;', 'codec'),
+    'error-position-in-bytes': (CODEC, 'return i + 1;', 'return sql.chars().take(i).map(char::len_utf8).sum::<usize>() + 1;', 'codec'),
 
 }
 

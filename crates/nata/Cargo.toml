@@ -8,6 +8,8 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+nata-pgwire = { path = "../nata-pgwire" }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
 clap.workspace = true
 nata-parquet = { path = "../nata-parquet", default-features = false }
 nata-sql = { path = "../nata-sql" }

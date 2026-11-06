@@ -68,6 +68,7 @@ executor resource boundaries; budget at most about a quarter of this slice. No c
 
 ## 6. Closeout (fill in when done)
 
+- Progress 2026-11-07: step 2 built and checked locally: codec, SIMPLE server, bounded admission/streaming, cancel/disconnect, protocol/corpus/mutants; R13 audited, R15 local ASan depth fix passes, R16 diagnosis recorded and remains open. Results: `bench/results/20261107-pgwire-server.md`. No two-CPU, full sanitizer or real-client certification; step 3 next.
 - Progress: step 1 done; steps: 2 server core (startup, simple query, errors, cancel, limits) with carried-in R13/R15/R16; 3 extended protocol and session chatter; 4 reliability, fuzz and leak checks; 5 benchmarks on both CPUs; 6 item 35 real-client job.
 - Results file: step 1: `bench/results/20261107-pgwire-baseline.md`; slice closeout pending
 - ADR updated: ADR 0008 accepted 2026-11-07 under the owner's delegation

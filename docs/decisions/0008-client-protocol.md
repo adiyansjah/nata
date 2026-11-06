@@ -119,3 +119,18 @@ Session-scoped cancellation and backpressure become explicit integration obligat
 
 Upstream pgwire fixes and fuzzes these decoders; item 35 finds a mapping/chatter incompatibility; a new Nata type needs an OID;
 TLS/auth or a non-loopback deployment is required; the two-CPU benchmarks expose a bridge/codec bottleneck.
+
+## Implementation note, 2026-11-07 (step 2, local)
+
+The SIMPLE server uses one global query-admission slot and the existing executor's
+configured CPU workers, plus one coordinator; connected sessions cannot multiply
+full CPU pools. This is deliberately conservative pending the step-5 scalability
+measurement. Extended messages are decoded but explicitly rejected until step 3.
+Non-cancel SQLSTATE classes use 42 (syntax/bind), 0A (unsupported), 22 (evaluation),
+58 (source I/O), XX (internal); positions count characters across the whole query.
+The R15 planning stack is now 64 MiB: local ASan/build-std fails at 16 MiB and
+passes at 32 MiB; the final reservation has 2x headroom without changing SQL limits.
+Dates outside years 1–9999 and embedded zero bytes return class 22 explicitly.
+Cancellation preserves an in-progress backend frame for up to one second before
+sending ErrorResponse; if the reader remains blocked the socket closes. Evidence
+and remaining certification: `bench/results/20261107-pgwire-server.md`.

@@ -101,7 +101,7 @@ def stage(work):
     root = re.sub(r"exclude = \[[^\]]*\]\n", "", root)
     open(os.path.join(base, "Cargo.toml"), "w").write(root)
     shutil.copy(os.path.join(ROOT, "Cargo.lock"), os.path.join(base, "Cargo.lock"))
-    for dep in ["nata-sql", "nata-scan", "nata-sched", "nata-kernels"]:
+    for dep in ["nata-sql", "nata-scan", "nata-sched", "nata-kernels", "nata-pgwire"]:
         os.symlink(os.path.join(ROOT, "crates", dep), os.path.join(base, "crates", dep))
     for c in ["nata-exec", "nata-parquet", "nata"]:
         # copy2 would keep the old modification times, and cargo would trust the artifacts of an earlier (mutated) build

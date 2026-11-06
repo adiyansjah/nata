@@ -209,12 +209,12 @@ def stage(work, name):
     shutil.rmtree(base, ignore_errors=True)
     os.makedirs(os.path.join(base, "crates"))
     root = open(os.path.join(ROOT, "Cargo.toml")).read()
-    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan", "crates/nata-sql", "crates/nata-exec", "crates/nata-kernels"]', root)
+    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan", "crates/nata-sql", "crates/nata-exec", "crates/nata-kernels", "crates/nata-pgwire"]', root)
     root = re.sub(r"exclude = \[[^\]]*\]\n", "", root)
     open(os.path.join(base, "Cargo.toml"), "w").write(root)
     # nata depends on nata-sql and nata-exec since slice 4 (only their sources are needed to build the `nata` binary that the CLI tests run)
     for crate, parts in (("nata-parquet", ["src", "tests", "Cargo.toml"]), ("nata-scan", ["src", "Cargo.toml"]), ("nata-sched", ["src", "Cargo.toml"]),
-                         ("nata-sql", ["src", "corpus", "Cargo.toml"]), ("nata-exec", ["src", "Cargo.toml"]), ("nata-kernels", ["src", "Cargo.toml"]), ("nata", ["src", "tests", "Cargo.toml"])):
+                         ("nata-sql", ["src", "corpus", "Cargo.toml"]), ("nata-exec", ["src", "Cargo.toml"]), ("nata-pgwire", ["src", "Cargo.toml"]), ("nata-kernels", ["src", "Cargo.toml"]), ("nata", ["src", "tests", "Cargo.toml"])):
         src_root = os.path.join(ROOT, "crates", crate)
         dst = os.path.join(base, "crates", crate)
         os.makedirs(dst)

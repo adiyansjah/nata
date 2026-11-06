@@ -28,6 +28,21 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Serve Postgres wire 3.0 SIMPLE queries (trust authentication, no TLS).
+    Serve {
+        /// Bind address. Loopback only unless --unsafe-listen is explicitly given.
+        #[arg(long, default_value = "127.0.0.1:5432")]
+        listen: std::net::SocketAddr,
+        /// UNSAFE: allow non-loopback clients without TLS or authentication. Local trusted development only.
+        #[arg(long)]
+        unsafe_listen: bool,
+        /// Authenticated sessions (1..=64); eight additional bounded startup/cancel slots.
+        #[arg(long, default_value_t = 64)]
+        max_connections: usize,
+        /// CPU workers for the one admitted query (default: available parallelism).
+        #[arg(long)]
+        threads: Option<usize>,
+    },
     /// Start a node.
     Run,
     /// Run one SQL statement and print the result: `SELECT ... FROM '<file or glob>' [WHERE ...] [LIMIT n [OFFSET m]]`, or `EXPLAIN [ANALYZE]` of it.
@@ -244,6 +259,39 @@ fn scan(a: ScanArgs) -> ExitCode {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let what = match cli.command {
+        Command::Serve {
+            listen,
+            unsafe_listen,
+            max_connections,
+            threads,
+        } => {
+            std::panic::set_hook(Box::new(|_| {
+                let _ = writeln!(std::io::stderr(), "error: internal server error");
+            }));
+            let config = nata_pgwire::server::Config {
+                listen,
+                unsafe_listen,
+                max_connections,
+                threads: threads.unwrap_or_else(|| {
+                    std::thread::available_parallelism().map_or(1, std::num::NonZero::get)
+                }),
+                metrics: None,
+            };
+            let result = config.validate().and_then(|()| {
+                tokio::runtime::Builder::new_multi_thread()
+                    .worker_threads(2)
+                    .enable_all()
+                    .build()
+                    .and_then(|r| r.block_on(nata_pgwire::server::serve(config)))
+            });
+            return match result {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    let _ = writeln!(std::io::stderr(), "error: {e}");
+                    ExitCode::from(2)
+                }
+            };
+        }
         Command::Run => "`nata run` (node startup)",
         Command::Sql {
             command,
