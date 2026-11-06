@@ -84,6 +84,9 @@ Before acceptance: (1) ~~Test the tokio-to-pool bridge~~ done within bounds: `be
 
 ## Revision notes
 
+- 2026-11-06, the pool sizing is checked (plan item 9, `bench/results/20261106-cgroup-pool-size.md`): the scan scheduler's default size follows
+  cgroup v2 CPU quotas (rounded down) and affinity masks, the smaller limit winning.
+
 - 2026-11-06, **the first product scheduler does not use `crossbeam-deque`** (slice 3, `crates/nata-sched`, decided by the assistant under the
   owner's delegation): the Parquet scan hands out row groups from ONE FIFO under one lock, because its ordered output needs tasks to start in
   sequence order inside a bounded reorder window (a stealing deque does not keep that order) and because loom can check the lock but cannot

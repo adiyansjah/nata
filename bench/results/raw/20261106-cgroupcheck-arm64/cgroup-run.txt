@@ -1,0 +1,11 @@
+machine: 8 CPUs; Model name:                              Neoverse-N3; cgroup: cgroup2fs
+no limit: threads=8 rows=6001215
+CHECK quota-100 PASS threads=1 (allowed 1..1)
+CHECK quota-200 PASS threads=2 (allowed 2..2)
+CHECK quota-350 PASS threads=3 (allowed 3..4)
+CHECK quota-600 PASS threads=6 (allowed 6..6)
+CHECK affinity-3 PASS threads=3
+CHECK quota-200-with-affinity-6 PASS threads=2
+explicit --threads 4 under a 100% quota: threads=4 (informational)
+VERDICT PASS
+exit status: 0
