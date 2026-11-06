@@ -1,6 +1,6 @@
 # The Iceberg commit under concurrent writers, retries and crashes (verification-plan item 24, gate)
 
-Status (updated 2026-11-05): **the model part is now complete within its bounds: all 24 model runs have their expected result, from two GCP runs** (section 8: nine of them, verdict FAIL for lack of time; section 10: the other fifteen, verdict PASS), with the same `IcebergCommit.tla` and `MC.tla` in both (identical sha256, section 10). This covers only the model, as `checked within bounds`, not as a proof; later runs of the code side, the Apache Polaris product catalog and the pyiceberg interop are in sections 11 to 13. A real object store and a production vendor's catalog are still untested.
+Status (updated 2026-11-05): **the model part is now complete within its bounds: all 24 model runs have their expected result, from two GCP runs** (section 8: nine of them, verdict FAIL for lack of time; section 10: the other fifteen, verdict PASS), with the same `IcebergCommit.tla` and `MC.tla` in both (identical sha256, section 10). This covers only the model, as `checked within bounds`, not as a proof; later runs of the code side, the Apache Polaris product catalog and the pyiceberg interop are in sections 11 to 13. A real object store and a production vendor's catalog are still untested. **Update 2026-11-06 (section 15): the code is now tied to the model by trace validation on the object-store backend** (45 standard traces and 40 extended ones replayed through the model with TLC; every known-bad writer the scenarios force is refused; the checker is mutation-checked); **it found one model/code mismatch** (the code aborts a compaction on a redundant delete file that the model says must retry), recorded as FINDING 1 and not fixed in the model.
 
 History of the first run, which the next paragraph describes: **first GCP run done on 2026-11-05 (section 8): the verdict is FAIL, and not because the model checker found a violation.** The phase `model-full` used up its 7,200 s budget: one configuration timed out (`three-store-ser`, no result) and 14 were never started (`three-rest-snap-i4`, `live-2`, `live-3` and the 11 canaries), so **15 of the 24 model runs had no result** (they were run in section 10). What did run passed: the seven smaller model configurations, `three-rest-ser` and `three-rest-snap` (no invariant violated), 9 of 9 mutants caught, and the commit spike against the Apache REST reference fixture 1.12.0 and against the object-store mode (every check as expected). The pyiceberg interop phase was skipped. Sections 1-7 below were written before the run; where they say "to be filled" or "nothing has been run", sections 8 to 13 are the current state. The facts about Iceberg, the REST API and object stores are from primary sources read on 2026-11-04 (section 1).
 
@@ -498,3 +498,165 @@ unchanged); raw in `first-attempt/`.
 
 What this does not show: S3 (`If-None-Match: *`) and Azure; another region; a bucket shared with other writers; the catalog-less layout read
 by another engine; manifests and data files in the bucket (only the commit point was there); one run, ARM64 only.
+
+## 15. Trace validation (code against the model), 2026-11-06: the code gate, object-store backend, run on the development machine
+
+Verification-plan item 24 had two halves that were checked separately: the TLA+ model (sections 8 and 10) and the Rust writers (sections 8, 11, 12, 14), and **nothing tied the code to the model**. This section ties them: every run of the suite on the object-store backend writes a trace of the model's actions that the code performed, and TLC checks that the model can perform exactly that sequence. Run locally, no GCP (a TLC run on one trace takes seconds; the JDK and `tla2tools.jar` are the pinned ones of `scripts/tools.env`, downloaded with `scripts/setup-tools.sh`, sha verified). Code: `src/trace.rs`, hooks in `src/writer.rs`, `src/catalog.rs`, `src/suite.rs`; checker: `model/TraceSpec.tla`, `model/trace_to_tla.py`, `model/trace_check.py`; checks of the checker: `model/mutate_trace_check.py`, `model/test_model_tools.py`, `tests/trace.rs`, the corpus `model/testdata/traces/`.
+
+**Verdict.** Every trace of a correct writer is VALID, except those that exhibit **one model/code mismatch (FINDING, below)**; every known-bad writer whose bad behaviour the scenario forces is INVALID; the checker itself is mutation-checked (21 corrupted traces and 23 mutants of the checker, all caught). Within the limits at the end of this section.
+
+### How it works
+
+1. **Recording (`IC_TRACE=<dir>`, off by default).** One file `<table>.jsonl` per table. The writer emits an abstract event at each step of the model's protocol, the catalog wrapper (`TracedCatalog`, below the fault injector) at each linearization point, the fault injector for a dropped request. Every event has a global sequence number. For the object store the number is taken **under an exclusive `flock`** that is held across the conditional create and the lines that describe it, so the create IS the linearization point and nothing lands between a call and its record; the lock dies with a SIGKILLed process. A read of the table (`load`) takes its number under the same lock, and the writer's DECISION that follows (plan, recover-done / -abort / -retry / -fail) is recorded **at the number of that read**, because the model takes such a decision atomically with the read of the current metadata. A commit writes `deliver-intent` before the create and `deliver` (ok / conflict, the version created) after it.
+2. **Translation (`trace_to_tla.py`, Python, `-I`).** Orders the events, resolves an intent without an outcome (a process killed inside the call), numbers the operations as model writers in the order of their plan events, shifts every version by the seed commit's (the seed commit IS the model's initial state: its rows are `InitRows`), and writes `Tr.tla` (constants and the event sequence) and `Tr.cfg`.
+3. **`TraceSpec.tla`.** The model's own actions, unchanged, driven by an index `i`: at step `i` only the action named by event `i` can fire, with the numbers of the event as extra guards. `NotDone == i <= Len(Trace)` is the invariant TLC must VIOLATE: the trace is **VALID iff TLC reaches the end**. If TLC deadlocks, the last state's `i` is the first event the model does not allow. Everything the trace does not say is chosen by the model (what the writer plans, the metadata a store writer builds, the validation outcome). The model invariants TypeOK, I1, I2, I4 (serializable only), I5, I6, I7 are checked on every replayed state (so a larger configuration than the 24 exhaustive ones gets those checks too); I3 is not (no readers).
+4. **Runner (`trace_check.py`).** Per trace: translate, stage fresh copies of the model, run TLC (one worker, a private `java.io.tmpdir`, 1 GB), classify: VALID / INVALID (with the event and why) / UNMODELLED (the trace holds something the model has no action for: a rejected commit, another catalog error, a `failed` outcome) / ERROR. Only VALID and INVALID are verdicts. Each trace carries what the suite expects of it (`pass`, `detect`, `informational`, `known-mismatch`); exit 1 on any run that does not match, on UNMODELLED and on ERROR (`--all-valid`: any trace that is not VALID).
+
+### Event-to-action mapping (every row is a decision to review)
+
+| Raw event (emitted where) | Model action | Observable numbers compared with the model |
+|---|---|---|
+| `plan` (writer, at its first `load`) | `PlanOp(w)` | the version read |
+| `planned` (after `make_plan`) | none (compares) | number of delete targets, compaction inputs, rows of the new file, against what the model computes for that writer |
+| `upload-begin` / `upload-finish` (around the data or delete file) | `BeginUpload(w)` / `FinishUpload(file)` | |
+| `upload-await` (after the manifests of the operation are written) | `AwaitUpload(w)` | |
+| `build` (manifest list of attempt k written) | `WriteMeta(w)` | attempt, the version the list was built from (`carry_from`) |
+| `send` (just before `catalog.commit`) | `Send(w)` | attempt, the version expected |
+| `deliver` (inside the catalog wrapper, under the lock) | `DeliverOk` / `DeliverConflict` (`keep` for the first of two deliveries of a duplicate) | the version the catalog was at, the version created, attempt, expected version |
+| `drop` (fault injector, drop-request) | `Drop(q)` | |
+| `receive` / `timeout` (after the call returned; after the `after-commit` crash point) | `Receive(w)` / `Timeout(w)` | answer, attempt |
+| `recover-done` / `-abort` / `-retry` / `-fail` (at the read position) | `RecoverDone` / `RecoverAbort` / `RecoverRetry` / `RecoverFail` | version read, attempt, whether the trigger was a conflict or an unknown outcome |
+| `crash` (crash point, before the process exits) | `Crash(w)` | |
+| `outcome` (end of `run`) | none (compares) | acked / recovered = done, aborted, gave_up = failed, crashed |
+| `final` (once the writers are done) | none (compares) | version of the table and the ids of its live rows against the model's `LiveRows(CurMeta.cur)` |
+
+Mapping decisions:
+
+1. **One model writer per operation** (token `w<id>o<ordinal>`); the model has one operation per writer. A stress process with three operations is three model writers.
+2. **The upload group.** The model has one file per writer (data or delete file) and a manifest LIST per attempt. The code also writes per-operation manifests (reused by every attempt). They are folded into the upload: `upload-finish` is the data / delete file, `upload-await` is "the manifests are written too". The model's `Man(w,k)` is the manifest list of attempt k.
+3. **Versions.** Store: the number N of `vN.metadata.json`; the model's version 0 is the table after the seed commit (store v2), so every version is shifted by that.
+4. **Budgets.** `CrashBudget`, `DupBudget`, `LossBudget` of the model are set to the number of crash, duplicate-first-delivery and drop events in the trace; `MaxAttempts` is the writers' (8). So a fault the trace does not contain is not available to the model; a fault the trace contains is.
+5. **The model plans for itself.** The trace says which rows an appender adds and which key a deleter names; the delete targets, the compaction inputs and the compacted rows are computed by the model from its own picture of the table, and compared (`planned`, `final`) with the code's counts and rows.
+6. **A SIGKILL inside the catalog call** leaves an intent without an outcome. It is resolved from the next version anyone observes: applied (the create happened), conflict (the version already existed), or not happened. No SIGKILL landed inside a call in any of the 55 stress traces of the two runs below, 6 + 9 standard and 40 extended (0 unresolved intents), so this path is exercised only by a derived trace and by unit tests.
+7. **The second delivery of a duplicated request** (injected `dup@n`: the request reaches the catalog twice; the writer reads the answer of the first) is moved to just after the writer reads its answer, when it is a conflict. Reason: the model's response slot is single, so a conflict delivered before the writer reads the "ok" would overwrite it; the real client never sees the duplicate's answer. This is a **modelling artefact in the model's favour that the translator has to work around** (the model allows more: the clobbering). The move is narrow (only a second delivery that is a conflict), its `cur` is replaced by the version at its new place (a conflict stays a conflict: versions only grow), and a mutant that does not do it is caught (`tr-no-duplicate-move`).
+8. **Not traced:** the REST backend (it has no version number the writers can see, and the reference fixture needs Java and the Iceberg sources, which this check does not download); the garbage collector (the spike has none, so `GCOrphan` never occurs in a trace); readers (`PinReader`; `MaxPins = 0`, so I3 is not checked on traces).
+
+### Results
+
+**Standard run** (the suite as `gcp-check.sh` runs it on the object store, `ic-spike suite --backend store`, local file system; `SUITE PASS`; 45 traces, 8,366 events; TLC 6.2 s per trace on average and 33 s at most, 8 in parallel):
+
+| Class | Traces | Expected | VALID | INVALID |
+|---|---|---|---|---|
+| forced interleavings, correct writer | 10 | VALID | 10 | 0 |
+| crash matrix (3 operations x 4 crash points), correct | 12 | VALID | 12 | 0 |
+| stress, correct writers (4 to 16 processes, faults, crash points, one SIGKILL) | 6 | VALID | 6 | 0 |
+| forced, known-bad writer in the scenario that exposes it | 5 | INVALID | 0 | 5 |
+| forced, known-bad writer where it must not misbehave | 3 | VALID | 3 | 0 |
+| stress with known-bad writers (informational) | 9 | not judged | 1 | 8 |
+
+**Extended exploration** (not a gate: 40 stress seeds, 4 to 16 processes, 3 operations each, 3 SIGKILLs per run, correct writers; 16,168 events): **39 VALID, 1 INVALID**, the INVALID one being the finding below. A first extended run, before the damaged-counter fix described under "Defects found on the way", gave 4 INVALID of 36 analysable traces (all with the same cause); 4 traces were unusable because of that defect.
+
+**Known-bad writers.** Detected as INVALID, each at the event that is the bad behaviour:
+
+| Scenario | Bad writer | INVALID at | Why the model refuses it |
+|---|---|---|---|
+| `lost-update` | `bad-no-cas` | `send` by the second appender, expecting version 1 | its manifest list was built from version 0; the model's writers always expect the version their list is built from. (None of the nine mutants of the model is this bug: see the cross-check below) |
+| `unknown-outcome` | `bad-blind-retry` | `recover-retry` after a timeout | the model has the writer's own snapshot in the table, so `RecoverRetry` (needs `~Mine`) is not enabled |
+| `delete-then-compact` | `bad-skip-validation` | `recover-retry` after a conflict | the compaction's input files got a delete; the model demands an abort |
+| `compact-then-delete` | `bad-skip-validation` | `recover-retry` after a conflict | the delete's target files were rewritten; abort |
+| `phantom-serializable` | `bad-skip-validation` | `recover-retry` after a conflict | an append added a matching row under serializable isolation; abort |
+
+The three bad-writer runs in scenarios where the bad writer does not misbehave (`lost-request` with `bad-blind-retry`; `phantom-snapshot-isolation` and `append-then-compact` with `bad-skip-validation`) are VALID, as the suite expects (the checker is not just refusing everything of a bad writer). In the informational stress runs 8 of 9 are INVALID and 1 VALID (a `bad-blind-retry` seed in which no commit was lost, so no retry was blind); all five known-bad writers of the suite are therefore visible in a trace, none is invisible.
+
+**Code mutants outside the known-bad set** (hand-made, not committed, to see that the check finds bugs other than the three it was built around; each run on the forced scenarios and two stress seeds): (a) delete validation without the serializable phantom check: `phantom-serializable` with the CORRECT writer is INVALID at `recover-retry` (model: abort); (b) a retry that keeps the stale base: 7 correct-writer traces INVALID (`build` on a base the model has already moved); (c) compaction validation that ignores new deletes: `delete-then-compact` and two stress traces INVALID at `recover-retry`. The suite's own checker catches (a) and (c) too (I4, I2); (b) it cannot see, because a writer that never commits violates nothing.
+
+### FINDING 1 (model and code differ): the code aborts a compaction that the model says must retry
+
+Reproduced deterministically (`tests/trace.rs::redundant_delete_makes_the_compaction_abort`, 36-event trace `model/testdata/traces/finding_redundant_delete.jsonl`, expectation `known-mismatch`: INVALID) and found in 4 of 36, 1 of 40 and 1 of 40 correct-writer stress traces of three extended runs (different executions of the same seeds): two deleters plan the same rows (key b); the first commits; the second, which planned before, conflicts and RETRIES (its targets' files are still live), committing a delete file that deletes rows **already deleted**; a compaction that planned in between conflicts, re-reads, and finds a new delete file on its input files: the code **aborts** ("added deletes on files this compaction rewrites"). In the model the snapshot of the second deleter has `delPairs = targets \ b.del` = {} (nothing newly deleted), so `Valid` holds and `RecoverAbort` is not enabled: TLC deadlocks at the abort.
+
+* Direction: the code is MORE conservative than the model (a spurious abort, not a lost or resurrected row). The suite's checker and every model invariant are satisfied in all these runs. It costs availability: a compaction can abort needlessly when two deleters race on the same rows. I believe the Iceberg library's own check (`validateNoNewDeletesForDataFiles`) also looks at added delete files and not at whether their rows were already deleted; **I did not verify that here** (section 1 does not cover it; the spec leaves these checks undefined, F4).
+* Cause confirmed, not assumed: with `delPairs |-> pl.targets` (the delete file's content) in a scratch copy of the model, the 6 traces seen up to then and the repro are VALID, and so are the later two. **The model was not changed** (the model gate stands as measured; changing it means re-running 24 model configurations on GCP, the owner's cost decision). Decision for the owner: either the model gets the code's rule (`delPairs` = the pairs the delete file names) and the 24 runs are repeated, or the code stops aborting on redundant deletes (more availability, needs the compaction to know the pairs were already deleted at its base).
+* Until then the check reports this trace class as `known-mismatch` (it must stay INVALID; if it turns VALID the finding has gone away and the expectation must be changed).
+
+### Mutation check of the checker (docs/decisions/0006: a check counts only if it fails on a known-bad version)
+
+Unmutated checker on the corpus (24 real traces from the standard run and 23 derived): all 47 get the verdict they must get. The 21 **corrupted traces** are each a real VALID trace damaged in one way, and each is INVALID, at the event shown:
+
+| Corruption | INVALID at |
+|---|---|
+| event dropped: a `send`; a delivery (intent and outcome); an `upload-finish` | the delivery that has no request; the `receive` of an answer nobody gave; `upload-await` |
+| two events swapped: `build` and `send`; the catalog's handling of two requests | `send`; the delivery (version mismatch) |
+| wrong number: delivery `cur`+1; send `exp`+1; created version +1; recovery `ver`+1; attempt +1 | the delivery; `send`; the delivery; `recover-retry`; `build` |
+| wrong answer or outcome: `receive` conflict -> ok; duplicate's second delivery conflict -> ok; outcome acked -> aborted; `recover-done` -> `recover-retry`; `recover-retry` -> `recover-done` | `receive`; the delivery; `outcome`; `recover-retry`; `recover-done` |
+| wrong comparison: planned targets +1; planned inputs +1; final rows minus one; final version +1 | `planned` (x2); `final` (x2) |
+| other: upload attributed to another writer; a crash after the writer finished | `upload-begin`; `crash` |
+
+Two derived traces must stay VALID and do: a writer killed inside the catalog call (intent without outcome, the create happened) and a torn last line.
+
+The 23 **mutants of the checker** (a one-line edit of a private copy, exactly once; all CAUGHT; 9 by a VALID trace turning INVALID, 11 by a corrupted or known-bad trace turning VALID, 2 because a refused trace is refused at another event (a check was taken away that the trace's rejection relied on; the other checks still refused it later) and 1 because a trace can no longer be read):
+
+| Mutant | What is broken | Caught by |
+|---|---|---|
+| `tr-drops-upload-await` | the translator forgets the upload-await events | 20 trace(s), e.g. append_then_compact_bad_skip_validation: must be VALID, got INVALID |
+| `tr-version-offset` | every version in the trace is shifted by one | 20 trace(s), e.g. append_then_compact_bad_skip_validation: must be VALID, got INVALID |
+| `tr-answer-flipped` | a delivery's answer is turned around (ok <-> conflict) | 20 trace(s), e.g. append_then_compact_bad_skip_validation: must be VALID, got INVALID |
+| `tr-ignores-keep` | a duplicated request is delivered once and removed | 2 trace(s), e.g. duplicate_request_correct: must be VALID, got INVALID |
+| `tr-no-duplicate-move` | the second delivery of a duplicate is not moved after the answer is read | 2 trace(s), e.g. duplicate_request_correct: must be VALID, got INVALID |
+| `tr-file-order` | events are ordered by position in the file, not by sequence number | 3 trace(s), e.g. stress_correct_1: must be VALID, got INVALID |
+| `tr-no-crash-budget` | the model gets no crash budget | 5 trace(s), e.g. crash_append_after_commit: must be VALID, got INVALID |
+| `tr-no-loss-budget` | the model gets no lost-request budget | 3 trace(s), e.g. lost_request_bad_blind_retry: must be VALID, got INVALID |
+| `tr-intent-never-applied` | an intent without an outcome is always taken as 'the create never happened' | 1 trace(s), e.g. derived: killed-in-catalog-call: must be VALID, got INVALID |
+| `tr-torn-line-fatal` | a torn line makes the whole trace unusable | 1 trace(s), e.g. derived: torn-last-line: must be VALID, got ERROR |
+| `tr-trusts-the-model` | the version a delivery observed is replaced by the model's own | 1 trace(s), e.g. corrupted: wrong-cur: must be INVALID, got VALID |
+| `tr-drops-outcome` | the writers' reported outcomes are not compared | 1 trace(s), e.g. corrupted: wrong-outcome: must be INVALID, got VALID |
+| `tr-drops-planned` | the planned counts are not compared | 2 trace(s), e.g. corrupted: wrong-planned: must be INVALID, got VALID |
+| `tr-drops-final` | the final table is not compared | 2 trace(s), e.g. corrupted: wrong-final-rows: must be INVALID, got VALID |
+| `spec-no-cur-guard` | TraceSpec does not check the version a delivery observed | 1 trace(s), e.g. corrupted: wrong-cur: must be INVALID, got VALID |
+| `spec-no-recover-guard` | TraceSpec does not check the version a recovery read | 1 trace(s), e.g. corrupted: wrong-recover-ver: must be INVALID, got VALID |
+| `spec-retry-unvalidated` | TraceSpec's retry is the model's retry without the validation | 3 refused trace(s) refused later, e.g. compact_then_delete_bad_skip_validation: event 24 instead of 20 |
+| `spec-done-unchecked` | TraceSpec accepts RecoverDone whether or not the writer's snapshot is in the table | 1 refused trace(s) refused later, e.g. corrupted: recover-done-without-commit: event 11 instead of 10 |
+| `spec-outcome-unchecked` | TraceSpec does not compare the writer's reported outcome | 1 trace(s), e.g. corrupted: wrong-outcome: must be INVALID, got VALID |
+| `spec-planned-unchecked` | TraceSpec does not compare the planned delete targets | 1 trace(s), e.g. corrupted: wrong-planned: must be INVALID, got VALID |
+| `spec-final-rows-unchecked` | TraceSpec does not compare the final rows | 1 trace(s), e.g. corrupted: wrong-final-rows: must be INVALID, got VALID |
+| `spec-stops-early` | TraceSpec reports VALID one event before the end | 2 trace(s), e.g. corrupted: wrong-final-rows: must be INVALID, got VALID |
+| `check-deadlock-is-valid` | a deadlock of TLC is reported as VALID | 27 trace(s), e.g. compact_then_delete_bad_skip_validation: must be INVALID, got VALID |
+
+**Model mutants against the known-bad traces** (informational: the nine mutants of `mutate_model.py` plus `send-refreshes-exp`, which is the code's `bad-no-cas`, applied to the model; each cell is the verdict of the known-bad trace against the MUTATED model):
+
+| known-bad trace | no-cas | skip-validation | blind-retry | commit-before-durable | reuse-seq | compaction-deletes | accept-stale-base | gc-active | gc-inflight | send-refreshes-exp |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `append_then_compact_bad_skip_validation` | INVALID | VALID | VALID | VALID | I6 | I1 | INVALID | VALID | VALID | INVALID |
+| `compact_then_delete_bad_skip_validation` | INVALID | I2 | INVALID | INVALID | I6 | I1 | INVALID | INVALID | INVALID | INVALID |
+| `delete_then_compact_bad_skip_validation` | INVALID | I2 | INVALID | INVALID | I6 | INVALID | INVALID | INVALID | INVALID | INVALID |
+| `lost_request_bad_blind_retry` | VALID | VALID | VALID | VALID | I6 | VALID | VALID | VALID | VALID | VALID |
+| `lost_update_bad_no_cas` | INVALID | INVALID | INVALID | INVALID | I6 | INVALID | INVALID | INVALID | INVALID | I2 |
+| `phantom_serializable_bad_skip_validation` | INVALID | I4 | INVALID | INVALID | I6 | INVALID | INVALID | INVALID | INVALID | INVALID |
+| `phantom_snapshot_isolation_bad_skip_validation` | INVALID | VALID | VALID | VALID | I6 | VALID | INVALID | VALID | VALID | INVALID |
+| `unknown_outcome_bad_blind_retry` | INVALID | INVALID | I5 | INVALID | I6 | INVALID | INVALID | INVALID | INVALID | INVALID |
+
+Columns, in order: the nine mutants of `mutate_model.py` (`no-cas`, `skip-validation`, `blind-retry-after-unknown`, `commit-before-durable`, `reuse-sequence-number`, `compaction-deletes-live-files`, `accept-stale-base-on-retry`, `gc-ignores-active-writers`, `gc-ignores-inflight-requests`) and `send-refreshes-exp` (the store writer expects the version current at the commit while its manifest list stays built on the stale base; defined in `mutate_trace_check.py`). A cell: VALID = the mutated model replays the trace; INVALID = still refused; I1..I6 = replayed, then that invariant is violated.
+
+Reading it: removing the model's protection makes its trace replayable, and the model's own invariant then fires **on the same invariant the suite's checker names**: `skip-validation` -> I2 (`delete-then-compact`, `compact-then-delete`) and I4 (`phantom-serializable`), `blind-retry-after-unknown` -> I5, `send-refreshes-exp` -> I2 for `lost-update`. The `no-cas` mutant (the catalog stops checking) refuses every trace with a conflict, so its column says nothing; `reuse-sequence-number` violates I6 in every trace.
+
+### Tests of the tooling and the instrumentation
+
+* `cargo test --release` in `spikes/iceberg-commit`: all pass with `IC_TRACE` unset (3 + 8 + 4 + 2 tests; the new `tests/trace.rs` sets it for its own process) and with `IC_TRACE=<dir>` exported for the whole run (the REST mock tests ignore it with one warning). `tests/trace.rs`: with tracing on, the 18 forced runs and 12 crash runs behave exactly as without it (5 of 5 known-bad writers caught), one well-formed trace per run, unique sequence numbers, every fault leaves its event; the deterministic repro of the finding.
+* `python3 -I model/test_model_tools.py`: 32 tests (19 existing and 13 new, no TLC): every corpus trace translates and renders, every step `TraceSpec` knows is produced (except `recover-fail`, which no correct-writer trace takes: 8 attempts are never used up), intent resolution (four cases), the duplicate move, UNMODELLED vs bad trace, torn lines, version shift and budgets, `classify` of canned TLC output, `judge`, `trace_check.py` against a fake `java` (exit codes by expectation, `--all-valid`, ERROR), every checker mutant applies exactly once.
+
+### Defects found on the way (fixed)
+
+* **The trace's sequence counter was damaged by SIGKILL.** It was rewritten in place; a writer killed between truncating and writing it reset the counter to 0, and two operations then shared sequence numbers. The translator reported "an event precedes the end of the seed commit" (4 of 40 traces). Fixed: atomic replace by rename, and the translator refuses a trace where two events share a number.
+* Parallel TLC runs raced on `/tmp/TLC.tla` (TLC unpacks its standard modules into `java.io.tmpdir`; a NullPointerException in the other run). Fixed: a private `java.io.tmpdir` per run.
+* The first duplicate-delivery rule kept the delivery's old `cur` after moving it, which made correct traces INVALID (found by the first stress trace with a duplicate). Fixed as in decision 7.
+
+### What this does not show
+
+* **Only the object-store backend**, and on the local file system. The REST catalogs (Apache fixture, Polaris) are not traced; the real GCS run of section 14 is not traced either (the instrumentation works with `NATA_STORE_URL`, nobody ran it there).
+* **Only what the suite drives**: 45 standard traces and 40 extended ones, at most 16 processes and 3 operations each, faults from the injector only (a real HTTP 500, a 503, a refused commit are UNMODELLED, not tested). `recover-fail` (attempts used up) is taken by no correct-writer trace.
+* **Refinement of OBSERVED events, not a proof of the code.** What the trace does not record is not checked: file contents (only counts and the live rows at the end), the bytes of the metadata, sequence numbers and parents (the model has them, the trace does not carry them), timestamps. A bug in the instrumentation could hide a bug in the code (the corrupted-trace and mutant checks show that the translator and `TraceSpec` do not ignore what they are given, not that every code path emits its event).
+* **Bounds**: a trace is replayed with the model's budgets set to what it contains, one operation per model writer; the 24 exhaustive configurations are not re-run with the traces' sizes. No readers (I3), no garbage collector.
+* **The decision events are placed at the read** by design (item 1 of "How it works"); a bug that makes a decision from a state other than the one it read (a stale table) would show as a wrong decision, which is what the known-bad writers do, but a decision that reads one thing and logs another is not seen.
+* **One mismatch found, not fixed in the model** (finding 1); the model gate (section 10) was measured on the unchanged model.
+* Runs on one development machine, once for the standard set; no GCP.
+
+Reproduce: `cargo build --release` in `spikes/iceberg-commit`, `IC_TRACE=<dir> ./target/release/ic-spike suite --backend store --work <work>`, then `python3 -I model/trace_check.py --jar tla2tools.jar --java java --traces <dir> --out <out>`; the checker's own check: `python3 -I model/mutate_trace_check.py --jar tla2tools.jar --java java --out <out> --model-mutants` (about 15 minutes, 6 jobs).
