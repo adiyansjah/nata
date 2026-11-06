@@ -51,6 +51,19 @@ Decisions it needs: (a) build or reuse the Parquet decoder, (b) the morsel size.
 - Result file: `bench/results/20261105-parquet-scan-baseline.md` (run 2026-11-05 on `n4a-highcpu-8` and `c3d-highcpu-8`, about $0.03).
 - **Result:** R1 passes on both CPU types, so `parquet-rs` is reused: it returns dictionary arrays without expanding them and takes 0.37 to 0.65 of DuckDB's time for decode plus a cheap consumer (limit 1.25). R3 chooses **a whole row group per morsel**: on `big1` a quarter has 0.64 to 0.73x the 8-thread throughput and 2.2x the memory. With a page index a quarter is 1.55 to 1.80x faster at 8 threads, but only because `big1` has 4 row groups for 8 threads. The 5x-at-8-threads scalability target was not measured (4 morsels cannot use 8 threads); it stays a check of the slice.
 
+## 4b. Decisions taken during step 2b (2026-11-06, by the assistant under the owner's delegation)
+
+- **Memory bound, as measured:** the literal "threads x largest row group + a fixed slice" does not hold for RSS (about 15 MB predicted,
+  38-52 MB measured). The bound that holds is `peak_inflight_bytes <= window x largest_task_bytes` (by construction, asserted) and
+  `RSS <= base + 3 x window x M + 32 MiB` (empirical: one dataset, one allocator; the constants were raised once after 13 runs reached 97%
+  of the first guess). The Resource-bounds row is checked against this bound.
+- **Panics inside `parquet`/`arrow` on corrupt pages** (57 of 15,000 fuzz cases, mostly `delta_byte_array.rs:101` in 60.1.0) are caught at
+  the task boundary and become an error naming the file and the row group, never a crash and never a wrong result. The Fault-tolerance
+  row's "never a panic" means that no panic reaches the user; an uncaught panic, or a caught one without the row group, fails the test.
+- **Scheduler:** one FIFO under one lock instead of `crossbeam-deque` (ADR 0002 revision note of 2026-11-06). **Defaults:** window =
+  threads, footers read one file at a time; the benchmark also measures window = 2 x threads.
+- **Lazy footers:** a corrupt later file is reported after the earlier files' rows are printed (ordered mode: deterministically).
+
 ## 5. Closeout (fill in when done)
 
 - Progress (not the closeout): 2026-11-05, implementation step 1 done: the pruning decision as a pure library function `crates/nata-scan` (`can_skip`: statistics and a predicate to Skip or Keep(reason)), with a soundness property test against a row-by-row oracle (400,000 cases per release run, the oracle checked against DuckDB 2.0.0: 19,925 cases, 0 mismatches), tightness and R2 effectiveness tests (83.7% of the row groups skipped for a one-year range on a model of the SF1 `lineitem` layout), 5 negative controls and 53 mutants, all caught (`bench/results/20261105-scan-pruning.md`). Not yet: the footer decoder, real files from DuckDB, pyarrow and parquet-rs, the reader, `nata scan`, fuzz, resource bounds, the benchmarks. Known difference found: DuckDB 2.0.0 errors on some decimal comparisons that the decimal rules define as exact.

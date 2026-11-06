@@ -84,6 +84,13 @@ Before acceptance: (1) ~~Test the tokio-to-pool bridge~~ done within bounds: `be
 
 ## Revision notes
 
+- 2026-11-06, **the first product scheduler does not use `crossbeam-deque`** (slice 3, `crates/nata-sched`, decided by the assistant under the
+  owner's delegation): the Parquet scan hands out row groups from ONE FIFO under one lock, because its ordered output needs tasks to start in
+  sequence order inside a bounded reorder window (a stealing deque does not keep that order) and because loom can check the lock but cannot
+  see inside `crossbeam-deque` (16 loom models, 23 of 23 scheduler mutants caught, `bench/results/20261106-scan-parallel.md`). The decision
+  above stands for work whose order does not matter (hash build, aggregation); the slice that first needs that brings the deque in, behind
+  the same `claim()` seam, with its own check. The cost of the single lock on millisecond tasks is measured by the slice 3 benchmark.
+
 - 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets):
   - `object_store`, `crossbeam-deque` and the compression crates have not yet built and tested on x86-64 and ARM64 in CI [8]; this was a gate and must pass before the first slice that uses them merges.
   - Bridge latency and stress, and the overhead of cooperative time slicing, still need a re-run on a quiet machine [6, 22].
