@@ -663,3 +663,50 @@ fn a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_s
     assert_eq!(out.status.code(), Some(0), "{}", text(&out.stderr));
     let _ = std::fs::remove_dir_all(&d);
 }
+
+#[test]
+fn the_deepest_queries_the_parser_allows_run_in_the_process() {
+    // R11: 10,000 terms in a chain and 1,000 levels of nesting, evaluated by the real binary (its scan workers have the default 2 MiB stacks; the executor
+    // evaluates a deep expression on a thread with a stack of its own), also from stdin, with EXPLAIN and EXPLAIN ANALYZE
+    let (_d, p) = std_file("deep");
+    let chain = format!("id{}", " + 0".repeat(9_999));
+    let nested = format!("{}id{}", "(".repeat(1000), ")".repeat(1000));
+    for expr in [&chain, &nested] {
+        let q = format!("SELECT {expr} AS x FROM '{p}' WHERE id IN (3, 17)");
+        for extra in [&["--threads", "1"][..], &["--threads", "4"][..]] {
+            let out = Command::new(env!("CARGO_BIN_EXE_nata"))
+                .args(["sql", "--csv"])
+                .args(extra)
+                .args(["-c", &q])
+                .output()
+                .expect("run");
+            assert_eq!(out.status.code(), Some(0), "{}", text(&out.stderr));
+            assert_eq!(text(&out.stdout), "x\n3\n17\n");
+        }
+        let mut child = Command::new(env!("CARGO_BIN_EXE_nata"))
+            .args(["sql", "--csv"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn");
+        child
+            .stdin
+            .take()
+            .expect("stdin")
+            .write_all(q.as_bytes())
+            .expect("write");
+        let out = child.wait_with_output().expect("wait");
+        assert_eq!(out.status.code(), Some(0), "{}", text(&out.stderr));
+        assert_eq!(text(&out.stdout), "x\n3\n17\n");
+        for prefix in ["EXPLAIN ", "EXPLAIN ANALYZE "] {
+            let out = nata(&["sql", "-c", &format!("{prefix}{q}")]);
+            assert_eq!(
+                out.status.code(),
+                Some(0),
+                "{prefix}: {}",
+                text(&out.stderr)
+            );
+        }
+    }
+}
