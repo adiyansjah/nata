@@ -1,0 +1,48 @@
+load: 2.08 0.57 0.20 1/227 10865
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running tests/fairness.rs (target/release/deps/fairness-4aeeff84ac001765)
+
+running 14 tests
+test bound_w1_k2_morsel_budget ... W=1 K=2 slice=SliceConfig { max_morsels: 2, max_time: None } heavy_morsel=2ms small=3x1ms: latency 19.110208ms, bound 19ms (+14.75ms), ratio 1.01
+ok
+test bound_w1_k3_default_config ... W=1 K=3 slice=SliceConfig { max_morsels: 32, max_time: Some(1ms) } heavy_morsel=1ms small=3x1ms: latency 15.075779ms, bound 99ms (+34.75ms), ratio 0.15
+ok
+test bound_w1_k4_morsel_budget ... W=1 K=4 slice=SliceConfig { max_morsels: 2, max_time: None } heavy_morsel=2ms small=3x1ms: latency 35.071624ms, bound 35ms (+18.75ms), ratio 1.00
+ok
+test bound_w2_k3_morsel_budget ... W=2 K=3 slice=SliceConfig { max_morsels: 2, max_time: None } heavy_morsel=2ms small=3x1ms: latency 11.11546ms, bound 19ms (+14.75ms), ratio 0.59
+ok
+test bound_w2_k5_time_budget ... W=2 K=5 slice=SliceConfig { max_morsels: 18446744073709551615, max_time: Some(3ms) } heavy_morsel=1ms small=3x1ms: latency 15.092189ms, bound 15ms (+13.75ms), ratio 1.01
+ok
+test bound_w2_k8_morsel_budget ... W=2 K=8 slice=SliceConfig { max_morsels: 2, max_time: None } heavy_morsel=2ms small=3x1ms: latency 33.08562ms, bound 35ms (+18.75ms), ratio 0.95
+ok
+test bound_w2_k8_single_slice_small_task ... W=2 K=8 slice=SliceConfig { max_morsels: 4, max_time: None } heavy_morsel=1ms small=3x1ms: latency 19.053648ms, bound 19ms (+14.75ms), ratio 1.00
+ok
+test consumer_fed_by_channel_makes_progress ... consumer: all 20 chunks consumed after 49.110025ms (worst-case bound 120ms)
+ok
+test control_consumer_starves_without_slicing ... ok
+test control_unlimited_slice_starves ... ok
+test lone_task_never_yields ... ok
+test round_robin_order_and_exact_yield_count ... ok
+test slice_of_one_morsel_alternates ... ok
+test unlimited_slice_runs_tasks_to_completion_in_turn ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.47s
+
+     Running tests/starvation.rs (target/release/deps/starvation-2b57762064ef5360)
+
+running 6 tests
+test control_free_worker_completes ... workers=2 heavy=1: small task latency = Some(3.186382ms)
+ok
+test one_worker_four_heavy ... workers=1 heavy=4: small task latency = Some(19.093084ms)
+ok
+test one_worker_two_heavy ... workers=1 heavy=2: small task latency = Some(11.073893ms)
+ok
+test two_workers_eight_heavy ... workers=2 heavy=8: small task latency = Some(17.102179ms)
+ok
+test two_workers_four_heavy ... workers=2 heavy=4: small task latency = Some(9.088229ms)
+ok
+test two_workers_two_heavy ... workers=2 heavy=2: small task latency = Some(5.079628ms)
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+

@@ -1,0 +1,68 @@
+load: 0.47 0.97 0.46 1/227 18666
+host: 8 cores; workers=2; total rows 134217728; rounds=20; load1 at start 0.47; quiet GCP run
+
+### tasks=2 workers=2 morsel=4096 rows (16384 morsels/task, 32768 total); load1 before 0.47, after 0.67
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 33.6 | 34.4 | 1.000 | 1.000..1.000 | 70 | 1.000 | 0 |
+| A' unlimited (control twin) | 33.6 | 34.1 | 0.999 | 0.898..1.198 | 70 | 0.993 | 0 |
+| slice 1 morsel | 33.7 | 34.0 | 0.994 | 0.876..1.170 | 70 | 1.000 | 1 |
+| slice 4 morsels | 33.7 | 33.9 | 0.996 | 0.898..1.109 | 70 | 1.000 | 0 |
+| slice 16 morsels | 33.6 | 34.0 | 0.988 | 0.895..1.038 | 69 | 0.986 | 0 |
+| slice 64 morsels | 33.6 | 33.7 | 0.988 | 0.882..1.166 | 70 | 1.007 | 0 |
+| default (32 morsels / 1 ms) | 34.1 | 34.7 | 1.004 | 0.875..1.176 | 69 | 0.986 | 0 |
+
+### tasks=2 workers=2 morsel=65536 rows (1024 morsels/task, 2048 total); load1 before 0.67, after 0.78
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 33.4 | 34.8 | 1.000 | 1.000..1.000 | 74 | 1.000 | 0 |
+| A' unlimited (control twin) | 33.4 | 34.7 | 1.002 | 0.942..1.239 | 72 | 0.973 | 0 |
+| slice 1 morsel | 33.4 | 34.9 | 0.999 | 0.928..1.204 | 74 | 1.007 | 0 |
+| slice 4 morsels | 33.5 | 34.7 | 1.001 | 0.843..1.175 | 71 | 0.966 | 0 |
+| slice 16 morsels | 33.4 | 34.7 | 0.999 | 0.897..1.240 | 72 | 0.980 | 0 |
+| slice 64 morsels | 33.5 | 34.7 | 0.999 | 0.795..1.100 | 71 | 0.966 | 0 |
+| default (32 morsels / 1 ms) | 33.4 | 34.7 | 0.986 | 0.946..1.044 | 69 | 0.939 | 0 |
+
+### tasks=2 workers=2 morsel=1048576 rows (64 morsels/task, 128 total); load1 before 0.78, after 0.97
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 45.0 | 46.8 | 1.000 | 1.000..1.000 | 97 | 1.000 | 0 |
+| A' unlimited (control twin) | 45.0 | 47.2 | 1.006 | 0.927..1.175 | 96 | 0.995 | 0 |
+| slice 1 morsel | 44.5 | 46.9 | 1.008 | 0.841..1.157 | 96 | 0.990 | 0 |
+| slice 4 morsels | 44.7 | 47.7 | 1.010 | 0.842..1.061 | 97 | 1.000 | 0 |
+| slice 16 morsels | 44.6 | 46.8 | 0.989 | 0.856..1.074 | 94 | 0.969 | 0 |
+| slice 64 morsels | 43.8 | 46.8 | 0.999 | 0.860..1.111 | 95 | 0.979 | 0 |
+| default (32 morsels / 1 ms) | 44.5 | 46.6 | 0.989 | 0.822..1.047 | 94 | 0.974 | 0 |
+
+### tasks=8 workers=2 morsel=4096 rows (4096 morsels/task, 32768 total); load1 before 0.97, after 1.05
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 33.7 | 35.0 | 1.000 | 1.000..1.000 | 70 | 1.000 | 0 |
+| A' unlimited (control twin) | 33.7 | 34.0 | 0.998 | 0.931..1.048 | 70 | 1.000 | 0 |
+| slice 1 morsel | 45.0 | 45.5 | 1.339 | 1.103..1.428 | 92 | 1.298 | 32762 |
+| slice 4 morsels | 36.3 | 36.6 | 1.077 | 0.918..1.242 | 78 | 1.106 | 8191 |
+| slice 16 morsels | 34.3 | 34.4 | 1.016 | 0.870..1.222 | 72 | 1.021 | 2047 |
+| slice 64 morsels | 33.8 | 34.0 | 0.993 | 0.864..1.171 | 71 | 1.007 | 511 |
+| default (32 morsels / 1 ms) | 34.4 | 34.6 | 1.019 | 0.920..1.147 | 72 | 1.028 | 1023 |
+
+### tasks=8 workers=2 morsel=65536 rows (256 morsels/task, 2048 total); load1 before 1.05, after 1.13
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 33.4 | 34.7 | 1.000 | 1.000..1.000 | 68 | 1.000 | 0 |
+| A' unlimited (control twin) | 33.4 | 34.2 | 0.990 | 0.958..1.028 | 68 | 1.015 | 0 |
+| slice 1 morsel | 34.2 | 34.8 | 1.007 | 0.975..1.045 | 70 | 1.030 | 2046 |
+| slice 4 morsels | 33.6 | 34.0 | 0.979 | 0.941..1.011 | 68 | 1.007 | 511 |
+| slice 16 morsels | 33.5 | 34.2 | 0.992 | 0.914..1.026 | 69 | 1.022 | 127 |
+| slice 64 morsels | 33.4 | 34.6 | 0.999 | 0.945..1.039 | 67 | 0.993 | 31 |
+| default (32 morsels / 1 ms) | 33.4 | 34.1 | 0.986 | 0.971..1.061 | 70 | 1.037 | 64 |
+
+### tasks=8 workers=2 morsel=1048576 rows (16 morsels/task, 128 total); load1 before 1.13, after 1.20
+| arm | wall min ms | wall median ms | median paired wall ratio to A | paired ratio min..max | mean CPU ms/run | CPU ratio to A | yields/run |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| A unlimited (old) | 44.1 | 44.7 | 1.000 | 1.000..1.000 | 89 | 1.000 | 0 |
+| A' unlimited (control twin) | 44.1 | 44.6 | 1.000 | 0.978..1.018 | 89 | 1.000 | 0 |
+| slice 1 morsel | 44.3 | 44.8 | 1.004 | 0.982..1.018 | 89 | 1.000 | 127 |
+| slice 4 morsels | 44.2 | 44.6 | 0.996 | 0.979..1.018 | 90 | 1.006 | 31 |
+| slice 16 morsels | 43.9 | 44.6 | 1.000 | 0.970..1.019 | 88 | 0.994 | 7 |
+| slice 64 morsels | 44.0 | 44.8 | 1.000 | 0.976..1.017 | 90 | 1.006 | 0 |
+| default (32 morsels / 1 ms) | 44.3 | 44.7 | 1.001 | 0.979..1.025 | 90 | 1.006 | 63 |

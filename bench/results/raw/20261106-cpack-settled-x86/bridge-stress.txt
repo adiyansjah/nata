@@ -1,0 +1,33 @@
+host: 8 cores; 2026-11-06T01:18:30Z
+load before: 1.09 1.08 0.53 1/206 21998
+A no extra contention, no hooks (machine shared; load in output): runs=1500 ok=1500 (of which slow_under_load_recovered_on_retry=0) wrong=0 hung_confirmed=0 cancelled_with_err=375 slowest_run=263ms total=30.9s contention=false hook_us=0 worker_delay_us=0 timeout=20s
+  Abort: ok=375 wrong=0 hung=0
+  Cancel: ok=375 wrong=0 hung=0
+  EarlyClose: ok=375 wrong=0 hung=0
+  Normal: ok=375 wrong=0 hung=0
+  runs that ended with fewer chunks delivered than planned (i.e. really cut off mid-flight): {"Abort": 163, "Cancel": 212}
+load after: 0.66 0.98 0.51 1/206 28785
+load before: 0.66 0.98 0.51 8/214 28795
+B 8 busy threads (= cores), no hooks: runs=1500 ok=1500 (of which slow_under_load_recovered_on_retry=0) wrong=0 hung_confirmed=0 cancelled_with_err=375 slowest_run=286ms total=80.2s contention=true hook_us=0 worker_delay_us=0 timeout=20s
+  Abort: ok=375 wrong=0 hung=0
+  Cancel: ok=375 wrong=0 hung=0
+  EarlyClose: ok=375 wrong=0 hung=0
+  Normal: ok=375 wrong=0 hung=0
+  runs that ended with fewer chunks delivered than planned (i.e. really cut off mid-flight): {"Abort": 236, "Cancel": 300}
+load after: 6.96 2.90 1.22 9/213 35666
+load before: 6.96 2.90 1.22 1/205 35668
+C delay hooks 50us + worker delay 200us: runs=600 ok=600 (of which slow_under_load_recovered_on_retry=0) wrong=0 hung_confirmed=0 cancelled_with_err=150 slowest_run=486ms total=21.1s contention=false hook_us=50 worker_delay_us=200 timeout=20s
+  Abort: ok=150 wrong=0 hung=0
+  Cancel: ok=150 wrong=0 hung=0
+  EarlyClose: ok=150 wrong=0 hung=0
+  Normal: ok=150 wrong=0 hung=0
+  runs that ended with fewer chunks delivered than planned (i.e. really cut off mid-flight): {"Abort": 90, "Cancel": 113}
+load after: 4.58 2.67 1.19 1/205 38395
+load before: 4.58 2.67 1.19 9/213 38405
+D 8 busy threads + delay hooks: runs=600 ok=600 (of which slow_under_load_recovered_on_retry=0) wrong=0 hung_confirmed=0 cancelled_with_err=150 slowest_run=468ms total=41.2s contention=true hook_us=50 worker_delay_us=200 timeout=20s
+  Abort: ok=150 wrong=0 hung=0
+  Cancel: ok=150 wrong=0 hung=0
+  EarlyClose: ok=150 wrong=0 hung=0
+  Normal: ok=150 wrong=0 hung=0
+  runs that ended with fewer chunks delivered than planned (i.e. really cut off mid-flight): {"Abort": 98, "Cancel": 121}
+load after: 6.88 3.51 1.54 9/213 41163

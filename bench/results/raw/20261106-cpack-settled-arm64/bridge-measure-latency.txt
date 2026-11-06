@@ -1,0 +1,33 @@
+load: 0.48 2.06 1.28 1/206 41075
+## latency: 30 rounds x 6 arms interleaved, 4 producers x 200 chunks, one chunk per producer per ms from an OS-thread "store", tokio=2 workers, cpu pool=2 threads, cores=8
+load average at start: 0.48 2.06 1.28
+preflight Idle: delivered 200 chunks in order; consumed before stop: 200
+preflight CpuSat: delivered 200 chunks in order; consumed before stop: 0
+preflight OsSpin: delivered 200 chunks in order; consumed before stop: 200
+preflight TokioSat1ms: delivered 200 chunks in order; consumed before stop: 200
+preflight TokioSat10ms: delivered 200 chunks in order; consumed before stop: 200
+preflight CpuSatBackpressure: delivered 200 chunks in order; consumed before stop: 0
+load average at end: 1.14 1.97 1.29
+
+Latency from "chunk ready" (the store thread timestamps the chunk as ready) to "send completed", microseconds.
+Per-round p50 and p99 are shown as min / median / max over 30 rounds (the median-to-min/max spread is the run-to-run noise).
+
+| arm | p50 of rounds (min/med/max) | p99 of rounds (min/med/max) | worst sample of rounds (min/med/max) | pooled p50 | pooled p99 | pooled p99.9 | load1 before each run (min/med/max) |
+|---|---|---|---|---:|---:|---:|---|
+| Idle | 12 / 12 / 13 | 17 / 20 / 27 | 24 / 38 / 97 | 12 | 21 | 40 | 0.6 / 0.9 / 1.2 |
+| CpuSat | 10 / 10 / 10 | 12 / 18 / 48 | 22 / 58 / 79 | 10 | 19 | 50 | 0.6 / 0.9 / 1.2 |
+| OsSpin | 12 / 12 / 13 | 14 / 19 / 27 | 23 / 34 / 91 | 12 | 20 | 38 | 0.6 / 0.9 / 1.2 |
+| TokioSat1ms | 511 / 551 / 611 | 1545 / 1692 / 1993 | 1739 / 1982 / 2368 | 550 | 1707 | 1991 | 0.6 / 0.9 / 1.2 |
+| TokioSat10ms | 4994 / 5150 / 5716 | 9887 / 15449 / 19110 | 9976 / 19463 / 19990 | 5157 | 16888 | 19542 | 0.6 / 0.9 / 1.2 |
+| CpuSatBackpressure | 494825 / 496477 / 497103 | 591390 / 593121 / 594116 | 593256 / 595173 / 596988 | 496147 | 593089 | 595088 | 0.6 / 0.9 / 1.2 |
+
+Split of the pooled samples (microseconds): `lag` = ready to the producer task being polled (the I/O task waited for a tokio thread), `send` = time inside send().await (lock + wake, or waiting for room).
+
+| arm | lag p50 | lag p99 | send p50 | send p99 | chunks consumed by the CPU pool before the window ended (min/med/max) | producers unfinished at window end (max) |
+|---|---:|---:|---:|---:|---|---:|
+| Idle | 10 | 18 | 3 | 3 | 800 / 800 / 800 | 0 |
+| CpuSat | 10 | 18 | 0 | 1 | 0 / 0 / 0 | 0 |
+| OsSpin | 9 | 17 | 2 | 4 | 800 / 800 / 800 | 0 |
+| TokioSat1ms | 550 | 1704 | 0 | 4 | 798 / 800 / 800 | 0 |
+| TokioSat10ms | 5157 | 16888 | 0 | 4 | 800 / 800 / 800 | 0 |
+| CpuSatBackpressure | 495146 | 592082 | 0 | 392 | 0 / 0 / 0 | 4 |

@@ -1,0 +1,19 @@
+load: 0.47 1.64 1.23 1/205 43334
+## memory bound: fast producers (no latency), slow consumer (1 ms per chunk), 1 MiB chunks, 240 chunks per producer
+load average at start: 0.47 1.64 1.23
+Documented bound per channel: capacity N (queued) + P (one built chunk per producer waiting inside send) + 1 (the chunk the consumer task still holds). Total bound = consumers x (N + P + 1).
+
+| producers P | consumer tasks | capacity N | bound (chunks) | peak chunks | peak bytes (MiB) | bound (MiB) | within bound | process VmHWM growth (MiB) | load1 |
+|---:|---:|---:|---:|---:|---:|---:|---|---:|---|
+| 1 | 1 | 1 | 3 | 3 | 3 | 3 | yes | 6 | 0.5 |
+| 1 | 1 | 4 | 6 | 6 | 6 | 6 | yes | 12 | 0.5 |
+| 1 | 1 | 16 | 18 | 18 | 18 | 18 | yes | 18 | 0.5 |
+| 4 | 1 | 1 | 6 | 6 | 6 | 6 | yes | 12 | 0.5 |
+| 4 | 1 | 4 | 9 | 9 | 9 | 9 | yes | 18 | 0.5 |
+| 4 | 1 | 16 | 21 | 21 | 21 | 21 | yes | 43 | 0.4 |
+| 4 | 2 | 4 | 18 | 18 | 18 | 18 | yes | 35 | 0.4 |
+| 8 | 2 | 16 | 50 | 50 | 50 | 50 | yes | 84 | 0.4 |
+| 4 | 1 | unbounded (1e6) | n/a | 761 | 761 | n/a | n/a (control), total chunks 960 | 761 | 0.4 |
+
+bound respected in every bounded row: true
+load average at end: 0.40 1.59 1.22

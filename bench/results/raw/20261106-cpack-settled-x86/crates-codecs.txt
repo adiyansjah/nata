@@ -1,0 +1,24 @@
+x86_64
+load: 1.99 0.51 0.17 1/227 5005
+    Finished `release` profile [optimized] target(s) in 0.04s
+     Running tests/codecs.rs (target/release/deps/codecs-ba2b27a8d4b421d1)
+
+running 6 tests
+test corrupt_input_is_an_error_not_a_crash ... ok
+test gzip_round_trips ... gzip       16777216 -> 2178684 bytes (7.70x)  encode 511 MB/s  decode 456 MB/s
+ok
+test lz4_round_trips ... lz4_flex   67108864 -> 15533915 bytes (4.32x)  encode 774 MB/s  decode 1020 MB/s
+ok
+test snappy_round_trips ... snappy     67108864 -> 12854133 bytes (5.22x)  encode 868 MB/s  decode 961 MB/s
+ok
+test the_cpu_report_prints ... arch: x86_64
+sse4.2=true avx2=true bmi2=true pclmulqdq=true avx512f=true
+
+ok
+test zstd_round_trips_at_three_levels ... zstd-1     67108864 -> 5911143 bytes (11.35x)  encode 683 MB/s  decode 1082 MB/s
+zstd-3     67108864 -> 7396206 bytes (9.07x)  encode 549 MB/s  decode 1060 MB/s
+zstd-9     67108864 -> 4623470 bytes (14.51x)  encode 99 MB/s  decode 1191 MB/s
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.67s
+

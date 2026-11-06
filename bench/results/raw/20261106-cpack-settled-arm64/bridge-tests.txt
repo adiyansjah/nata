@@ -1,0 +1,37 @@
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running unittests src/lib.rs (target/release/deps/spike_async_bridge-bbc337655bb5e7b9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/bridge.rs (target/release/deps/bridge-b7246bb1d6ffec15)
+
+running 5 tests
+test producers_closing_early_end_the_consumer ... ok
+test cancel_frees_blocked_producers ... ok
+test empty_channel_parks_and_tokio_send_requeues ... ok
+test single_worker_single_channel_delivers_everything ... ok
+test matrix_prefix_runs_clean ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.27s
+
+     Running tests/delay_hook.rs (target/release/deps/delay_hook-91ce71ff25cef4c8)
+
+running 1 test
+test matrix_with_widened_race_windows ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.72s
+
+     Running tests/loom_bridge.rs (target/release/deps/loom_bridge-eebee50382051f13)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests spike_async_bridge
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

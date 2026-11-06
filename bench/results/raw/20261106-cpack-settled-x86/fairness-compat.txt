@@ -1,0 +1,56 @@
+ulimit -n: 1024
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running tests/protocol.rs (target/release/deps/protocol-5a28d94f8d846402)
+
+running 15 tests
+test a_blocked_consumer_frees_the_only_worker_thread ... ok
+test a_dependency_cycle_is_rejected ... ok
+test a_full_exchange_blocks_the_producer_until_the_consumer_drains_it ... ok
+test a_limit_above_an_exchange_stops_the_producers ... ok
+test an_error_in_one_task_cancels_the_rest_and_is_reported ... ok
+test cancelling_mid_query_stops_work_and_cleans_up_spill ... ok
+test cancelling_wakes_tasks_that_are_parked_on_an_empty_exchange ... ok
+test exchange_stress_finds_no_lost_wake_up_or_deadlock ... ok
+test exchange_stress_under_cpu_contention ... ok
+test finalize_spills_when_over_budget_and_stays_within_it ... spill stats: AggStats { spilled_entries: 50000, spill_files: 1024, peak_local_groups: 200, peak_partition_groups: 80, peak_open_spill_files: 3, spill_file_opens: 44733 }
+ok
+test hash_join_fan_out_needs_many_calls_per_input_batch ... ok
+test hash_join_waits_for_the_build_side_and_matches_the_reference ... ok
+test limit_is_exact_under_heavy_contention ... ok
+test limit_stops_the_scan_early_and_is_exact ... limit: threads=1 morsels scanned 8 of 10000
+limit: threads=4 morsels scanned 11 of 10000
+ok
+test no_spill_when_everything_fits ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.92s
+
+     Running tests/shutdown.rs (target/release/deps/shutdown-2832267612f47a19)
+
+running 1 test
+test shutting_down_never_leaves_a_worker_asleep ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/spill_fd_limit.rs (target/release/deps/spill_fd_limit-4087b2ad295e26ce)
+
+running 3 tests
+test spilling_aggregate_under_1024_fd_limit ... under fd limit 1024: AggStats { spilled_entries: 200000, spill_files: 1024, peak_local_groups: 200, peak_partition_groups: 80, peak_open_spill_files: 3, spill_file_opens: 180912 }
+ok
+test spilling_aggregate_under_1024_fd_limit_default_slice ... under fd limit 1024, default slice: AggStats { spilled_entries: 200000, spill_files: 1024, peak_local_groups: 200, peak_partition_groups: 80, peak_open_spill_files: 3, spill_file_opens: 180912 }
+ok
+test spilling_aggregate_under_1024_fd_limit_unlimited_slice_four_workers ... under fd limit 1024, unlimited slice, 4 workers: AggStats { spilled_entries: 200000, spill_files: 1024, peak_local_groups: 200, peak_partition_groups: 80, peak_open_spill_files: 4, spill_file_opens: 180912 }
+ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.46s
+
+     Running tests/spill_fds.rs (target/release/deps/spill_fds-8fc1fc3dcbc449e9)
+
+running 1 test
+test peak_open_spill_files_by_slice ... PEAK slice=unlimited  tasks=4 workers=3 partitions=256: peak open spill files     3, opens  180912, spill files on disk 1024
+PEAK slice=default    tasks=4 workers=3 partitions=256: peak open spill files     3, opens  180912, spill files on disk 1024
+PEAK slice=1 morsel   tasks=4 workers=3 partitions=256: peak open spill files     3, opens  180912, spill files on disk 1024
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.79s
+
+exit status: 0

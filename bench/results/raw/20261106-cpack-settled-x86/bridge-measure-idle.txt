@@ -1,0 +1,13 @@
+load: 0.40 1.59 1.22 1/205 43417
+## idle CPU of the pool: 2 producers at 5 ms per chunk (400 chunks/s total), channel capacity 4, fast consumer; 2 pool threads, window 1500 ms, 6 rounds interleaved
+load average at start: 0.40 1.59 1.22
+preflight busy_poll=false: all 40 chunks delivered
+preflight busy_poll=true: all 40 chunks delivered
+
+CPU seconds used per wall second (1.0 = one core fully busy). Clock tick = 10 ms, so each reading is accurate to about +-0.01 CPU s over a window of ~1.5 s.
+
+| design | pool workers' CPU (min / median / max), 2 threads | tokio threads' CPU (min / median / max) | load1 before each run (median) |
+|---|---|---|---|
+| real bridge: Blocked + waker stored, re-queued by the producer's send | 0.000 / 0.000 / 0.000 | 0.000 / 0.000 / 0.000 | 0.6 |
+| KNOWN-BAD control: source re-wakes itself while empty (busy re-queue) | 1.907 / 1.980 / 1.987 | 0.000 / 0.000 / 0.000 | 0.6 |
+load average at end: 0.54 1.55 1.21

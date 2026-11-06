@@ -1,0 +1,24 @@
+aarch64
+load: 1.28 0.31 0.10 1/214 4628
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running tests/codecs.rs (target/release/deps/codecs-e5b4ae601d0799d3)
+
+running 6 tests
+test corrupt_input_is_an_error_not_a_crash ... ok
+test gzip_round_trips ... gzip       16777216 -> 2178684 bytes (7.70x)  encode 547 MB/s  decode 441 MB/s
+ok
+test lz4_round_trips ... lz4_flex   67108864 -> 15533915 bytes (4.32x)  encode 809 MB/s  decode 1041 MB/s
+ok
+test snappy_round_trips ... snappy     67108864 -> 12854133 bytes (5.22x)  encode 1126 MB/s  decode 1214 MB/s
+ok
+test the_cpu_report_prints ... arch: aarch64
+neon=true aes=true crc=true sha2=true lse=true sve=true
+
+ok
+test zstd_round_trips_at_three_levels ... zstd-1     67108864 -> 5911143 bytes (11.35x)  encode 758 MB/s  decode 998 MB/s
+zstd-3     67108864 -> 7396206 bytes (9.07x)  encode 618 MB/s  decode 1081 MB/s
+zstd-9     67108864 -> 4623470 bytes (14.51x)  encode 99 MB/s  decode 1196 MB/s
+ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.68s
+
