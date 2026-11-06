@@ -143,8 +143,11 @@ summaries.** fmt, workspace clippy with -D warnings, workspace tests (328.45 s)
 and cargo-deny PASS; deny has only pre-existing unmatched-license warnings.
 The added Rust surface has 17 protocol tests and four live-resource tests.
 The corrected healthy-thread shutdown path also passes the mutation runner's
-unmutated baseline and fresh clippy. Staged leak scan is recorded at commit.
-A second full gate run verifies the final tree before the automation commit. Required commands, with disk TMPDIR and AI_AGENT absent:
+unmutated baseline and fresh clippy. Staged leak scan PASS before the implementation commit.
+A second full gate run PASS on the final Rust tree: **403 tests**, 288.49 s; fmt,
+clippy and deny also PASS. [Both gate summaries](20261107-pgwire-reliability/checks.txt)
+record exits/times; staged leak scans pass for both commits. Optional psql runs
+only when present on PATH; this step certifies the two clients above. Required commands, with disk TMPDIR and AI_AGENT absent:
 
 ```sh
 mkdir -p "$HOME/tmp-4b4"

@@ -207,3 +207,14 @@ summary still checks each query's planning target; this reducer does not replace
 those per-query verdicts. Its optional final argument selects SQL rounds, used
 for the closeout's disjoint baseline/held-out demonstration. Never regenerate a
 baseline merely to accept a slowdown; explain it and record the decision.
+
+
+## `pgwirecheck`: slice 4b local reliability replay
+
+Runs the release pgwire suite, 2,000 lifecycle scenarios under `nproc` busy-loop
+competitors plus 10,000 live fuzz cases (seed 322661912839), and all private-copy
+mutants. Results are `pgwire-protocol.txt`, `pgwire-live.txt`, and
+`pgwire-mutants.txt`. Generated Parquet and TMPDIR stay on the work disk.
+No client dependency installation, performance benchmark, or cloud run is claimed
+by adding this job. See `bench/results/20261107-pgwire-reliability.md` for the
+exact approved-run commands and the remaining step-5 measurements.

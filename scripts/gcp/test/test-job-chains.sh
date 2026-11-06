@@ -105,6 +105,9 @@ C=$(sed -n "s/^settle_before() {.*run \"settle-\$1\" bash -c '\([^']*\)' \"\$1\"
 echo "0.05 0.10 0.10 1/100 1" > "$T/quiet"; echo "9.00 5.00 2.00 1/100 1" > "$T/busy"
 out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/quiet" bash -c "${C/ 600;/ 600;}" lbl 2>&1); echo "$out" | grep -q '^SETTLE lbl: settled, load 0.05 after 0 s' && ok "settle step: a quiet machine settles at once" || bad "settle quiet: $out"
 out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/busy" SETTLE_POLL=1 bash -c "${C/ 600;/ 1;}" lbl 2>&1); rc=$?; echo "$out" | grep -q '^SETTLE lbl: NOT SETTLED, load 9.00' && [ $rc = 0 ] && ok "settle step: a busy machine is given up on cleanly (exit 0, says NOT SETTLED)" || bad "settle busy rc=$rc: $out"
+# The pgwire replay is checks only: no benchmark data or timing step.
+pw=$(steps pgwirecheck | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+[ "$pw" = "STEP pgwire-protocol STEP pgwire-live STEP pgwire-mutants " ] && ok "pgwirecheck runs protocol, live lifecycle and mutants in order" || bad "pgwirecheck steps: $pw"
 # slice4bench (step 4b of slice 4): the data, BOTH builds of nata (the default and --no-default-features, for the R4 cost arm), the pyarrow venv and the one
 # benchmark step, in that order, and nothing of another job
 sb=$(steps slice4bench | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')

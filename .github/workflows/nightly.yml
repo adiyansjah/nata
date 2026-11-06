@@ -186,3 +186,28 @@ jobs:
           NATA_PGWIRE_SEED: ${{ needs.seeds.outputs.seed }}
           NATA_PGWIRE_CASES: "1000000"
         run: cargo test -p nata-pgwire --test codec seeded_decoder_fuzz -- --nocapture
+
+
+  live-pgwire:
+    name: Live Postgres wire lifecycle (${{ matrix.os }})
+    needs: seeds
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Seeded live fuzz, kills, cancellation and resource bounds
+        env:
+          NATA_PGWIRE_SEED: ${{ needs.seeds.outputs.seed }}
+          NATA_PGWIRE_SCENARIOS: "4000"
+          NATA_PGWIRE_LIVE_CASES: "20000"
+        run: |
+          export TMPDIR="$RUNNER_TEMP/pgwire"
+          mkdir -p "$TMPDIR"
+          export NATA_PGWIRE_CONTENTION=$(nproc)
+          cargo test --release -p nata-pgwire --test reliability -- --nocapture

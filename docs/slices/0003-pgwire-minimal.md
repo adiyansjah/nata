@@ -68,6 +68,8 @@ executor resource boundaries; budget at most about a quarter of this slice. No c
 
 ## 6. Closeout (fill in when done)
 
+- Progress 2026-11-07: step 4 built and certified locally: bounded named statements/portals, default pgjdbc 42.7.7 and psycopg 3.3.8 preparation and scalar formats, explicit fetch-limit refusal with rollback recovery; 2,000 seeded lifecycle scenarios under eight-core contention/file delays, 10,000 live fuzz cases, 64 concurrent correct queries and one-byte/ms backpressure/RSS bounds. All 45 mutants CAUGHT (all 30 previous retained); workspace gates pass. ADR 0008 records limits, SQLSTATEs, rowless Execute and upstream issue 481. Evidence: `bench/results/20261107-pgwire-reliability.md`. Larger nightly and GCP replay job prepared, no GCP run or push. Step 5 two-CPU performance and R15/R16 certification remain open; this is not slice closeout.
+
 - Progress 2026-11-07: step 3 built locally: unnamed extended/text literals, Sync recovery, driver session layer, positioned Nata diagnostics/SQLSTATEs, bounded concurrent admission and stalled-reader timeout. ADR 0008 records named/fetch-limit refusals and exact client settings; default-driver limits are measured, not hidden. Checks, mutants and local clients: `bench/results/20261107-pgwire-extended.md`. Step 4 reliability/fuzz/leak certification next; no GCP or push.
 
 - Progress 2026-11-07: step 2 built and checked locally: codec, SIMPLE server, bounded admission/streaming, cancel/disconnect, protocol/corpus/mutants; R13 audited, R15 local ASan depth fix passes, R16 diagnosis recorded and remains open. Results: `bench/results/20261107-pgwire-server.md`. No two-CPU, full sanitizer or real-client certification; step 3 next.

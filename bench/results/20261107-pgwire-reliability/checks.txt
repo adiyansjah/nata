@@ -1,0 +1,12 @@
+Gate 1: 403 passed, 0 failed, 0 marked ignored, 61 summaries
+  fmt: PASS, 0.52 s
+  clippy: PASS, 0.13 s
+  workspace: PASS, 328.45 s
+  deny: PASS, 1.36 s
+  scripts/check-leaks.sh --staged: PASS
+Gate 2: 403 passed, 0 failed, 0 marked ignored, 61 summaries
+  fmt: PASS, 0.62 s
+  clippy: PASS, 0.21 s
+  workspace: PASS, 288.49 s
+  deny: PASS, 1.00 s
+  scripts/check-leaks.sh --staged: PASS

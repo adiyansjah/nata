@@ -312,6 +312,11 @@ case "$JOB" in
     run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  pgwirecheck)
+    # Local step-4 replay only: prepared here, never launches cloud resources itself.
+    run pgwire-protocol bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-pgwire > "$RESULTS/pgwire-protocol.txt" 2>&1'
+    run pgwire-live bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" NATA_PGWIRE_SEED=322661912839 NATA_PGWIRE_SCENARIOS=2000 NATA_PGWIRE_LIVE_CASES=10000 NATA_PGWIRE_CONTENTION=$(nproc) cargo test --release -p nata-pgwire --test reliability -- --nocapture > "$RESULTS/pgwire-live.txt" 2>&1'
+    run pgwire-mutants bash -c 'cd "$SRC" && python3 crates/nata-pgwire/mutate.py --work "$WORK/pgwire-mutants" > "$RESULTS/pgwire-mutants.txt" 2>&1' ;;
   slice4bench)
     # slice 4, step 4b (docs/slices/0002-select-where-limit.md part 5; record bench/results/20261106-slice4-carried-in.md): the paired benchmarks of the carried-in
     # improvements, all in crates/nata-bench/scan-bench.sh: P1 late materialization against the early read (BLOCKS=late), P2 footers read ahead and P10 on 1,000

@@ -388,7 +388,7 @@ do_run() {
   local bound; bound=$(bound_usd)
   [ -n "$APPROVED_USD" ] || die "a real run needs --approved-usd (at least \$$bound, the worst case for this plan); try '$0 plan' first"
   le "$bound" "$APPROVED_USD" || die "the worst case is \$$bound but only \$$APPROVED_USD was approved; nothing was called"
-  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|kani-solvers|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergcs|icebergpolaris|pushpin|netexchsim|netexchreal|failmodel|failmodel-retry|opsbeyond|spillbench|scanbench|slice4bench|slice4close|cgroupcheck|eng-checks|scale-sf10|scale-sf100|scale-cores|sqlfuzz|parquetwrite|icebergplan|icebergplan-mut) ;; *) die "unknown job $JOB" ;; esac
+  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|kani-solvers|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergcs|icebergpolaris|pushpin|netexchsim|netexchreal|failmodel|failmodel-retry|opsbeyond|spillbench|scanbench|pgwirecheck|slice4bench|slice4close|cgroupcheck|eng-checks|scale-sf10|scale-sf100|scale-cores|sqlfuzz|parquetwrite|icebergplan|icebergplan-mut) ;; *) die "unknown job $JOB" ;; esac
   [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
   [ -n "$PROJECT" ] || die "no project: pass --project or set one with gcloud"
   mkdir -p "$OUT"; : > "$OUT/gcloud.log"

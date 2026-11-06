@@ -19,11 +19,11 @@ public class Clients4 {
    }}
    System.out.println("DEFAULT ten repeats types/NULL PASS");
    try(PreparedStatement s=c.prepareStatement("SELECT si FROM '"+f+"' LIMIT 1")) {for(int i=0;i<10;i++){try(ResultSet r=s.executeQuery()){r.next();if(r.getInt(1)!=-32768)throw new AssertionError();}System.out.println("DEFAULT repeated no parameters "+(i+1)+" PASS");}}
-   
+
   }
   try(Connection c=connect("")) {
    try(PreparedStatement s=c.prepareStatement("SELECT ? AS p FROM '"+f+"' LIMIT 1")) {for(int i=0;i<10;i++){s.setInt(1,7);try(ResultSet r=s.executeQuery()){r.next();if(r.getInt(1)!=7)throw new AssertionError();}System.out.println("DEFAULT prepared "+(i+1)+" PASS");}}
-   
+
   }
   try(Connection c=connect("")) {
    try(PreparedStatement s=c.prepareStatement("SELECT ? AS p FROM '"+f+"' LIMIT 1")){for(int i=0;i<10;i++){s.setInt(1,7);try(ResultSet r=s.executeQuery()){r.next();if(r.getInt(1)!=7)throw new AssertionError();}}s.setNull(1,Types.INTEGER);try(ResultSet r=s.executeQuery()){r.next();if(r.getObject(1)!=null)throw new AssertionError();}}
