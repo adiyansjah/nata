@@ -102,14 +102,24 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
         .expect("sh");
     assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), "256");
 
-    for threads in ["1", "8"] {
+    // (threads, footers read ahead): 1 is slice 3's behaviour; 4 and 8 are register item P2: the footers of the next files are read while earlier row
+    // groups run, and the handles and footers are bounded all the same
+    for (threads, ahead) in [("1", "1"), ("8", "1"), ("1", "4"), ("8", "8"), ("3", "4")] {
         let out = Command::new("sh")
             .arg("-c")
             .arg("ulimit -n 256 && exec \"$0\" \"$@\"")
             .arg(env!("CARGO_BIN_EXE_nata"))
             .arg("scan")
             .args(&files)
-            .args(["--columns", "id", "--threads", threads, "--csv"])
+            .args([
+                "--columns",
+                "id",
+                "--threads",
+                threads,
+                "--footers-ahead",
+                ahead,
+                "--csv",
+            ])
             .output()
             .expect("run");
         let err = String::from_utf8_lossy(&out.stderr).into_owned();
@@ -119,8 +129,9 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
             "threads {threads}: the rows differ from the expected 0..{}",
             n * 3
         );
-        eprintln!("10k files, ulimit -n 256, threads {threads}: {err}");
+        eprintln!("10k files, ulimit -n 256, threads {threads}, footers ahead {ahead}: {err}");
         let t: u64 = threads.parse().expect("threads");
+        let k: u64 = ahead.parse().expect("ahead");
         assert_eq!(report_field(&err, "files"), n as u64);
         assert_eq!(report_field(&err, "files_opened"), n as u64, "{err}");
         assert_eq!(report_field(&err, "rows_returned"), (n * 3) as u64);
@@ -130,8 +141,8 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
             "handles are bounded by the threads (plus the footer reader): {err}"
         );
         assert!(
-            report_field(&err, "peak_footers") <= t + 2,
-            "footers are bounded by the window: {err}"
+            report_field(&err, "peak_footers") <= t + k + 1,
+            "footers are bounded by the threads and the footers ahead: {err}"
         );
     }
     // the unordered mode and a limit under the same ulimit
@@ -147,6 +158,8 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
             "--threads",
             "8",
             "--unordered",
+            "--footers-ahead",
+            "8",
             "--limit",
             "25",
             "--csv",
@@ -159,7 +172,7 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
     eprintln!("10k files, ulimit -n 256, unordered, limit 25: {err}");
     assert!(
         report_field(&err, "files_opened") < 200,
-        "a limit does not read the footers of 10,000 files: {err}"
+        "a limit does not read the footers of 10,000 files, also with footers read ahead: {err}"
     );
 }
 

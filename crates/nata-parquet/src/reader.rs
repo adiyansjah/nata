@@ -65,6 +65,10 @@ pub struct ScanOptions {
     /// errors as the default (decode every column of the row group, then filter). Off by default until the benchmark of step 4b decides. Has no effect
     /// without a filter.
     pub late_materialization: bool,
+    /// Require every file to have the first file's whole schema: the same top-level columns, in the same order, with the same types. A file that does not
+    /// is an error naming the file, found when the scan reaches it (register item P10: the SQL binder reads only the first footer and relies on this). Off:
+    /// a later file needs only the columns the scan reads (`nata scan`).
+    pub strict_schema: bool,
 }
 
 /// One row group of one file, and what pruning decided.
@@ -250,6 +254,8 @@ struct Spec {
     terms: Vec<Term>,
     /// For each term, its column's kind.
     term_kinds: Vec<Kind>,
+    /// Every top-level column of the first file with its kind (or why it is unsupported), kept only for `strict_schema`.
+    first_schema: Option<Vec<(String, Result<Kind, String>)>>,
 }
 
 fn kind_of(leaf: &Leaf, path: &Path) -> Result<Kind, ScanError> {
@@ -318,6 +324,11 @@ fn first_spec(all: &[Leaf], options: &ScanOptions, path: &Path) -> Result<Spec, 
         read,
         terms,
         term_kinds,
+        first_schema: options.strict_schema.then(|| {
+            all.iter()
+                .map(|l| (l.name.clone(), l.kind.clone()))
+                .collect()
+        }),
     })
 }
 
@@ -517,6 +528,45 @@ fn check_magic(file: &mut File, path: &Path) -> Result<(), ScanError> {
     Ok(())
 }
 
+/// `strict_schema`: the file must have the first file's top-level columns in the same order with the same kinds. The error names the first column that
+/// differs (never a value).
+fn strict_schema_check(
+    first: &[(String, Result<Kind, String>)],
+    all: &[Leaf],
+    path: &Path,
+) -> Result<(), ScanError> {
+    let describe = |name: &str, kind: &Result<Kind, String>| match kind {
+        Ok(k) => format!("{name} {}", k.sql_name()),
+        Err(_) => format!("{name} (unsupported type)"),
+    };
+    let differs = |i: usize| match (all.get(i), first.get(i)) {
+        (Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,
+        _ => true,
+    };
+    if all.len() == first.len() && !(0..all.len()).any(differs) {
+        return Ok(());
+    }
+    let why = (0..all.len().max(first.len()))
+        .find(|i| differs(*i))
+        .map(|i| match (all.get(i), first.get(i)) {
+            (Some(a), Some((bn, bk))) => format!(
+                "column {} here, {} in the first file",
+                describe(&a.name, &a.kind),
+                describe(bn, bk)
+            ),
+            _ => format!(
+                "{} columns here, {} in the first file",
+                all.len(),
+                first.len()
+            ),
+        })
+        .unwrap_or_default();
+    Err(ScanError::new(ErrorKind::Schema(format!(
+        "the files of a pattern must have the same schema ({why})"
+    )))
+    .in_file(path))
+}
+
 /// Open one file, read its footer, CLOSE it, and decide its pruning.
 fn read_file(
     path: &Path,
@@ -549,6 +599,9 @@ fn read_file(
     let Some(spec_ref) = spec.as_ref() else {
         return Err(ScanError::new(ErrorKind::Internal("no spec".into())).in_file(path));
     };
+    if let Some(first) = &spec_ref.first_schema {
+        strict_schema_check(first, &all, path)?;
+    }
     for (name, kind) in &spec_ref.read {
         let leaf = find(&all, name, path)
             .map_err(|e| ScanError::new(ErrorKind::Schema(e_text(&e))).in_file(path))?;

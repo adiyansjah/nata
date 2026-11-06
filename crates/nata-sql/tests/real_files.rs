@@ -7,7 +7,7 @@ use std::sync::Arc;
 use arrow_array::{ArrayRef, Date32Array, Decimal128Array, Int64Array, RecordBatch, StringArray};
 use arrow_schema::{DataType, Field, Schema};
 use nata_parquet::{ScanPlan, run_serial};
-use nata_sql::{ErrorClass, FsSource, plan_sql};
+use nata_sql::{BindOptions, ErrorClass, FsSource, plan_sql, plan_sql_with};
 use parquet::arrow::ArrowWriter;
 use parquet::file::properties::WriterProperties;
 
@@ -143,9 +143,11 @@ fn a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error() {
     write(&d.join("b.parquet"), 40, 40, DataType::Decimal128(15, 2));
     write(&d.join("c.parquet"), 80, 40, DataType::Decimal128(12, 2)); // l_discount differs
     write(&d.join("d.parquet"), 120, 40, DataType::Decimal128(12, 2));
-    let e = plan_sql(
+    // the binder that reads every footer (BindOptions::all_footers: the behaviour before register item P10)
+    let e = plan_sql_with(
         &format!("SELECT l_orderkey FROM '{}/*.parquet'", d.display()),
         &FsSource,
+        BindOptions { all_footers: true },
     )
     .expect_err("schemas differ");
     assert_eq!(e.class, ErrorClass::Bind);
@@ -155,6 +157,33 @@ fn a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error() {
     );
     assert!(e.message.contains("l_discount"), "{e}");
     assert!(!e.to_string().contains("SECRET"), "{e}");
+    // register item P10: the default binder reads the first footer only, and the SCAN finds the same file when it reaches it, naming it; the rows of the
+    // files before it are delivered first (ordered scan), and the error is the same for every thread count
+    let p = plan_sql(
+        &format!("SELECT l_orderkey FROM '{}/*.parquet'", d.display()),
+        &FsSource,
+    )
+    .expect("the binder does not see the later files");
+    let sp = ScanPlan::open(&p.plan.scan.files, &p.plan.scan.scan_options()).expect("first file");
+    let mut rows = 0u64;
+    let e = run_serial(&sp, None, |b| {
+        rows += b.num_rows() as u64;
+        Ok(())
+    })
+    .expect_err("the scan reaches c.parquet");
+    assert_eq!(rows, 80, "a.parquet and b.parquet were delivered first");
+    let text = e.to_string();
+    assert!(
+        text.contains("c.parquet") && !text.contains("d.parquet"),
+        "the scan names the file: {text}"
+    );
+    assert!(text.contains("l_discount"), "{text}");
+    assert!(!text.contains("SECRET"), "{text}");
+    assert!(
+        matches!(e.kind, nata_parquet::ErrorKind::Schema(_)),
+        "{text}"
+    );
+
     // every other error of the binder is also free of cell values
     for q in [
         "SELECT l_commen FROM 'FILE'",
@@ -253,4 +282,53 @@ fn the_front_end_plans_in_well_under_a_millisecond() {
         median < std::time::Duration::from_millis(1),
         "median {median:?}"
     );
+}
+
+#[test]
+fn a_later_file_with_an_extra_column_that_the_query_does_not_read_is_still_a_different_schema() {
+    // the contract is "the same schema" (docs/dialect.md), not "the columns the query reads": the scan checks the whole schema of every file it reaches
+    let d = scratch("extra-column");
+    write(&d.join("a.parquet"), 0, 40, DataType::Decimal128(15, 2));
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("l_orderkey", DataType::Int64, false),
+        Field::new("l_shipdate", DataType::Date32, true),
+        Field::new("l_discount", DataType::Decimal128(15, 2), true),
+        Field::new("l_comment", DataType::Utf8, true),
+        Field::new("l_extra", DataType::Int64, true),
+    ]));
+    let ids: ArrayRef = Arc::new(Int64Array::from_iter_values(40..50));
+    let dates: ArrayRef = Arc::new(Date32Array::from_iter_values(std::iter::repeat_n(8000, 10)));
+    let disc: ArrayRef = Arc::new(
+        Decimal128Array::from_iter_values(std::iter::repeat_n(1, 10))
+            .with_precision_and_scale(15, 2)
+            .expect("decimal"),
+    );
+    let comments: ArrayRef = Arc::new(StringArray::from_iter_values(std::iter::repeat_n("x", 10)));
+    let extra: ArrayRef = Arc::new(Int64Array::from_iter_values(0..10));
+    let batch = RecordBatch::try_new(schema.clone(), vec![ids, dates, disc, comments, extra])
+        .expect("batch");
+    let mut w = ArrowWriter::try_new(
+        std::fs::File::create(d.join("b.parquet")).expect("create"),
+        schema,
+        Some(WriterProperties::builder().build()),
+    )
+    .expect("writer");
+    w.write(&batch).expect("write");
+    w.close().expect("close");
+    let q = format!("SELECT l_orderkey FROM '{}/*.parquet'", d.display());
+    let p = plan_sql(&q, &FsSource).expect("binds on a.parquet");
+    let sp = ScanPlan::open(&p.plan.scan.files, &p.plan.scan.scan_options()).expect("first file");
+    let e = run_serial(&sp, None, |_| Ok(())).expect_err("b.parquet differs");
+    let text = e.to_string();
+    assert!(
+        text.contains("b.parquet") && text.contains("5 columns here, 4 in the first file"),
+        "{text}"
+    );
+    // without strict_schema (nata scan) only the columns read matter, as in slice 3
+    let mut loose = p.plan.scan.scan_options();
+    loose.strict_schema = false;
+    let sp = ScanPlan::open(&p.plan.scan.files, &loose).expect("first file");
+    run_serial(&sp, None, |_| Ok(()))
+        .expect("a scan that reads only l_orderkey accepts the extra column");
+    std::fs::remove_dir_all(&d).ok();
 }

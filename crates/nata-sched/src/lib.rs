@@ -24,6 +24,12 @@
 //!   limit, a sink error for a closed output), a task error cancels the tasks above it, [`CancelHandle::cancel`] cancels from outside. Tasks look at
 //!   their [`CancelToken`] between batches; workers look before every claim; a worker waiting for the window or the opener is woken. [`Scheduler::run`]
 //!   returns only after every worker thread has been joined and every undelivered result and unclaimed task has been dropped (also when the sink panics).
+//! * **Footers ahead** (`Config::open_ahead`, register item P2). With `open_ahead = 1` files are opened one at a time, and only when no task is queued
+//!   (slice 3). With `open_ahead = K` up to K files may be *pending* at once: being opened by a worker, opened and waiting for an earlier file, or queued with
+//!   tasks not yet claimed. A worker with nothing to run opens the next file while others run earlier row groups, so many small files do not wait for one
+//!   footer read after the other. The results of the opens are installed into the queue **in file order** (a file that finishes early waits in `ready`), so
+//!   the sequence numbers, and with them the ordered output and the lowest-error rule, are exactly those of `open_ahead = 1`. A file that cannot be opened
+//!   is queued in its place as a failure; it takes its sequence number when the workers reach it. Pending files are bounded by K whatever the number of files.
 //! * **One lock.** All state is in one `Mutex<Core>` with two condition variables (`work_cv` for workers, `out_cv` for the consumer); every state change
 //!   that can unblock someone calls `notify_all`. Tasks run outside the lock. The model checker explores exactly this code (`tests/loom_sched.rs`).
 //!
@@ -74,6 +80,9 @@ pub struct Config {
     pub window: usize,
     /// Deliver results in sequence order (identical to the single-thread scan); `false`: in completion order.
     pub ordered: bool,
+    /// Files that may be pending at once (being opened, opened and waiting for an earlier file, or queued with unclaimed tasks); at least 1. `1` is one
+    /// file at a time.
+    pub open_ahead: usize,
 }
 
 /// Given to a running task; cheap to ask.
@@ -119,6 +128,8 @@ pub struct Summary {
     pub claims_after_stop: u64,
     /// Files whose opening was claimed.
     pub files_opened: usize,
+    /// The most files pending at once (see `Config::open_ahead`): never above it.
+    pub max_pending_files: u64,
     pub workers_started: usize,
     pub workers_joined: usize,
 }
@@ -136,12 +147,18 @@ enum Slot<W: Work> {
 }
 
 struct Core<W: Work> {
-    /// The next file to open.
+    /// The next file to hand to an opener.
     next_file: usize,
-    /// A worker is opening a file right now (at most one at a time: files are opened in order, and only when the queue is empty).
-    opener_busy: bool,
-    /// Tasks of opened files, not yet claimed, in key order.
-    queue: VecDeque<W::Task>,
+    /// Files being opened right now (at most `open_ahead` files are pending).
+    opening: usize,
+    /// Opened files that wait for an earlier file to be installed, by file number.
+    ready: BTreeMap<usize, Result<Vec<W::Task>, W::Err>>,
+    /// The next file to install into the queue: files are installed in file order.
+    next_install: usize,
+    /// Files in the queue that still have a task (or a failure) unclaimed.
+    queued_files: usize,
+    /// Tasks of installed files, not yet claimed, in key order.
+    queue: VecDeque<Queued<W>>,
     /// Sequence numbers handed out.
     claimed: u64,
     /// Nothing is left to claim.
@@ -161,6 +178,15 @@ struct Core<W: Work> {
     high_water: u64,
     claims_after_stop: u64,
     files_opened: usize,
+    max_pending_files: u64,
+}
+
+/// An entry of the queue, in key order.
+enum Queued<W: Work> {
+    /// A task; `last` marks the last task of its file.
+    Task { task: W::Task, last: bool },
+    /// The file at this place could not be opened: it takes the next sequence number when it is reached, and stops the claims.
+    Failed(W::Err),
 }
 
 struct Shared<W: Work> {
@@ -221,6 +247,7 @@ impl<W: Work> Drop for ExitGuard<W> {
 /// Take the next unit of work, or wait for one, or learn that there is none. `None` = this worker is done.
 fn claim<W: Work>(sh: &Shared<W>) -> Option<Job<W>> {
     let window = sh.cfg.window.max(1) as u64;
+    let ahead = sh.cfg.open_ahead.max(1);
     let mut g = lock(&sh.core);
     loop {
         if g.stop_claims {
@@ -230,27 +257,52 @@ fn claim<W: Work>(sh: &Shared<W>) -> Option<Job<W>> {
             return None;
         }
         if g.claimed - g.released < window {
-            if let Some(task) = g.queue.pop_front() {
-                let seq = g.claimed;
-                g.claimed += 1;
-                let out = g.claimed - g.released;
-                g.high_water = g.high_water.max(out);
+            // open the next file when fewer than `open_ahead` files are pending (with 1: nothing is pending, so the queue is empty and nobody is opening)
+            let pending = g.opening + g.ready.len() + g.queued_files;
+            if pending < ahead && g.next_file < sh.work.files() {
+                let file = g.next_file;
+                g.next_file += 1;
+                g.opening += 1;
+                g.files_opened += 1;
+                g.max_pending_files = g.max_pending_files.max(pending as u64 + 1);
                 if g.stop_claims {
                     g.claims_after_stop += 1;
                 }
-                return Some(Job::Run(seq, task));
+                return Some(Job::Open(file));
             }
-            if !g.opener_busy {
-                if g.next_file < sh.work.files() {
-                    let file = g.next_file;
-                    g.next_file += 1;
-                    g.opener_busy = true;
-                    g.files_opened += 1;
+            match g.queue.pop_front() {
+                Some(Queued::Task { task, last }) => {
+                    if last {
+                        g.queued_files -= 1;
+                    }
+                    let seq = g.claimed;
+                    g.claimed += 1;
+                    let out = g.claimed - g.released;
+                    g.high_water = g.high_water.max(out);
                     if g.stop_claims {
                         g.claims_after_stop += 1;
                     }
-                    return Some(Job::Open(file));
+                    return Some(Job::Run(seq, task));
                 }
+                Some(Queued::Failed(e)) => {
+                    // the file at this place could not be opened: its error takes the next sequence number and stops the claims
+                    g.queued_files -= 1;
+                    let seq = g.claimed;
+                    g.claimed += 1;
+                    let out = g.claimed - g.released;
+                    g.high_water = g.high_water.max(out);
+                    g.slots.insert(seq, Slot::Failed(e));
+                    g.stop_claims = true;
+                    let from = sh.abandon_from.load(Ordering::SeqCst).min(seq + 1);
+                    sh.abandon_from.store(from, Ordering::SeqCst);
+                    drop(g);
+                    sh.out_cv.notify_all();
+                    sh.work_cv.notify_all();
+                    return None;
+                }
+                None => {}
+            }
+            if g.next_file >= sh.work.files() && g.opening == 0 && g.ready.is_empty() {
                 // no file left, no task queued, nobody opening: the claims are over
                 g.exhausted = true;
                 drop(g);
@@ -263,28 +315,40 @@ fn claim<W: Work>(sh: &Shared<W>) -> Option<Job<W>> {
     }
 }
 
-/// Store the result of the file opening: its tasks join the queue, or its error takes the next sequence number.
-fn install<W: Work>(sh: &Shared<W>, opened: Result<Vec<W::Task>, W::Err>) {
-    let mut unused: Vec<W::Task> = Vec::new();
+/// Store the result of the opening of `file`: it joins the queue when every earlier file has been installed (files are installed in file order, so the
+/// queue and the sequence numbers are those of a scan that opens one file at a time); until then it waits in `ready`.
+fn finish_open<W: Work>(sh: &Shared<W>, file: usize, opened: Result<Vec<W::Task>, W::Err>) {
+    let mut unused: Vec<Result<Vec<W::Task>, W::Err>> = Vec::new();
     let mut g = lock(&sh.core);
-    g.opener_busy = false;
-    match opened {
-        Ok(tasks) => {
-            if g.stop_claims {
-                unused = tasks;
-            } else {
-                g.queue.extend(tasks);
-            }
+    g.opening -= 1;
+    g.ready.insert(file, opened);
+    loop {
+        let next = g.next_install;
+        let Some(result) = g.ready.remove(&next) else {
+            break;
+        };
+        g.next_install += 1;
+        if g.stop_claims {
+            unused.push(result);
+            continue;
         }
-        Err(e) => {
-            let seq = g.claimed;
-            g.claimed += 1;
-            let out = g.claimed - g.released;
-            g.high_water = g.high_water.max(out);
-            g.slots.insert(seq, Slot::Failed(e));
-            g.stop_claims = true;
-            let from = sh.abandon_from.load(Ordering::SeqCst).min(seq + 1);
-            sh.abandon_from.store(from, Ordering::SeqCst);
+        match result {
+            Ok(tasks) => {
+                let n = tasks.len();
+                if n > 0 {
+                    g.queued_files += 1;
+                }
+                for (i, task) in tasks.into_iter().enumerate() {
+                    g.queue.push_back(Queued::Task {
+                        task,
+                        last: i + 1 == n,
+                    });
+                }
+            }
+            Err(e) => {
+                g.queued_files += 1;
+                g.queue.push_back(Queued::Failed(e));
+            }
         }
     }
     drop(g);
@@ -334,7 +398,7 @@ fn worker<W: Work>(sh: Arc<Shared<W>>) {
             }
             Job::Open(file) => {
                 let opened = sh.work.open(file);
-                install(&sh, opened);
+                finish_open(&sh, file, opened);
             }
         }
     }
@@ -377,7 +441,10 @@ impl<W: Work> Scheduler<W> {
     pub fn new(work: Arc<W>, cfg: Config) -> Scheduler<W> {
         let core = Core {
             next_file: 0,
-            opener_busy: false,
+            opening: 0,
+            ready: BTreeMap::new(),
+            next_install: 0,
+            queued_files: 0,
             queue: VecDeque::new(),
             claimed: 0,
             exhausted: false,
@@ -390,6 +457,7 @@ impl<W: Work> Scheduler<W> {
             high_water: 0,
             claims_after_stop: 0,
             files_opened: 0,
+            max_pending_files: 0,
         };
         Scheduler {
             sh: Arc::new(Shared {
@@ -532,10 +600,11 @@ impl<W: Work> Scheduler<W> {
 
         // shutdown: cancel, join every worker, then drop what is left (outside the lock)
         let joined_ok = workers.shutdown();
-        let (leftover_slots, leftover_queue, summary_core) = {
+        let (leftover_slots, leftover_queue, leftover_ready, summary_core) = {
             let mut g = lock(&sh.core);
             let slots = std::mem::take(&mut g.slots);
             let queue = std::mem::take(&mut g.queue);
+            let ready = std::mem::take(&mut g.ready);
             let cancelled = g.cancelled;
             let sc = (
                 g.claimed,
@@ -545,8 +614,9 @@ impl<W: Work> Scheduler<W> {
                 g.files_opened,
                 g.worker_failed,
                 cancelled,
+                g.max_pending_files,
             );
-            (slots, queue, sc)
+            (slots, queue, ready, sc)
         };
         // in error mode (unordered) a task with a lower number than the error found so far may have failed after it
         let mut leftover_slots = leftover_slots;
@@ -561,9 +631,18 @@ impl<W: Work> Scheduler<W> {
         }
         drop(leftover_slots);
         drop(leftover_queue);
+        drop(leftover_ready);
 
-        let (claimed, taken, high_water, claims_after_stop, files_opened, failed_flag, cancelled) =
-            summary_core;
+        let (
+            claimed,
+            taken,
+            high_water,
+            claims_after_stop,
+            files_opened,
+            failed_flag,
+            cancelled,
+            max_pending_files,
+        ) = summary_core;
         let finish = if stopped {
             Finish::Stopped
         } else if cancelled {
@@ -578,6 +657,7 @@ impl<W: Work> Scheduler<W> {
             high_water,
             claims_after_stop,
             files_opened,
+            max_pending_files,
             workers_started: started,
             workers_joined: workers.joined,
         };

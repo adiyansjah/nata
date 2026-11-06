@@ -9,7 +9,7 @@ which this page does not repeat. "DuckDB" below means DuckDB 2.0.0, checked by h
 
 `SELECT <select list> FROM <source> [WHERE <expr>] [LIMIT <n> [OFFSET <m>]]`, `EXPLAIN <select>`, `EXPLAIN ANALYZE <select>`. One
 statement per call; a trailing `;` is allowed. `<source>` is a single-quoted path or glob of Parquet files: `FROM 'lineitem.parquet'`,
-`FROM 'data/*.parquet'` (all files must have the same schema). Not yet: `GROUP BY`, `HAVING`, `ORDER BY`, joins, subqueries, `WITH`,
+`FROM 'data/*.parquet'` (all files must have the same schema: the same top-level columns, in the same order, with the same types). The binder reads the footer of the FIRST file only, for the names and types the query binds against; the scan checks the schema of every other file when it reaches the file, and a file that differs is an error that names it (a failure of the data: exit code 1, after the rows of the files before it were printed, if the query printed any). `EXPLAIN` reads the first footer only. Not yet: `GROUP BY`, `HAVING`, `ORDER BY`, joins, subqueries, `WITH`,
 `DISTINCT`, set operations, more than one source, a table name.
 
 ## 2. Names

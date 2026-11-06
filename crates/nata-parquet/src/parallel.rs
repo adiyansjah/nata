@@ -13,6 +13,9 @@
 //!   found after the limit was satisfied is never reported. A file whose footer cannot be read has a place in the order like any row group.
 //! * **Sink errors.** A sink error (a closed stdout) cancels everything exactly like a limit and is returned (it wins over a task error: the output
 //!   is gone).
+//! * **Footers ahead.** `footers_ahead = K` lets up to K files be pending at once (see `ParallelConfig`); the rows, their order and the errors are those
+//!   of `K = 1`. A file that cannot be opened (or whose schema differs) has its place in the order; files after it may have been opened ahead and are
+//!   dropped.
 //! * **Memory.** Peak decoded bytes in flight is at most `window` times the largest task, see `ScanReport` and the record for the formula.
 
 use std::sync::{Arc, Mutex};
@@ -32,6 +35,11 @@ pub struct ParallelConfig {
     pub window: usize,
     /// Deliver in the order of the single-thread scan.
     pub ordered: bool,
+    /// Footers read ahead (register item P2): how many files may be pending at once (their footer being read, read and waiting for an earlier file, or
+    /// with row groups not yet started). `1` is slice 3's behaviour: one file at a time, and the next only when no row group is queued. With `K` the
+    /// workers read the next files' footers while earlier row groups run, and the footers in memory stay bounded by `K` plus the files whose row groups
+    /// are running. Off (1) by default until the benchmark of step 4b decides.
+    pub footers_ahead: usize,
 }
 
 impl ParallelConfig {
@@ -41,6 +49,7 @@ impl ParallelConfig {
             threads,
             window: threads,
             ordered: true,
+            footers_ahead: 1,
         }
     }
 }
@@ -157,6 +166,7 @@ pub fn run_parallel_with(
                 threads,
                 window,
                 ordered: cfg.ordered,
+                open_ahead: cfg.footers_ahead.max(1),
             },
         );
         if let Some(c) = cancel {

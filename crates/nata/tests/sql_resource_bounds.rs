@@ -107,16 +107,30 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
 
     // a filter above the scan (not pushable) and a projection: the rows are still the right ones
     let q = format!("SELECT id + 1 AS next FROM '{pattern}' WHERE id + 0 >= 0");
-    for threads in ["1", "8"] {
-        let out = under_ulimit(&["sql", "--csv", "--threads", threads, "--report", "-c", &q]);
+    // (threads, footers read ahead): 1 is slice 3's behaviour; 4 and 8 are register item P2
+    for (threads, ahead) in [("1", "1"), ("8", "1"), ("1", "4"), ("8", "8"), ("3", "4")] {
+        let out = under_ulimit(&[
+            "sql",
+            "--csv",
+            "--threads",
+            threads,
+            "--footers-ahead",
+            ahead,
+            "--report",
+            "-c",
+            &q,
+        ]);
         let err = String::from_utf8_lossy(&out.stderr).into_owned();
         assert_eq!(out.status.code(), Some(0), "threads {threads}: {err}");
         assert!(
             out.stdout == want.as_bytes(),
             "threads {threads}: the rows differ from the expected"
         );
-        eprintln!("nata sql, 10k files, ulimit -n 256, threads {threads}: {err}");
+        eprintln!(
+            "nata sql, 10k files, ulimit -n 256, threads {threads}, footers ahead {ahead}: {err}"
+        );
         let t: u64 = threads.parse().expect("threads");
+        let k: u64 = ahead.parse().expect("ahead");
         assert_eq!(field(&err, "files"), n as u64);
         assert_eq!(field(&err, "files_opened"), n as u64, "{err}");
         assert_eq!(field(&err, "rows_returned"), (n * 3) as u64);
@@ -125,13 +139,23 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
             "handles are bounded by the threads (plus the footer reader): {err}"
         );
         assert!(
-            field(&err, "peak_footers") <= t + 2,
-            "footers are bounded by the window: {err}"
+            field(&err, "peak_footers") <= t + k + 1,
+            "footers are bounded by the threads and the footers ahead: {err}"
         );
     }
     // a limit under the same ulimit does not open the files it does not need
     let q = format!("SELECT id FROM '{pattern}' WHERE id + 0 >= 0 LIMIT 25");
-    let out = under_ulimit(&["sql", "--csv", "--threads", "8", "--report", "-c", &q]);
+    let out = under_ulimit(&[
+        "sql",
+        "--csv",
+        "--threads",
+        "8",
+        "--footers-ahead",
+        "8",
+        "--report",
+        "-c",
+        &q,
+    ]);
     let err = String::from_utf8_lossy(&out.stderr).into_owned();
     assert_eq!(out.status.code(), Some(0), "{err}");
     assert_eq!(String::from_utf8_lossy(&out.stdout).lines().count(), 26);

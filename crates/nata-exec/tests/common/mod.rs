@@ -111,6 +111,12 @@ pub fn late_from_env() -> bool {
 pub fn run_with(sql: &str, cfg: &ExecConfig) -> Outcome {
     let mut cfg = cfg.clone();
     cfg.late_materialization |= late_from_env();
+    if let Some(k) = std::env::var("NATA_FOOTERS_AHEAD")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    {
+        cfg.footers_ahead = cfg.footers_ahead.max(k);
+    }
     let cfg = &cfg;
     let planned = match plan_sql(sql, &FsSource) {
         Ok(p) => p,

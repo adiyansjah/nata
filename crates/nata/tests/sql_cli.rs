@@ -279,6 +279,15 @@ fn golden(name: &str, got: &str) {
 #[test]
 fn explain_and_explain_analyze_have_golden_output() {
     let (_d, p) = std_file("explain");
+    // the golden numbers are those of the default read (the scan's bytes and footers change with the developer options), whatever the environment says
+    let nata = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_nata"))
+            .args(args)
+            .env_remove("NATA_LATE_MATERIALIZATION")
+            .env_remove("NATA_FOOTERS_AHEAD")
+            .output()
+            .expect("failed to launch nata")
+    };
     let sub = |s: &str| s.replace(&p, "<FILE>");
     let queries = [
         "SELECT id, price * 2 AS twice FROM '{F}' WHERE id >= 5 AND id < 15 AND a > 0 LIMIT 4 OFFSET 1",
@@ -529,44 +538,128 @@ fn ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_
         );
     }
     let q = format!("SELECT id FROM '{}/f*.parquet' LIMIT 5", d.display());
-    let (mut stopped, mut finished) = (0, 0);
-    for delay_ms in [5u64, 10, 20, 40, 80, 160] {
-        let child = Command::new(env!("CARGO_BIN_EXE_nata"))
-            .args(["sql", "--csv", "-c", &q])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("spawn");
-        std::thread::sleep(std::time::Duration::from_millis(delay_ms));
-        let _ = Command::new("kill")
-            .args(["-INT", &child.id().to_string()])
-            .status();
-        let out = child.wait_with_output().expect("wait");
-        match out.status.code() {
-            Some(130) => {
-                stopped += 1;
-                assert!(
-                    text(&out.stderr).contains("interrupted"),
-                    "{}",
-                    text(&out.stderr)
-                );
-                assert!(
-                    out.stdout.is_empty(),
-                    "nothing was printed: the footers were still being read"
-                );
+    // the default (the binder reads one footer, the scan reads the others as it reaches them: register item P10) and the binder that reads every
+    // footer before the query starts (`--bind-all-footers`: the interruptible source of the binder)
+    for extra in [
+        &[][..],
+        &["--bind-all-footers"][..],
+        &["--footers-ahead", "8"][..],
+    ] {
+        let (mut stopped, mut finished) = (0, 0);
+        for delay_ms in [5u64, 10, 20, 40, 80, 160] {
+            let child = Command::new(env!("CARGO_BIN_EXE_nata"))
+                .args(["sql", "--csv"])
+                .args(extra)
+                .args(["-c", &q])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .expect("spawn");
+            std::thread::sleep(std::time::Duration::from_millis(delay_ms));
+            let _ = Command::new("kill")
+                .args(["-INT", &child.id().to_string()])
+                .status();
+            let out = child.wait_with_output().expect("wait");
+            match out.status.code() {
+                Some(130) => {
+                    stopped += 1;
+                    assert!(
+                        text(&out.stderr).contains("interrupted"),
+                        "{}",
+                        text(&out.stderr)
+                    );
+                    assert!(
+                        out.stdout.is_empty(),
+                        "nothing was printed: the footers were still being read"
+                    );
+                }
+                Some(0) => {
+                    finished += 1;
+                    assert_eq!(text(&out.stdout).lines().count(), 6);
+                }
+                // a SIGINT before the handler is installed (the first milliseconds of the process) ends it by the signal itself, as for any program
+                None if delay_ms <= 20
+                    && std::os::unix::process::ExitStatusExt::signal(&out.status) == Some(2) => {}
+                c => panic!("delay {delay_ms} ms: exit {c:?}: {}", text(&out.stderr)),
             }
-            Some(0) => {
-                finished += 1;
-                assert_eq!(text(&out.stdout).lines().count(), 6);
-            }
-            // a SIGINT before the handler is installed (the first milliseconds of the process) ends it by the signal itself, as for any program
-            None if delay_ms <= 20
-                && std::os::unix::process::ExitStatusExt::signal(&out.status) == Some(2) => {}
-            c => panic!("delay {delay_ms} ms: exit {c:?}: {}", text(&out.stderr)),
         }
+        assert!(
+            stopped >= 1,
+            "{extra:?}: no interrupt came in time ({finished} runs finished first): the glob is too small for this machine"
+        );
     }
-    assert!(
-        stopped >= 1,
-        "no interrupt came in time ({finished} runs finished first): the glob is too small for this machine"
+}
+
+#[test]
+fn a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_scan_reaches_it() {
+    // register item P10: `nata sql` binds on the first footer; the scan checks the schema of every other file when it reaches it
+    let d = dir("schema_later");
+    let ids = |lo: i64, hi: i64| -> ArrayRef { Arc::new(Int64Array::from_iter_values(lo..hi)) };
+    for i in 0..3i64 {
+        write_batch(
+            &d.join(format!("f{i}.parquet")),
+            &RecordBatch::try_from_iter([("id", ids(i * 10, i * 10 + 10))]).expect("batch"),
+            5,
+        );
+    }
+    // f3: the same column name, another type
+    let wrong: ArrayRef = Arc::new(StringArray::from_iter_values(
+        (0..4).map(|i| format!("s{i}")),
+    ));
+    write_batch(
+        &d.join("f3.parquet"),
+        &RecordBatch::try_from_iter([("id", wrong)]).expect("batch"),
+        5,
     );
+    write_batch(
+        &d.join("f4.parquet"),
+        &RecordBatch::try_from_iter([("id", ids(40, 50))]).expect("batch"),
+        5,
+    );
+    let q = format!("SELECT id FROM '{}/f*.parquet'", d.display());
+    for extra in [
+        &[][..],
+        &["--footers-ahead", "4"][..],
+        &["--threads", "1"][..],
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_nata"))
+            .args(["sql", "--csv"])
+            .args(extra)
+            .args(["-c", &q])
+            .output()
+            .expect("run");
+        let err = text(&out.stderr);
+        // a failure of the data, found by the scan: exit code 1, the rows of the files before it were printed, the output is said to be incomplete
+        assert_eq!(out.status.code(), Some(1), "{extra:?}: {err}");
+        assert!(
+            err.contains("f3.parquet") && err.contains("must have the same schema"),
+            "{extra:?}: {err}"
+        );
+        assert!(!err.contains("f4.parquet"), "{extra:?}: {err}");
+        assert_eq!(
+            text(&out.stdout).lines().count(),
+            31,
+            "{extra:?}: the header and the 30 rows of f0..f2"
+        );
+        assert!(err.contains("INCOMPLETE"), "{extra:?}: {err}");
+    }
+    // the binder that reads every footer finds it before the query starts: a bind error (exit code 2), nothing printed
+    let out = Command::new(env!("CARGO_BIN_EXE_nata"))
+        .args(["sql", "--csv", "--bind-all-footers", "-c", &q])
+        .output()
+        .expect("run");
+    assert_eq!(out.status.code(), Some(2), "{}", text(&out.stderr));
+    assert!(out.stdout.is_empty());
+    assert!(
+        text(&out.stderr).contains("f3.parquet"),
+        "{}",
+        text(&out.stderr)
+    );
+    // EXPLAIN does not run the query and does not look at the later files
+    let out = Command::new(env!("CARGO_BIN_EXE_nata"))
+        .args(["sql", "-c", &format!("EXPLAIN {q}")])
+        .output()
+        .expect("run");
+    assert_eq!(out.status.code(), Some(0), "{}", text(&out.stderr));
+    let _ = std::fs::remove_dir_all(&d);
 }

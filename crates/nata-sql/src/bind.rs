@@ -7,7 +7,7 @@ use nata_parquet::civil;
 
 use crate::ast::{self, BinOp, DataType, ExplainMode, ExprKind as A, Ident, SelectItem, UnOp};
 use crate::error::{Pos, Result, SqlError};
-use crate::source::{SourceInfo, SourceProvider, resolve};
+use crate::source::{BindOptions, SourceInfo, SourceProvider, resolve_with};
 use crate::texpr::{CmpOp, Expr, ExprKind, Value};
 use crate::types::{
     ArithOp, SqlType, TypeError, arith_type, check_cast, check_comparable, neg_type, unify_results,
@@ -32,7 +32,16 @@ pub struct Bound {
 }
 
 pub fn bind(q: &ast::Query, provider: &dyn SourceProvider) -> Result<Bound> {
-    let source = resolve(provider, &q.from, q.from_pos.0)?;
+    bind_with(q, provider, BindOptions::default())
+}
+
+/// As [`bind`]; `options.all_footers` reads every footer of a glob at bind time (see [`BindOptions`]).
+pub fn bind_with(
+    q: &ast::Query,
+    provider: &dyn SourceProvider,
+    options: BindOptions,
+) -> Result<Bound> {
+    let source = resolve_with(provider, &q.from, q.from_pos.0, options)?;
     let b = Binder::new(&source, q);
     let mut items = Vec::new();
     for it in &q.items {

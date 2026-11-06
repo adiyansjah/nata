@@ -44,6 +44,9 @@ pub struct ExecConfig {
     /// Late materialization in the scan (register item P1): decode the columns of the pushed filter first, the others only for the rows that pass.
     /// Same rows as without; off by default until the benchmark of step 4b decides.
     pub late_materialization: bool,
+    /// Footers read ahead (register item P2): how many files may be pending at once. 1 is slice 3's behaviour (one file at a time); off by default until
+    /// the benchmark of step 4b decides.
+    pub footers_ahead: usize,
 }
 
 impl ExecConfig {
@@ -55,6 +58,7 @@ impl ExecConfig {
             ordered: true,
             opener: None,
             late_materialization: false,
+            footers_ahead: 1,
         }
     }
 }
@@ -328,6 +332,7 @@ pub fn execute_observed(
         threads: cfg.threads.max(1),
         window: cfg.window.max(1),
         ordered: cfg.ordered,
+        footers_ahead: cfg.footers_ahead.max(1),
     };
     let scan_report = run_parallel_with(scan, pcfg, limit, cancel, |batch| {
         let n = u64::try_from(batch.num_rows()).unwrap_or(u64::MAX);

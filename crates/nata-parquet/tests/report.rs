@@ -214,6 +214,7 @@ fn tasks_are_independent_row_group_morsels() {
         filters: vec!["id < 2500".into()],
         prune: true,
         late_materialization: late_default(),
+        strict_schema: false,
     };
     let plan = ScanPlan::open(&[PathBuf::from(&f)], &options).expect("plan");
     let tasks = plan.tasks().expect("tasks");

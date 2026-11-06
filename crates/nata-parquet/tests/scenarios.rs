@@ -223,6 +223,7 @@ fn run_one(
         filters: s.filters.iter().map(|f| (*f).to_string()).collect(),
         prune: s.prune,
         late_materialization: late_default(),
+        strict_schema: false,
     };
     let plan = Arc::new(
         ScanPlan::open_with(files, &opts, opener.clone())
@@ -246,6 +247,7 @@ fn run_one(
             threads: s.threads,
             window: s.window,
             ordered: s.ordered,
+            footers_ahead: ahead_default(),
         };
         run_parallel_with(Arc::clone(&plan), cfg, limit, cancel, &mut sink).map(|_| ())
     } else {

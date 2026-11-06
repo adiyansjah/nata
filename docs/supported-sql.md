@@ -28,7 +28,7 @@ Every example runs: `check/queries/sql/` runs 251 of them against DuckDB (`nata-
 | construct | example |
 |---|---|
 | `SELECT <list> FROM '<file or glob>'`; a trailing `;` | `SELECT l_orderkey, l_quantity FROM 'lineitem.parquet';` |
-| a glob: the files in byte order of their names, one schema | `SELECT id FROM 'data/parts/*.parquet'` |
+| a glob: the files in byte order of their names, one schema (the first file's footer binds the query; a later file whose schema differs is an error naming it, found when the scan reaches it) | `SELECT id FROM 'data/parts/*.parquet'` |
 | `*` | `SELECT * FROM 'nation.parquet'` |
 | unquoted names fold to lower case, `"quoted"` names are exact | `SELECT L_ORDERKEY, "l_quantity" FROM 'lineitem.parquet'` |
 | `AS` alias (required for an alias) | `SELECT l_extendedprice * (1 - l_discount) AS net FROM 'lineitem.parquet'` |

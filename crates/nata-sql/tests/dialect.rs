@@ -6,7 +6,7 @@ use common::*;
 use nata_parquet::schema::Kind;
 use nata_sql::source::MemSource;
 use nata_sql::texpr::{ExprKind, Value};
-use nata_sql::{ErrorClass, plan_sql};
+use nata_sql::{BindOptions, ErrorClass, SourceProvider, plan_sql, plan_sql_with};
 
 fn lit(expr: &str) -> (Value, String) {
     let p = ok(&format!("SELECT {expr} AS r FROM 't.parquet'"));
@@ -97,8 +97,10 @@ fn s1_all_the_files_of_a_glob_must_have_the_same_schema_and_the_first_differing_
             &["d/1.parquet", "d/2.parquet", "d/3.parquet", "d/4.parquet"],
         )
         .glob("d/ok-*.parquet", &["d/1.parquet", "d/2.parquet"]);
-    assert!(plan_sql("SELECT a FROM 'd/ok-*.parquet'", &s).is_ok());
-    let e = plan_sql("SELECT a FROM 'd/*.parquet'", &s).expect_err("schemas differ");
+    // register item P10: this is the binder that reads every footer (BindOptions::all_footers, the behaviour before P10; `nata sql --bind-all-footers`)
+    let all = BindOptions { all_footers: true };
+    assert!(plan_sql_with("SELECT a FROM 'd/ok-*.parquet'", &s, all).is_ok());
+    let e = plan_sql_with("SELECT a FROM 'd/*.parquet'", &s, all).expect_err("schemas differ");
     assert_eq!(e.class, ErrorClass::Bind);
     assert!(
         e.message.contains("d/3.parquet") && !e.message.contains("d/4.parquet"),
@@ -1144,4 +1146,86 @@ fn s9_the_differences_from_duckdb_each_have_a_test() {
     assert_eq!(ty("a / b"), "DECIMAL(16,6)");
     assert_eq!(ty_err("d_15_2 + d").class, ErrorClass::Bind);
     assert_eq!(ty("1e2"), "DECIMAL(3,0)");
+}
+
+/// Counts the footers the binder asks for.
+struct Counting<'a> {
+    inner: &'a MemSource,
+    asked: std::sync::Mutex<Vec<std::path::PathBuf>>,
+}
+
+impl SourceProvider for Counting<'_> {
+    fn expand(&self, pattern: &str) -> Result<Vec<std::path::PathBuf>, String> {
+        self.inner.expand(pattern)
+    }
+
+    fn leaves(
+        &self,
+        file: &std::path::Path,
+    ) -> Result<Vec<nata_parquet::schema::Leaf>, nata_parquet::ScanError> {
+        self.asked.lock().expect("lock").push(file.to_path_buf());
+        self.inner.leaves(file)
+    }
+}
+
+#[test]
+fn s1_the_binder_reads_the_footer_of_the_first_file_only_and_the_other_files_are_not_looked_at() {
+    // register item P10: 1,000 files must not mean 1,000 footer reads before the query starts; one of the later files does not even exist here
+    let same = t_columns();
+    let names: Vec<String> = (0..1000).map(|i| format!("d/{i:04}.parquet")).collect();
+    let mut s = MemSource::new().file(&names[0], &same);
+    for n in &names[1..10] {
+        s = s.file(n, &same);
+    }
+    // files 10.. are not known to the source at all: asking for their footers would be an error
+    let refs: Vec<&str> = names.iter().map(String::as_str).collect();
+    let s = s.glob("d/*.parquet", &refs);
+    let c = Counting {
+        inner: &s,
+        asked: std::sync::Mutex::new(vec![]),
+    };
+    let p = plan_sql("SELECT a FROM 'd/*.parquet'", &c).expect("binds on the first footer alone");
+    assert_eq!(
+        c.asked.lock().expect("lock").as_slice(),
+        [std::path::PathBuf::from("d/0000.parquet")],
+        "one footer"
+    );
+    assert_eq!(p.plan.scan.files.len(), 1000, "every file is still scanned");
+    // the old binder asked for all of them, and failed on the unknown ones
+    let c = Counting {
+        inner: &s,
+        asked: std::sync::Mutex::new(vec![]),
+    };
+    let e = plan_sql_with(
+        "SELECT a FROM 'd/*.parquet'",
+        &c,
+        BindOptions { all_footers: true },
+    )
+    .expect_err("file 10 is unknown");
+    assert!(e.message.contains("d/0010.parquet"), "{e}");
+    assert_eq!(c.asked.lock().expect("lock").len(), 11);
+}
+
+#[test]
+fn s1_a_glob_whose_later_file_has_another_schema_binds_and_the_scan_finds_the_file() {
+    // P10: the bind-time error of the schema check moved to the scan (tests/real_files.rs runs it on real files); here only that the binder no longer sees it
+    let same = t_columns();
+    let mut other = t_columns();
+    other[2].1 = Ok(Kind::Int {
+        bits: 32,
+        signed: true,
+    });
+    let s = MemSource::new()
+        .file("d/1.parquet", &same)
+        .file("d/2.parquet", &other)
+        .glob("d/*.parquet", &["d/1.parquet", "d/2.parquet"]);
+    assert!(plan_sql("SELECT a FROM 'd/*.parquet'", &s).is_ok());
+    assert!(
+        plan_sql_with(
+            "SELECT a FROM 'd/*.parquet'",
+            &s,
+            BindOptions { all_footers: true }
+        )
+        .is_err()
+    );
 }

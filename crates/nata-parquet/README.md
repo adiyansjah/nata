@@ -44,6 +44,13 @@ is looked at between batches in both steps. Without a filter it changes nothing.
 how the DuckDB differential files and `nata-check` run in this mode. A finding: parquet-rs sizes the buffers of a string batch for the batch size, not for the rows selected, so a late batch of 200 rows can
 hold about 1 MB (`tests/late.rs`).
 
+## Footers read ahead (register item P2, `ParallelConfig::footers_ahead`, `--footers-ahead K`) and the schema check (P10, `ScanOptions::strict_schema`)
+
+Off (1 = one file at a time, slice 3's behaviour) until the benchmark of step 4b decides. With `K`, up to K files may be pending (footer being read, read and waiting for an earlier file, or with row groups not yet started),
+and idle workers read the next files' footers while earlier row groups run (`crates/nata-sched`). The rows, their order and the errors are those of `K = 1`; handles stay at one per worker, and the footers in memory at
+`K` plus the files whose row groups run (`peak_footers <= threads + K + 1`, tested under `ulimit -n 256` on 10,000 files). `strict_schema` (set by `nata sql`, whose binder reads only the first footer) makes the scan require
+every file to have the first file's top-level columns in order and types; the error names the file. `NATA_FOOTERS_AHEAD=<k>` sets the default for the CLI and the test suites.
+
 ## The footer adapter (`src/adapter.rs`)
 
 Statistics are handed to `nata-scan` only when they are sound; otherwise the row group is kept. `min_value`/`max_value` only (the deprecated `min`/`max` are never used: the `parquet` crate

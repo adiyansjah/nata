@@ -27,11 +27,22 @@ mut("lost-wakeup-on-window-release", "the consumer releases a window slot but do
                    "            {\n                let mut g = lock(&sh.core);\n                g.released += 1;\n            }\n"))
 mut("claim-ignores-the-stop-flag", "a worker takes a task although claiming was stopped (cancel not checked before taking a task)",
     ("src/lib.rs", "    loop {\n        if g.stop_claims {\n            return None;\n        }\n        if g.exhausted {", "    loop {\n        if g.exhausted {"))
-mut("double-open-claim-before-advance", "two workers can claim the same file: the claim neither marks the opener busy nor advances the file counter (a steal race), install advances it",
-    ("src/lib.rs", "                    g.next_file += 1;\n                    g.opener_busy = true;\n", ""),
-    ("src/lib.rs", "    g.opener_busy = false;\n    match opened {", "    g.opener_busy = false;\n    g.next_file += 1;\n    match opened {"))
-mut("two-files-opened-at-once", "the opener is not exclusive: file i+1 can be opened (and installed) before file i, the order is lost",
-    ("src/lib.rs", "                    g.opener_busy = true;\n                    g.files_opened += 1;", "                    g.files_opened += 1;"))
+mut("double-open-claim-before-advance", "two workers can claim the same file: the claim does not advance the file counter (a steal race), the end of the opening does",
+    ("src/lib.rs", "                let file = g.next_file;\n                g.next_file += 1;\n                g.opening += 1;", "                let file = g.next_file;\n                g.opening += 1;"),
+    ("src/lib.rs", "    g.opening -= 1;\n    g.ready.insert(file, opened);", "    g.opening -= 1;\n    g.next_file += 1;\n    g.ready.insert(file, opened);"))
+mut("ahead-bound-ignored", "files are opened without looking at how many are pending: every footer of the list is read at once",
+    ("src/lib.rs", "            if pending < ahead && g.next_file < sh.work.files() {", "            if g.next_file < sh.work.files() {"))
+mut("queued-files-not-counted-as-pending", "the files whose tasks wait in the queue do not count as pending: footers pile up in the queue",
+    ("src/lib.rs", "            let pending = g.opening + g.ready.len() + g.queued_files;", "            let pending = g.opening + g.ready.len();"))
+mut("last-task-of-a-file-not-marked", "the last task of a file is not marked, so the file stays pending forever and the opening stops after `open_ahead` files",
+    ("src/lib.rs", "                        last: i + 1 == n,", "                        last: false,"))
+mut("ready-installed-without-waiting-for-the-earlier-file", "an opened file joins the queue as soon as it is ready, before an earlier file that is still being opened: the order is lost",
+    ("src/lib.rs", "        let next = g.next_install;\n        let Some(result) = g.ready.remove(&next) else {\n            break;\n        };\n        g.next_install += 1;",
+                   "        let Some((_, result)) = g.ready.pop_first() else {\n            break;\n        };\n        g.next_install += 1;"))
+mut("failed-open-queued-before-the-earlier-tasks", "a file that cannot be opened goes to the front of the queue: its error would be reported before the rows of the earlier files",
+    ("src/lib.rs", "                g.queue.push_back(Queued::Failed(e));", "                g.queue.push_front(Queued::Failed(e));"))
+mut("stop-after-the-slot-is-released", "the consumer releases the window slot of the result that satisfied the limit before it stops the claims: a freed slot lets a worker start one more task",
+    ("src/lib.rs", "            if stopped || sink_err.is_some() {\n                // enough (a satisfied limit)", "            if false {\n                // enough (a satisfied limit)"))
 mut("window-bound-off-by-one", "the window admits one more result than its capacity",
     ("src/lib.rs", "        if g.claimed - g.released < window {", "        if g.claimed - g.released <= window {"))
 mut("error-ordered-by-arrival", "the consumer keeps the first error it sees instead of the lowest sequence number",
@@ -69,11 +80,10 @@ mut("facade-bypassed-by-a-std-atomic", "a std atomic is named outside src/sync.r
 mut("limit-stop-ignored", "the sink says stop and the consumer goes on",
     ("src/lib.rs", "                            Ok(Flow::Stop) => {\n                                stopped = true;\n                                emitting = false;\n                            }", "                            Ok(Flow::Stop) => {}"))
 mut("open-failure-takes-no-sequence-number", "a file that cannot be opened is stored under the next number without counting it",
-    ("src/lib.rs", "            let seq = g.claimed;\n            g.claimed += 1;\n            let out = g.claimed - g.released;\n            g.high_water = g.high_water.max(out);\n            g.slots.insert(seq, Slot::Failed(e));",
-                   "            let seq = g.claimed;\n            let out = g.claimed - g.released;\n            g.high_water = g.high_water.max(out);\n            g.slots.insert(seq, Slot::Failed(e));"))
+    ("src/lib.rs", "                    let seq = g.claimed;\n                    g.claimed += 1;\n                    let out = g.claimed - g.released;\n                    g.high_water = g.high_water.max(out);\n                    g.slots.insert(seq, Slot::Failed(e));",
+                   "                    let seq = g.claimed;\n                    let out = g.claimed - g.released;\n                    g.high_water = g.high_water.max(out);\n                    g.slots.insert(seq, Slot::Failed(e));"))
 mut("open-failure-does-not-stop-claims", "after a file fails to open the scan goes on opening later files",
-    ("src/lib.rs", "            g.slots.insert(seq, Slot::Failed(e));\n            g.stop_claims = true;\n            let from = sh.abandon_from.load(Ordering::SeqCst).min(seq + 1);\n            sh.abandon_from.store(from, Ordering::SeqCst);\n        }\n    }\n    drop(g);\n    sh.work_cv",
-                   "            g.slots.insert(seq, Slot::Failed(e));\n            let from = sh.abandon_from.load(Ordering::SeqCst).min(seq + 1);\n            sh.abandon_from.store(from, Ordering::SeqCst);\n        }\n    }\n    drop(g);\n    sh.work_cv"))
+    ("src/lib.rs", "                    g.slots.insert(seq, Slot::Failed(e));\n                    g.stop_claims = true;\n", "                    g.slots.insert(seq, Slot::Failed(e));\n"))
 # EQUIVALENT mutant, removed: "task-run-after-cancel-at-claim" (the worker no longer checks the token before calling `run`). `Work::run` is contractually
 # the one that looks at the token and returns Cancelled at once, so the result is the same; the check in the worker only saves the call.
 

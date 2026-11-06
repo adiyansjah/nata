@@ -76,6 +76,7 @@ fn scan_with_deadline(
             filters,
             prune: true,
             late_materialization: late_default(),
+            strict_schema: false,
         };
         let r = match ScanPlan::open(&[path], &options) {
             Err(e) => Err((false, e)),
@@ -452,6 +453,7 @@ fn a_damaged_row_group_is_an_error_and_later_row_groups_are_not_read() {
         filters: vec![],
         prune: true,
         late_materialization: late_default(),
+        strict_schema: false,
     };
     let plan = ScanPlan::open(&[PathBuf::from(&f)], &options).expect("the footer is fine");
     let mut seen = 0u64;

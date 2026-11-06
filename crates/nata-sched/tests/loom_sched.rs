@@ -44,10 +44,15 @@ where
 }
 
 fn cfg(threads: usize, window: usize, ordered: bool) -> Config {
+    cfg_ahead(threads, window, ordered, 1)
+}
+
+fn cfg_ahead(threads: usize, window: usize, ordered: bool, open_ahead: usize) -> Config {
     Config {
         threads,
         window,
         ordered,
+        open_ahead,
     }
 }
 
@@ -79,8 +84,17 @@ fn run_ordered(model: &Arc<Model>, c: Config) -> (Vec<usize>, nata_sched::Outcom
 }
 
 fn complete(files: Vec<usize>, threads: usize, window: usize, ordered: bool) {
-    let model = Arc::new(Model::new(files));
-    let (mut got, out) = run_ordered(&model, cfg(threads, window, ordered));
+    complete_with(Model::new(files), threads, window, ordered, 1);
+}
+
+fn complete_with(model: Model, threads: usize, window: usize, ordered: bool, ahead: usize) {
+    let model = Arc::new(model);
+    let (mut got, out) = run_ordered(&model, cfg_ahead(threads, window, ordered, ahead));
+    assert!(
+        out.summary.max_pending_files <= ahead as u64,
+        "more files pending than allowed: {:?}",
+        out.summary
+    );
     let mut expect = model.all_ids();
     if !ordered {
         got.sort_unstable();
@@ -164,7 +178,11 @@ fn m07_limit_stop_wakes_a_worker_blocked_on_the_window_and_drops_everything() {
             assert_eq!(model.runs_of(0), 1);
             // the window is 1: the slot of the result that satisfied the limit is released only after the claims were stopped, so no second task starts
             assert_eq!(out.summary.claimed, 1, "{:?}", out.summary);
-            assert_eq!(model.runs_of(1), 0, "a second task was started after the limit");
+            assert_eq!(
+                model.runs_of(1),
+                0,
+                "a second task was started after the limit"
+            );
         },
     );
 }
@@ -332,4 +350,101 @@ fn m16_no_files_and_only_empty_files() {
         complete(vec![], 2, 1, true);
         complete(vec![0, 0], 2, 1, true);
     });
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------ footers ahead (P2)
+
+#[test]
+fn m17_footers_ahead_by_two_the_order_is_sequential_and_at_most_two_files_are_pending() {
+    check(
+        "m17_footers_ahead_by_two_the_order_is_sequential_and_at_most_two_files_are_pending",
+        2,
+        || complete_with(Model::new(vec![1, 1, 1]), 2, 3, true, 2),
+    );
+}
+
+#[test]
+fn m18_a_later_file_that_finishes_opening_first_is_installed_after_the_earlier_one() {
+    check(
+        "m18_a_later_file_that_finishes_opening_first_is_installed_after_the_earlier_one",
+        2,
+        || {
+            // opening file 0 returns only after file 1 was opened: needs two workers opening at once
+            let mut m = Model::new(vec![1, 1, 1]);
+            m.open_after = vec![(0, 1)];
+            complete_with(m, 2, 3, true, 2)
+        },
+    );
+}
+
+#[test]
+fn m19_a_file_that_cannot_be_opened_is_queued_in_its_place_with_footers_ahead() {
+    check(
+        "m19_a_file_that_cannot_be_opened_is_queued_in_its_place_with_footers_ahead",
+        2,
+        || {
+            let mut m = Model::new(vec![1, 1, 1]);
+            m.fail_open = Some(1);
+            let model = Arc::new(m);
+            let (got, out) = run_ordered(&model, cfg_ahead(2, 3, true, 2));
+            assert_eq!(out.result, Err(ModelErr::Open(1)));
+            assert_eq!(got, vec![0], "only the results before the failing file");
+            assert_eq!(out.summary.claimed, 2, "task 0 and the file that failed");
+            common_checks(&model, &out.summary, 2, 3);
+        },
+    );
+}
+
+#[test]
+fn m20_a_limit_stop_with_files_pending_drops_everything_that_was_opened_ahead() {
+    check(
+        "m20_a_limit_stop_with_files_pending_drops_everything_that_was_opened_ahead",
+        2,
+        || {
+            let model = Arc::new(Model::new(vec![2, 1, 1]));
+            let mut got = vec![];
+            let out = Scheduler::new(Arc::clone(&model), cfg_ahead(2, 3, true, 3)).run(|_, o| {
+                got.push(o.id);
+                Ok(Flow::Stop)
+            });
+            assert_eq!(got, vec![0]);
+            assert_eq!(out.result, Ok(Finish::Stopped));
+            common_checks(&model, &out.summary, 2, 3);
+        },
+    );
+}
+
+#[test]
+fn m21_an_external_cancel_with_files_pending_reaches_everyone() {
+    check(
+        "m21_an_external_cancel_with_files_pending_reaches_everyone",
+        2,
+        || {
+            let mut m = Model::new(vec![1, 1]);
+            m.spin_tasks = vec![0];
+            let model = Arc::new(m);
+            let sched = Scheduler::new(Arc::clone(&model), cfg_ahead(2, 2, true, 2));
+            let handle = sched.cancel_handle();
+            let t = thread::spawn(move || handle.cancel());
+            let out = sched.run(|_, _| Ok(Flow::Continue));
+            t.join().expect("canceller");
+            assert_eq!(out.result, Ok(Finish::Cancelled));
+            common_checks(&model, &out.summary, 2, 2);
+        },
+    );
+}
+
+#[test]
+fn m22_a_worker_waiting_for_tasks_is_woken_when_the_opening_of_a_file_ends() {
+    check(
+        "m22_a_worker_waiting_for_tasks_is_woken_when_the_opening_of_a_file_ends",
+        2,
+        || {
+            // file 0 has two tasks, and each waits until the other one has started: both must run at once, so the worker that found the queue empty (the
+            // other one was opening the file) has to be woken by the end of the opening, nothing else wakes it while the first task spins
+            let mut m = Model::new(vec![2]);
+            m.wait_for_started = vec![(0, 1), (1, 0)];
+            complete_with(m, 2, 2, true, 1);
+        },
+    );
 }

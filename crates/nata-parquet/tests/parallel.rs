@@ -27,6 +27,7 @@ fn options(columns: Option<&[&str]>, filters: &[&str], prune: bool) -> ScanOptio
         filters: filters.iter().map(|s| (*s).to_string()).collect(),
         prune,
         late_materialization: late_default(),
+        strict_schema: false,
     }
 }
 
@@ -61,10 +62,15 @@ fn run(
 }
 
 fn cfg(threads: usize, window: usize, ordered: bool) -> ParallelConfig {
+    cfg_ahead(threads, window, ordered, ahead_default())
+}
+
+fn cfg_ahead(threads: usize, window: usize, ordered: bool, footers_ahead: usize) -> ParallelConfig {
     ParallelConfig {
         threads,
         window,
         ordered,
+        footers_ahead,
     }
 }
 
@@ -237,12 +243,17 @@ fn limit_returns_exactly_the_first_n_rows_in_ordered_mode_and_leaves_nothing_beh
 fn footers_are_read_when_the_scan_reaches_the_file() {
     let (_d, files) = dataset("par-lazy");
     let opts = options(Some(&["id"]), &[], true);
-    // a limit inside the first file: with one thread and a window of one, only the first footer is ever read
+    // a limit inside the first file: with one thread and a window of one, only the first footer is ever read (with footers read ahead, at most `ahead`)
     let r = run(&files, &opts, Some(cfg(1, 1, true)), Some(10), None);
     let rep = r.result.expect("scan");
-    assert_eq!((rep.files, rep.files_opened), (9, 1), "{}", rep.line());
+    assert_eq!(rep.files, 9);
     assert!(
-        rep.row_groups_total < 12,
+        (1..=ahead_default()).contains(&rep.files_opened),
+        "{}",
+        rep.line()
+    );
+    assert!(
+        rep.row_groups_total < 12 * ahead_default() as u64,
         "only the opened file's row groups are counted: {}",
         rep.line()
     );
@@ -415,7 +426,7 @@ fn many_small_files_hold_few_handles_and_footers() {
             rep.line()
         );
         assert!(
-            rep.peak_footers as usize <= threads + 2,
+            rep.peak_footers as usize <= threads + ahead_default() + 1,
             "footers held: {}",
             rep.line()
         );
@@ -534,5 +545,230 @@ fn the_batch_being_filtered_is_counted_even_when_nothing_is_kept() {
             rep.line()
         );
         assert_clean(&r.plan, "transient");
+    }
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------ footers ahead (P2)
+
+#[test]
+fn footers_ahead_give_the_serial_scan_for_every_thread_count_window_and_ahead() {
+    let (_d, files) = dataset("par-ahead-ordered");
+    for (columns, filters) in [
+        (None, vec![]),
+        (Some(vec!["cat", "id"]), vec!["id >= 700"]),
+        (Some(vec!["x"]), vec!["id IS NULL"]),
+    ] {
+        let opts = options(columns.as_deref(), &filters, true);
+        let reference = run(&files, &opts, None, None, None);
+        let want = reference.result.as_ref().expect("serial");
+        for threads in [1, 2, 4, 8] {
+            for window in [1, threads, 3 * threads] {
+                for ahead in [2, 3, 16] {
+                    let r = run(
+                        &files,
+                        &opts,
+                        Some(cfg_ahead(threads, window, true, ahead)),
+                        None,
+                        None,
+                    );
+                    let got = r.result.as_ref().unwrap_or_else(|e| panic!("{e}"));
+                    let what = format!(
+                        "{columns:?} {filters:?} threads {threads} window {window} ahead {ahead}"
+                    );
+                    assert_eq!(r.csv, reference.csv, "{what}");
+                    assert_eq!(got.rows_returned, want.rows_returned, "{what}");
+                    assert_eq!(got.rows_read, want.rows_read, "{what}");
+                    assert_eq!(got.row_groups_total, want.row_groups_total, "{what}");
+                    assert_eq!(got.row_groups_skipped, want.row_groups_skipped, "{what}");
+                    assert_eq!(got.files_opened, want.files_opened, "{what}");
+                    assert_clean(&r.plan, &what);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn many_small_files_with_footers_ahead_hold_the_slice_3_bounds_plus_the_footers_ahead() {
+    let dir = scratch("par-many-ahead");
+    let files = write_many(&dir, 400, 3, 5, 100);
+    let opts = options(Some(&["id"]), &[], true);
+    let want = run(&files, &opts, None, None, None);
+    for (threads, ahead) in [(1, 4), (4, 3), (8, 8), (8, 16)] {
+        let opener = FaultOpener::new(&files, vec![]);
+        let r = run(
+            &files,
+            &opts,
+            Some(cfg_ahead(threads, 2 * threads, true, ahead)),
+            None,
+            Some(opener.clone()),
+        );
+        let rep = r.result.expect("scan");
+        assert_eq!(r.csv, want.csv, "threads {threads} ahead {ahead}");
+        assert_eq!(rep.files_opened, 400);
+        // one handle per worker: a worker either runs a row group or reads a footer
+        assert!(
+            rep.peak_open_files as usize <= threads + 1,
+            "handles: {}",
+            rep.line()
+        );
+        // the footers waiting (at most `ahead`) and the footers of the row groups that run (at most one per worker)
+        assert!(
+            rep.peak_footers as usize <= threads + ahead + 1,
+            "footers held: {}",
+            rep.line()
+        );
+        assert_eq!(opener.live_handles(), 0);
+        assert_clean(&r.plan, "many files ahead");
+    }
+}
+
+#[test]
+fn footers_ahead_really_read_footers_at_the_same_time() {
+    // slow footers (the fault opener sleeps in every footer open): with ahead 1 the reads are one after the other, with ahead 4 they overlap
+    let dir = scratch("par-overlap");
+    let files = write_many(&dir, 24, 3, 5, 100);
+    let faults: Vec<Fault> = (0..24)
+        .map(|i| Fault {
+            file: i,
+            rg: None,
+            kind: FaultKind::DelayMs(15),
+        })
+        .collect();
+    let opts = options(Some(&["id"]), &[], true);
+    let mut secs = Vec::new();
+    for ahead in [1usize, 4] {
+        let opener = FaultOpener::new(&files, faults.clone());
+        let t = std::time::Instant::now();
+        let r = run(
+            &files,
+            &opts,
+            Some(cfg_ahead(4, 8, true, ahead)),
+            None,
+            Some(opener),
+        );
+        r.result.as_ref().expect("scan");
+        secs.push(t.elapsed().as_secs_f64());
+    }
+    // 24 footers of 15 ms: about 0.36 s one at a time, about 0.09 s four at a time; the bound is far from both
+    assert!(
+        secs[1] * 2.0 < secs[0],
+        "ahead 4 took {:.3} s, ahead 1 took {:.3} s: the footer reads did not overlap",
+        secs[1],
+        secs[0]
+    );
+}
+
+#[test]
+fn a_corrupt_later_file_is_the_same_error_with_footers_ahead_and_the_earlier_rows_come_first() {
+    let dir = scratch("par-ahead-corrupt");
+    let mut files = write_many(&dir, 8, 20, 5, 7);
+    std::fs::write(&files[5], b"this is not a parquet file at all").expect("corrupt");
+    let _ = &mut files;
+    let opts = options(Some(&["id"]), &[], true);
+    let reference = run(&files, &opts, Some(cfg_ahead(3, 6, true, 1)), None, None);
+    let want_err = reference.result.as_ref().expect_err("fails").to_string();
+    assert!(want_err.contains("a00005.parquet"), "{want_err}");
+    for threads in [1, 3, 8] {
+        for ahead in [2, 4, 16] {
+            let r = run(
+                &files,
+                &opts,
+                Some(cfg_ahead(threads, 2 * threads, true, ahead)),
+                None,
+                None,
+            );
+            let e = r.result.as_ref().expect_err("fails").to_string();
+            assert_eq!(e, want_err, "threads {threads} ahead {ahead}");
+            assert_eq!(
+                r.csv, reference.csv,
+                "the rows before the file come first: threads {threads} ahead {ahead}"
+            );
+            assert!(!e.contains("a00006") && !e.contains("a00007"), "{e}");
+            assert_clean(&r.plan, "corrupt later file");
+        }
+    }
+}
+
+#[test]
+fn a_later_file_with_another_schema_is_found_when_the_scan_reaches_it_with_strict_schema() {
+    use arrow_array::{ArrayRef, Float64Array, Int64Array, RecordBatch, StringArray};
+    // file 3 of 6 gets another schema; every variant must be refused by name, and the rows of files 0 to 2 delivered first
+    let variants: [(&str, &str); 4] = [
+        ("fewer columns", "1 columns here, 3 in the first file"),
+        ("another type", "column x"),
+        ("another name", "column y"),
+        ("another order", "column x"),
+    ];
+    for (variant, why) in variants {
+        let dir = scratch("par-strict");
+        let files = write_many(&dir, 6, 20, 5, 7);
+        let ids = |n: i64| -> ArrayRef { Arc::new(Int64Array::from_iter_values(0..n)) };
+        let cat = |n: i64| -> ArrayRef {
+            Arc::new(StringArray::from_iter_values(
+                (0..n).map(|i| format!("cat{i}")),
+            ))
+        };
+        let x = |n: i64| -> ArrayRef {
+            Arc::new(Float64Array::from_iter_values((0..n).map(|i| i as f64)))
+        };
+        let batch = match variant {
+            "fewer columns" => RecordBatch::try_from_iter([("id", ids(5))]),
+            // x is a string here, a double in the first file
+            "another type" => {
+                RecordBatch::try_from_iter([("id", ids(5)), ("cat", cat(5)), ("x", cat(5))])
+            }
+            "another name" => {
+                RecordBatch::try_from_iter([("id", ids(5)), ("cat", cat(5)), ("y", x(5))])
+            }
+            _ => RecordBatch::try_from_iter([("id", ids(5)), ("x", x(5)), ("cat", cat(5))]),
+        }
+        .expect("batch");
+        let mut w = parquet::arrow::ArrowWriter::try_new(
+            std::fs::File::create(&files[3]).expect("create"),
+            batch.schema(),
+            None,
+        )
+        .expect("writer");
+        w.write(&batch).expect("write");
+        w.close().expect("close");
+        for strict in [true, false] {
+            // only `id` is read: a scan that is not strict accepts every variant, which still has `id`
+            let mut opts = options(Some(&["id"]), &[], true);
+            opts.strict_schema = strict;
+            for ahead in [1usize, 4] {
+                let r = run(
+                    &files,
+                    &opts,
+                    Some(cfg_ahead(3, 6, true, ahead)),
+                    None,
+                    None,
+                );
+                let what = format!("{variant}, strict {strict}, ahead {ahead}");
+                if strict {
+                    let e = r
+                        .result
+                        .as_ref()
+                        .expect_err("the schema differs")
+                        .to_string();
+                    assert!(
+                        e.contains("a00003.parquet")
+                            && e.contains("must have the same schema")
+                            && e.contains(why),
+                        "{what}: {e}"
+                    );
+                    assert!(
+                        !e.contains("a00004") && !e.contains("a00005"),
+                        "{what}: {e}"
+                    );
+                    // the rows of files 0..3 come first (their ids, and a header)
+                    let n: u64 = (0..3).map(|i| 20 + (i * 13) % 5).sum();
+                    assert_eq!(r.csv.lines().count() as u64, n + 1, "{what}");
+                } else {
+                    r.result.as_ref().unwrap_or_else(|e| panic!("{what}: {e}"));
+                }
+                assert_clean(&r.plan, &what);
+            }
+        }
     }
 }

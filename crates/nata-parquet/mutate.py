@@ -171,6 +171,13 @@ M = {
  "late-selected-rows-not-compared-with-the-rows-decoded": (R, "if got != selected {", "if false && got != selected {"),
  "late-filter-batch-not-counted-on-the-gauge": (R, "let mut transient = Reservation::new(&stats.memory);\n            transient.grow(batch.get_array_memory_size() as u64);\n            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes());\n            if !column_types_are_as_requested(&batch, &late.filter_columns) {", "let transient = Reservation::new(&stats.memory);\n            if !column_types_are_as_requested(&batch, &late.filter_columns) {"),
  "late-cancel-not-looked-at-in-step-2": (R, "for batch in reader {\n            if (self.cancel)() {\n                return Ok(Step::Cancelled);\n            }\n            let batch = batch.map_err(|e| self.corrupt(&e))?;\n            got +=", "for batch in reader {\n            let batch = batch.map_err(|e| self.corrupt(&e))?;\n            got +="),
+ # --- step 4a: footers read ahead (P2) and the schema check at scan time (P10)
+ "par-footers-ahead-not-passed-to-the-scheduler": (PAR, "open_ahead: cfg.footers_ahead.max(1),", "open_ahead: 1,"),
+ "par-ahead-bound-ignored-in-the-scheduler": ("../nata-sched/src/lib.rs", "if pending < ahead && g.next_file < sh.work.files() {", "if g.next_file < sh.work.files() {"),
+ "par-strict-schema-not-checked": (R, "if let Some(first) = &spec_ref.first_schema {\n        strict_schema_check(first, &all, path)?;\n    }", ""),
+ "par-strict-schema-kinds-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((bn, _))) => a.name != *bn,"),
+ "par-strict-schema-names-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((_, bk))) => a.kind != *bk,"),
+ "par-strict-schema-extra-columns-allowed": (R, "if all.len() == first.len() && !(0..all.len()).any(differs) {", "if !(0..all.len().min(first.len())).any(differs) {"),
 }
 
 

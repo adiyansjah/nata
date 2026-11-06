@@ -14,7 +14,7 @@ let scan_options = planned.plan.scan.scan_options(); // columns and pushed conju
 | `bind` | names (folded or exact), `*`, aliases, exact types, the decimal rules, NULL typed by context, "did you mean" |
 | `types`, `texpr` | the typing rules of `docs/dialect.md` and `docs/decimal-rules.md`; the typed expression tree (contract in its module doc) |
 | `plan` | `Scan -> Filter -> Project -> Limit`, rule R2 pushdown, the plan text |
-| `source`, `glob` | the files of a path or glob and their shared schema, from the footers (`nata_parquet::read_leaves`); `MemSource` for tests |
+| `source`, `glob` | the files of a path or glob and their schema, from the FIRST footer only (`nata_parquet::read_leaves`; register item P10: the scan checks every other file's schema when it reaches it, `ScanOptions::strict_schema`; `BindOptions::all_footers` is the older binder that reads them all); `MemSource` for tests |
 
 Rules: every error has a class (`syntax`, `bind`, `not supported yet`, `execution`) and a 1-based line and column in characters; messages quote the query and never data. A deep tree (a chain of 10,000 terms) is dropped, visited and printed with loops; the evaluator of step 3 must also run on a large stack or iterate.
 

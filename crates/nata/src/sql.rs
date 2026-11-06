@@ -19,7 +19,7 @@ use nata_exec::{ExecConfig, execute};
 use nata_parquet::schema::Leaf;
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sql::ast::ExplainMode;
-use nata_sql::{FsSource, SourceProvider, plan_sql};
+use nata_sql::{BindOptions, FsSource, SourceProvider, plan_sql_with};
 use signal_hook::consts::SIGINT;
 use signal_hook::iterator::Signals;
 
@@ -34,6 +34,8 @@ pub struct SqlArgs {
     pub unordered: bool,
     pub report: bool,
     pub late: bool,
+    pub footers_ahead: usize,
+    pub bind_all_footers: bool,
 }
 
 /// Wraps stdout and remembers that the reader went away.
@@ -108,8 +110,8 @@ fn read_query(a: &SqlArgs) -> Result<String, ExitCode> {
 }
 
 pub fn run(a: SqlArgs) -> ExitCode {
-    if a.threads == Some(0) || a.window == Some(0) {
-        say("error: --threads and --window must be at least 1\n");
+    if a.threads == Some(0) || a.window == Some(0) || a.footers_ahead == 0 {
+        say("error: --threads, --window and --footers-ahead must be at least 1\n");
         return ExitCode::from(2);
     }
     // a panic must not print its message (it could hold a value from a file): location only
@@ -162,7 +164,13 @@ fn run_query(
     let source = InterruptibleSource {
         interrupted: Arc::clone(interrupted),
     };
-    let planned = match plan_sql(sql, &source) {
+    let planned = match plan_sql_with(
+        sql,
+        &source,
+        BindOptions {
+            all_footers: a.bind_all_footers,
+        },
+    ) {
         Ok(p) => p,
         Err(e) => {
             if interrupted.load(Ordering::SeqCst) {
@@ -193,6 +201,7 @@ fn run_query(
     }
     cfg.ordered = !a.unordered;
     cfg.late_materialization = a.late;
+    cfg.footers_ahead = a.footers_ahead;
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
     let types: Vec<_> = planned.output.iter().map(|c| c.ty).collect();
     let plan = Arc::new(planned.plan);

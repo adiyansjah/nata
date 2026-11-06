@@ -11,6 +11,7 @@ ordered tasks); knows nothing about Parquet. `nata-parquet`'s `run_parallel` is 
 * **Cancellation.** One atomic (`abandon_from`): a task with `seq >= abandon_from` is cancelled. The consumer cancels everything (limit, sink error), a
   failed task cancels the tasks above it, `CancelHandle::cancel` cancels from outside. `Scheduler::run` returns only after every worker is joined and
   everything undelivered is dropped, also when the sink panics.
+* **Footers ahead** (`Config::open_ahead`, register item P2). `1` opens one file at a time and only when no task is queued (slice 3). With `K` up to K files may be pending at once (being opened, opened and waiting for an earlier file, or queued with unclaimed tasks); an idle worker opens the next file while others run earlier row groups. Results are installed into the queue in file order, so the sequence numbers, the ordered output and the lowest-error rule are those of `1`; a file that cannot be opened is queued in its place. Loom models m17 to m21 and the mutants `ahead-*` check it.
 * **Errors.** The error of the lowest sequence number is returned, always (ordered or not); an error after a satisfied limit is never reported.
 * **`src/sync.rs` is the only place that names `std::sync`/`std::thread`**; under `RUSTFLAGS="--cfg nata_loom"` it hands out `loom`'s types, and
   `tests/loom_sched.rs` explores the real scheduler. `tests/facade.rs` fails if another file bypasses the facade.

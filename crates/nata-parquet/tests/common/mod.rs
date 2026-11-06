@@ -155,6 +155,7 @@ pub fn scan(
         filters: filters.iter().map(|s| (*s).to_string()).collect(),
         prune,
         late_materialization: late_default(),
+        strict_schema: false,
     };
     let paths: Vec<PathBuf> = files.iter().map(|p| p.to_path_buf()).collect();
     let plan = ScanPlan::open(&paths, &options)?;
@@ -167,6 +168,7 @@ pub fn scan(
     } else {
         let cfg = ParallelConfig {
             ordered: !(m.unordered && UNORDERED_OK.get()),
+            footers_ahead: ahead_default(),
             ..ParallelConfig::new(m.threads)
         };
         run_parallel(Arc::new(plan), cfg, limit, |b| {
@@ -578,4 +580,14 @@ pub fn check_case(
 /// (and so the DuckDB differential files) with it set checks that the late read gives the rows of the default read.
 pub fn late_default() -> bool {
     std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
+}
+
+/// Footers read ahead (P2) for every parallel scan the tests open through their helpers: 1 (slice 3's behaviour), unless `NATA_FOOTERS_AHEAD=<k>`.
+/// Running the suites with it set checks that the rows, their order and the errors do not depend on it.
+pub fn ahead_default() -> usize {
+    std::env::var("NATA_FOOTERS_AHEAD")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|k| *k >= 1)
+        .unwrap_or(1)
 }

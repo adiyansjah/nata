@@ -435,6 +435,8 @@ impl Scan {
             filters: self.pushed.iter().map(PushedTerm::filter_text).collect(),
             prune: true,
             late_materialization: false,
+            // the binder read only the first footer: the scan checks the whole schema of every other file when it reaches it
+            strict_schema: true,
         }
     }
 

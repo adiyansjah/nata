@@ -55,6 +55,14 @@ enum Command {
         /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
         #[arg(long)]
         late_materialization: bool,
+        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). 1 (the default until the benchmark decides)
+        /// is one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
+        #[arg(long)]
+        footers_ahead: Option<usize>,
+        /// Check the schema of EVERY file of a glob before the query starts (what the binder did before register item P10), instead of reading only the first
+        /// file's footer and letting the scan check the others as it reaches them. Developer option, for the benchmark.
+        #[arg(long)]
+        bind_all_footers: bool,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -94,6 +102,10 @@ enum Command {
         /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
         #[arg(long)]
         late_materialization: bool,
+        /// Files whose footers may be pending at once: read ahead while earlier row groups run (register item P2). 1 (the default until the benchmark decides)
+        /// is one file at a time. Developer option; the environment variable NATA_FOOTERS_AHEAD gives the default.
+        #[arg(long)]
+        footers_ahead: Option<usize>,
     },
 }
 
@@ -120,8 +132,19 @@ pub(crate) fn late_materialization(flag: bool) -> bool {
     flag || std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
 }
 
+/// `--footers-ahead`, else `NATA_FOOTERS_AHEAD`, else 1 (one file at a time, as in slice 3).
+pub(crate) fn footers_ahead_of(flag: Option<usize>) -> usize {
+    flag.or_else(|| {
+        std::env::var("NATA_FOOTERS_AHEAD")
+            .ok()
+            .and_then(|v| v.parse().ok())
+    })
+    .unwrap_or(1)
+}
+
 struct ScanArgs {
     late: bool,
+    footers_ahead: usize,
     count: bool,
     files: Vec<PathBuf>,
     columns: Option<Vec<String>>,
@@ -136,6 +159,7 @@ struct ScanArgs {
 fn scan(a: ScanArgs) -> ExitCode {
     let ScanArgs {
         late,
+        footers_ahead,
         count,
         files,
         columns,
@@ -146,10 +170,10 @@ fn scan(a: ScanArgs) -> ExitCode {
         unordered,
         window,
     } = a;
-    if threads == Some(0) || window == Some(0) {
+    if threads == Some(0) || window == Some(0) || footers_ahead == 0 {
         let _ = writeln!(
             std::io::stderr(),
-            "error: --threads and --window must be at least 1"
+            "error: --threads, --window and --footers-ahead must be at least 1"
         );
         return ExitCode::from(2);
     }
@@ -167,6 +191,7 @@ fn scan(a: ScanArgs) -> ExitCode {
         filters,
         prune: !no_prune,
         late_materialization: late,
+        strict_schema: false,
     };
     let result = (|| {
         let plan = Arc::new(ScanPlan::open(&files, &options)?);
@@ -179,6 +204,7 @@ fn scan(a: ScanArgs) -> ExitCode {
             // 2 x threads: on SF10 the 8-thread scan is 1.4x faster than with window = threads on both CPU types (scan benchmark)
             window: window.unwrap_or(threads.saturating_mul(2)),
             ordered: !unordered,
+            footers_ahead,
         };
         let report = if count {
             let mut rows: u64 = 0;
@@ -227,6 +253,8 @@ fn main() -> ExitCode {
             unordered,
             report,
             late_materialization: late,
+            footers_ahead,
+            bind_all_footers,
         } => {
             return sql::run(sql::SqlArgs {
                 command,
@@ -236,6 +264,8 @@ fn main() -> ExitCode {
                 unordered,
                 report,
                 late: late_materialization(late),
+                footers_ahead: footers_ahead_of(footers_ahead),
+                bind_all_footers,
             });
         }
         Command::Scan {
@@ -250,6 +280,7 @@ fn main() -> ExitCode {
             unordered,
             window,
             late_materialization: late,
+            footers_ahead,
         } => {
             if !csv && !count {
                 eprintln!("error: not supported yet: output other than --csv or --count");
@@ -257,6 +288,7 @@ fn main() -> ExitCode {
             }
             return scan(ScanArgs {
                 late: late_materialization(late),
+                footers_ahead: footers_ahead_of(footers_ahead),
                 count,
                 files,
                 columns,

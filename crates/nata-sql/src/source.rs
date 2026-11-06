@@ -70,8 +70,28 @@ fn describe(l: &Leaf) -> String {
     }
 }
 
-/// Resolve `pattern`: expand it, read the footer of every file, require one schema. `pos` is the place of the path in the query.
+/// What the binder does with the files of a glob.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BindOptions {
+    /// Read the footer of EVERY file before the query starts and require one schema (what the binder did before register item P10: 10,000 files meant
+    /// 10,000 sequential reads at bind time). The default reads only the first file's footer for the column names and types; the scan checks every other
+    /// file's schema when it reaches the file (`ScanOptions::strict_schema`): a mismatch is an error naming the file, found at scan time.
+    pub all_footers: bool,
+}
+
+/// Resolve `pattern`: expand it, read the footer of the first file (the schema of the query). `pos` is the place of the path in the query. The other files
+/// are not read here: see [`BindOptions`]; [`resolve_with`] reads them all.
 pub fn resolve(provider: &dyn SourceProvider, pattern: &str, pos: Pos) -> Result<SourceInfo> {
+    resolve_with(provider, pattern, pos, BindOptions::default())
+}
+
+/// As [`resolve`], and with `all_footers` read the footer of every file and require one schema.
+pub fn resolve_with(
+    provider: &dyn SourceProvider,
+    pattern: &str,
+    pos: Pos,
+    options: BindOptions,
+) -> Result<SourceInfo> {
     if pattern.is_empty() {
         return Err(SqlError::bind(pos, "the path is empty"));
     }
@@ -88,7 +108,12 @@ pub fn resolve(provider: &dyn SourceProvider, pattern: &str, pos: Pos) -> Result
         return Err(SqlError::bind(pos, "no file matches the pattern"));
     };
     let leaves = provider.leaves(first).map_err(|e| scan_error(&e, pos))?;
-    for f in &files[1..] {
+    let others: &[PathBuf] = if options.all_footers {
+        &files[1..]
+    } else {
+        &[]
+    };
+    for f in others {
         let other = provider.leaves(f).map_err(|e| scan_error(&e, pos))?;
         let same = other.len() == leaves.len()
             && other

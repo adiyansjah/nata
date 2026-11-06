@@ -98,6 +98,7 @@ fn opts(columns: Option<&[&str]>, filters: &[&str], prune: bool, late: bool) -> 
         filters: filters.iter().map(|s| (*s).to_string()).collect(),
         prune,
         late_materialization: late,
+        strict_schema: false,
     }
 }
 

@@ -188,6 +188,12 @@ fn run_one(
 ) -> Run {
     let mut cfg = cfg.clone();
     cfg.late_materialization |= std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1");
+    if let Some(k) = std::env::var("NATA_FOOTERS_AHEAD")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    {
+        cfg.footers_ahead = cfg.footers_ahead.max(k);
+    }
     let cfg = &cfg;
     let planned = plan_sql(sql, &FsSource).expect("the query plans");
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
@@ -354,6 +360,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 ordered: true,
                 opener: Some(opener),
                 late_materialization: false,
+                footers_ahead: 1,
             };
             run_one(&sql, &cfg, sink_fails, None)
         };
@@ -367,6 +374,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 ordered: true,
                 opener: Some(FaultOpener::new(&files, vec![])),
                 late_materialization: false,
+                footers_ahead: 1,
             };
             run_one(&clean_sql, &cfg, None, None)
         };
@@ -385,6 +393,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 ordered: true,
                 opener: Some(FaultOpener::new(&files, vec![])),
                 late_materialization: false,
+                footers_ahead: 1,
             };
             lines(&run_one(&unlimited, &cfg, None, None).csv)
         } else {
@@ -411,6 +420,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
             ordered: s.ordered,
             opener: Some(opener.clone()),
             late_materialization: false,
+            footers_ahead: 1,
         };
         let got = run_one(&sql, &cfg, sink_fails, Some(&cancel));
         if let Some(c) = canceller {
