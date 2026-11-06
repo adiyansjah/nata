@@ -23,6 +23,8 @@ NEW_GROUPS = [["-p", "nata-parquet", "--test", "parallel"], ["-p", "nata-parquet
               ["-p", "nata", "--test", "resource_bounds"], ["-p", "nata-parquet", "--test", "fuzz_files"]] + GROUPS
 # Step 4a (P1, late materialization): mutants named late-* run the dedicated test file first, then the others.
 LATE_GROUPS = [["-p", "nata-parquet", "--test", "late"]] + GROUPS
+# R4 (page checksums): mutants named crc-* run the checksum tests of the crate and of the `nata` binary first.
+CRC_GROUPS = [["-p", "nata-parquet", "--test", "checksums"], ["-p", "nata", "--test", "scan_cli"]] + GROUPS
 NEW_ENV = {"NATA_SCENARIOS": "1200", "NATA_FUZZ_CASES": "300", "NATA_FILES": "1500", "NATA_BIG_GROUPS": "60"}
 
 A, F, R, C, E, S, K = "src/adapter.rs", "src/filter.rs", "src/reader.rs", "src/csv.rs", "src/error.rs", "src/schema.rs", "src/civil.rs"
@@ -178,6 +180,9 @@ M = {
  "par-strict-schema-kinds-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((bn, _))) => a.name != *bn,"),
  "par-strict-schema-names-not-compared": (R, "(Some(a), Some((bn, bk))) => a.name != *bn || a.kind != *bk,", "(Some(a), Some((_, bk))) => a.kind != *bk,"),
  "par-strict-schema-extra-columns-allowed": (R, "if all.len() == first.len() && !(0..all.len()).any(differs) {", "if !(0..all.len().min(first.len())).any(differs) {"),
+ # --- step 4a: page checksums (R4). The two defaults decide whether the product verifies; the build without the feature is also the known-bad build of the fuzz test
+ "crc-off-by-default-in-nata-parquet": ("Cargo.toml", 'default = ["page-crc"]', 'default = []'),
+ "crc-off-by-default-in-the-nata-binary": ("../nata/Cargo.toml", 'default = ["page-crc"]', 'default = []'),
 }
 
 
@@ -275,7 +280,7 @@ def run_one(args):
     rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--no-run"])
     if rc != 0:
         return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
-    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else LATE_GROUPS if n.startswith("late-") else GROUPS)
+    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else LATE_GROUPS if n.startswith("late-") else CRC_GROUPS if n.startswith("crc-") else GROUPS)
     if ok:
         return n, "SURVIVED", "the tests cannot see this bug"
     failed = sorted(set(l.split()[1] for l in out.splitlines() if l.startswith("test ") and l.endswith("FAILED")))

@@ -19,6 +19,13 @@ arrow-select = "60"
 bytes = "1"
 parquet = "60"
 
+# R4 (register item, slice 4): verify the CRC of a Parquet page when the page has one. parquet-rs 60.1.0 does this only when it is COMPILED with its `crc`
+# feature (no run-time switch), so the choice is a cargo feature: on by default; `--no-default-features` builds the reader without it (the cost arm of the
+# benchmark, and the known-bad build of the fuzz test).
+[features]
+default = ["page-crc"]
+page-crc = ["parquet/crc"]
+
 [lints]
 workspace = true
 

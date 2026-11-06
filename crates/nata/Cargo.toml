@@ -9,11 +9,17 @@ rust-version.workspace = true
 
 [dependencies]
 clap.workspace = true
-nata-parquet = { path = "../nata-parquet" }
+nata-parquet = { path = "../nata-parquet", default-features = false }
 nata-sql = { path = "../nata-sql" }
 nata-exec = { path = "../nata-exec" }
 # SIGINT (Ctrl-C) cancels the running query: the one place that needs a signal handler, and the workspace forbids `unsafe` in our own code
 signal-hook = "0.4"
+
+# R4: verify the CRC of the Parquet pages that carry one (parquet-rs compiles that check in or out; see crates/nata-parquet/Cargo.toml). On by default;
+# `cargo build --release -p nata --no-default-features` is the build without it, for the cost arm of the benchmark.
+[features]
+default = ["page-crc"]
+page-crc = ["nata-parquet/page-crc"]
 
 [dev-dependencies]
 arrow-array = "60"

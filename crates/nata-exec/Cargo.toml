@@ -9,7 +9,7 @@ rust-version.workspace = true
 
 [dependencies]
 nata-sql = { path = "../nata-sql" }
-nata-parquet = { path = "../nata-parquet" }
+nata-parquet = { path = "../nata-parquet", default-features = false }
 # `strict_cast` unpacks the scan's dictionary strings (the one sanctioned caller of arrow's cast)
 nata-kernels = { path = "../nata-kernels" }
 arrow-array = "60"

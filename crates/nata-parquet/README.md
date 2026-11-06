@@ -51,6 +51,14 @@ and idle workers read the next files' footers while earlier row groups run (`cra
 `K` plus the files whose row groups run (`peak_footers <= threads + K + 1`, tested under `ulimit -n 256` on 10,000 files). `strict_schema` (set by `nata sql`, whose binder reads only the first footer) makes the scan require
 every file to have the first file's top-level columns in order and types; the error names the file. `NATA_FOOTERS_AHEAD=<k>` sets the default for the CLI and the test suites.
 
+## Page checksums (register item R4, cargo feature `page-crc`, on by default)
+
+A Parquet page may carry a CRC-32 of its (compressed) payload in its header. With the feature, parquet-rs verifies it before it decodes the page; a mismatch is `ErrorKind::Corrupt` ("Page CRC checksum mismatch") naming the file and the
+row group, never a value. parquet-rs 60.1.0 offers no run-time switch (the check is compiled in or out with its `crc` feature, which adds the `crc32fast` crate: 30 `unsafe` keywords in 17 files, SIMD paths; recorded in
+`bench/results/20261106-slice4-carried-in.md`), and it cannot WRITE checksums, so the files with checksums come from pyarrow (`tests/fixtures/make_checksummed.py`, committed). `cargo build -p nata --no-default-features` is the build
+without the verification (the cost arm of the benchmark and the known-bad build of the fuzz test). What it does not cover: the footer and the page headers are not covered by a page checksum, and a page that carries no CRC
+(parquet-rs and DuckDB write none) is not checked; pages that late materialization skips are not decoded and so not checked.
+
 ## The footer adapter (`src/adapter.rs`)
 
 Statistics are handed to `nata-scan` only when they are sound; otherwise the row group is kept. `min_value`/`max_value` only (the deprecated `min`/`max` are never used: the `parquet` crate

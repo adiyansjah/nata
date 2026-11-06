@@ -302,3 +302,75 @@ fn count_equals_the_number_of_csv_rows() {
     );
     let _ = std::fs::remove_dir_all(&d);
 }
+
+#[test]
+fn a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_row_group() {
+    // R4: the file is one of the pyarrow-written fixtures with a CRC in every page header (parquet-rs cannot write them). One byte of a text value of row
+    // 700 (row group 1 of 600 rows) is flipped. The product build verifies the CRC (cargo feature `page-crc`, on by default); a build without it reads
+    // the damaged value silently, which this test states for that build.
+    let src = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../nata-parquet/tests/fixtures/checksummed_lineitem_like.parquet");
+    let mut bytes = std::fs::read(&src).expect("fixture");
+    let marker = b"ZQXJ-PLANTED-7731";
+    let value_offsets: Vec<usize> = (4..bytes.len() - marker.len())
+        .filter(|i| &bytes[*i..*i + marker.len()] == marker)
+        .filter(|i| {
+            let len = u32::from_le_bytes(bytes[*i - 4..*i].try_into().expect("4 bytes"));
+            len == 20 || len == 21
+        })
+        .collect();
+    assert_eq!(value_offsets.len(), 2400);
+    let d = dir("crc");
+    let clean = d.join("clean.parquet");
+    std::fs::write(&clean, &bytes).expect("write");
+    bytes[value_offsets[700] + 5] ^= 1;
+    let damaged = d.join("damaged.parquet");
+    std::fs::write(&damaged, &bytes).expect("write");
+    let (c, p) = (
+        clean.to_str().expect("path"),
+        damaged.to_str().expect("path"),
+    );
+    let commands = |f: &str| {
+        vec![
+            vec!["scan".to_string(), f.to_string(), "--csv".to_string()],
+            vec![
+                "sql".to_string(),
+                "--csv".to_string(),
+                "-c".to_string(),
+                format!("SELECT l_comment FROM '{f}'"),
+            ],
+        ]
+    };
+    for (cmd, good_cmd) in commands(p).into_iter().zip(commands(c)) {
+        let run = |args: &[String]| nata(&args.iter().map(String::as_str).collect::<Vec<_>>());
+        let good = run(&good_cmd);
+        assert_eq!(good.status.code(), Some(0), "{good_cmd:?}");
+        let out = run(&cmd);
+        let err = String::from_utf8_lossy(&out.stderr).into_owned();
+        #[cfg(feature = "page-crc")]
+        {
+            assert_eq!(out.status.code(), Some(1), "{cmd:?}: {err}");
+            assert!(
+                err.contains("damaged.parquet")
+                    && err.contains("row group 1")
+                    && err.contains("CRC"),
+                "{cmd:?}: {err}"
+            );
+            assert!(!err.contains("ZQXJ"), "no value in the error: {err}");
+        }
+        #[cfg(not(feature = "page-crc"))]
+        {
+            assert_eq!(out.status.code(), Some(0), "{cmd:?}: {err}");
+            assert_ne!(out.stdout, good.stdout, "silently other values");
+        }
+    }
+}
+
+#[test]
+fn the_default_build_of_the_binary_verifies_page_checksums() {
+    // as in nata-parquet/tests/checksums.rs: the build without the verification is chosen on purpose (NATA_NO_CRC_BUILD=1 with `--no-default-features`)
+    assert_eq!(
+        cfg!(feature = "page-crc"),
+        std::env::var("NATA_NO_CRC_BUILD").is_err()
+    );
+}

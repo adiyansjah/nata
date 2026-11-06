@@ -8,7 +8,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-nata-parquet = { path = "../nata-parquet" }
+nata-parquet = { path = "../nata-parquet", default-features = false }
 nata-scan = { path = "../nata-scan" }
 # `source::MemSource` builds the `Leaf` values of nata-parquet, which carry the Parquet physical type
 parquet = "60"
