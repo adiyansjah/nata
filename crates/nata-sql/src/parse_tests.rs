@@ -491,7 +491,9 @@ fn mangled_queries_through_bind_and_plan_never_panic_and_every_error_has_a_posit
                     e.pos.line >= 1
                         && e.pos.col >= 1
                         && !e.message.starts_with("internal error")
-                        && e.class != ErrorClass::Execution,
+                        // only a source file that cannot be read (the mangled path) is a failure of the data
+                        && (e.class != ErrorClass::Execution
+                            || e.message.starts_with("cannot read the source:")),
                     "({label}) {q:?} -> {e}"
                 );
             }

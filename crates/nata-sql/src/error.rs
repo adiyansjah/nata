@@ -49,7 +49,8 @@ pub enum ErrorClass {
     Bind,
     /// `not supported yet: <what>`.
     NotSupported,
-    /// Raised while running (division by zero, overflow, a bad cast). Never produced by this crate: the evaluator of step 3 uses it.
+    /// A failure of the data, not of the query: raised while running (division by zero, overflow, a bad cast: by `nata-exec`), and by this crate when a source
+    /// file cannot be read (missing, unreadable, damaged: `cannot read the source: ...`).
     Execution,
 }
 

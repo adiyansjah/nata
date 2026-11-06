@@ -256,11 +256,29 @@ impl Run {
     }
 }
 
+/// What a run exposes besides its result, also when it failed: the scan's counters (handles, footers and bytes alive), which the leak checks of the
+/// reliability tests read after the run.
+#[derive(Debug, Default)]
+pub struct Observed {
+    pub stats: Option<Arc<nata_parquet::ScanStats>>,
+}
+
 /// Run the plan, handing every result batch (after `Filter`, `Project`, `Offset` and `Limit`) to `sink` in order.
 pub fn execute(
     plan: Arc<LogicalPlan>,
     cfg: &ExecConfig,
     cancel: Option<&ScanCancel>,
+    sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
+) -> Result<ExecReport, ScanError> {
+    execute_observed(plan, cfg, cancel, &mut Observed::default(), sink)
+}
+
+/// As [`execute`], and `observed` receives the scan's counters as soon as the scan is open.
+pub fn execute_observed(
+    plan: Arc<LogicalPlan>,
+    cfg: &ExecConfig,
+    cancel: Option<&ScanCancel>,
+    observed: &mut Observed,
     mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
 ) -> Result<ExecReport, ScanError> {
     let started = Instant::now();
@@ -292,6 +310,7 @@ pub fn execute(
         opener,
         Some(map),
     )?);
+    observed.stats = Some(Arc::clone(scan.stats()));
     let (offset, limit) = match plan.limit {
         // the scan counts rows delivered: skip `offset` of them here and stop at offset + n
         Some(l) if l.n == 0 => (0, Some(0)),

@@ -1,0 +1,47 @@
+SELECT id, price * 2 AS twice FROM '<FILE>' WHERE id >= 5 AND id < 15 AND a > 0 LIMIT 4 OFFSET 1
+Limit 4 offset 1  (rows in=4, out=3)
+  Project id: INTEGER, (price * 2) AS twice: DECIMAL(18,2)  (rows=4, time=<T>)
+    Scan '<FILE>' (1 file)  (rows=4, time=<T> wall, includes the operators above)
+      files: 1 (opened 1), row groups: total=4 skipped=2 read=2 abandoned=0
+      rows read=10 (before the pushed filter), rows returned by the scan=4, bytes read=383, columns read=3
+      pruning=applied(3 of 3 terms), threads=2, window=3, order=ordered
+      memory: <masked>
+      columns: id, price
+      pushed: id >= 5, id < 15, a > 0
+      also read for the pushed filter: a
+total: rows returned=3, time=<T> wall
+
+SELECT id FROM '<FILE>' WHERE a = 0 OR s = 'alpha'
+Project id: INTEGER  (rows=7, time=<T>)
+  Filter ((a = 0) OR (s = 'alpha'))  (rows in=20, out=7, time=<T>)
+    Scan '<FILE>' (1 file)  (rows=20, time=<T> wall, includes the operators above)
+      files: 1 (opened 1), row groups: total=4 skipped=0 read=4 abandoned=0
+      rows read=20 (before the pushed filter), rows returned by the scan=20, bytes read=727, columns read=3
+      pruning=none(no pushed filter), threads=2, window=3, order=ordered
+      memory: <masked>
+      columns: id, a, s
+      pushed: (none)
+total: rows returned=7, time=<T> wall
+
+SELECT 1 AS one FROM '<FILE>'
+Project 1 AS one: INTEGER  (rows=20, time=<T>)
+  Scan '<FILE>' (1 file)  (rows=20, time=<T> wall, includes the operators above)
+    files: 1 (opened 1), row groups: total=4 skipped=0 read=4 abandoned=0
+    rows read=20 (before the pushed filter), rows returned by the scan=20, bytes read=224, columns read=1
+    pruning=none(no pushed filter), threads=2, window=3, order=ordered
+    memory: <masked>
+    columns: (none)
+    pushed: (none)
+total: rows returned=20, time=<T> wall
+
+SELECT id FROM '<FILE>' WHERE id < 0
+Project id: INTEGER  (rows=0, time=<T>)
+  Scan '<FILE>' (1 file)  (rows=0, time=<T> wall, includes the operators above)
+    files: 1 (opened 1), row groups: total=4 skipped=4 read=0 abandoned=0
+    rows read=0 (before the pushed filter), rows returned by the scan=0, bytes read=0, columns read=1
+    pruning=applied(1 of 1 terms), threads=2, window=3, order=ordered
+    memory: <masked>
+    columns: id
+    pushed: id < 0
+total: rows returned=0, time=<T> wall
+

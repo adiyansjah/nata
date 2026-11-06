@@ -108,7 +108,7 @@ impl<W: Write> ResultWriter<W> {
                 .names
                 .iter()
                 .enumerate()
-                .map(|(i, n)| pad(n, w[i], false))
+                .map(|(i, n)| pad(n, w[i], self.numeric.get(i).copied().unwrap_or(false)))
                 .collect();
             text.push_str(&format!(" {} \n", header.join(" | ")));
             let rule: Vec<String> = w.iter().map(|x| "-".repeat(*x + 2)).collect();

@@ -169,7 +169,7 @@ fn a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error() {
 }
 
 #[test]
-fn missing_corrupt_and_empty_sources_are_bind_errors_with_a_position() {
+fn missing_corrupt_and_empty_sources_are_errors_with_a_position() {
     let d = scratch("bad");
     let junk = d.join("junk.parquet");
     std::fs::write(
@@ -177,23 +177,27 @@ fn missing_corrupt_and_empty_sources_are_bind_errors_with_a_position() {
         b"this is certainly not a parquet file, but it is long enough",
     )
     .expect("write");
-    for (q, frag) in [
+    // a file that is missing or damaged is a failure of the data (class execution, exit code 1 of `nata sql`); no match and an empty path are the query's
+    for (q, frag, class) in [
         (
             format!("SELECT a FROM '{}/missing.parquet'", d.display()),
             "missing.parquet",
+            ErrorClass::Execution,
         ),
         (
             format!("SELECT a FROM '{}'", junk.display()),
             "junk.parquet",
+            ErrorClass::Execution,
         ),
         (
             format!("SELECT a FROM '{}/nothing-*.parquet'", d.display()),
             "no file matches",
+            ErrorClass::Bind,
         ),
-        ("SELECT a FROM ''".to_string(), "empty"),
+        ("SELECT a FROM ''".to_string(), "empty", ErrorClass::Bind),
     ] {
         let e = plan_sql(&q, &FsSource).expect_err(&q);
-        assert_eq!(e.class, ErrorClass::Bind, "{q}: {e}");
+        assert_eq!(e.class, class, "{q}: {e}");
         assert!(e.message.contains(frag), "{q}: {e}");
         assert_eq!((e.pos.line, e.pos.col), (1, 15), "{q}: {e}");
     }

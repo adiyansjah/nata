@@ -1,0 +1,27 @@
+SELECT id, price * 2 AS twice FROM '<FILE>' WHERE id >= 5 AND id < 15 AND a > 0 LIMIT 4 OFFSET 1
+Limit 4 offset 1
+  Project id: INTEGER, (price * 2) AS twice: DECIMAL(18,2)
+    Scan '<FILE>' (1 file)
+      columns: id, price
+      pushed: id >= 5, id < 15, a > 0
+      also read for the pushed filter: a
+
+SELECT id FROM '<FILE>' WHERE a = 0 OR s = 'alpha'
+Project id: INTEGER
+  Filter ((a = 0) OR (s = 'alpha'))
+    Scan '<FILE>' (1 file)
+      columns: id, a, s
+      pushed: (none)
+
+SELECT 1 AS one FROM '<FILE>'
+Project 1 AS one: INTEGER
+  Scan '<FILE>' (1 file)
+    columns: (none)
+    pushed: (none)
+
+SELECT id FROM '<FILE>' WHERE id < 0
+Project id: INTEGER
+  Scan '<FILE>' (1 file)
+    columns: id
+    pushed: id < 0
+

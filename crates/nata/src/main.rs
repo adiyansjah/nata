@@ -48,6 +48,9 @@ enum Command {
         /// Print rows as row groups finish, in no promised order (default: the order of the files, row groups and rows). Developer option.
         #[arg(long)]
         unordered: bool,
+        /// After a successful run print the one-line report of the scan (as `nata scan`) and the peak resident memory on stderr. Developer option.
+        #[arg(long)]
+        report: bool,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -97,7 +100,7 @@ fn exit_code(e: &ScanError) -> ExitCode {
 }
 
 /// Highest resident memory of this process so far, from `/proc` (Linux); `None` elsewhere.
-fn peak_rss_kib() -> Option<u64> {
+pub(crate) fn peak_rss_kib() -> Option<u64> {
     let status = std::fs::read_to_string("/proc/self/status").ok()?;
     let line = status.lines().find(|l| l.starts_with("VmHWM:"))?;
     line.split_whitespace().nth(1)?.parse().ok()
@@ -205,6 +208,7 @@ fn main() -> ExitCode {
             threads,
             window,
             unordered,
+            report,
         } => {
             return sql::run(sql::SqlArgs {
                 command,
@@ -212,6 +216,7 @@ fn main() -> ExitCode {
                 threads,
                 window,
                 unordered,
+                report,
             });
         }
         Command::Scan {

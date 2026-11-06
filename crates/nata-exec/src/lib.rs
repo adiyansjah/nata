@@ -15,4 +15,4 @@ pub mod output;
 pub mod value;
 
 pub use error::EvalError;
-pub use exec::{ExecConfig, ExecReport, OperatorStats, execute};
+pub use exec::{ExecConfig, ExecReport, Observed, OperatorStats, execute, execute_observed};

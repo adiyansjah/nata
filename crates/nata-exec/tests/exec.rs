@@ -640,3 +640,54 @@ fn the_files_of_a_glob_are_read_in_name_order() {
         vec!["11", "0", "1"]
     );
 }
+
+#[test]
+fn min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division() {
+    let p = fixture("minus_one");
+    for q in [
+        "-2147483648 % -1",
+        "-2147483648 // -1",
+        "-9223372036854775808 // -1",
+        "-9223372036854775808 % -1",
+    ] {
+        let e = err(&format!("SELECT {q} AS x FROM '{p}' WHERE id = 0"));
+        assert!(e.contains("integer overflow"), "{q}: {e}");
+    }
+    assert_eq!(
+        rows(&format!(
+            "SELECT -2147483647 % -1 AS x, -7 // -1 AS y FROM '{p}' WHERE id = 0"
+        )),
+        vec!["0,7"]
+    );
+}
+
+#[test]
+fn a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter() {
+    let p = fixture("projection_guards");
+    // the division runs only for the rows the first operand left undecided (a is 0 for ids 2, 7, 12; NULL for 3, 10, 17)
+    assert_eq!(
+        rows(&format!(
+            "SELECT (a <> 0 AND 10 // a > 1) AS x FROM '{p}' WHERE id IN (2, 3, 4)"
+        )),
+        vec!["false", "NULL", "true"]
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT (a = 0 OR 10 // a > 100) AS x FROM '{p}' WHERE id IN (2, 3, 4)"
+        )),
+        vec!["true", "NULL", "false"]
+    );
+    // BETWEEN: the upper bound runs only for the rows the lower bound did not decide as FALSE (a = 0 < 1 is decided)
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE a BETWEEN 1 AND 10 // a"
+        )),
+        ids((0..N).filter(|i| a(*i).is_some_and(|x| x == 1 || x == 2)))
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT (a BETWEEN 1 AND 10 // a) AS x FROM '{p}' WHERE id IN (2, 3, 4)"
+        )),
+        vec!["false", "NULL", "true"]
+    );
+}

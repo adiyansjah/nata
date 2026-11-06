@@ -117,7 +117,11 @@ fn s1_all_the_files_of_a_glob_must_have_the_same_schema_and_the_first_differing_
     let e = plan_sql("SELECT a FROM 'nothing/*.parquet'", &s).expect_err("empty");
     assert!(e.message.contains("no file matches"), "{e}");
     let e = plan_sql("SELECT a FROM 'missing.parquet'", &MemSource::new()).expect_err("missing");
-    assert_eq!(e.class, ErrorClass::Bind);
+    assert_eq!(
+        e.class,
+        ErrorClass::Execution,
+        "a missing file is a failure of the data"
+    );
     assert!(e.message.contains("missing.parquet"), "{e}");
     // the file order of a glob is the order of its expansion
     let p = plan_sql("SELECT a FROM 'd/ok-*.parquet'", &s).expect("plan");

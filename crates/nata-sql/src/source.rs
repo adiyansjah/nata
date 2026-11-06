@@ -50,10 +50,16 @@ pub struct SourceInfo {
 }
 
 fn scan_error(e: &ScanError, pos: Pos) -> SqlError {
-    if e.is_not_supported() {
-        SqlError::not_supported(pos, e.to_string())
-    } else {
-        SqlError::bind(pos, format!("cannot read the source: {e}"))
+    use nata_parquet::ErrorKind;
+    match &e.kind {
+        _ if e.is_not_supported() => SqlError::not_supported(pos, e.to_string()),
+        // a file that is missing, unreadable or damaged is a failure of the data, not of the query: class `execution` (exit code 1 of `nata sql`)
+        ErrorKind::Io(_) | ErrorKind::Corrupt(_) | ErrorKind::Internal(_) => SqlError::new(
+            crate::error::ErrorClass::Execution,
+            pos,
+            format!("cannot read the source: {e}"),
+        ),
+        _ => SqlError::bind(pos, format!("cannot read the source: {e}")),
     }
 }
 

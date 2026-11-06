@@ -32,6 +32,7 @@ pub struct SqlArgs {
     pub threads: Option<usize>,
     pub window: Option<usize>,
     pub unordered: bool,
+    pub report: bool,
 }
 
 /// Wraps stdout and remembers that the reader went away.
@@ -228,8 +229,15 @@ fn run_query(
     );
     let result = execute(plan, &cfg, Some(cancel), |batch| writer.write_batch(batch));
     match result {
-        Ok(_) => match writer.finish() {
-            Ok(()) => ExitCode::SUCCESS,
+        Ok(report) => match writer.finish() {
+            Ok(()) => {
+                if a.report {
+                    let rss = crate::peak_rss_kib()
+                        .map_or(String::new(), |k| format!(" peak_rss_kib={k}"));
+                    say(&format!("{}{rss}\n", report.scan.line()));
+                }
+                ExitCode::SUCCESS
+            }
             Err(e) => finish_error(sql, &e, writer.rows_written(), interrupted, &closed),
         },
         Err(e) => {
