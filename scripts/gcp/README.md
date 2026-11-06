@@ -183,6 +183,9 @@ results. See `crates/nata-bench/sql-bench.py` for the alternating arms and inclu
 `eng-checks` additionally covers SQL, execution and CLI sanitizers, SQL pushdown and
 executor scalar tests under Miri, dependency checks, unsafe inventory and leak scan.
 Miri does not run process/signal/file-decoding tests; ASan and TSan cover those.
+The two RSS-budget tests run separately without instrumentation: sanitizer quarantine
+and shadow metadata are outside the normal allocator budget. Sanitizer defaults
+remain enabled; the remaining CLI and resource tests still run instrumented.
 
 `crates/nata-bench/regress.sh BASELINE NEW [fraction=0.20]` compares machine-specific
 `metric,median_secs` CSVs. Missing metrics and invalid samples fail. There is deliberately
