@@ -67,7 +67,7 @@ threshold (a regression larger than the twin's spread fails).
   positions and messages, literal fidelity and parse time; check that every numeric literal keeps its text, that errors carry positions, and run `cargo-deny` and the unsafe inventory
   on its dependency tree; control: the same corpus through DuckDB's parser (accept/reject agreement), timing of parse per query.
 - Time box and cloud spend: one day, local only (parsing is not a performance-critical number at this size); no GCP needed.
-- Result file: `bench/results/<date>-sql-parser-baseline.md`.
+- Result file: `bench/results/20261106-sql-parser-baseline.md`. Result (2026-11-06): R1 is not triggered, so reuse `sqlparser` 0.63.0 (PostgreSQL dialect, `default-features = false`, behind a conversion layer and a depth guard, parsing on a stack of at least 16 MB): all four criteria passed (22 of 22 TPC-H and 230 of 230 test-set queries parse to the hand parser's AST, 47 of 47 literals keep their text, every error has line and column, no `unsafe` and no refused license without the crate's `recursive-protection` feature), at the price of 10 times the parse time of a hand-written parser (11 us against 1.1 us median, both far under 1 ms) and the close calls listed in the file.
 
 ## 5. Carried-in improvements (from `docs/improvements.md`)
 
