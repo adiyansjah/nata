@@ -150,4 +150,24 @@ Reproduced from a clean tarball on a Spot VM (ARM64, `bench/results/20261104-arm
 
 ## Amendments
 
-None yet.
+- **2026-11-06, A1: the operator protocol gains what the operators-beyond spike (plan item 31) found missing.** Decided by the assistant
+  under the owner's delegation of 2026-11-06, from `spikes/operators-beyond/README.md` ("What the protocol could and could not express";
+  the spike's 31/30 DuckDB comparisons and 21 of 21 mutants passed on ARM64 and x86-64, so the workarounds below are known to be correct
+  but cost a materialization or serialize work). Each item names the slice that must build it and the check that must show it.
+  1. **`Operator::finish(&mut self, out) -> OpResult`**, called exactly once per task after the last input, with the `HaveMoreOutput`
+     convention (the scheduler calls it again while it answers `HaveMoreOutput`). Without it a window function must be fused into its
+     sort source and a right or full join must emit unmatched build rows from a later pipeline. First needed by slice 7 (right/full
+     join) or slice 8 (window), whichever comes first. Check: the scheduler's loom model gains the call, with mutants "finish never
+     called", "finish called twice", "finish before the last input", "HaveMoreOutput from finish ignored", each caught.
+  2. **A sink declares how many pipelines produce into it and is finalized once**, after the last of them has finished (today a sink
+     shared by two pipelines is finalized twice, so UNION and the second stream of an outer join go through a materializing queue).
+     First needed by slice 9 (set operations) or slice 7, whichever comes first. Check: loom model property "finalize runs exactly once,
+     after every producer"; mutants "finalized per producer", "finalized before the last producer", caught.
+  3. **Ordered streams stay serial** (a k-way merge and a window source run as one task). Parallel window functions need hash
+     partitioning through an exchange first; slice 8's card decides whether that is in its scope. Not a protocol change.
+  4. **Output order is not preserved across tasks.** `ORDER BY` is the last blocking step of a plan; anything that needs input order
+     (a stable sort, `row_number()` without `ORDER BY`) must state it in its slice card. The Parquet scan (slice 3) preserves file and
+     row-group order through its own ordered hand-off, outside this protocol.
+  5. **Memory accounting is not part of the protocol.** The spike passed a per-query `Budget` into every sink. A query memory manager
+     (fair shares, a request to spill made to another operator) is its own decision, written before slice 5 (hash aggregate with spill)
+     starts; until then each spilling operator takes a budget at construction.
