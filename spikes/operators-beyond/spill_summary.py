@@ -39,7 +39,7 @@ for (q, t) in sorted(blocks):
     if "mem2" in arms:
         tr = [float(arms["mem2"][k]["secs"]) / float(base[k]["secs"]) for k in arms["mem2"] if k in base and float(base[k]["secs"]) > 0]
         twin = quart(tr) if tr else None
-    for a in ["mem", "mem2", "g256", "g64", "duckdb"]:
+    for a in ["mem", "mem2", "g256", "g64", "g1", "duckdb"]:
         if a not in arms:
             continue
         rs = arms[a]

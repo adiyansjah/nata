@@ -1,0 +1,48 @@
+SETTLE join-inner-t8: settled, load 0.46 after 20 s (limit 0.5)
+block join-inner threads=8 load at start: 0.46 1.06 0.84
+FAIL join-inner t=8 g64: query=join-inner status=FAILED error="query error: join partition 7 needs about 30887952 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL join-inner t=8 g64: leftover spill files (query=join-inner status=FAILED error="query error: join partition 7 needs about 30887952 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+FAIL join-inner t=8 g64: query=join-inner status=FAILED error="query error: join partition 1 needs about 31031194 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL join-inner t=8 g64: leftover spill files (query=join-inner status=FAILED error="query error: join partition 1 needs about 31031194 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+FAIL join-inner t=8 g64: query=join-inner status=FAILED error="query error: join partition 2 needs about 30992428 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL join-inner t=8 g64: leftover spill files (query=join-inner status=FAILED error="query error: join partition 2 needs about 30992428 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+SETTLE join-left-t8: settled, load 0.48 after 75 s (limit 0.5)
+block join-left threads=8 load at start: 0.48 1.01 0.86
+FAIL join-left t=8 g64: query=join-left status=FAILED error="query error: join partition 1 needs about 31031706 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL join-left t=8 g64: leftover spill files (query=join-left status=FAILED error="query error: join partition 1 needs about 31031706 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+FAIL join-left t=8 g64: query=join-left status=FAILED error="query error: join partition 2 needs about 30992172 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.25
+FAIL join-left t=8 g64: leftover spill files (query=join-left status=FAILED error="query error: join partition 2 needs about 30992172 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.25)
+FAIL join-left t=8 g64: query=join-left status=FAILED error="query error: join partition 2 needs about 30991148 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL join-left t=8 g64: leftover spill files (query=join-left status=FAILED error="query error: join partition 2 needs about 30991148 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+SETTLE q13-t8: settled, load 0.49 after 80 s (limit 0.5)
+block q13 threads=8 load at start: 0.49 0.98 0.87
+FAIL q13 t=8 g64: query=q13 status=FAILED error="query error: join partition 0 needs about 30853936 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.25
+FAIL q13 t=8 g64: leftover spill files (query=q13 status=FAILED error="query error: join partition 0 needs about 30853936 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.25)
+FAIL q13 t=8 g64: query=q13 status=FAILED error="query error: join partition 5 needs about 30933682 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.23
+FAIL q13 t=8 g64: leftover spill files (query=q13 status=FAILED error="query error: join partition 5 needs about 30933682 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.23)
+FAIL q13 t=8 g64: query=q13 status=FAILED error="query error: join partition 1 needs about 31030938 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24
+FAIL q13 t=8 g64: leftover spill files (query=q13 status=FAILED error="query error: join partition 1 needs about 31030938 bytes, over the memory budget: more partitions or recursive partitioning needed" secs=0.24)
+FAIL run join-inner t=8 g64 round 1: status FAILED
+FAIL run join-inner t=8 g64 round 2: status FAILED
+FAIL run join-inner t=8 g64 round 3: status FAILED
+FAIL run join-left t=8 g64 round 1: status FAILED
+FAIL run join-left t=8 g64 round 2: status FAILED
+FAIL run join-left t=8 g64 round 3: status FAILED
+FAIL run q13 t=8 g64 round 1: status FAILED
+FAIL run q13 t=8 g64 round 2: status FAILED
+FAIL run q13 t=8 g64 round 3: status FAILED
+| query | threads | arm | median s | median peak RSS MB | spilled MB | spill files | most open | arm / mem median [q1, q3] | verdict |
+|---|---:|---|---:|---:|---:|---:|---:|---|---|
+| join-inner | 8 | mem | 4.451 | 1227 | 0 | 0 | 0 | - | - |
+| join-inner | 8 | mem2 | 4.497 | 1223 | 0 | 0 | 0 | 1.00 [1.00, 1.01] | control |
+| join-inner | 8 | g256 | 0.621 | 639 | 241 | 64 | 58 | 0.14 [0.14, 0.14] | faster |
+| join-inner | 8 | duckdb | 0.174 | 226 | - | - | - | 0.04 [0.04, 0.04] | faster |
+| join-left | 8 | mem | 4.499 | 1236 | 0 | 0 | 0 | - | - |
+| join-left | 8 | mem2 | 4.517 | 1240 | 0 | 0 | 0 | 1.01 [0.99, 1.01] | control |
+| join-left | 8 | g256 | 0.632 | 645 | 241 | 64 | 58 | 0.14 [0.14, 0.14] | faster |
+| join-left | 8 | duckdb | 0.186 | 232 | - | - | - | 0.04 [0.04, 0.04] | faster |
+| q13 | 8 | mem | 5.336 | 1284 | 0 | 0 | 0 | - | - |
+| q13 | 8 | mem2 | 5.334 | 1295 | 0 | 0 | 0 | 1.00 [1.00, 1.00] | control |
+| q13 | 8 | g256 | 1.506 | 625 | 241 | 64 | 60 | 0.28 [0.28, 0.28] | faster |
+| q13 | 8 | duckdb | 0.296 | 669 | - | - | - | 0.06 [0.06, 0.06] | faster |
+exit status: 1

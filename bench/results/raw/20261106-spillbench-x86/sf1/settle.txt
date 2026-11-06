@@ -1,0 +1,18 @@
+SETTLE join-inner-t1: settled, load 0.49 after 135 s (limit 0.5)
+block join-inner threads=1 load at start: 0.49 1.61 0.86
+SETTLE join-inner-t4: settled, load 0.48 after 10 s (limit 0.5)
+block join-inner threads=4 load at start: 0.48 1.54 0.85
+SETTLE join-inner-t8: settled, load 0.48 after 5 s (limit 0.5)
+block join-inner threads=8 load at start: 0.48 1.50 0.85
+SETTLE join-left-t1: settled, load 0.47 after 50 s (limit 0.5)
+block join-left threads=1 load at start: 0.47 1.36 0.84
+SETTLE join-left-t4: settled, load 0.47 after 10 s (limit 0.5)
+block join-left threads=4 load at start: 0.47 1.30 0.83
+SETTLE join-left-t8: settled, load 0.47 after 5 s (limit 0.5)
+block join-left threads=8 load at start: 0.47 1.27 0.83
+SETTLE q13-t1: settled, load 0.46 after 50 s (limit 0.5)
+block q13 threads=1 load at start: 0.46 1.17 0.82
+SETTLE q13-t4: settled, load 0.46 after 10 s (limit 0.5)
+block q13 threads=4 load at start: 0.46 1.13 0.81
+SETTLE q13-t8: settled, load 0.46 after 30 s (limit 0.5)
+block q13 threads=8 load at start: 0.46 1.06 0.80

@@ -25,7 +25,7 @@ command -v duckdb >/dev/null || ARMS=$(echo "$ARMS" | sed 's/duckdb//')
 views="create view customer as select * from '$DATA/customer.parquet'; create view orders as select * from '$DATA/orders.parquet'; create view lineitem as select * from '$DATA/lineitem.parquet'; create view supplier as select * from '$DATA/supplier.parquet'; create view nation as select * from '$DATA/nation.parquet'; create view part as select * from '$DATA/part.parquet'; create view partsupp as select * from '$DATA/partsupp.parquet'; create view region as select * from '$DATA/region.parquet';"
 CSV=$OUT/rounds.csv; echo "query,threads,round,arm,secs,engine_secs,peak_rss_mb,rows,spilled_mb,spill_files,max_open_files,leftover,status" > "$CSV"
 FAILED=0
-args_of() { case "$1" in mem|mem2) echo "" ;; g256) echo "--grace 32 --mem-mb 256" ;; g64) echo "--grace 32 --mem-mb 64" ;; esac; }
+args_of() { case "$1" in mem|mem2) echo "" ;; g256) echo "--grace 32 --mem-mb 256" ;; g64) echo "--grace 32 --mem-mb 64" ;; g1) echo "--grace 32 --mem-mb 1" ;; esac; }
 one() { # query threads round arm
   local q=$1 t=$2 r=$3 a=$4 m=$OUT/.rss line secs rows sp sf mo lo st
   if [ "$a" = duckdb ]; then
@@ -38,9 +38,11 @@ one() { # query threads round arm
     line=$("$TIMEBIN" -f %M -o "$m" "$BIN" "$q" --data "$DATA" --threads "$t" --spill-dir "${SPILL_ROOT:-$OUT}/spill-$q-$t-$a" $(args_of "$a") 2>&1 | tail -1)
     s1=$(date +%s.%N); secs=$(awk -v a="$s0" -v b="$s1" 'BEGIN{printf "%.3f", b-a}')
     kv() { sed -n "s/.* $1=\([^ ]*\).*/\1/p" <<<" $line"; }
-    st=$(kv status); esecs=$(kv secs); rows=$(kv rows); sp=$(kv spilled_mb); sf=$(kv spill_files); mo=$(kv max_open_files); lo=$(kv leftover_spill_files)
+    st=$(kv status); esecs=$(kv secs); rows=$(kv rows); sp=$(kv spilled_mb); sf=$(kv spill_files); mo=$(kv max_open_files)
+    # leftover spill files: counted on disk after the process has exited (the binary's own count is not printed when it fails)
+    local sd="${SPILL_ROOT:-$OUT}/spill-$q-$t-$a"; lo=0; [ -d "$sd" ] && lo=$(find "$sd" -type f | wc -l); rm -rf "$sd"
     [ "$st" = ok ] || { echo "FAIL $q t=$t $a: $line"; FAILED=1; }
-    [ "${lo:-1}" = 0 ] || { echo "FAIL $q t=$t $a: leftover spill files ($line)"; FAILED=1; }
+    [ "${lo:-1}" = 0 ] || { echo "FAIL $q t=$t $a: $lo spill files left on disk after the process exited ($st)"; FAILED=1; }
   fi
   echo "$q,$t,$r,$a,${secs:-},${esecs:-},$(( $(tail -1 "$m" 2>/dev/null || echo 0) / 1024 )),${rows:-},${sp:-},${sf:-},${mo:-},${lo:-},${st:-FAILED}" >> "$CSV"
 }
