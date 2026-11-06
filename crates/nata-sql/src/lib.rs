@@ -16,7 +16,7 @@ pub use source::{BindOptions, FsSource, SourceProvider};
 
 /// Parse, bind and plan one statement: `SELECT ... FROM '<file or glob>' [WHERE ...] [LIMIT n [OFFSET m]]`, or `EXPLAIN [ANALYZE]` of it.
 ///
-/// Everything runs on a thread with a 16 MB stack (the parser needs it for the nesting the dialect allows). Errors carry their class and the line and
+/// Everything runs on a thread with a 64 MiB stack (the parser needs it for the nesting the dialect allows). Errors carry their class and the line and
 /// column of the construct (`docs/dialect.md` section 8). The returned plan is ready for step 3: [`LogicalPlan::scan`] has the files, the columns and the
 /// pushed conjuncts (see [`plan::Scan::scan_options`]), the operators above it hold typed expressions over the scan's columns.
 pub fn plan_sql(sql: &str, source: &dyn SourceProvider) -> Result<Planned> {

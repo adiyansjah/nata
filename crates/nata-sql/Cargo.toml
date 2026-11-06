@@ -13,7 +13,7 @@ nata-scan = { path = "../nata-scan" }
 # `source::MemSource` builds the `Leaf` values of nata-parquet, which carry the Parquet physical type
 parquet = "60"
 # Rule R1 of card 0002 (decision 4b): reuse the crate WITHOUT its default `recursive-protection` feature (stacker and psm bring `unsafe` and assembly).
-# The parse runs on a thread with a 16 MB stack behind a token-level guard instead (src/parse.rs).
+# The parse runs on a thread with a 64 MiB stack behind a token-level guard instead (src/parse.rs).
 sqlparser = { version = "0.63", default-features = false, features = ["std"] }
 
 [dev-dependencies]

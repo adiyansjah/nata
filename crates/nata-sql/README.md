@@ -10,7 +10,7 @@ let scan_options = planned.plan.scan.scan_options(); // columns and pushed conju
 
 | module | job |
 |---|---|
-| `parse` | token guard (1 MB, nesting 1,000, chains of 10,000 terms), the 16 MB parse thread, `sqlparser` (PostgreSQL dialect) converted to `ast`, `not supported yet: <what>` for the rest |
+| `parse` | token guard (1 MB, nesting 1,000, chains of 10,000 terms), the 64 MiB parse thread (R15 instrumentation headroom), `sqlparser` (PostgreSQL dialect) converted to `ast`, `not supported yet: <what>` for the rest |
 | `bind` | names (folded or exact), `*`, aliases, exact types, the decimal rules, NULL typed by context, "did you mean" |
 | `types`, `texpr` | the typing rules of `docs/dialect.md` and `docs/decimal-rules.md`; the typed expression tree (contract in its module doc) |
 | `plan` | `Scan -> Filter -> Project -> Limit`, rule R2 pushdown, the plan text |

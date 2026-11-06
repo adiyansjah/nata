@@ -3,7 +3,7 @@
 //! 1. A **token guard** runs before the parser: the text size, the nesting depth (parentheses, `CASE`, runs of prefix operators), the length of a chain
 //!    of one operator (dialect section 8), and the constructs the crate's tree would HIDE (`LIMIT ALL`, a stray `;`). It also turns the two characters
 //!    `//` (integer division, which the crate tokenizes only for DuckDB's dialect) into one `/` token whose place is remembered.
-//! 2. The parser runs on a thread with a **16 MB stack** (without the crate's `recursive-protection` feature it needs 6 to 8 MB for 1,000 nested levels).
+//! 2. The parser runs on a thread with a **64 MiB stack** (including instrumentation headroom; see R15 and `WORKER_STACK_BYTES`).
 //! 3. A **conversion** maps the crate's tree to [`crate::ast`] and refuses everything outside the subset as `not supported yet: <what>` at its position.
 //!    Every field of the crate's `Query` and `Select` is destructured, so a new field in a later release is a compile error and not a silent accept.
 //!    Long chains of one binary operator are walked in a loop (no recursion), so a chain of 10,000 terms costs no stack.
@@ -30,11 +30,17 @@ pub const MAX_NESTING: usize = 1_000;
 /// Most terms in one chain of the same binary operator.
 pub const MAX_CHAIN_TERMS: usize = 10_000;
 /// The stack of the thread that parses (and binds and plans).
-pub const WORKER_STACK_BYTES: usize = 16 << 20;
+// Local x86-64 ASan/build-std: 16 MiB overflows in sqlparser's recursive
+// parse_prefix -> parse_subexpr -> parse_expr path; 32 MiB passes every deep
+// construct at the unchanged 1,000-level limit. Reserve twice that measured
+// passing envelope for compiler/instrumentation variation. This is virtual
+// stack reservation, not precommitted RSS. Server admission bounds concurrency.
+// Evidence: bench/results/20261107-pgwire-server.md (R15).
+pub const WORKER_STACK_BYTES: usize = 64 << 20;
 /// The crate's own recursion counter (default 50): a backstop under the guard. 1,000 nested parentheses use about 4,000 of it.
 pub const RECURSION_LIMIT: usize = 6_000;
 
-/// Run `f` on a thread with the 16 MB stack and wait for it. A panic of `f` becomes an error (the front end promises none; the fuzz test asserts it).
+/// Run `f` on a thread with the budgeted stack and wait for it. A panic of `f` becomes an error (the front end promises none; the fuzz test asserts it).
 pub(crate) fn on_big_stack<T: Send>(f: impl FnOnce() -> T + Send) -> Result<T> {
     std::thread::scope(|s| {
         let h = std::thread::Builder::new()
@@ -54,7 +60,7 @@ fn internal(what: &str) -> SqlError {
     )
 }
 
-/// Parse one statement on a thread of its own (16 MB stack).
+/// Parse one statement on a thread of its own (budgeted stack).
 pub fn parse_query(text: &str) -> Result<ast::Query> {
     on_big_stack(|| parse_query_here(text))?
 }
