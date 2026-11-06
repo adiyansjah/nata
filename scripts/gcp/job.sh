@@ -315,6 +315,20 @@ case "$JOB" in
     run cg-gen bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run cg-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run cg-check bash -c 'cd "$SRC" && { scripts/cgroup-check.sh "$WORK/target-ws/release/nata" data/tpch-sf1/lineitem.parquet "$RESULTS/cgroup"; echo "exit status: $?"; } > "$RESULTS/cgroup-run.txt" 2>&1; true' ;;
+  eng-checks)
+    # verification-plan item 34 (slice 4 card, part 2): the engineering checks on the real crates. Each check records its exit status in
+    # $RESULTS/eng-*-exit.txt and does not stop the job, so one failure does not hide the others.
+    NIGHTLY=nightly-2026-08-21
+    run ec-tools bash -c 'rustup toolchain install '"$NIGHTLY"' --profile minimal --component rust-src,miri > /dev/null && cargo install --locked cargo-deny cargo-audit > /dev/null 2>&1; cargo deny --version; cargo audit --version; rustup run '"$NIGHTLY"' rustc --version'
+    run ec-deny bash -c 'cd "$SRC" && { cargo deny check 2>&1; echo "exit status: $?"; } > "$RESULTS/eng-deny.txt"; tail -1 "$RESULTS/eng-deny.txt" > "$RESULTS/eng-deny-exit.txt"; true'
+    run ec-audit bash -c 'cd "$SRC" && { cargo audit 2>&1; echo "exit status: $?"; } > "$RESULTS/eng-audit.txt"; tail -1 "$RESULTS/eng-audit.txt" > "$RESULTS/eng-audit-exit.txt"; true'
+    run ec-unsafe bash -c 'cd "$SRC" && { for p in nata nata-parquet nata-sched nata-scan nata-kernels; do echo "== $p"; python3 -I scripts/unsafe-inventory.py "$p" 2>&1 | tail -n 15; done; } > "$RESULTS/eng-unsafe.txt" 2>&1; true'
+    T=$(rustc -vV | sed -n "s/^host: //p")
+    for san in address thread; do
+      run "ec-$san" bash -c 'cd "$SRC" && { RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' -p nata-sched -p nata-parquet -p nata-scan -p nata-kernels --lib --tests 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
+    done
+    run ec-miri bash -c 'cd "$SRC" && { MIRIFLAGS=-Zmiri-disable-isolation CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-scan --test rules 2>&1 | tail -n 30; r1=${PIPESTATUS[0]}; CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-kernels --lib 2>&1 | tail -n 30; r2=${PIPESTATUS[0]}; echo "exit status: $(( r1 | r2 ))"; } > "$RESULTS/eng-miri.txt"; tail -1 "$RESULTS/eng-miri.txt" > "$RESULTS/eng-miri-exit.txt"; true'
+    run ec-summary bash -c 'cd "$RESULTS" && for f in eng-*-exit.txt; do echo "${f%-exit.txt}: $(cat "$f")"; done > eng-summary.txt; cat eng-summary.txt' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
