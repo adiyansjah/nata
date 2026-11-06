@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Run one harness with a time cap: run1.sh <harness> [seconds]. Prints one line:
+# name: RESULT | verification Ns (KANI_SOLVER=<kissat|z3|cvc5|...> picks the CBMC back end; default CaDiCaL)
 # name: RESULT | verification Ns | wall Ns | checks summary | cover UNSATISFIED: n
 cd "$(dirname "$0")" || exit 2
 start=$(date +%s)
 memf=$(mktemp)
 # peak memory is measured with GNU time when it is installed (Debian: apt install time); without it the column shows 0
 if [ -x /usr/bin/time ]; then timer=(/usr/bin/time -f "%M" -o "$memf"); else timer=(); fi
-out=$(CARGO_BUILD_JOBS=2 "${timer[@]}" timeout "${2:-300}" cargo kani -Z stubbing --harness "$1" 2>&1); rc=$?
+out=$(CARGO_BUILD_JOBS=2 "${timer[@]}" timeout "${2:-300}" cargo kani -Z stubbing ${KANI_SOLVER:+--solver "$KANI_SOLVER"} --harness "$1" 2>&1); rc=$?
 mem=$(tail -1 "$memf" 2>/dev/null); rm -f "$memf"
 res=$(echo "$out" | grep -m1 '^VERIFICATION:' | sed 's/VERIFICATION:- //')
 t=$(echo "$out" | grep -m1 '^Verification Time' | sed 's/Verification Time: //')

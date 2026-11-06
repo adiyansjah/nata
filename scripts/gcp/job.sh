@@ -185,6 +185,15 @@ case "$JOB" in
     run k-install bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); echo "toolchain: $RUSTUP_TOOLCHAIN"; command -v cargo-kani >/dev/null || { cargo install --locked kani-verifier && cargo kani setup; }; cargo kani --version'
     run kc-all bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); { free -g | head -2; TMPDIR="$WORK/kc-tmp" bash -c "mkdir -p \$TMPDIR && $SRC/scripts/gcp/kani-crate.sh all $RESULTS/kc ${KANI_PAR:-3} 900"; true; } > "$RESULTS/kani-crate-all.txt" 2>&1'
     run kc-timeouts bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); { TMPDIR="$WORK/kc-tmp" bash -c "mkdir -p \$TMPDIR && $SRC/scripts/gcp/kani-crate.sh timeouts $RESULTS/kc 2 3600"; true; } > "$RESULTS/kani-crate-timeouts.txt" 2>&1' ;;
+  kani-solvers)
+    # (1) The step-6 sum bound of the NULL-path spike (spikes/kani-wrap-bound: an induction proof on the REAL
+    # spikes/null-path/src/wrapadd.rs) and its mutation check (a negative control and three mutants, each must be CAUGHT).
+    # (2) The five division proofs that timed out with the default CaDiCaL back end on 2026-11-04, once per other solver
+    # (kissat, z3, cvc5; z3 and cvc5 are installed by vm-startup.sh for this job), 2400 s cap, a few at a time.
+    run k-install bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); echo "toolchain: $RUSTUP_TOOLCHAIN"; command -v cargo-kani >/dev/null || { cargo install --locked kani-verifier && cargo kani setup; }; cargo kani --version; z3 --version || echo "z3: NOT FOUND"; cvc5 --version 2>/dev/null | head -1 || echo "cvc5: NOT FOUND"; true'
+    run kw-proofs bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); cd "$SRC/spikes/kani-wrap-bound" && { ./run.sh 1200; echo "exit status: $?"; } > "$RESULTS/kani-wrap-bound.txt" 2>&1; true'
+    run kw-mutants bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); cd "$SRC/spikes/kani-wrap-bound" && { ./mutate.sh 1200; echo "exit status: $?"; } > "$RESULTS/kani-wrap-bound-mutants.txt" 2>&1; true'
+    run kc-solvers bash -c 'export RUSTUP_TOOLCHAIN=$(sed -n "s/^channel *= *\"\\(.*\\)\"/\\1/p" "$SRC/rust-toolchain.toml"); { free -g | head -2; TMPDIR="$WORK/kc-tmp" bash -c "mkdir -p \$TMPDIR && $SRC/scripts/gcp/kani-crate.sh solvers $RESULTS/kc ${KANI_PAR:-5} 2400"; true; } > "$RESULTS/kani-crate-solvers.txt" 2>&1' ;;
   nullpath|timing)
     # ADR 0003 item 16: the word-wise NULL path, timed on a QUIET machine (the agent's numbers were taken at load 2-14).
     # spikes/null-path/run-all.sh: correctness first (tests, check, nullcheck, DuckDB diff; it stops at the first failure,

@@ -268,8 +268,9 @@ pub fn group_sums<const K: usize, const WRAP: bool, const SUB: bool>(
         // (OR of values < NG = 2^10 is < NG exactly when every value is; an index selection reads only its own rows)
         assert!(gids[..rows].iter().fold(0u16, |a, &g| a | g) < NG as u16, "group id out of range");
     }
-    let add128 = |a: &mut i128, x: i128| if WRAP { *a = a.wrapping_add(x) } else { *a += x };
-    let add64 = |a: &mut u64, x: u64| if WRAP { *a = a.wrapping_add(x) } else { *a += x };
+    // the accumulations live in wrapadd.rs so that the Kani proof of the WRAP = true case runs on the same code
+    let add128 = |a: &mut i128, x: i128| crate::wrapadd::add128::<WRAP>(a, x);
+    let add64 = |a: &mut u64, x: u64| crate::wrapadd::add64::<WRAP>(a, x);
     if let Sel::Idx(idx) = sel {
         for &i in idx {
             let i = i as usize;

@@ -1,0 +1,16 @@
+# Kani proof that the wrapping accumulations of the step-6 NULL-path sink (spikes/null-path/src/wrapadd.rs, included by
+# #[path], never copied) can never wrap. THROWAWAY with the null-path spike. Run: ./run.sh (or the kani-solvers GCP job).
+[package]
+name = "kani-wrap-bound"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+
+[features]
+# turns on the negative-control harness, which must FAIL (mutate.sh)
+negative = []

@@ -27,7 +27,7 @@ case "$h" in
   beta*) if [ "$cap" -lt 1000 ]; then echo "$h: TIMEOUT after ${cap}s | wall ${cap}s"; else echo "$h: SUCCESSFUL | wall 1s"; fi ;;
   gamma*) echo "$h: FAILED | wall 1s | failing checks: 1" ;;
   delta*) if [ "$cap" -lt 1000 ]; then echo "$h: NO RESULT (CBMC failed: killed) | wall 1s"; else echo "$h: SUCCESSFUL | wall 1s"; fi ;;
-  *) echo "$h: SUCCESSFUL | wall 1s" ;;
+  *) echo "$h: SUCCESSFUL | wall 1s | solver ${KANI_SOLVER:-default}" ;;
 esac
 EOF2
 chmod +x "$T/spike/run1.sh"
@@ -49,4 +49,12 @@ grep -q "beta_rows2: SUCCESSFUL" "$T/to.txt" && grep -q "delta_rows2: SUCCESSFUL
 [ ! -e "$T/out/alpha_rows1.timeouts.txt" ] && [ ! -e "$T/out/gamma_rows2.timeouts.txt" ] && ok "finished and failed harnesses are not retried" || bad "retried too much"
 # the mechanism of the defect, shown on its own: with an exported `out` the stub's exec fails
 ( export out=1; out=$(head -c 400000 /dev/zero | tr '\0' x); date +%s > /dev/null 2>&1 ) && bad "an exported big variable did not break exec (the test would not catch the defect)" || ok "an exported big \`out\` does break exec (so the test above can catch it)"
+# phase solvers: each listed harness once per solver, the solver reaches run1.sh, one file per pair, resumable
+KC_HARNESSES="alpha_rows1 beta_rows2" KC_SOLVERS="kissat z3" "$K" solvers "$T/sv" 2 1200 > "$T/sv.txt" 2>&1
+[ "$(ls "$T/sv"/*.solvers-*.txt 2>/dev/null | wc -l)" = 4 ] && ok "solvers: 2 harnesses x 2 solvers = 4 result files" || bad "solvers: $(ls "$T/sv")"
+grep -q "alpha_rows1: SUCCESSFUL.*solver z3" "$T/sv/alpha_rows1.solvers-z3.txt" && grep -q "solver kissat" "$T/sv/alpha_rows1.solvers-kissat.txt" && ok "solvers: KANI_SOLVER reaches run1.sh" || bad "solvers: solver not passed: $(cat "$T/sv"/alpha* 2>&1)"
+grep -q "^\[z3\] alpha_rows1" "$T/sv/table-solvers.txt" && ok "solvers: the table line names the solver" || bad "solvers table: $(cat "$T/sv/table-solvers.txt")"
+before=$(stat -c %Y "$T/sv/alpha_rows1.solvers-z3.txt"); sleep 1
+KC_HARNESSES="alpha_rows1 beta_rows2" KC_SOLVERS="kissat z3" "$K" solvers "$T/sv" 2 1200 > /dev/null 2>&1
+[ "$(stat -c %Y "$T/sv/alpha_rows1.solvers-z3.txt")" = "$before" ] && ok "solvers: a restart skips the pairs that are done" || bad "solvers: re-ran a finished pair"
 [ "$fail" = 0 ] && echo "all kani-crate tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

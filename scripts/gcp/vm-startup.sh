@@ -42,6 +42,8 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in netexchsim) ;; *) false ;; esac && 
 }
 # The Kani jobs (and the memory measurements of hashops and timing) record peak memory with GNU time.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani*|timing|hashops) [ -x /usr/bin/time ] || apt-get install -y -qq time ;; esac
+# The other CBMC back ends for the solver comparison of the division proofs.
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani-solvers) for pk in z3 cvc5; do command -v $pk > /dev/null || apt-get install -y -qq $pk || echo "vm-startup: $pk not installable"; done ;; esac
 if [ -f "$MNT/START" ] && ! pgrep -u nata -f "scripts/gcp/job.sh" > /dev/null; then
   su - nata -c "mkdir -p $MNT/logs && cd $MNT && WORK=$MNT nohup bash src/scripts/gcp/job.sh >> $MNT/logs/job.out 2>&1 &"
 fi

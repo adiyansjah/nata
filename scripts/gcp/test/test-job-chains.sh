@@ -95,6 +95,9 @@ for j in cpack fairness-bench bridge; do
     [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ] && ok "$j: $s comes before $r" || bad "$j: $s ($a) must come before $r ($b)"
   done
 done
+# kani-solvers: exactly its own four steps after the common setup, in order, nothing of kani-crate's phases
+ks=$(steps kani-solvers | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+[ "$ks" = "STEP k-install STEP kw-proofs STEP kw-mutants STEP kc-solvers " ] && ok "kani-solvers runs k-install, kw-proofs, kw-mutants, kc-solvers only" || bad "kani-solvers steps: $ks"
 for j in hashops armcheck simharness objscan iceberg icebergmodel icebergspikes icebergpolaris pushpin netexchsim; do steps $j | grep -q '^STEP settle-' && bad "job $j must not have settle steps" || ok "job $j has no settle steps"; done
 steps perf | grep -q '^STEP settle-p-timing$' && ok "perf alone settles before p-timing" || bad "perf alone has no settle step"
 # the settle step of the job: it runs scripts/gcp/settle.sh (tested in test-settle.sh) and must NEVER fail the job, even when the machine does
