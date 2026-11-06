@@ -124,6 +124,10 @@ Kernel crate, lints and guarded expressions (`bench/results/20261104-kernel-lint
 
 ## Revision notes
 
+- 2026-11-06, the step-6 wrapping accumulation of the NULL path is proved safe (`bench/results/20261106-kani-wrap-bound.md`): a Kani
+  induction proof on the real accumulation code shows that `wrapping_add` equals the checked add for every input the grouped-sum sink can
+  see (sums of i64 values or 0, counters of 0 or 1, fewer than 2^64 - 1 rows per group); a negative control and 3 mutants are caught. Step 6
+  may be adopted without weakening decision 6.
 - 2026-11-05 (later), settled re-run (`bench/results/20261105-timing-settled-rerun.md`): open check [16] is closed. The NULL-path penalty meets the 1.3x target on x86-64 as well: word-wise step 6 reads 1.07x, 1.13x and 1.21x at 1%, 10% and 50% NULLs (old engine 2.15x, 2.01x, 1.40x), step 5 reads 1.04x, 1.14x and 1.27x; ARM64 is unchanged (step 6: 1.06x, 1.13x, 1.24x). The margin is small for step 5 at 50% NULLs (x86-64 interquartile range [1.23, 1.32], so a single round can exceed 1.3x). The "NULL-path timing is not assessed on x86-64" item in the acceptance note below is superseded.
 
 - 2026-11-05, **accepted by the owner, with these checks still open** (verification-plan items in brackets):
