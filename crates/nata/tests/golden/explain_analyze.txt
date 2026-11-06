@@ -45,3 +45,16 @@ Project id: INTEGER  (rows=0, time=<T>)
     pushed: id < 0
 total: rows returned=0, time=<T> wall
 
+SELECT id + 1 AS n FROM '<FILE>' WHERE a + 0 > -5 LIMIT 3
+Limit 3 offset 0  (rows in=3, out=3)
+  Project (id + 1) AS n: INTEGER  (rows=3, time=<T>)
+    Filter ((a + 0) > -5)  (rows in=5, out=4, time=<T>)
+      Scan '<FILE>' (1 file)  (rows=5, time=<T> wall, includes the operators above)
+        files: 1 (opened 1), row groups: total=4 skipped=0 read=1 abandoned=0
+        rows read=5 (before the pushed filter), rows returned by the scan=5, bytes read=113, columns read=2
+        pruning=none(no pushed filter), threads=1, window=1, order=ordered
+        memory: <masked>
+        columns: id, a
+        pushed: (none)
+total: rows returned=3, time=<T> wall
+

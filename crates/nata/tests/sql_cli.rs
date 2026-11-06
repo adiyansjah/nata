@@ -285,6 +285,8 @@ fn explain_and_explain_analyze_have_golden_output() {
         "SELECT id FROM '{F}' WHERE a = 0 OR s = 'alpha'",
         "SELECT 1 AS one FROM '{F}'",
         "SELECT id FROM '{F}' WHERE id < 0",
+        // a filter that stays in the executor and a limit that is reached inside the first row group: the filter keeps 4 rows, the projection computes 3
+        "SELECT id + 1 AS n FROM '{F}' WHERE a + 0 > -5 LIMIT 3",
     ];
     let mut plans = String::new();
     let mut analyzed = String::new();
@@ -295,12 +297,18 @@ fn explain_and_explain_analyze_have_golden_output() {
         assert_eq!(out.status.code(), Some(0), "{}", text(&out.stderr));
         plans.push_str(&format!("{shown}\n{}\n", sub(&text(&out.stdout))));
         // EXPLAIN is the plan only: it reads no row group (the file is not scanned) and is the same whatever the thread count
+        // one thread and a window of one row group make the counts of a query with a limit exact (no row group is read ahead)
+        let (threads, window) = if q.contains("LIMIT 3") {
+            ("1", "1")
+        } else {
+            ("2", "3")
+        };
         let out = nata(&[
             "sql",
             "--threads",
-            "2",
+            threads,
             "--window",
-            "3",
+            window,
             "-c",
             &format!("EXPLAIN ANALYZE {q}"),
         ]);

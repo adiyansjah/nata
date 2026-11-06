@@ -25,3 +25,11 @@ Project id: INTEGER
     columns: id
     pushed: id < 0
 
+SELECT id + 1 AS n FROM '<FILE>' WHERE a + 0 > -5 LIMIT 3
+Limit 3 offset 0
+  Project (id + 1) AS n: INTEGER
+    Filter ((a + 0) > -5)
+      Scan '<FILE>' (1 file)
+        columns: id, a
+        pushed: (none)
+
