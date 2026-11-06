@@ -274,6 +274,15 @@ case "$JOB" in
     # verification-plan item 31 (spikes/operators-beyond): unit tests, the DuckDB differential check (memory and spill), the mutants.
     run ob-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run ob-all bash -c 'cd "$SRC/spikes/operators-beyond" && ./gcp-check.sh "$RESULTS/operators-beyond" "$SRC/data/tpch-sf1" > "$RESULTS/operators-beyond-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/operators-beyond-exit.txt"; true' ;;
+  spillbench)
+    # verification-plan item 15: what the grace hash join's spill path costs (spikes/operators-beyond/spill-bench.sh): in memory,
+    # its twin, grace with a 256 MB and a 64 MB budget, and DuckDB, interleaved, a settle before every block. SF1 at 1, 4 and 8
+    # threads; SF10 at 8 threads (bigger than the budgets by far). Correctness against DuckDB is the opsbeyond job's check.
+    run sb-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
+    run sb-build bash -c 'cd "$SRC/spikes/operators-beyond" && RUSTFLAGS= cargo build --release && ./test-spill-summary.sh > "$RESULTS/spill-summary-test.txt" 2>&1'
+    run sb-sf1 bash -c 'cd "$SRC/spikes/operators-beyond" && { SPILL_ROOT="$WORK/spill-sf1" ./spill-bench.sh "$SRC/data/tpch-sf1" "$RESULTS/spill-sf1" 7 "1 4 8"; echo "exit status: $?"; } > "$RESULTS/spill-sf1-run.txt" 2>&1; rm -rf "$WORK/spill-sf1"; true'
+    run sb-sf10 bash -c 'cd "$SRC/spikes/operators-beyond" && { SPILL_ROOT="$WORK/spill-sf10" ./spill-bench.sh "$SRC/data/tpch-sf10" "$RESULTS/spill-sf10" 3 "8"; echo "exit status: $?"; } > "$RESULTS/spill-sf10-run.txt" 2>&1; rm -rf "$WORK/spill-sf10"; true' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;

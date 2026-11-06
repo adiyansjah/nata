@@ -41,7 +41,7 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in netexchsim) ;; *) false ;; esac && 
   echo 'nata ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nata-netexch && chmod 440 /etc/sudoers.d/nata-netexch
 }
 # The Kani jobs (and the memory measurements of hashops and timing) record peak memory with GNU time.
-case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani*|timing|hashops) [ -x /usr/bin/time ] || apt-get install -y -qq time ;; esac
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani*|timing|hashops|spillbench) [ -x /usr/bin/time ] || apt-get install -y -qq time ;; esac
 # The other CBMC back ends for the solver comparison of the division proofs.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in kani-solvers) for pk in z3 cvc5; do command -v $pk > /dev/null || apt-get install -y -qq $pk || echo "vm-startup: $pk not installable"; done ;; esac
 if [ -f "$MNT/START" ] && ! pgrep -u nata -f "scripts/gcp/job.sh" > /dev/null; then
