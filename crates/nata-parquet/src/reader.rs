@@ -110,10 +110,21 @@ impl FileScan {
 }
 
 /// What every file and task of one plan shares: where handles come from and where the counts go.
-#[derive(Debug)]
 pub struct Ctx {
     pub opener: Arc<dyn Opener>,
+    /// What each task does with every batch it produced, inside the task (the filter and the projection of `nata sql`), if anything.
+    pub map: Option<BatchMap>,
     pub stats: Arc<ScanStats>,
+}
+
+impl std::fmt::Debug for Ctx {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Ctx")
+            .field("opener", &self.opener)
+            .field("map", &self.map.as_ref().map(|_| "fn"))
+            .field("stats", &self.stats)
+            .finish()
+    }
 }
 
 /// How pruning was set up, for the report.
@@ -139,6 +150,10 @@ pub struct ScanPlan {
     read_column_count: usize,
     ctx: Arc<Ctx>,
 }
+
+/// A function applied by each task to each batch it produced; see [`ScanPlan::open_with_map`].
+pub type BatchMap =
+    Arc<dyn Fn(RecordBatch) -> Result<Option<RecordBatch>, ErrorKind> + Send + Sync>;
 
 /// One row group to read: the unit of work (the morsel of ADR 0001).
 #[derive(Clone, Debug)]
@@ -308,11 +323,24 @@ impl ScanPlan {
         options: &ScanOptions,
         opener: Arc<dyn Opener>,
     ) -> Result<ScanPlan, ScanError> {
+        ScanPlan::open_with_map(paths, options, opener, None)
+    }
+
+    /// As [`ScanPlan::open_with`], and every batch a task produces (after the pushed row filter and the projection of the scan) goes through `map` inside
+    /// the task, on the worker thread: the rows of the scan are the rows `map` returns. `Ok(None)` drops the batch. An error is an error of the task
+    /// (it names the file and the row group, and the lowest one wins as for any task). The decoded batch and the mapped one both count on the memory gauge.
+    pub fn open_with_map(
+        paths: &[PathBuf],
+        options: &ScanOptions,
+        opener: Arc<dyn Opener>,
+        map: Option<BatchMap>,
+    ) -> Result<ScanPlan, ScanError> {
         let Some(first_path) = paths.first() else {
             return Err(ScanError::usage("no file given"));
         };
         let ctx = Arc::new(Ctx {
             opener,
+            map,
             stats: Arc::new(ScanStats::default()),
         });
         let mut spec: Option<Spec> = None;
@@ -904,10 +932,16 @@ impl RowGroupTask {
                 let projected = b
                     .project(&indices)
                     .map_err(|e| at(ErrorKind::Internal(redact(&e.to_string()))))?;
-                out.mem.grow(projected.get_array_memory_size() as u64);
-                task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
-                out.rows_returned += projected.num_rows() as u64;
-                out.batches.push(projected);
+                let mapped = match &f.ctx.map {
+                    Some(map) => map(projected).map_err(at)?,
+                    None => Some(projected),
+                };
+                if let Some(projected) = mapped {
+                    out.mem.grow(projected.get_array_memory_size() as u64);
+                    task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
+                    out.rows_returned += projected.num_rows() as u64;
+                    out.batches.push(projected);
+                }
             }
         }
         if out.rows_read != self.rows() {

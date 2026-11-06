@@ -1,0 +1,12 @@
+# Queries that need SQL beyond slice 4 (SELECT without FROM, VALUES, ORDER BY, aggregates, subqueries): they must answer `not supported yet` until the slice that brings the construct; remove a line when its query passes.
+avg_decimal
+case_guard_around_division
+coalesce_does_not_fit_38_digits
+decimal_compared_with_double
+decimal_plus_double
+divide_decimals
+divide_integers
+division_by_zero
+division_precision_too_large
+exponent_literal_is_exact
+stddev_is_double

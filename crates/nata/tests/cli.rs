@@ -1,5 +1,4 @@
-//! The CLI must fail loudly until the engine exists: exit code 2 and a
-//! `not supported yet` message, never a wrong or empty result.
+//! What is not there yet must fail loudly: exit code 2 and a `not supported yet` message, never a wrong or empty result.
 
 use std::process::Command;
 
@@ -11,7 +10,7 @@ fn nata(args: &[&str]) -> std::process::Output {
 }
 
 #[test]
-fn sql_is_not_supported_yet() {
+fn sql_outside_the_subset_is_not_supported_yet() {
     let out = nata(&["sql", "--csv", "-c", "SELECT 1"]);
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty(), "must not print a result");

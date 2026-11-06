@@ -179,7 +179,10 @@ def cmd_gen(args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="sqlfuzz")
-    ap.add_argument("cmd", choices=["run", "prove", "gen"])
+    ap.add_argument("cmd", choices=["run", "prove", "gen", "run-subset", "prove-subset", "replay-subset"])
+    ap.add_argument("--oracle-optimizer", action="store_true", help="run-subset: leave DuckDB's optimizer on in the oracle")
+    ap.add_argument("--batch", type=int, default=0, help="replay-subset: the batch of the seed")
+    ap.add_argument("--query", type=int, default=-1, help="replay-subset: one query of the batch (default: all)")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--cases", type=int, default=2000)
     ap.add_argument("--per-db", type=int, default=40)
@@ -191,9 +194,12 @@ def main(argv=None):
     ap.add_argument("--target-cmd", default="", help="adapter command for a real target (see README)")
     ap.add_argument("--duckdb", default="duckdb")
     ap.add_argument("--strict-types", action="store_true")
-    ap.add_argument("--shrink", type=int, default=3, help="run: how many differences to shrink and write")
+    ap.add_argument("--shrink", type=int, default=400, help="run: how many differences to shrink and write")
     ap.add_argument("--shrink-checks", type=int, default=250)
     ap.add_argument("--out", default="sqlfuzz-out")
     ap.add_argument("--count", type=int, default=10)
     args = ap.parse_args(argv)
+    if args.cmd in ("run-subset", "prove-subset", "replay-subset"):
+        from . import subset_cli
+        return {"run-subset": subset_cli.cmd_run, "prove-subset": subset_cli.cmd_prove, "replay-subset": subset_cli.cmd_replay}[args.cmd](args)
     return {"run": cmd_run, "prove": cmd_prove, "gen": cmd_gen}[args.cmd](args)

@@ -1,7 +1,7 @@
 //! `nata`: run a node, or act as a CLI client.
 //!
-//! SQL and the node are not implemented yet: those commands fail with a clear
-//! `not supported yet` error (see `docs/way-of-working.md`, section 3).
+//! The node is not implemented yet: `nata run` fails with a clear `not supported yet` error (see `docs/way-of-working.md`, section 3).
+//! `nata sql` runs `SELECT ... FROM '<parquet>' [WHERE ...] [LIMIT n [OFFSET m]]` and `EXPLAIN [ANALYZE]` of it (slice 4, `docs/supported-sql.md`).
 //! `nata scan` is the minimal developer command of slice 3 (`docs/slices/0001-parquet-scan.md`):
 //! it reads Parquet files and prints CSV.
 
@@ -10,6 +10,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 
+mod sql;
+
 use clap::{Parser, Subcommand};
 use nata_parquet::csv;
 use nata_parquet::{ErrorKind, ParallelConfig, ScanError, ScanOptions, ScanPlan, run_parallel};
@@ -17,7 +19,7 @@ use nata_parquet::{ErrorKind, ParallelConfig, ScanError, ScanOptions, ScanPlan, 
 #[derive(Parser)]
 #[command(
     version,
-    about = "Nata: lakehouse SQL engine (pre-alpha, no queries yet)"
+    about = "Nata: lakehouse SQL engine (pre-alpha: SELECT ... FROM '<parquet>' [WHERE ...] [LIMIT ...] only)"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -28,14 +30,24 @@ struct Cli {
 enum Command {
     /// Start a node.
     Run,
-    /// Run SQL and print the result.
+    /// Run one SQL statement and print the result: `SELECT ... FROM '<file or glob>' [WHERE ...] [LIMIT n [OFFSET m]]`, or `EXPLAIN [ANALYZE]` of it.
+    /// The query is the argument of -c, or stdin. Exit codes: 0 success, 1 a data or I/O error, 2 not supported yet / syntax / bind / usage, 130 Ctrl-C.
     Sql {
-        /// SQL text to run.
+        /// SQL text to run (default: read the query from stdin).
         #[arg(short = 'c', long = "command")]
-        command: String,
-        /// Print the result as CSV (header row, then data rows).
+        command: Option<String>,
+        /// Print the result as CSV (header row, then data rows; NULL as `NULL`) instead of an aligned table.
         #[arg(long)]
         csv: bool,
+        /// Worker threads (default: the available parallelism).
+        #[arg(long)]
+        threads: Option<usize>,
+        /// Row groups in flight at once (default: twice the thread count). Developer option.
+        #[arg(long)]
+        window: Option<usize>,
+        /// Print rows as row groups finish, in no promised order (default: the order of the files, row groups and rows). Developer option.
+        #[arg(long)]
+        unordered: bool,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -187,7 +199,21 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     let what = match cli.command {
         Command::Run => "`nata run` (node startup)",
-        Command::Sql { .. } => "SQL execution",
+        Command::Sql {
+            command,
+            csv,
+            threads,
+            window,
+            unordered,
+        } => {
+            return sql::run(sql::SqlArgs {
+                command,
+                csv,
+                threads,
+                window,
+                unordered,
+            });
+        }
         Command::Scan {
             files,
             columns,

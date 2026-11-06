@@ -1,0 +1,67 @@
+# ADR 0003, decision 6: ban the lenient arrow entry points (and the std wrappers that do the same thing).
+# Paths use the defining crate; a call through a re-export (arrow::compute::...) resolves to the same item.
+# Cast failures become NULL by default: casts go through nata_kernels::strict_cast, the one caller allowed.
+# Fixtures that prove each entry fails: lint-fixtures/ (run lint-fixtures/run.py).
+disallowed-methods = [
+  # --- the six named in the ADR
+  { path = "arrow_arith::numeric::add_wrapping", reason = "wraps silently; use arrow_arith::numeric::add" },
+  { path = "arrow_arith::numeric::sub_wrapping", reason = "wraps silently; use arrow_arith::numeric::sub" },
+  { path = "arrow_arith::numeric::mul_wrapping", reason = "wraps silently; use arrow_arith::numeric::mul" },
+  { path = "arrow_arith::aggregate::sum", reason = "wraps silently; use sum_checked" },
+  { path = "arrow_cast::cast::cast", reason = "default CastOptions return NULL on failure; use strict_cast" },
+  { path = "arrow_cast::cast::cast_with_options", reason = "use strict_cast" },
+
+  # --- found by reading arrow-arith / arrow-array / arrow-buffer 60.1.0 (bench/results/20261104-kernel-lints-and-guards.md)
+  { path = "arrow_arith::numeric::neg_wrapping", reason = "wraps silently on MIN; use arrow_arith::numeric::neg" },
+  { path = "arrow_arith::aggregate::sum_array", reason = "wraps silently (also on dictionary and run-end arrays); use sum_array_checked" },
+  { path = "arrow_arith::aggregate::product", reason = "wraps silently; use product_checked" },
+  { path = "arrow_arith::arithmetic::multiply_fixed_point", reason = "wraps silently and rounds; use multiply_fixed_point_checked or our decimal kernels" },
+  { path = "arrow_arith::arithmetic::multiply_fixed_point_dyn", reason = "wraps silently and rounds; use multiply_fixed_point_checked or our decimal kernels" },
+  { path = "arrow_arith::bitwise::bitwise_shift_left", reason = "the shift amount wraps modulo the bit width; write a checked shift kernel" },
+  { path = "arrow_arith::bitwise::bitwise_shift_right", reason = "the shift amount wraps modulo the bit width; write a checked shift kernel" },
+  { path = "arrow_array::PrimitiveArray::unary_opt", reason = "a None from the closure silently becomes NULL; use try_unary and return an error" },
+  # ArrowNativeTypeOp is the trait behind every arrow integer/decimal op; the *_wrapping methods are public
+  { path = "arrow_array::ArrowNativeTypeOp::add_wrapping", reason = "wraps silently; use add_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::sub_wrapping", reason = "wraps silently; use sub_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::mul_wrapping", reason = "wraps silently; use mul_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::div_wrapping", reason = "wraps on MIN / -1; use div_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::mod_wrapping", reason = "wraps silently; use mod_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::neg_wrapping", reason = "wraps silently on MIN; use neg_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::pow_wrapping", reason = "wraps silently; use pow_checked" },
+  { path = "arrow_array::ArrowNativeTypeOp::div_rem_wrapping", reason = "wraps silently; use div_rem_checked" },
+  # i256 (Decimal256) has inherent wrapping methods
+  { path = "arrow_buffer::i256::wrapping_abs", reason = "wraps silently on MIN" },
+  { path = "arrow_buffer::i256::wrapping_neg", reason = "wraps silently on MIN" },
+  { path = "arrow_buffer::i256::wrapping_add", reason = "wraps silently; use checked_add" },
+  { path = "arrow_buffer::i256::wrapping_sub", reason = "wraps silently; use checked_sub" },
+  { path = "arrow_buffer::i256::wrapping_mul", reason = "wraps silently; use checked_mul" },
+  { path = "arrow_buffer::i256::wrapping_div", reason = "wraps silently; use checked_div" },
+  { path = "arrow_buffer::i256::wrapping_rem", reason = "wraps silently; use checked_rem" },
+  { path = "arrow_buffer::i256::wrapping_div_rem", reason = "wraps silently; use checked_div_rem" },
+  { path = "arrow_buffer::i256::wrapping_pow", reason = "wraps silently; use checked_pow" },
+
+  # --- std wrappers for the integer types SQL INT, BIGINT and DECIMAL(<=38) are stored in. A closure passed to
+  # arrow's unary/binary could otherwise do `x.wrapping_add(1)`, which arithmetic_side_effects does not see.
+  # u64/usize are left out on purpose: hashing legitimately wraps (allow it there, with a reason).
+  { path = "i32::wrapping_add", reason = "wraps silently; use checked_add or overflowing_add" },
+  { path = "i32::wrapping_sub", reason = "wraps silently; use checked_sub or overflowing_sub" },
+  { path = "i32::wrapping_mul", reason = "wraps silently; use checked_mul or overflowing_mul" },
+  { path = "i32::wrapping_neg", reason = "wraps silently on MIN; use checked_neg" },
+  { path = "i32::saturating_add", reason = "clamps silently; use checked_add" },
+  { path = "i32::saturating_sub", reason = "clamps silently; use checked_sub" },
+  { path = "i32::saturating_mul", reason = "clamps silently; use checked_mul" },
+  { path = "i64::wrapping_add", reason = "wraps silently; use checked_add or overflowing_add" },
+  { path = "i64::wrapping_sub", reason = "wraps silently; use checked_sub or overflowing_sub" },
+  { path = "i64::wrapping_mul", reason = "wraps silently; use checked_mul or overflowing_mul" },
+  { path = "i64::wrapping_neg", reason = "wraps silently on MIN; use checked_neg" },
+  { path = "i64::saturating_add", reason = "clamps silently; use checked_add" },
+  { path = "i64::saturating_sub", reason = "clamps silently; use checked_sub" },
+  { path = "i64::saturating_mul", reason = "clamps silently; use checked_mul" },
+  { path = "i128::wrapping_add", reason = "wraps silently; use checked_add or overflowing_add" },
+  { path = "i128::wrapping_sub", reason = "wraps silently; use checked_sub or overflowing_sub" },
+  { path = "i128::wrapping_mul", reason = "wraps silently; use checked_mul or overflowing_mul" },
+  { path = "i128::wrapping_neg", reason = "wraps silently on MIN; use checked_neg" },
+  { path = "i128::saturating_add", reason = "clamps silently; use checked_add" },
+  { path = "i128::saturating_sub", reason = "clamps silently; use checked_sub" },
+  { path = "i128::saturating_mul", reason = "clamps silently; use checked_mul" },
+]

@@ -118,6 +118,24 @@ fn directives_decide_what_passes() {
                 "nata_unsupported",
                 "-- expect-error-nata: division by zero\nSELECT CANDUNSUPPORTED",
             ),
+            // the wanted text may itself be `not supported yet: ...` (a deliberate difference such as date arithmetic)
+            (
+                "nata_unsupported_is_wanted",
+                "-- expect-error-nata: not supported yet: thing\nSELECT CANDUNSUPPORTED",
+            ),
+            // expect-nata: the records Nata must print, whatever the reference says (the candidate prints `v` and `1`)
+            (
+                "nata_rows_ok",
+                "-- expect-nata: v\n-- expect-nata: 1\nSELECT REFFAIL",
+            ),
+            (
+                "nata_rows_differ",
+                "-- expect-nata: v\n-- expect-nata: 2\nSELECT 1",
+            ),
+            (
+                "nata_rows_unsupported",
+                "-- expect-nata: v\nSELECT CANDUNSUPPORTED",
+            ),
             // tolerance.
             ("tol_loose", "-- tolerance: 1e-7\nSELECT REFVAL CANDVAL"),
             ("tol_tight", "-- tolerance: 1e-9\nSELECT REFVAL CANDVAL"),
@@ -134,6 +152,10 @@ fn directives_decide_what_passes() {
     assert_eq!(l("nata_returns_rows"), "MISMATCH");
     assert_eq!(l("nata_wrong_message"), "MISMATCH");
     assert_eq!(l("nata_unsupported"), "UNSUPPORTED");
+    assert_eq!(l("nata_unsupported_is_wanted"), "PASS");
+    assert_eq!(l("nata_rows_ok"), "PASS");
+    assert_eq!(l("nata_rows_differ"), "MISMATCH");
+    assert_eq!(l("nata_rows_unsupported"), "UNSUPPORTED");
     assert_eq!(l("tol_loose"), "PASS");
     assert_eq!(l("tol_tight"), "MISMATCH");
     assert_eq!(l("tol_none"), "MISMATCH");
@@ -199,4 +221,57 @@ fn a_malformed_scan_directive_stops_the_run() {
         "stderr: {}",
         run.stderr
     );
+}
+
+#[test]
+fn a_pending_query_must_answer_not_supported_yet_and_the_list_can_only_shrink() {
+    let dir = std::env::temp_dir().join(format!("nata-check-pending-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&dir);
+    fs::create_dir_all(dir.join("q")).expect("mkdir");
+    fs::create_dir_all(dir.join("data")).expect("mkdir");
+    let reference = script(&dir, "ref", REFERENCE);
+    let candidate = script(&dir, "cand", CANDIDATE);
+    let run = |queries: &[(&str, &str)], pending: &str| {
+        let _ = fs::remove_dir_all(dir.join("q"));
+        fs::create_dir_all(dir.join("q")).expect("mkdir");
+        for (name, sql) in queries {
+            fs::write(dir.join("q").join(format!("{name}.sql")), sql).expect("write");
+        }
+        fs::write(dir.join("q").join("PENDING"), pending).expect("write");
+        let out = Command::new(env!("CARGO_BIN_EXE_nata-check"))
+            .args(["--data", dir.join("data").to_str().expect("path")])
+            .args(["--queries", dir.join("q").to_str().expect("path")])
+            .args(["--reference", reference.to_str().expect("path")])
+            .args(["--candidate", candidate.to_str().expect("path")])
+            .output()
+            .expect("run");
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).into_owned(),
+        )
+    };
+    // a pending query that is still unsupported: the run succeeds
+    let (code, out) = run(
+        &[("a", "SELECT 1"), ("b", "SELECT CANDUNSUPPORTED")],
+        "# later\nb\n",
+    );
+    assert_eq!(code, Some(0), "{out}");
+    assert!(
+        out.contains("PENDING          b") && out.contains("1 pending, 0 pending-wrong"),
+        "{out}"
+    );
+    // it now passes: the list must shrink
+    let (code, out) = run(&[("a", "SELECT 1"), ("b", "SELECT 1")], "b\n");
+    assert_eq!(code, Some(1), "{out}");
+    assert!(out.contains("PENDING-WRONG    b"), "{out}");
+    // it fails in another way
+    let (code, _) = run(&[("b", "SELECT CANDFAIL")], "b\n");
+    assert_eq!(code, Some(1));
+    // an unlisted unsupported query fails the run
+    let (code, _) = run(&[("b", "SELECT CANDUNSUPPORTED")], "");
+    assert_eq!(code, Some(1));
+    // a name that does not exist
+    let (code, out) = run(&[("a", "SELECT 1")], "ghost\n");
+    assert_eq!(code, Some(1), "{out}");
+    let _ = fs::remove_dir_all(&dir);
 }

@@ -1,0 +1,1 @@
+SELECT id FROM '{data}/sqlcheck/types.parquet' WHERE i BETWEEN 2 AND 5 AND dt BETWEEN DATE '1990-01-01' AND DATE '2025-01-01'

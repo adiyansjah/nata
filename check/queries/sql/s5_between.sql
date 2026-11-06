@@ -1,0 +1,1 @@
+SELECT id, i BETWEEN 2 AND 5 AS a, i NOT BETWEEN 2 AND 5 AS b, dec52 BETWEEN 0 AND 2 AS c, dt BETWEEN DATE '1994-01-01' AND DATE '1999-12-31' AS d, s BETWEEN 'a' AND 'b' AS e FROM '{data}/sqlcheck/types.parquet'

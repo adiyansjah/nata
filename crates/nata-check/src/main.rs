@@ -15,6 +15,8 @@
 //! - `-- expect-error-nata: <text>`: only Nata is run, and it must fail with a
 //!   message containing `<text>` (case-insensitive). For deliberate differences
 //!   from DuckDB (see `docs/decimal-rules.md`).
+//! - `-- expect-nata: <csv record>` (repeat per line, the header first): only Nata is run and its output must be exactly these records, in this order.
+//!   For deliberate differences where Nata answers and the reference answers otherwise or errors (dialect section 9).
 //! - `-- scan: <args>`: the candidate is not asked to run the SQL: it runs
 //!   `nata scan <args> --csv` (slice 3, the Parquet scan before SQL exists), while the
 //!   reference still runs the SQL of the file. `<args>` are split like a shell would
@@ -26,6 +28,10 @@
 //!   (`3.5` equals `3.500000`). Other cells must match exactly. Rows are sorted as
 //!   text when there is no `ORDER BY`, so a tolerance query with several rows
 //!   needs one.
+//!
+//! A directory may hold a `PENDING` file: one query name per line (`#` starts a comment), the queries that need SQL the engine does not have yet.
+//! A pending query must answer `not supported yet` (reported `PENDING`, and the run still succeeds); if it passes, or fails in any other way, the run fails
+//! (a pending query that now passes must be removed from the list, so that the list can only shrink and nothing hides behind it).
 //!
 //! A malformed directive is an error, never a silently ignored comment.
 //!
@@ -93,6 +99,8 @@ impl Outcome {
 struct Directives {
     expect_error: bool,
     expect_error_nata: Option<String>,
+    /// Records Nata must print (the reference is not consulted).
+    expect_nata: Option<Vec<String>>,
     tolerance: Option<f64>,
     /// The arguments of `nata scan` (before `{data}` is substituted).
     scan: Option<Vec<String>>,
@@ -118,6 +126,16 @@ fn parse_directives(sql: &str) -> Result<(Directives, String), String> {
                     return Err("`expect-error-nata:` needs the text to look for".into());
                 }
                 d.expect_error_nata = Some(wanted.to_string());
+                continue;
+            }
+            if let Some(rest) = t
+                .trim_start_matches('-')
+                .trim_start()
+                .strip_prefix("expect-nata:")
+            {
+                d.expect_nata
+                    .get_or_insert_with(Vec::new)
+                    .push(rest.strip_prefix(' ').unwrap_or(rest).to_string());
                 continue;
             }
             if let Some(rest) = body.strip_prefix("tolerance:") {
@@ -151,6 +169,11 @@ fn parse_directives(sql: &str) -> Result<(Directives, String), String> {
     }
     if d.expect_error && d.expect_error_nata.is_some() {
         return Err("`expect-error` and `expect-error-nata:` cannot be combined".into());
+    }
+    if d.expect_nata.is_some()
+        && (d.expect_error || d.expect_error_nata.is_some() || d.scan.is_some())
+    {
+        return Err("`expect-nata:` cannot be combined with `expect-error`, `expect-error-nata:` or `scan:`".into());
     }
     Ok((d, kept.join("\n")))
 }
@@ -217,7 +240,9 @@ fn run(args: Args) -> Result<bool> {
         bail!("no *.sql files in {}", args.queries.display());
     }
 
+    let pending = read_pending(&args.queries)?;
     let mut counts = [0usize; 5];
+    let (mut pending_ok, mut pending_bad) = (0usize, 0usize);
     for path in &queries {
         let name = path
             .file_stem()
@@ -234,6 +259,23 @@ fn run(args: Args) -> Result<bool> {
         let sql = substitute_data(&sql, &data);
         let outcome = check_query(&args.reference, &candidate, &sql, &directives);
 
+        if pending.contains(&name) {
+            match &outcome {
+                Outcome::Unsupported(m) => {
+                    pending_ok += 1;
+                    println!("PENDING          {name}\n    {m}");
+                }
+                other => {
+                    pending_bad += 1;
+                    println!(
+                        "PENDING-WRONG    {name}\n    listed in PENDING but the outcome is {}{}: remove it from PENDING if it passes",
+                        other.label(),
+                        other.detail().map_or(String::new(), |d| format!(" ({d})"))
+                    );
+                }
+            }
+            continue;
+        }
         let slot = match outcome {
             Outcome::Pass => 0,
             Outcome::Mismatch(_) => 1,
@@ -252,10 +294,37 @@ fn run(args: Args) -> Result<bool> {
     let [pass, mismatch, unsupported, error, reference_error] = counts;
     println!(
         "\n{} queries: {pass} pass, {mismatch} mismatch, {unsupported} unsupported, \
-         {error} error, {reference_error} reference-error",
+         {error} error, {reference_error} reference-error, {pending_ok} pending, {pending_bad} pending-wrong",
         queries.len()
     );
-    Ok(pass == queries.len())
+    let unknown: Vec<&String> = pending
+        .iter()
+        .filter(|p| {
+            !queries
+                .iter()
+                .any(|q| q.file_stem().is_some_and(|s| s.to_string_lossy() == **p))
+        })
+        .collect();
+    if !unknown.is_empty() {
+        println!("PENDING lists queries that do not exist: {unknown:?}");
+    }
+    Ok(pass + pending_ok == queries.len() && pending_bad == 0 && unknown.is_empty())
+}
+
+/// The names in `<dir>/PENDING`, if the file exists.
+fn read_pending(dir: &Path) -> Result<std::collections::BTreeSet<String>> {
+    let path = dir.join("PENDING");
+    if !path.exists() {
+        return Ok(std::collections::BTreeSet::new());
+    }
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    Ok(text
+        .lines()
+        .map(|l| l.split('#').next().unwrap_or("").trim())
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect())
 }
 
 fn default_candidate() -> Result<PathBuf> {
@@ -306,14 +375,31 @@ fn check_query(reference: &Path, candidate: &Path, sql: &str, d: &Directives) ->
         None => run_engine(candidate, &["sql", "--csv", "-c", sql]),
     };
 
+    // Deliberate difference in the rows: the reference is not consulted.
+    if let Some(records) = &d.expect_nata {
+        return match run_candidate() {
+            Run::Rows(text) => {
+                let got = split_records(&text);
+                if &got == records {
+                    Outcome::Pass
+                } else {
+                    Outcome::Mismatch(format!("expected the records {records:?}, got {got:?}"))
+                }
+            }
+            Run::Failed(m) if m.contains("not supported yet") => Outcome::Unsupported(m),
+            Run::Failed(m) | Run::Launch(m) => Outcome::CandidateError(m),
+        };
+    }
+
     // Deliberate difference: the reference is not consulted.
     if let Some(wanted) = &d.expect_error_nata {
         return match run_candidate() {
             Run::Rows(_) => Outcome::Mismatch(format!(
                 "expected an error mentioning {wanted:?}, but the candidate returned a result"
             )),
-            Run::Failed(m) if m.contains("not supported yet") => Outcome::Unsupported(m),
+            // the wanted text is looked for first: a deliberate difference may BE `not supported yet: ...` (dialect section 9)
             Run::Failed(m) if m.to_lowercase().contains(&wanted.to_lowercase()) => Outcome::Pass,
+            Run::Failed(m) if m.contains("not supported yet") => Outcome::Unsupported(m),
             Run::Failed(m) => Outcome::Mismatch(format!("error does not mention {wanted:?}: {m}")),
             Run::Launch(m) => Outcome::CandidateError(m),
         };

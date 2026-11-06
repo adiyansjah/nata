@@ -1,0 +1,38 @@
+[package]
+name = "nata-exec"
+description = "Execution of the logical plans of nata-sql (slice 4): strict expression evaluation on Arrow batches, filter, projection, limit, the scan with its pushed conjuncts, EXPLAIN ANALYZE"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+nata-sql = { path = "../nata-sql" }
+nata-parquet = { path = "../nata-parquet" }
+# `strict_cast` unpacks the scan's dictionary strings (the one sanctioned caller of arrow's cast)
+nata-kernels = { path = "../nata-kernels" }
+arrow-array = "60"
+arrow-buffer = "60"
+arrow-schema = "60"
+arrow-select = "60"
+
+[dev-dependencies]
+parquet = "60"
+
+# The workspace lints, repeated (cargo does not allow `workspace = true` plus extra entries), and the ban of the lenient arrow entry points of
+# ADR 0003 decision 6 (clippy.toml is a copy of nata-kernels'): every conversion goes through `nata_kernels::strict_cast` or our own checked code.
+# `arithmetic_side_effects` is not enabled (index arithmetic is everywhere); value arithmetic is written with checked operations and tested.
+[lints.rust]
+unsafe_code = "forbid"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+
+[lints.clippy]
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "warn"
+dbg_macro = "deny"
+disallowed_methods = "deny"
+cast_possible_truncation = "deny"
+cast_possible_wrap = "deny"
+allow_attributes_without_reason = "deny"

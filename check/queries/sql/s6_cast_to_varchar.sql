@@ -1,0 +1,1 @@
+SELECT id, CAST(i AS VARCHAR) AS a, CAST(dec52 AS VARCHAR) AS b, CAST(dt AS VARCHAR) AS c, CAST(f AS VARCHAR) AS d, CAST(dec33 AS VARCHAR) AS e, CAST(dec3810 AS VARCHAR) AS g, CAST(b AS VARCHAR) AS h FROM '{data}/sqlcheck/types.parquet'

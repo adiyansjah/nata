@@ -10,6 +10,10 @@ rust-version.workspace = true
 [dependencies]
 clap.workspace = true
 nata-parquet = { path = "../nata-parquet" }
+nata-sql = { path = "../nata-sql" }
+nata-exec = { path = "../nata-exec" }
+# SIGINT (Ctrl-C) cancels the running query: the one place that needs a signal handler, and the workspace forbids `unsafe` in our own code
+signal-hook = "0.4"
 
 [dev-dependencies]
 arrow-array = "60"

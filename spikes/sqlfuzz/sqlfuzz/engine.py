@@ -3,7 +3,9 @@
 import json, os, re, subprocess, tempfile
 from dataclasses import dataclass, field
 
-MARK = re.compile(r'^\[\{"q":"QID:(\d+):([TR])"\}\]$')
+# an error in the middle of a result leaves the JSON writer's opening `[` on the line of the next marker: accept it
+MARK = re.compile(r'^\[?\[\{"q":"QID:(\d+):([TR])"\}\]$')
+ERROR_START = re.compile(r'^\w[\w ]* Error: ')
 
 
 @dataclass
@@ -47,10 +49,13 @@ class DuckDB:
             if m: cur = (int(m.group(1)), m.group(2)); chunks[cur] = []
             elif cur is not None: chunks[cur].append(ln)
         out = {}
+        # the k-th error message of stderr belongs to the k-th query that failed (the CLI goes on after an error)
+        errors = [m.strip().split("\n")[0][:200] for m in re.split(r"\n(?=\w[\w ]* Error: )", "\n" + p.stderr) if ERROR_START.match(m.strip())]
+        failed = iter(errors)
         for cid, _ in cases:
             t, r = chunks.get((cid, "T")), chunks.get((cid, "R"))
-            if not t or not r or not "".join(r).strip():
-                out[cid] = Result(False, error=self._err(p.stderr, cid) or "error")
+            if not t or not r or "".join(r).strip() in ("", "["):
+                out[cid] = Result(False, error=next(failed, "") or self._err(p.stderr, cid) or "error")
                 continue
             try:
                 desc = json.loads("\n".join(t))

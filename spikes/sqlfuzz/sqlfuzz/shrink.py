@@ -10,11 +10,12 @@ SIMPLE = (Bin, Fn, Case, Neg, Cast, Not, Between, InList, Like, IsNull, Distinct
 
 def here(n):
     """Simpler replacements for node n itself."""
-    if isinstance(n, Select):
+    if isinstance(n, Select) or type(n).__name__ == "SubsetSelect":
         if n.where is not None: yield replace(n, where=None)
         if n.having is not None: yield replace(n, having=None)
         if n.order: yield replace(n, order=(), total=False, limit=None)
-        if n.limit is not None: yield replace(n, limit=None)
+        if n.limit is not None: yield replace(n, limit=None, offset=None) if hasattr(n, "offset") else replace(n, limit=None)
+        if getattr(n, "offset", None) is not None: yield replace(n, offset=None)
         if n.distinct: yield replace(n, distinct=False)
         if len(n.items) > 1:
             for i in range(len(n.items)): yield replace(n, items=n.items[:i] + n.items[i + 1:])

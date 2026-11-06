@@ -1,0 +1,1 @@
+SELECT id, i IN (1, 2, 3) AS a, i NOT IN (1, 2, 3) AS b, s IN ('a', 'A', 'é') AS c, dt IN (DATE '1994-01-01', DATE '2000-02-29') AS d, dec52 IN (1.5, 2, 3.00) AS e FROM '{data}/sqlcheck/types.parquet'

@@ -160,6 +160,21 @@ pub fn format_decimal(unscaled: i128, scale: u8) -> String {
     }
 }
 
+/// The text of a `DECIMAL(precision, scale)` value as DuckDB prints it: `format_decimal`, and no leading zero when every digit is a fraction digit
+/// (`DECIMAL(3,3)` prints `.500` and `-.500`, `DECIMAL(4,3)` prints `0.500`; DuckDB 2.0.0).
+pub fn format_decimal_typed(unscaled: i128, precision: u8, scale: u8) -> String {
+    let text = format_decimal(unscaled, scale);
+    if scale > 0 && precision == scale {
+        if let Some(rest) = text.strip_prefix("0.") {
+            return format!(".{rest}");
+        }
+        if let Some(rest) = text.strip_prefix("-0.") {
+            return format!("-.{rest}");
+        }
+    }
+    text
+}
+
 pub fn format_blob(bytes: &[u8]) -> String {
     let mut s = String::new();
     for &b in bytes {
@@ -174,6 +189,11 @@ pub fn format_blob(bytes: &[u8]) -> String {
 
 fn unsupported(t: &DataType) -> ScanError {
     ScanError::not_supported(format!("CSV output of a column of Arrow type {t}"))
+}
+
+/// The text of row `i` of a column (`None` for NULL), the text the CSV writer prints before quoting.
+pub fn cell_text(col: &dyn Array, i: usize) -> Result<Option<String>, ScanError> {
+    cell(col, i)
 }
 
 /// The text of row `i` of a column (`None` for NULL).
@@ -238,23 +258,25 @@ fn cell(col: &dyn Array, i: usize) -> Result<Option<String>, ScanError> {
                 .ok_or_else(bad)?
                 .value(i),
         ),
-        DataType::Decimal64(_, s) => {
+        DataType::Decimal64(p, s) => {
             let s = u8::try_from(*s).map_err(|_| bad())?;
-            format_decimal(
+            format_decimal_typed(
                 i128::from(
                     col.as_primitive_opt::<Decimal64Type>()
                         .ok_or_else(bad)?
                         .value(i),
                 ),
+                *p,
                 s,
             )
         }
-        DataType::Decimal128(_, s) => {
+        DataType::Decimal128(p, s) => {
             let s = u8::try_from(*s).map_err(|_| bad())?;
-            format_decimal(
+            format_decimal_typed(
                 col.as_primitive_opt::<Decimal128Type>()
                     .ok_or_else(bad)?
                     .value(i),
+                *p,
                 s,
             )
         }
@@ -372,6 +394,13 @@ mod tests {
         assert_eq!(format_decimal(-5, 2), "-0.05");
         assert_eq!(format_decimal(123, 0), "123");
         assert_eq!(format_decimal(0, 3), "0.000");
+        // DuckDB prints a decimal whose precision equals its scale without the leading zero
+        assert_eq!(format_decimal_typed(500, 3, 3), ".500");
+        assert_eq!(format_decimal_typed(-500, 3, 3), "-.500");
+        assert_eq!(format_decimal_typed(0, 3, 3), ".000");
+        assert_eq!(format_decimal_typed(500, 4, 3), "0.500");
+        assert_eq!(format_decimal_typed(1500, 4, 3), "1.500");
+        assert_eq!(format_decimal_typed(7, 2, 0), "7");
         assert_eq!(
             format_blob(&[0, 0x41, 0xFF, 0x27, 0x5C, 0x22]),
             "\\x00A\\xFF\\x27\\x5C\\x22"

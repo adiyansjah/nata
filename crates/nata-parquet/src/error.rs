@@ -22,6 +22,13 @@ pub enum ErrorKind {
     Internal(String),
     /// The scan was cancelled from outside before it finished; what was delivered is a prefix of the result, never the whole of it.
     Cancelled(String),
+    /// An error of the query's own expressions while running (division by zero, an overflow, a value that does not convert): `message` quotes the query,
+    /// never data; `line` and `column` (1-based) are the construct in the query text. Raised by a [`crate::reader::BatchMap`].
+    Eval {
+        message: String,
+        line: u32,
+        column: u32,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,6 +90,14 @@ impl fmt::Display for ScanError {
                 "internal error (a bug, or a file that triggers one): {m}"
             ),
             ErrorKind::Cancelled(m) => write!(f, "cancelled: {m}"),
+            ErrorKind::Eval {
+                message,
+                line,
+                column,
+            } => write!(
+                f,
+                "execution error: {message} (line {line}, column {column})"
+            ),
         }
     }
 }
