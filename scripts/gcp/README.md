@@ -164,3 +164,9 @@ An orchestrator started as a background child of a chat or terminal session is k
 It died mid-cleanup: the VM was deleted, the data disk was not, and the job (50 minutes in, with the longest model check still running)
 was lost. Start long runs as `setsid nohup scripts/gcp/orchestrate.sh run ... > log 2>&1 < /dev/null &` so they survive, and then watch
 the log or the process; the recovery steps in the section above apply if one dies anyway.
+
+## The project's CPU quota (found 2026-11-06)
+
+The project allows 96 vCPUs in total across all regions (`CPUS_ALL_REGIONS`). Runs started in parallel share it: with a 64-vCPU run and an
+8-vCPU run going, a 32-vCPU VM is refused ("Quota 'CPUS_ALL_REGIONS' exceeded. Limit: 96.0 globally"), in every zone. Plan a wave so that
+its machines (peers of a multi-VM run included) add up to at most 96 vCPUs, or start the large run after the others have ended.
