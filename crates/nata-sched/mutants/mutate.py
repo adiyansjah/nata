@@ -170,6 +170,30 @@ def check(slot, name):
         return name, "CAUGHT", detail + (" [loom]" if loom else " [std only]"), time.time() - t0
     return name, "SURVIVED", detail, time.time() - t0
 
+def nightly(name):
+    """The nightly job against a known-bad scheduler: copy the repository (without target, data, .git) to target/nightly-mutant, apply one mutant, run the same
+    command as the workflow. The job must exit non-zero (red). The copy is deleted at the end."""
+    if name not in M:
+        print(f"no mutant {name!r}"); return 2
+    dst = os.path.join(ROOT, "target", "nightly-mutant")
+    shutil.rmtree(dst, ignore_errors=True)
+    skip = shutil.ignore_patterns("target", "data", ".git", "__pycache__")
+    shutil.copytree(ROOT, dst, ignore=skip, symlinks=True)
+    for path, old, new in M[name][1]:
+        fp = os.path.join(dst, "crates", "nata-sched", path)
+        text = open(fp).read()
+        if text.count(old) != 1:
+            print(f"INVALID: anchor found {text.count(old)} times in {path}"); shutil.rmtree(dst, ignore_errors=True); return 2
+        open(fp, "w").write(text.replace(old, new))
+    env = {"LOOM_MAX_PREEMPTIONS": "3", "SCHED_FAIL_FAST": "1", "SCHED_TIMEOUT": "3000", "CARGO_TARGET_DIR": os.path.join(dst, "target", "loom")}
+    t0 = time.time()
+    rc, out = sh(["crates/nata-sched/run_loom.sh"], dst, env, 6 * 3600)
+    print(out.strip()[-1500:])
+    red = rc != 0
+    print(f"NIGHTLY-LOOM against {name}: exit {rc} after {time.time() - t0:.0f} s -> the job goes {'RED (as it must)' if red else 'GREEN (the nightly cannot see this bug)'}")
+    shutil.rmtree(dst, ignore_errors=True)
+    return 0 if red else 1
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--jobs", type=int, default=3)
@@ -178,7 +202,11 @@ def main():
     ap.add_argument("--control", action="store_true")
     ap.add_argument("--dry", action="store_true", help="only check that every anchor is found and the mutant compiles (std)")
     ap.add_argument("--out")
+    ap.add_argument("--nightly", metavar="MUTANT", help="R9: run the NIGHTLY loom job itself (crates/nata-sched/run_loom.sh at preemption bound 3, fail fast, as in "
+                    ".github/workflows/nightly.yml) on a copy of the repository with this mutant applied; exit 0 when the job goes red, 1 when it stays green")
     a = ap.parse_args()
+    if a.nightly:
+        return nightly(a.nightly)
     if a.list:
         for n, (why, _) in M.items():
             print(f"{n}: {why}")

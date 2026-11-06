@@ -1,0 +1,173 @@
+name: nightly
+
+# The deep checks that are too long for every push (register item R9, slice 4): the scheduler's loom suite at preemption bound 3 (the per-push suite runs at
+# bound 2), and long fuzz runs with their seeds printed. Scheduled, and by hand (workflow_dispatch) with a seed of your own. A red run is a bug in the
+# scheduler / the scan / the SQL engine OR a check that no longer finishes in its time box: read the log, the seed to replay is printed at the top of each job.
+#
+# It must be able to go red: crates/nata-sched/mutants/mutate.py holds the known-bad schedulers, and `mutate.py --nightly <mutant>` runs the loom command of this
+# file (run_loom.sh at preemption bound 3) against a copy of the repository with one of them applied: it must exit 0 = the job went red. The record
+# bench/results/20261106-slice4-carried-in.md, section R9, has those runs, the times of every part, and the run on main (green).
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Seed of the fuzz runs (default: today's date, YYYYMMDD)"
+        required: false
+      sql_cases:
+        description: "Queries of the SQL subset fuzzer"
+        required: false
+        default: "100000"
+      file_cases:
+        description: "Cases per shape of the damaged-file fuzz"
+        required: false
+        default: "30000"
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  seeds:
+    # one place that decides the seed, so that every job prints and uses the same one
+    name: seeds
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      seed: ${{ steps.s.outputs.seed }}
+    steps:
+      - id: s
+        run: |
+          seed="${{ github.event.inputs.seed }}"
+          [ -n "$seed" ] || seed=$(date -u +%Y%m%d)
+          echo "seed=$seed" >> "$GITHUB_OUTPUT"
+          echo "SEED $seed (replay: the commands in the jobs below with this seed)"
+
+  loom-models:
+    # the names of the loom models, from the test binary itself, so that a model added later is run without touching this file
+    name: list the loom models
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      models: ${{ steps.list.outputs.models }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: loom
+      - id: list
+        env:
+          RUSTFLAGS: --cfg nata_loom
+          CARGO_TARGET_DIR: target/loom
+        run: |
+          models=$(cargo test --release -p nata-sched --test loom_sched -- --list 2>/dev/null | sed -n 's/: test$//p' | jq -R . | jq -sc .)
+          echo "models=$models" >> "$GITHUB_OUTPUT"
+          echo "$models" | jq -r '.[]'
+          [ "$(echo "$models" | jq length)" -gt 0 ] || { echo "no loom model found"; exit 1; }
+
+  loom:
+    # The model checker over every interleaving up to 3 preemptions (the per-push suite runs at 2), ONE JOB PER MODEL: the models differ by orders of magnitude
+    # in size (millions of executions each), and a job has a time box. crates/nata-sched/run_loom.sh prints a row per model (name, rc, executions, bound, wall) and
+    # exits non-zero when the model fails or does not finish in SCHED_TIMEOUT seconds (the suite grew past its time box: a failure, never a silent pass).
+    name: loom bound 3, ${{ matrix.model }}
+    needs: loom-models
+    runs-on: ubuntu-latest
+    timeout-minutes: 90          # build (a few minutes) + SCHED_TIMEOUT below
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJson(needs.loom-models.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain (from rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: loom
+      - name: Loom model at preemption bound 3
+        shell: bash          # -eo pipefail: the exit status of run_loom.sh, not of tee
+        env:
+          LOOM_MAX_PREEMPTIONS: "3"
+          SCHED_TIMEOUT: "3000"    # seconds for the model: how long bound 3 takes is measured by this job, not locally
+          SCHED_OFFLINE: ""
+          CARGO_TARGET_DIR: target/loom
+          SCHED_ONLY: ^${{ matrix.model }}$
+        run: |
+          echo "loom: preemption bound $LOOM_MAX_PREEMPTIONS, model ${{ matrix.model }}, $SCHED_TIMEOUT s"
+          crates/nata-sched/run_loom.sh | tee loom-bound3.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loom-bound3-${{ matrix.model }}
+          path: loom-bound3.txt
+
+  fuzz-sql:
+    # the grammar fuzzer of the SQL subset against DuckDB through `nata sql` (spikes/sqlfuzz): 100,000 queries instead of the 20,000 of the per-push job
+    name: SQL subset fuzzer (${{ matrix.os }})
+    needs: seeds
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Install DuckDB (the build for this CPU)
+        run: |
+          case "$(uname -m)" in
+            x86_64) asset=duckdb-cli-linux-amd64.tar.gz ;;
+            aarch64) asset=duckdb-cli-linux-arm64.tar.gz ;;
+            *) echo "unsupported CPU $(uname -m)"; exit 1 ;;
+          esac
+          mkdir -p "$RUNNER_TEMP/duckdb" && cd "$RUNNER_TEMP/duckdb"
+          gh release download v2.0.0 --repo duckdb/duckdb -p "$asset"
+          tar -xzf "$asset"
+          echo "$PWD" >> "$GITHUB_PATH"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: cargo build --release -p nata
+      - name: 100,000 queries (seed printed)
+        working-directory: spikes/sqlfuzz
+        env:
+          NATA_BIN: ${{ github.workspace }}/target/release/nata
+          SEED: ${{ needs.seeds.outputs.seed }}
+          CASES: ${{ github.event.inputs.sql_cases || '100000' }}
+        run: |
+          echo "SEED $SEED, $CASES queries; replay a failure with: python3 -I fuzz.py replay-subset --seed $SEED --batch B --query Q --target-cmd 'python3 -I adapters/nata_adapter.py'"
+          python3 -I fuzz.py run-subset --seed "$SEED" --cases "$CASES" --jobs 2 --target-cmd "python3 -I adapters/nata_adapter.py" --out "$RUNNER_TEMP/fuzz-out"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: sqlfuzz-failures-${{ matrix.os }}
+          path: ${{ runner.temp }}/fuzz-out
+
+  fuzz-files:
+    # damaged Parquet files (byte flips, truncations, zeroed and random ranges) through the scan at 1 and 4 threads (crates/nata-parquet/tests/fuzz_files.rs):
+    # no panic, no hang, no leak, errors name the file, 1 and 4 threads agree; the checksummed shapes must never read as other rows. 30,000 cases per shape
+    # instead of the 3,000 of the per-push suite.
+    name: damaged-file fuzz (${{ matrix.os }})
+    needs: seeds
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Damaged files (seed printed)
+        env:
+          NATA_FUZZ_SEED: ${{ needs.seeds.outputs.seed }}
+          NATA_FUZZ_CASES: ${{ github.event.inputs.file_cases || '30000' }}
+        run: |
+          echo "SEED $NATA_FUZZ_SEED, $NATA_FUZZ_CASES cases per shape; replay one case with NATA_FUZZ_SEED=$NATA_FUZZ_SEED NATA_FUZZ_ONLY=<shape>:<case>"
+          cargo test --release -p nata-parquet --test fuzz_files -- --nocapture
