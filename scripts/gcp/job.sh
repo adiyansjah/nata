@@ -308,6 +308,13 @@ case "$JOB" in
       case "$JOB" in scale-sf100) MEM=4096; GR=512 ;; *) MEM=1024; GR=128 ;; esac
       run sc-ob bash -c 'ulimit -n 1024; cd "$SRC/spikes/operators-beyond" && { echo "ulimit -n: $(ulimit -n)"; OB_SPILL_ONLY='"$([ "$JOB" = scale-sf100 ] && echo 1 || echo 0)"' OB_THREADS=32 OB_MEM_MB='"$MEM"' OB_GRACE='"$GR"' ./check.sh "$SRC/data/tpch-sf'"$SF"'" "$WORK/ob-scale"; echo "exit status: $?"; } > "$RESULTS/operators-scale-run.txt" 2>&1; cp "$WORK/ob-scale/summary.txt" "$RESULTS/operators-scale-summary.txt" 2>/dev/null; rm -rf "$WORK/ob-scale"; true'
     fi ;;
+  scanbench)
+    # slice 3 (docs/slices/0001-parquet-scan.md): R2 pruning on SF1 lineitem sorted by l_shipdate, and the 1-8 thread scalability of
+    # `nata scan --count` on SF1 and SF10 (crates/nata-bench/scan-bench.sh). Intended machines: n4a-highcpu-8 and c3d-highcpu-8.
+    run sb-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
+    run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
+    run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
