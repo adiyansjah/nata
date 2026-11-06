@@ -1,0 +1,92 @@
+ok   ban/add_wrapping                         clippy::disallowed_methods x1
+ok   ban/bitwise_shift_left                   clippy::disallowed_methods x1
+ok   ban/bitwise_shift_right                  clippy::disallowed_methods x1
+ok   ban/cast                                 clippy::disallowed_methods x1
+ok   ban/cast_with_options                    clippy::disallowed_methods x1
+ok   ban/cast_with_safe_true                  clippy::disallowed_methods x1
+ok   ban/i256_wrapping_abs                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_add                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_div                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_div_rem                clippy::disallowed_methods x1
+ok   ban/i256_wrapping_mul                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_neg                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_pow                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_rem                    clippy::disallowed_methods x1
+ok   ban/i256_wrapping_sub                    clippy::disallowed_methods x1
+ok   ban/mul_wrapping                         clippy::disallowed_methods x1
+ok   ban/multiply_fixed_point                 clippy::disallowed_methods x1
+ok   ban/multiply_fixed_point_dyn             clippy::disallowed_methods x1
+ok   ban/native_add_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_add_wrapping_on_decimal_native clippy::disallowed_methods x1
+ok   ban/native_div_rem_wrapping              clippy::disallowed_methods x1
+ok   ban/native_div_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_mod_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_mul_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_neg_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_pow_wrapping                  clippy::disallowed_methods x1
+ok   ban/native_sub_wrapping                  clippy::disallowed_methods x1
+ok   ban/neg_wrapping                         clippy::disallowed_methods x1
+ok   ban/product                              clippy::disallowed_methods x1
+ok   ban/reexport_add_wrapping                clippy::disallowed_methods x1
+ok   ban/reexport_cast                        clippy::disallowed_methods x1
+ok   ban/reexport_cast_with_options           clippy::disallowed_methods x1
+ok   ban/reexport_sum                         clippy::disallowed_methods x1
+ok   ban/std_i128_saturating_add              clippy::disallowed_methods x1
+ok   ban/std_i128_saturating_mul              clippy::disallowed_methods x1
+ok   ban/std_i128_saturating_sub              clippy::disallowed_methods x1
+ok   ban/std_i128_wrapping_add                clippy::disallowed_methods x1
+ok   ban/std_i128_wrapping_mul                clippy::disallowed_methods x1
+ok   ban/std_i128_wrapping_neg                clippy::disallowed_methods x1
+ok   ban/std_i128_wrapping_sub                clippy::disallowed_methods x1
+ok   ban/std_i32_saturating_add               clippy::disallowed_methods x1
+ok   ban/std_i32_saturating_mul               clippy::disallowed_methods x1
+ok   ban/std_i32_saturating_sub               clippy::disallowed_methods x1
+ok   ban/std_i32_wrapping_add                 clippy::disallowed_methods x1
+ok   ban/std_i32_wrapping_mul                 clippy::disallowed_methods x1
+ok   ban/std_i32_wrapping_neg                 clippy::disallowed_methods x1
+ok   ban/std_i32_wrapping_sub                 clippy::disallowed_methods x1
+ok   ban/std_i64_saturating_add               clippy::disallowed_methods x1
+ok   ban/std_i64_saturating_mul               clippy::disallowed_methods x1
+ok   ban/std_i64_saturating_sub               clippy::disallowed_methods x1
+ok   ban/std_i64_wrapping_add                 clippy::disallowed_methods x1
+ok   ban/std_i64_wrapping_mul                 clippy::disallowed_methods x1
+ok   ban/std_i64_wrapping_neg                 clippy::disallowed_methods x1
+ok   ban/std_i64_wrapping_sub                 clippy::disallowed_methods x1
+ok   ban/sub_wrapping                         clippy::disallowed_methods x1
+ok   ban/sum                                  clippy::disallowed_methods x1
+ok   ban/sum_array                            clippy::disallowed_methods x1
+ok   ban/unary_opt                            clippy::disallowed_methods x1
+ok   controls/add_checked                     clean
+ok   controls/allow_with_reason               clean
+ok   controls/cast_inside_one_allowed_wrapper clean
+ok   controls/lossless_and_checked_casts      clean
+ok   controls/native_checked_methods          clean
+ok   controls/product_checked                 clean
+ok   controls/std_checked_and_overflowing     clean
+ok   controls/sub_mul_div_checked             clean
+ok   controls/sum_checked                     clean
+ok   controls/unary_try                       clean
+ok   gaps/abs_and_pow                         clean
+ok   gaps/hash_wrapping_u64                   clean
+ok   gaps/int_to_float_cast                   clean
+ok   gaps/shift_left                          clean
+ok   gaps/shift_right                         clean
+ok   lints/allow_without_reason               clippy::allow_attributes_without_reason x1
+ok   lints/arith_add                          clippy::arithmetic_side_effects x1
+ok   lints/arith_add_assign                   clippy::arithmetic_side_effects x1
+ok   lints/arith_div                          clippy::arithmetic_side_effects x1
+ok   lints/arith_in_closure_passed_to_arrow   clippy::arithmetic_side_effects x1
+ok   lints/arith_mul                          clippy::arithmetic_side_effects x1
+ok   lints/arith_neg                          clippy::arithmetic_side_effects x1
+ok   lints/arith_rem                          clippy::arithmetic_side_effects x1
+ok   lints/arith_sub                          clippy::arithmetic_side_effects x1
+ok   lints/cast_truncate_f64_to_i64           clippy::cast_possible_truncation x1
+ok   lints/cast_truncate_i128_to_i64          clippy::cast_possible_truncation x1
+ok   lints/cast_truncate_i64_to_i32           clippy::cast_possible_truncation x1
+ok   lints/cast_truncate_usize_to_u32         clippy::cast_possible_truncation x1
+ok   lints/cast_wrap_u32_to_i32               clippy::cast_possible_wrap x1
+ok   lints/cast_wrap_u64_to_i64               clippy::cast_possible_wrap x1
+ok   sanity: ban/add_wrapping WITHOUT clippy.toml is not flagged clean
+ok   real crate: cargo clippy -p nata-kernels --all-targets -D warnings clean
+
+73 of 73 fixtures fail with the expected lint; 10 of 10 controls are clean; 5 of 5 known gaps still pass clippy (a gap that starts failing means the lint improved)

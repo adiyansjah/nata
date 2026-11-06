@@ -1,0 +1,16 @@
+compared 81 cases (3 tables x 9 queries x 3 executors): 81 identical (42 result sets, 39 errors), 0 different
+
+DuckDB 2.0.0 probes (not compared with our kernels; the Nata rule is the second column):
+expression                                     | DuckDB 2.0.0
+-----------------------------------------------+-------------------------------------------------------------
+BIGINT 1 / 0                                   | inf
+BIGINT 1 // 0                                  | ERROR: Invalid Input Error: Division by zero in expression (1 // 0). Use TRY(...) to re
+BIGINT MIN // -1                               | ERROR: Out of Range Error: Overflow in division of -9223372036854775808 / -1
+BIGINT MIN / -1                                | 9.223372036854776e+18
+BIGINT 1 % 0                                   | ERROR: Invalid Input Error: Division by zero in expression (1 % 0). Use TRY(...) to ret
+BIGINT MIN % -1                                | ERROR: Out of Range Error: Overflow in division of -9223372036854775808 / -1
+TRY(1 // 0)                                    | NULL
+typeof(7 / 2)                                  | DOUBLE
+7 / 2                                          | 3.5
+-7 // 2                                        | -3
+SET error_on_division_by_zero=false; 1 // 0    | NULL

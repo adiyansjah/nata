@@ -1,0 +1,69 @@
+ Downloading crates ...
+  Downloaded rustversion v1.0.23
+  Downloaded lazy_static v1.5.1
+  Downloaded nu-ansi-term v0.50.3
+  Downloaded matchers v0.2.0
+  Downloaded log v0.4.35
+  Downloaded scoped-tls v1.0.1
+  Downloaded generator v0.8.11
+  Downloaded pin-project-lite v0.2.17
+  Downloaded sharded-slab v0.1.7
+  Downloaded thread_local v1.1.10
+  Downloaded smallvec v1.16.4
+  Downloaded tracing-log v0.2.0
+  Downloaded loom v0.7.2
+  Downloaded tracing-core v0.1.36
+  Downloaded tracing-subscriber v0.3.23
+  Downloaded tracing v0.1.44
+   Compiling rustversion v1.0.23
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling once_cell v1.21.4
+   Compiling cfg-if v1.0.5
+   Compiling log v0.4.35
+   Compiling libc v0.2.191
+   Compiling regex-syntax v0.8.11
+   Compiling lazy_static v1.5.1
+   Compiling cc v1.11.0
+   Compiling pin-project-lite v0.2.17
+   Compiling tracing-core v0.1.36
+   Compiling sharded-slab v0.1.7
+   Compiling thread_local v1.1.10
+   Compiling smallvec v1.16.4
+   Compiling nu-ansi-term v0.50.3
+   Compiling scoped-tls v1.0.1
+   Compiling tracing-log v0.2.0
+   Compiling tracing v0.1.44
+   Compiling generator v0.8.11
+   Compiling regex-automata v0.4.18
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling loom v0.7.2
+   Compiling spike-operator-trait v0.0.0 (/mnt/work/src/spikes/operator-trait)
+    Finished `release` profile [optimized] target(s) in 8.24s
+     Running tests/loom_sched.rs (/mnt/work/target-loom/release/deps/loom_sched-30759d59f37c59fa)
+
+running 9 tests
+[loom] a1_idle_workers_always_terminate_on_an_empty_query: 819 executions, preemption bound None
+test a1_idle_workers_always_terminate_on_an_empty_query ... ok
+[loom] c1_cancel_races_with_completion: 22998 executions, preemption bound Some(3)
+test c1_cancel_races_with_completion ... ok
+[loom] c2_cancel_wakes_a_blocked_task: 25939 executions, preemption bound Some(3)
+test c2_cancel_wakes_a_blocked_task ... ok
+[loom] b1_wake_while_running_is_never_lost_one_task: 25914 executions, preemption bound Some(3)
+test b1_wake_while_running_is_never_lost_one_task ... ok
+[loom] c3_cancel_races_with_an_error: 41094 executions, preemption bound Some(3)
+test c3_cancel_races_with_an_error ... ok
+[loom] c4_cancel_races_with_a_dependent_pipeline_start: 74468 executions, preemption bound Some(3)
+test c4_cancel_races_with_a_dependent_pipeline_start ... ok
+[loom] b2_wake_while_running_is_never_lost_two_tasks: 89301 executions, preemption bound Some(3)
+test b2_wake_while_running_is_never_lost_two_tasks ... ok
+test a2_idle_workers_always_terminate_after_a_task_finishes has been running for over 60 seconds
+test b3_wake_from_a_third_thread has been running for over 60 seconds
+[loom] b3_wake_from_a_third_thread: 239372 executions, preemption bound Some(3)
+test b3_wake_from_a_third_thread ... ok
+[loom] a2_idle_workers_always_terminate_after_a_task_finishes: 1400886 executions, preemption bound None
+test a2_idle_workers_always_terminate_after_a_task_finishes ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 138.33s
+

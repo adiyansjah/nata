@@ -1,0 +1,48 @@
+baseline: all tests pass
+
+CAUGHT    div: error flags ignore the selection (every row is checked)
+          by: a_zero_divisor_in_an_unselected_row_is_not_an_error, div_matches_the_scalar_reference_including_errors, min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid
+CAUGHT    div: zero-divisor flag not masked by validity
+          by: a_zero_divisor_in_a_null_slot_is_not_an_error, div_matches_the_scalar_reference_including_errors
+CAUGHT    div: overflow flag not masked by validity
+          by: div_matches_the_scalar_reference_including_errors, min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid
+CAUGHT    div: validity ignores the divisor (zero-in-NULL-divisor raises)
+          by: a_zero_divisor_in_a_null_slot_is_not_an_error, div_matches_the_scalar_reference_including_errors, min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid
+CAUGHT    div: zero check dropped
+          by: a_zero_divisor_in_an_unselected_row_is_not_an_error, div_const_left_follows_the_same_rules, div_const_left_matches_the_scalar_reference_including_errors (+1 more)
+CAUGHT    div: MIN / -1 check dropped
+          by: div_const_left_follows_the_same_rules, div_const_left_matches_the_scalar_reference_including_errors, div_matches_the_scalar_reference_including_errors (+1 more)
+CAUGHT    div: output validity always true
+          by: a_zero_divisor_in_a_null_slot_is_not_an_error, div_matches_the_scalar_reference_including_errors
+CAUGHT    div: rounds toward minus infinity instead of zero
+          by: div_const_left_matches_the_scalar_reference_including_errors, div_matches_the_scalar_reference_including_errors, min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid
+CAUGHT    div: overflow reported ahead of zero
+          by: div_const_left_matches_the_scalar_reference_including_errors, div_matches_the_scalar_reference_including_errors
+CAUGHT    div_const_left: zero flag not masked by validity
+          by: div_const_left_follows_the_same_rules, div_const_left_matches_the_scalar_reference_including_errors
+CAUGHT    div_const_left: ignores the selection
+          by: div_const_left_follows_the_same_rules, div_const_left_matches_the_scalar_reference_including_errors
+CAUGHT    div_const_left: operands swapped
+          by: div_const_left_follows_the_same_rules, div_const_left_matches_the_scalar_reference_including_errors
+CAUGHT    guard split_ne: a NULL comparison counts as TRUE
+          by: filter_ne_drops_nulls_and_respects_the_selection, split_ne_sends_null_comparisons_to_the_else_branch
+CAUGHT    guard split_ne: NULL comparisons vanish from the ELSE branch
+          by: split_ne_sends_null_comparisons_to_the_else_branch
+CAUGHT    guard split_ne: ignores the incoming selection
+          by: filter_ne_drops_nulls_and_respects_the_selection, split_ne_sends_null_comparisons_to_the_else_branch
+CAUGHT    guard split_ne: tests `==` instead of `<>`
+          by: filter_ne_drops_nulls_and_respects_the_selection, split_ne_sends_null_comparisons_to_the_else_branch
+CAUGHT    merge_branches: branch NULLs become valid
+          by: merge_branches_lets_a_later_part_win_on_an_overlap, merge_branches_places_each_part_and_leaves_other_rows_null
+CAUGHT    merge_branches: later branch does not overwrite
+          by: merge_branches_lets_a_later_part_win_on_an_overlap
+CAUGHT    arrow wrapper: compaction skipped (take over all rows)
+          by: a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it, arrow_without_compaction_errors_on_a_row_the_guard_removed, arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row (+6 more)
+CAUGHT    arrow wrapper: selection not folded (every row kept)
+          by: a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it, arrow_without_compaction_errors_on_a_row_the_guard_removed, arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row (+5 more)
+CAUGHT    arrow wrapper: selection dropped from the null-buffer union
+          by: a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it, arrow_without_compaction_errors_on_a_row_the_guard_removed, arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row (+5 more)
+CAUGHT    arrow wrapper: validity bytes inverted
+          by: a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it, arrow_skips_null_slots_by_itself, case_as_selection_splitting_gives_the_else_value_to_guarded_rows (+6 more)
+
+22 of 22 mutations caught, 0 survived

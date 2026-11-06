@@ -1,0 +1,41 @@
+
+thread 'c2_cancel_wakes_a_blocked_task' (58864) panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/rt/execution.rs:216:13:
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None))), (Id(2), Blocked(Location(None)))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'c2_cancel_wakes_a_blocked_task' (58864) panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/rt/thread.rs:276:39:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0:     0x55579fd727b1 - <<std[68c81ae915296b05]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[efd5e57aef94d71e]::fmt::Display>::fmt
+   1:     0x55579fd8760a - core[efd5e57aef94d71e]::fmt::write
+   2:     0x55579fd7724c - <alloc[c23e483dde3f7cfb]::vec::Vec<u8> as core[efd5e57aef94d71e]::io::write::Write>::write_fmt
+   3:     0x55579fd4e6b6 - std[68c81ae915296b05]::panicking::default_hook::{closure#0}
+   4:     0x55579fd6aaf9 - std[68c81ae915296b05]::panicking::default_hook
+   5:     0x55579fce0410 - test[ff178199d140d5fa]::test_main_inner::<test[ff178199d140d5fa]::test_main_static::{closure#0}>::{closure#0}
+   6:     0x55579fd3761a - generator[89eecfa79c388d2d]::detail::gen::catch_unwind_filter::<generator[89eecfa79c388d2d]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+   7:     0x55579fd6ae22 - std[68c81ae915296b05]::panicking::panic_with_hook
+   8:     0x55579fd4e794 - std[68c81ae915296b05]::panicking::panic_handler::{closure#0}
+   9:     0x55579fd46b49 - std[68c81ae915296b05]::sys::backtrace::__rust_end_short_backtrace::<std[68c81ae915296b05]::panicking::panic_handler::{closure#0}, !>
+  10:     0x55579fd4f46d - __rustc[3d2f79520d6fa809]::rust_begin_unwind
+  11:     0x55579fd87d6c - core[efd5e57aef94d71e]::panicking::panic_fmt
+  12:     0x55579fd87d32 - core[efd5e57aef94d71e]::panicking::panic
+  13:     0x55579fd87ae9 - core[efd5e57aef94d71e]::option::unwrap_failed
+  14:     0x55579fd22ada - <scoped_tls[84cd5c319fae6910]::ScopedKey<core[efd5e57aef94d71e]::cell::RefCell<loom[3ec8083d7d957cf5]::rt::scheduler::State>>>::with::<<loom[3ec8083d7d957cf5]::rt::scheduler::Scheduler>::with_state<<loom[3ec8083d7d957cf5]::rt::scheduler::Scheduler>::with_execution<loom[3ec8083d7d957cf5]::rt::branch<<loom[3ec8083d7d957cf5]::rt::object::Ref<loom[3ec8083d7d957cf5]::rt::arc::State>>::branch_action<loom[3ec8083d7d957cf5]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+  15:     0x55579fd2f246 - <loom[3ec8083d7d957cf5]::rt::arc::Arc>::ref_dec
+  16:     0x55579fd1c3d6 - <loom[3ec8083d7d957cf5]::sync::arc::Arc<spike_operator_trait[2b4640bc6f1b6e0f]::sched::Shared> as core[efd5e57aef94d71e]::ops::drop::Drop>::drop
+  17:     0x55579fd15b43 - core[efd5e57aef94d71e]::ptr::drop_glue::<loom[3ec8083d7d957cf5]::sync::arc::Arc<spike_operator_trait[2b4640bc6f1b6e0f]::sched::Shared>>
+  18:     0x55579fd19edc - spike_operator_trait[2b4640bc6f1b6e0f]::sched::worker
+  19:     0x55579fd1e291 - <loom[3ec8083d7d957cf5]::rt::spawn<loom[3ec8083d7d957cf5]::thread::spawn_internal<<spike_operator_trait[2b4640bc6f1b6e0f]::sched::Query>::start::{closure#2}::{closure#0}, ()>::{closure#0}>::{closure#1} as core[efd5e57aef94d71e]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  20:     0x55579fd3079e - <generator[89eecfa79c388d2d]::stack::StackBox<<generator[89eecfa79c388d2d]::gen_impl::GeneratorImpl<core[efd5e57aef94d71e]::option::Option<alloc[c23e483dde3f7cfb]::boxed::Box<dyn core[efd5e57aef94d71e]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[3ec8083d7d957cf5]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+  21:     0x55579fd37ba6 - generator[89eecfa79c388d2d]::detail::gen::gen_init_impl
+  22:     0x55579fd37b49 - generator[89eecfa79c388d2d]::detail::asm::gen_init
+  23:                0x0 - <unknown>
+
+thread 'c2_cancel_wakes_a_blocked_task' (58864) panicked at /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `--test loom_sched`
+
+Caused by:
+  process didn't exit successfully: `/mnt/work/target-loom/release/deps/loom_sched-b788dfe422907eb1` (signal: 6, SIGABRT: process abort signal)
+expect-fail: failed as expected (matched: deadlock|panicked|invariant)

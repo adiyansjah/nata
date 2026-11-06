@@ -1,0 +1,41 @@
+task started from a state other than Queued
+
+---- c2_cancel_wakes_a_blocked_task stdout ----
+
+thread 'c2_cancel_wakes_a_blocked_task' (58624) panicked at src/sched.rs:289:9:
+task started from a state other than Queued
+
+---- c1_cancel_races_with_completion stdout ----
+
+thread 'c1_cancel_races_with_completion' (58623) panicked at src/sched.rs:289:9:
+task started from a state other than Queued
+
+---- c4_cancel_races_with_a_dependent_pipeline_start stdout ----
+
+thread 'c4_cancel_races_with_a_dependent_pipeline_start' (58629) panicked at src/sched.rs:289:9:
+task started from a state other than Queued
+
+---- b2_wake_while_running_is_never_lost_two_tasks stdout ----
+
+thread 'b2_wake_while_running_is_never_lost_two_tasks' (58621) panicked at src/sched.rs:289:9:
+task started from a state other than Queued
+
+---- b3_wake_from_a_third_thread stdout ----
+
+thread 'b3_wake_from_a_third_thread' (58622) panicked at src/sched.rs:289:9:
+task started from a state other than Queued
+
+
+failures:
+    b1_wake_while_running_is_never_lost_one_task
+    b2_wake_while_running_is_never_lost_two_tasks
+    b3_wake_from_a_third_thread
+    c1_cancel_races_with_completion
+    c2_cancel_wakes_a_blocked_task
+    c3_cancel_races_with_an_error
+    c4_cancel_races_with_a_dependent_pipeline_start
+
+test result: FAILED. 2 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 102.79s
+
+error: test failed, to rerun pass `--test loom_sched`
+expect-fail: failed as expected (matched: deadlock|panicked|invariant)
