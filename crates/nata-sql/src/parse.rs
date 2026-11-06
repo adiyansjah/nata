@@ -599,13 +599,15 @@ impl Conv<'_> {
         }
         let sel = match body.as_ref() {
             sp::SetExpr::Select(s) => s,
-            other => {
-                return ns(
-                    Some(other.span()),
-                    end,
-                    &format!("{} (set operations, VALUES, subqueries)", variant(other)),
-                );
+            sp::SetExpr::SetOperation { .. } => {
+                let at = self
+                    .kw_pos(Keyword::UNION)
+                    .or(self.kw_pos(Keyword::INTERSECT))
+                    .or(self.kw_pos(Keyword::EXCEPT));
+                return ns(at, end, "UNION, INTERSECT and EXCEPT (set operations)");
             }
+            sp::SetExpr::Values(v) => return ns(Some(v.span()), end, "VALUES"),
+            other => return ns(Some(other.span()), end, "subqueries"),
         };
         let sp::Select {
             select_token,
@@ -708,12 +710,26 @@ impl Conv<'_> {
         let twj = match from {
             [] => return ns(tok, end, "SELECT without FROM (write FROM 'path')"),
             [one] => one,
-            [_, second, ..] => {
-                return ns(Some(second.span()), end, "more than one table (joins)");
+            [_, ..] => {
+                // the comma that follows the first table
+                let comma = self
+                    .kw_pos(Keyword::FROM)
+                    .and_then(|f| self.tok_at(sp_pos(f)))
+                    .and_then(|i| {
+                        self.toks[i..]
+                            .iter()
+                            .find(|t| t.token == Token::Comma)
+                            .map(|t| t.span)
+                    });
+                return ns(comma, end, "more than one table (joins)");
             }
         };
         if !twj.joins.is_empty() {
-            return ns(Some(twj.span()), end, "joins");
+            return ns(
+                self.kw_pos(Keyword::JOIN).or(Some(twj.span())),
+                end,
+                "joins",
+            );
         }
         let sp::TableFactor::Table {
             name,
@@ -754,7 +770,20 @@ impl Conv<'_> {
         }
         match name.0.as_slice() {
             [sp::ObjectNamePart::Identifier(id)] if id.quote_style == Some('\'') => {
-                Ok((id.value.clone(), Span(sp_pos(id.span))))
+                // the crate gives a quoted table name no span: the string is the token after the word FROM
+                let pos = if id.span.start.line > 0 {
+                    sp_pos(id.span)
+                } else {
+                    self.kw_pos(Keyword::FROM)
+                        .and_then(|f| self.tok_at(sp_pos(f)))
+                        .and_then(|i| {
+                            self.toks[i + 1..]
+                                .iter()
+                                .find(|t| !matches!(t.token, Token::Whitespace(_)))
+                        })
+                        .map_or(self.end(), |t| sp_pos(t.span))
+                };
+                Ok((id.value.clone(), Span(pos)))
             }
             _ => ns(
                 Some(twj.relation.span()),
