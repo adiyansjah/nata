@@ -15,10 +15,10 @@
 //!   is gone).
 //! * **Memory.** Peak decoded bytes in flight is at most `window` times the largest task, see `ScanReport` and the record for the formula.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use arrow_array::RecordBatch;
-use nata_sched::{CancelToken, Config, Flow, Run, Scheduler, Work};
+use nata_sched::{CancelToken, Config, Finish, Flow, Run, Scheduler, Work};
 
 use crate::error::{ErrorKind, ScanError};
 use crate::reader::{Limiter, RowGroupTask, ScanPlan, ScanReport, TaskOutput, TaskResult};
@@ -76,11 +76,70 @@ impl Work for ScanWork {
     }
 }
 
+#[derive(Default)]
+struct CancelState {
+    cancelled: bool,
+    hook: Option<Box<dyn Fn() + Send + Sync>>,
+}
+
+/// Cancels a running scan from another thread (a signal handler, a supervisor, a test). A scan that is cancelled before it finished returns
+/// `ErrorKind::Cancelled`: what the sink has seen is a prefix of the result in ordered mode, and the caller is told that it is not all of it.
+/// Cancelling before the scan starts, or after it ended, is allowed (the first makes the scan stop at once, the second does nothing).
+#[derive(Clone, Default)]
+pub struct ScanCancel(Arc<Mutex<CancelState>>);
+
+impl ScanCancel {
+    pub fn new() -> ScanCancel {
+        ScanCancel::default()
+    }
+
+    pub fn cancel(&self) {
+        let mut g = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        g.cancelled = true;
+        if let Some(h) = &g.hook {
+            h();
+        }
+    }
+
+    fn register(&self, hook: Box<dyn Fn() + Send + Sync>) {
+        let mut g = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if g.cancelled {
+            hook();
+        }
+        g.hook = Some(hook);
+    }
+
+    fn clear(&self) {
+        let mut g = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        g.hook = None;
+    }
+}
+
 /// Run the plan on `cfg.threads` worker threads and hand the batches to `sink` (on this thread). See the module doc for order, limit and errors.
 pub fn run_parallel(
     plan: Arc<ScanPlan>,
     cfg: ParallelConfig,
     limit: Option<u64>,
+    sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
+) -> Result<ScanReport, ScanError> {
+    run_parallel_with(plan, cfg, limit, None, sink)
+}
+
+/// As [`run_parallel`], and `cancel` can stop it from another thread.
+pub fn run_parallel_with(
+    plan: Arc<ScanPlan>,
+    cfg: ParallelConfig,
+    limit: Option<u64>,
+    cancel: Option<&ScanCancel>,
     mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
 ) -> Result<ScanReport, ScanError> {
     let (threads, window) = (cfg.threads.max(1), cfg.window.max(1));
@@ -100,6 +159,10 @@ pub fn run_parallel(
                 ordered: cfg.ordered,
             },
         );
+        if let Some(c) = cancel {
+            let handle = sched.cancel_handle();
+            c.register(Box::new(move || handle.cancel()));
+        }
         let outcome = sched.run(|_seq, out| {
             for batch in &out.batches {
                 if lim.feed(batch, &mut sink)? {
@@ -108,8 +171,15 @@ pub fn run_parallel(
             }
             Ok(Flow::Continue)
         });
+        if let Some(c) = cancel {
+            c.clear();
+        }
         plan.release_first_footer();
-        outcome.result?;
+        if outcome.result? == Finish::Cancelled {
+            return Err(ScanError::new(ErrorKind::Cancelled(
+                "the scan was cancelled before it finished".into(),
+            )));
+        }
     }
     plan.release_first_footer();
     Ok(ScanReport::from_stats(

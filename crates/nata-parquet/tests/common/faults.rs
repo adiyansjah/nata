@@ -35,6 +35,10 @@ pub enum FaultKind {
     FailReadsAfter(u64),
     /// `open` sleeps this many milliseconds first (widens race windows).
     DelayMs(u64),
+    /// Every read call through the handle sleeps this many milliseconds (a slow disk).
+    SlowReadsMs(u64),
+    /// `open` panics (a bug in a reader: the scan must turn it into an error, not die).
+    Panic,
 }
 
 /// A fault at file number `file` (position in the list given to the plan), at its footer (`rg == None`) or at row group `rg`.
@@ -82,6 +86,7 @@ impl Opener for FaultOpener {
             OpenFor::RowGroup(r) => Some(r),
         };
         let mut read_fault = None;
+        let mut slow = None;
         for f in &self.faults {
             if Some(f.file) == file_no && f.rg == rg {
                 match f.kind {
@@ -91,6 +96,8 @@ impl Opener for FaultOpener {
                         return Err(io::Error::other("injected open failure"));
                     }
                     FaultKind::FailReadsAfter(n) => read_fault = Some(n),
+                    FaultKind::SlowReadsMs(ms) => slow = Some(Duration::from_millis(ms)),
+                    FaultKind::Panic => panic!("injected panic in the opener"),
                 }
             }
         }
@@ -98,6 +105,9 @@ impl Opener for FaultOpener {
         let mut open = OpenFile::new(file).with_guard(Box::new(Tracked::new(&self.live)));
         if let Some(n) = read_fault {
             open = open.failing_reads_after(n);
+        }
+        if let Some(d) = slow {
+            open = open.slow_reads(d);
         }
         Ok(open)
     }

@@ -27,6 +27,16 @@ pub struct Mode {
 
 thread_local! {
     static MODE: Cell<Option<Mode>> = const { Cell::new(None) };
+    static UNORDERED_OK: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Inside `f` a scan may run unordered if the mode says so (the comparison there is a multiset or an order-insensitive sum). Everywhere else a scan
+/// is ordered, because the test compares rows by position.
+pub fn unordered_ok<R>(f: impl FnOnce() -> R) -> R {
+    let old = UNORDERED_OK.replace(true);
+    let r = f();
+    UNORDERED_OK.set(old);
+    r
 }
 
 /// The mode of this test thread: set by [`with_mode`], else from `NATA_SCAN_THREADS` (a number; 0 or unset = serial) and `NATA_SCAN_UNORDERED=1`.
@@ -155,7 +165,7 @@ pub fn scan(
         run_serial(&plan, limit, |b| csv::write_batch(&mut out, b))?
     } else {
         let cfg = ParallelConfig {
-            ordered: !m.unordered,
+            ordered: !(m.unordered && UNORDERED_OK.get()),
             ..ParallelConfig::new(m.threads)
         };
         run_parallel(Arc::new(plan), cfg, limit, |b| {
@@ -435,6 +445,10 @@ pub fn pushdown_differences() -> Vec<String> {
 /// Check many cases against DuckDB: the scan (pruned and unpruned) must return DuckDB's rows IN ORDER, report invariants must hold, and the skip count must
 /// be as expected. Returns the reports of the pruned scans.
 pub fn check_cases(duck: &str, files: &[&Path], specs: &[Spec]) -> Vec<ScanReport> {
+    unordered_ok(|| check_cases_inner(duck, files, specs))
+}
+
+fn check_cases_inner(duck: &str, files: &[&Path], specs: &[Spec]) -> Vec<ScanReport> {
     let mut sqls = Vec::new();
     for s in specs {
         let cols = s.columns.as_deref();

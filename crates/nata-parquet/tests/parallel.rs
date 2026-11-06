@@ -452,3 +452,86 @@ fn a_task_error_never_carries_a_cell_value() {
     );
     assert!(!text.contains("cat3"), "{text}");
 }
+
+#[test]
+fn a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle() {
+    // two files of 40 batches each; file 1 is read slowly. The limit is satisfied by file 0 alone; the task of file 1 is in flight and must stop long
+    // before it could have finished, close its handle, and be reported as abandoned.
+    let dir = scratch("par-slow");
+    let files = vec![dir.join("a.parquet"), dir.join("b.parquet")];
+    write_ids(&files[0], 0, 8192 * 4, 8192 * 4);
+    write_ids(&files[1], 1_000_000, 8192 * 40, 8192 * 40);
+    let opts = options(Some(&["id"]), &[], true);
+    let slow = |files: &[PathBuf]| {
+        FaultOpener::new(
+            files,
+            vec![Fault {
+                file: 1,
+                rg: Some(0),
+                kind: FaultKind::SlowReadsMs(15),
+            }],
+        )
+    };
+    // how long the slow file takes when it is read to the end
+    let t = std::time::Instant::now();
+    let full = run(
+        &files,
+        &opts,
+        Some(cfg(2, 2, true)),
+        None,
+        Some(slow(&files)),
+    );
+    let full_time = t.elapsed();
+    assert!(full.result.is_ok());
+    let opener = slow(&files);
+    let t = std::time::Instant::now();
+    let r = run(
+        &files,
+        &opts,
+        Some(cfg(2, 2, true)),
+        Some(100),
+        Some(opener.clone()),
+    );
+    let cut_time = t.elapsed();
+    let rep = r.result.expect("scan");
+    assert_eq!(rep.rows_returned, 100);
+    assert_eq!(
+        rep.row_groups_abandoned,
+        1,
+        "the slow task was cancelled: {}",
+        rep.line()
+    );
+    assert!(
+        rep.rows_read < 8192 * 4 + 8192 * 40,
+        "the slow task did not decode its whole row group: {}",
+        rep.line()
+    );
+    assert!(
+        cut_time < full_time / 2,
+        "the cancelled scan ({cut_time:?}) must be much faster than the full one ({full_time:?})"
+    );
+    assert_eq!(opener.live_handles(), 0);
+    assert_clean(&r.plan, "slow limit");
+}
+
+#[test]
+fn the_batch_being_filtered_is_counted_even_when_nothing_is_kept() {
+    // no row survives the filter, so the output holds nothing: the only decoded bytes are the batch being filtered, and they must be on the gauge
+    let dir = scratch("par-transient");
+    let f = dir.join("a.parquet");
+    write_ids(&f, 0, 20_000, 20_000);
+    let files = vec![f];
+    let opts = options(Some(&["id"]), &["id IS NULL"], false);
+    for c in [None, Some(cfg(2, 2, true))] {
+        let r = run(&files, &opts, c, None, None);
+        let rep = r.result.expect("scan");
+        assert_eq!(rep.rows_returned, 0);
+        assert_eq!(rep.rows_read, 20_000);
+        assert!(
+            rep.largest_task_bytes >= 8192 * 8 && rep.peak_inflight_bytes >= 8192 * 8,
+            "a batch of 8,192 ids is at least 64 KiB: {}",
+            rep.line()
+        );
+        assert_clean(&r.plan, "transient");
+    }
+}

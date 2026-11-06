@@ -24,6 +24,8 @@ pub struct OpenFile {
     pub(crate) file: File,
     /// Reads fail with an I/O error once this many bytes were requested through the handle.
     pub(crate) fail_reads_after: Option<u64>,
+    /// Every read call through the handle sleeps this long first (a slow disk: a task that is still running when the scan is cancelled).
+    pub(crate) read_delay: Option<std::time::Duration>,
     /// Dropped with the handle (a counter for the `Tracked` leak check).
     pub(crate) _guard: Option<Box<dyn Send + Sync>>,
 }
@@ -33,12 +35,18 @@ impl OpenFile {
         OpenFile {
             file,
             fail_reads_after: None,
+            read_delay: None,
             _guard: None,
         }
     }
 
     pub fn failing_reads_after(mut self, bytes: u64) -> OpenFile {
         self.fail_reads_after = Some(bytes);
+        self
+    }
+
+    pub fn slow_reads(mut self, per_read: std::time::Duration) -> OpenFile {
+        self.read_delay = Some(per_read);
         self
     }
 

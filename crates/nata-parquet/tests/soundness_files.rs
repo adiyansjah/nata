@@ -364,9 +364,10 @@ fn pruned_equals_unpruned_equals_duckdb_on_random_files_and_predicates() {
                 .map(|x| x.trim().parse().unwrap_or(-1))
                 .collect();
             let texts: Vec<&str> = s.filters.iter().map(|f| f.scan.as_str()).collect();
-            let pruned = scan(&[&pq], Some(&["id"]), &texts, true, None)
+            // count, sum and sum of squares do not depend on the order of the rows
+            let pruned = unordered_ok(|| scan(&[&pq], Some(&["id"]), &texts, true, None))
                 .unwrap_or_else(|e| panic!("seed {seed} file {fi}: {texts:?}: {e}"));
-            let full = scan(&[&pq], Some(&["id"]), &texts, false, None)
+            let full = unordered_ok(|| scan(&[&pq], Some(&["id"]), &texts, false, None))
                 .unwrap_or_else(|e| panic!("seed {seed} file {fi}: {texts:?}: {e}"));
             let (n, sum, sq) = ids(&pruned.csv);
             let (nf, sumf, sqf) = ids(&full.csv);

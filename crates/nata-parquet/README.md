@@ -1,9 +1,9 @@
 # nata-parquet
 
-The Parquet scan of slice 3 (`docs/slices/0001-parquet-scan.md`), **single-thread step (2a)**: a plan over a list of Parquet files (footers read, row groups pruned by their statistics), one
-independent task per kept row group (the morsel of ADR 0001), an exact row filter with DuckDB's semantics, and DuckDB-compatible CSV output for the developer command `nata scan`.
-Parallel morsels, `LIMIT` cancellation, memory and file-handle bounds, the fuzz of the card and the cloud benchmarks are later steps; the task interface is built so that they can be added
-without changing it (`ScanPlan::tasks()` yields `RowGroupTask`s, each of which reads one row group with its own file handle and shares nothing mutable).
+The Parquet scan of slice 3 (`docs/slices/0001-parquet-scan.md`): a plan over a list of Parquet files (footers read lazily, row groups pruned by their statistics), one
+independent task per kept row group (the morsel of ADR 0001), an exact row filter with DuckDB's semantics, DuckDB-compatible CSV output for the developer command `nata scan`, and
+since **step 2b** a parallel, ordered, cancellable, memory- and handle-bounded driver (`run_parallel`, on `crates/nata-sched`). `run_serial` stays as the single-thread
+reference implementation that the parallel scan is tested against. The cloud benchmarks are a later step.
 
 **Why a new crate and not `nata-scan`.** `nata-scan` is the pruning DECISION: pure, no dependencies, 53 mutants checked in about 90 seconds. This crate needs `parquet` and `arrow` (a compile
 of minutes) and does I/O. Keeping them apart keeps the decision crate's checks fast and its claim ("no I/O, no dependencies, no `unsafe`") true. This crate depends on `nata-scan`.
@@ -49,14 +49,32 @@ semantics, and every one of them is checked against DuckDB.
 
 ## Output
 
-`nata scan FILE... [--columns a,b] [--filter 'col op literal' ...] [--limit N] --csv [--no-prune]`. stdout: the CSV in DuckDB's `-csv` text (the format `nata-check` compares); stderr: one report line,
-`scan: files=1 row_groups=30 skipped=25 read=5 not_read=0 rows_read=10240 rows_returned=9484 bytes_read=965772 columns_read=16 morsel=row-group pruning=applied(2 of 2 terms)`.
-`bytes_read` is the number of bytes requested from the file for the column chunks of the row groups read (counted at the file handle, and equal to the sum of the chunk sizes in the footer; the
-footer itself is not counted). Filtered batches are COMPACTED (arrow `filter_record_batch`; dictionary columns keep their dictionary); a batch where every row matches is passed through; a batch with no
-match is dropped. Exit codes: 0, 1 (file or data error), 2 (`not supported yet`, wrong use).
+`nata scan FILE... [--columns a,b] [--filter 'col op literal' ...] [--limit N] --csv [--no-prune] [--threads N] [--unordered] [--window N]`. stdout: the CSV in DuckDB's `-csv` text (the format
+`nata-check` compares); stderr: one report line, for example
+`scan: files=1 row_groups=30 skipped=25 read=5 not_read=0 rows_read=10240 rows_returned=9484 bytes_read=965772 columns_read=16 morsel=row-group pruning=applied(2 of 2 terms) files_opened=1 abandoned=0 threads=4 order=ordered window=4 peak_inflight_bytes=3088904 largest_task_bytes=3088904 peak_open_files=2 peak_footers=1 peak_rss_kib=14100`.
+`bytes_read` is the number of bytes requested from the files for the column chunks by the row-group tasks (counted at the file handle, cancelled tasks included; the footers are not counted).
+Row-group counts are those of the files that were **opened**: a scan that stops early (`--limit`, an error) has not read the footers of the files it never reached (`files_opened < files`).
+`not_read` = kept row groups that were not decoded to the end (never started, or abandoned: `abandoned=`). Filtered batches are COMPACTED (arrow `filter_record_batch`; dictionary columns keep
+their dictionary); a batch where every row matches is passed through; a batch with no match is dropped. Exit codes: 0, 1 (file or data error), 2 (`not supported yet`, wrong use). A closed stdout
+(`| head`) cancels the scan like a limit and exits 0 without a message.
 
-**Partial output on an error.** Footers of all files are read before any row is printed (so a corrupt or mismatching file is an error with nothing on stdout). A data error inside a row group is found
-when that row group is read: the rows of the earlier row groups have already been printed, the process exits non-zero and says which file and row group. A task never returns rows of the row group that failed.
+**Parallel semantics (step 2b; `src/parallel.rs`).**
+
+* **Order.** Default: the rows come out in the order of the single-thread scan (file list, row groups, rows) for every thread count, through a bounded reorder window. `--unordered`: results are
+  handed over as they finish (the same multiset of rows).
+* **Window.** At most `window` row groups (default: the thread count) are in flight, finished and waiting, or in the writer's hands. A slow early row group makes the workers wait; the buffer cannot grow.
+* **Limit.** `--limit N` counts rows in the delivered order. When the N-th row is out, no more row groups are claimed, running tasks stop at their next batch (8,192 rows), drop reader, handle and buffers,
+  and all threads are joined before the process exits. Ordered mode prints exactly the first N rows.
+* **Errors.** The error reported is the one of the lowest (file, row group) that failed (a file whose footer cannot be read has its place in the order), naming file and row group, never a cell value.
+  Ordered mode prints every row before it first. Footers are read when the scan reaches the file, so a corrupt LATER file is found after the earlier files' rows were printed (the first file's footer is read
+  before anything is printed). An error that comes after a satisfied limit is never reported.
+* **Memory.** Decoded bytes in flight are at most `window x` the largest task by construction (`peak_inflight_bytes <= window * largest_task_bytes`, asserted); resident memory is bounded by
+  `base + K x window x M + F` with `M` the decoded size of the largest row group, `K = 3` (the batch being filtered and its copy, allocator slack) and `F = 32 MiB`; K and F are empirical (see the
+  record `bench/results/20261106-scan-parallel.md`), checked by `crates/nata/tests/resource_bounds.rs` with an unbounded control.
+* **Handles.** At most one per worker thread plus the footer being read (`peak_open_files`), whatever the number of files.
+
+**Partial output on an error.** A data error inside a row group is found when that row group is read; the rows before it have been printed, the process exits non-zero and says which file and row group.
+A task never returns rows of the row group that failed.
 
 ## Commands
 
@@ -64,7 +82,11 @@ when that row group is read: the rows of the earlier row groups have already bee
 cargo test -p nata-parquet                       # debug; needs the duckdb command line for the differential files (they print SKIPPED without it), uvx + pyarrow optional
 cargo test --release -p nata-parquet             # release (overflow checks on for our code, off for dependencies, as in the workspace)
 NATA_REQUIRE_DUCKDB=1 NATA_REQUIRE_PYARROW=1 cargo test -p nata-parquet   # a missing DuckDB or pyarrow is an error, not a skip
-python3 crates/nata-parquet/mutate.py --jobs 4 --out /tmp/mutants-parquet.txt   # the mutants (about 95); every line must say CAUGHT
+scripts/local-heavy.sh crates/nata-parquet/run_thread_matrix.sh      # the DuckDB differential tests at threads 1,2,3,4,8, ordered and unordered (about 20 minutes)
+NATA_SCENARIOS=50000 cargo test --release -p nata-parquet --test scenarios -- --nocapture      # more random cancel/error scenarios (default 5000, 12 s)
+NATA_FUZZ_CASES=20000 cargo test --release -p nata-parquet --test fuzz_files -- --nocapture    # a larger byte-flip/truncation fuzz (default 3000 per shape x 5 shapes, 30 s)
+cargo test --release -p nata --test resource_bounds -- --nocapture                            # 10,000 files under ulimit -n 256, and the RSS bound (10 s)
+python3 crates/nata-parquet/mutate.py --jobs 3 --out /tmp/mutants-parquet.txt    # the mutants (111: 95 of step 2a + 16 `par-*` of step 2b); every line must say CAUGHT
 python3 crates/nata-parquet/mutate.py --list     # the mutant names;  --dry: only check that each one compiles
 ```
 
@@ -79,11 +101,17 @@ python3 crates/nata-parquet/mutate.py --list     # the mutant names;  --dry: onl
 | `tests/report.rs` | the report (counts, bytes equal to the footer's chunk sizes), file order, `--limit`, tasks run independently from other threads, schema differences, usage errors |
 | `tests/errors.rs` | truncation at every interesting offset, garbage footers, cut column chunks, a damaged row group, 600 random byte flips and zeroed ranges: no panic, no hang, the error names the file (and the row group), no cell value in any message; types outside the card |
 | `tests/overflow_config.rs` | ADR 0003 decision 6: dependencies are built without overflow checks (the arrow-data panic on a dictionary key under a NULL slot), our code with them |
-| `mutate.py` | ~95 mutants of the code above, each ONE text edit on a private copy; CAUGHT / SURVIVED / INVALID |
+| `tests/parallel.rs` | the parallel scan against the serial one on generated files: byte-identical ordered output for threads 1..8 and windows, the same multiset unordered, an exact `--limit`, lazy footers, the lowest error with injected faults, a closed consumer, 400 small files with bounded handles and footers, a slow task stopped at a batch boundary |
+| `tests/scenarios.rs` | 5,000 random scenarios with a printed seed (limit, closed consumer, external cancel, I/O error, panic, delays): nothing left alive (handles, footers, bytes, threads), output a prefix of the serial output, the serial scan's error |
+| `tests/fuzz_files.rs` | 3,000 byte-flip/truncation/zero/random-range cases per file shape (5 shapes) at 1 and 4 threads: no hang, no leak, errors name the file and carry no cell value, 1 and 4 threads agree; outcomes classified |
+| `tests/common/faults.rs` | the fault-injecting, handle-counting file opener (`Tracked` pattern) |
+| `crates/nata/tests/resource_bounds.rs` | 10,000 small files under `ulimit -n 256` with 1 and 8 threads; resident memory under the bound with a slow consumer, and over it with an unbounded window |
+| `mutate.py` | ~111 mutants of the code above, each ONE text edit on a private copy; CAUGHT / SURVIVED / INVALID |
 
 Environment variables: `NATA_DUCKDB` (path of the `duckdb` command line), `NATA_REQUIRE_DUCKDB`, `NATA_REQUIRE_PYARROW`, `NATA_TPCH_DIR` (directory with `lineitem.parquet` of SF0.01; the tests run
 `scripts/gen-tpch.sh` if it is missing), `NATA_SCAN_FILES` / `NATA_SCAN_PREDICATES` / `NATA_SCAN_SEED` (the soundness property: default 30 files x 40 predicates), `NATA_ERROR_CASES` / `NATA_ERROR_SEED`
-(the damaged-file sample: default 600), `NATA_DISCOVER=1` (the edge test prints every case with its skip count instead of asserting it).
+(the damaged-file sample: default 600), `NATA_SCAN_THREADS` / `NATA_SCAN_UNORDERED` (run the shared test helper `scan` through `run_parallel`: see `run_thread_matrix.sh`), `NATA_SCENARIOS` / `NATA_SCENARIO_SEED` /
+`NATA_SCENARIO_ONLY`, `NATA_FUZZ_CASES` / `NATA_FUZZ_SEED` / `NATA_FUZZ_ONLY=<shape>:<case>`, `NATA_FILES` / `NATA_BIG_GROUPS` (resource tests), `NATA_DISCOVER=1` (the edge test prints every case with its skip count instead of asserting it).
 
 ## Known differences from DuckDB 2.0.0 (listed, not hidden)
 

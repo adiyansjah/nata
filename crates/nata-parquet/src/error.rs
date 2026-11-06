@@ -20,6 +20,8 @@ pub enum ErrorKind {
     Filter(String),
     /// A bug of the reader or of a dependency (a panic was caught). Not the user's fault.
     Internal(String),
+    /// The scan was cancelled from outside before it finished; what was delivered is a prefix of the result, never the whole of it.
+    Cancelled(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,6 +82,7 @@ impl fmt::Display for ScanError {
                 f,
                 "internal error (a bug, or a file that triggers one): {m}"
             ),
+            ErrorKind::Cancelled(m) => write!(f, "cancelled: {m}"),
         }
     }
 }

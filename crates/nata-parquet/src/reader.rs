@@ -673,12 +673,14 @@ struct CountingFile {
     file: File,
     bytes: Arc<AtomicU64>,
     fail_after: Option<u64>,
+    delay: Option<std::time::Duration>,
 }
 
 struct CountingRead<R> {
     inner: R,
     bytes: Arc<AtomicU64>,
     fail_after: Option<u64>,
+    delay: Option<std::time::Duration>,
 }
 
 fn injected_error() -> std::io::Error {
@@ -691,6 +693,9 @@ impl<R: Read> Read for CountingRead<R> {
             && self.bytes.load(Ordering::Relaxed) >= limit
         {
             return Err(injected_error());
+        }
+        if let Some(d) = self.delay {
+            std::thread::sleep(d);
         }
         let n = self.inner.read(buf)?;
         self.bytes.fetch_add(n as u64, Ordering::Relaxed);
@@ -712,6 +717,7 @@ impl ChunkReader for CountingFile {
             inner: self.file.get_read(start)?,
             bytes: Arc::clone(&self.bytes),
             fail_after: self.fail_after,
+            delay: self.delay,
         })
     }
 
@@ -720,6 +726,9 @@ impl ChunkReader for CountingFile {
             && self.bytes.load(Ordering::Relaxed) >= limit
         {
             return Err(ParquetError::External(Box::new(injected_error())));
+        }
+        if let Some(d) = self.delay {
+            std::thread::sleep(d);
         }
         let b = self.file.get_bytes(start, length)?;
         self.bytes.fetch_add(b.len() as u64, Ordering::Relaxed);
@@ -791,6 +800,7 @@ impl RowGroupTask {
         let OpenFile {
             file: handle,
             fail_reads_after,
+            read_delay,
             _guard,
         } = f
             .ctx
@@ -808,6 +818,7 @@ impl RowGroupTask {
             file: handle,
             bytes: Arc::clone(&bytes),
             fail_after: fail_reads_after,
+            delay: read_delay,
         };
         let reader = ParquetRecordBatchReaderBuilder::new_with_metadata(source, f.meta.clone())
             .with_projection(f.mask.clone())

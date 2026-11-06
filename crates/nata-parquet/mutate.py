@@ -14,10 +14,17 @@ import argparse, concurrent.futures, hashlib, os, re, shutil, subprocess, sys, t
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-GROUPS = [["--lib"], ["--test", "adapter"], ["--test", "report"], ["--test", "errors"], ["--test", "overflow_config"], ["--test", "special_files"],
-          ["--test", "soundness_files"], ["--test", "differential_lineitem"], ["--test", "differential_edge"]]
+GROUPS = [["-p", "nata-parquet", "--lib"], ["-p", "nata-parquet", "--test", "adapter"], ["-p", "nata-parquet", "--test", "report"],
+          ["-p", "nata-parquet", "--test", "errors"], ["-p", "nata-parquet", "--test", "overflow_config"], ["-p", "nata-parquet", "--test", "special_files"],
+          ["-p", "nata-parquet", "--test", "soundness_files"], ["-p", "nata-parquet", "--test", "differential_lineitem"],
+          ["-p", "nata-parquet", "--test", "differential_edge"]]
+# Step 2b (parallel scan): mutants named par-* run these groups first, then the others. The scenario and fuzz sizes are reduced for the mutant runs.
+NEW_GROUPS = [["-p", "nata-parquet", "--test", "parallel"], ["-p", "nata-parquet", "--test", "scenarios"], ["-p", "nata", "--test", "scan_cli"],
+              ["-p", "nata", "--test", "resource_bounds"], ["-p", "nata-parquet", "--test", "fuzz_files"]] + GROUPS
+NEW_ENV = {"NATA_SCENARIOS": "1200", "NATA_FUZZ_CASES": "300", "NATA_FILES": "1500", "NATA_BIG_GROUPS": "60"}
 
 A, F, R, C, E, S, K = "src/adapter.rs", "src/filter.rs", "src/reader.rs", "src/csv.rs", "src/error.rs", "src/schema.rs", "src/civil.rs"
+PAR, STATS = "src/parallel.rs", "src/stats.rs"
 ROOTTOML = "ROOT:Cargo.toml"
 M = {
  # --- the footer-statistics adapter
@@ -131,6 +138,24 @@ M = {
  # --- the build configuration (ADR 0003 decision 6): dependencies built WITH overflow checks panic in arrow-data
  "build-dependencies-overflow-checks-on-in-release": (ROOTTOML, '[profile.release.package."*"]\noverflow-checks = false', '[profile.release.package."*"]\noverflow-checks = true'),
  "build-workspace-overflow-checks-off-in-release": (ROOTTOML, "[profile.release]\noverflow-checks = true", "[profile.release]\noverflow-checks = false"),
+ # --- step 2b: the parallel scan (src/parallel.rs, src/stats.rs, the cancellation and the lazy footers in src/reader.rs); the scheduler's own mutants are crates/nata-sched/mutants
+ "par-handle-not-closed-on-cancel": (R, "        for batch in reader {\n            if cancel() {\n                return abandoned();\n            }", "        for batch in reader {\n            if cancel() {\n                std::mem::forget(_guard);\n                return abandoned();\n            }"),
+ "par-footer-handle-leaked": (R, "ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())\n            .map_err(|e| parquet_error(&e, path, None))?\n        // the handle is closed here", "{ let m = ArrowReaderMetadata::load(&file, ArrowReaderOptions::new()).map_err(|e| parquet_error(&e, path, None))?; std::mem::forget(file); m }\n        // the handle is closed here"),
+ "par-window-ignored": (PAR, "let (threads, window) = (cfg.threads.max(1), cfg.window.max(1));", "let (threads, window) = (cfg.threads.max(1), usize::MAX / 4);"),
+ "par-ordered-flag-ignored": (PAR, "                ordered: cfg.ordered,\n            },\n        );", "                ordered: false,\n            },\n        );"),
+ "par-limit-does-not-stop-the-scan": (PAR, "                if lim.feed(batch, &mut sink)? {\n                    return Ok(Flow::Stop);\n                }", "                if lim.feed(batch, &mut sink)? {\n                    return Ok(Flow::Continue);\n                }"),
+ "par-tasks-never-look-at-the-cancellation": (R, "        for batch in reader {\n            if cancel() {\n                return abandoned();\n            }", "        for batch in reader {"),
+ "par-memory-reservation-not-released": (STATS, "    fn drop(&mut self) {\n        self.gauge.sub(self.bytes);\n    }", "    fn drop(&mut self) {}"),
+ "par-footer-count-not-released": (STATS, "    fn drop(&mut self) {\n        self.0.sub(1);\n    }", "    fn drop(&mut self) {}"),
+ "par-first-footer-kept-after-the-scan": (R, "        let _ = self\n            .first\n            .lock()\n            .unwrap_or_else(std::sync::PoisonError::into_inner)\n            .take();", "        let _ = 0;"),
+ "par-cancel-reported-as-success": (PAR, "if outcome.result? == Finish::Cancelled {", "if outcome.result? == Finish::Cancelled && false {"),
+ "par-footers-all-read-before-the-scan": (PAR, "        let work = Arc::new(ScanWork {\n            plan: Arc::clone(&plan),\n        });", "        for i in 0..plan.file_count() {\n            let _ = plan.open_file(i);\n        }\n        let work = Arc::new(ScanWork {\n            plan: Arc::clone(&plan),\n        });"),
+ "par-abandoned-row-groups-not-counted": (R, "ScanStats::add(&stats.row_groups_abandoned, 1);", "let _ = &stats.row_groups_abandoned;"),
+ "par-task-memory-not-counted": (R, "            transient.grow(batch.get_array_memory_size() as u64);", "            let _ = &transient;"),
+ "par-sink-error-not-returned": (PAR, "        let outcome = sched.run(|_seq, out| {\n            for batch in &out.batches {\n                if lim.feed(batch, &mut sink)? {", "        let outcome = sched.run(|_seq, out| {\n            for batch in &out.batches {\n                if lim.feed(batch, &mut sink).unwrap_or(false) {"),
+ "par-panic-not-caught-at-the-task": (R, "match catch_unwind(AssertUnwindSafe(f)) {", "match Ok::<Result<T, ScanError>, Box<dyn std::any::Any + Send>>(f()) {"),
+ # EQUIVALENT, removed: "par-serial-driver-reads-past-the-limit" (the second `lim.remaining == Some(0)` check of run_serial): feed() returns true when the limit is
+ # reached and the loop breaks at once, and limit 0 is caught by the check before open_file, so the inner check can never be true.
 }
 
 
@@ -155,10 +180,11 @@ def stage(work, name):
     shutil.rmtree(base, ignore_errors=True)
     os.makedirs(os.path.join(base, "crates"))
     root = open(os.path.join(ROOT, "Cargo.toml")).read()
-    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata-parquet", "crates/nata-scan"]', root)
+    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan"]', root)
     root = re.sub(r"exclude = \[[^\]]*\]\n", "", root)
     open(os.path.join(base, "Cargo.toml"), "w").write(root)
-    for crate, parts in (("nata-parquet", ["src", "tests", "Cargo.toml"]), ("nata-scan", ["src", "Cargo.toml"])):
+    for crate, parts in (("nata-parquet", ["src", "tests", "Cargo.toml"]), ("nata-scan", ["src", "Cargo.toml"]), ("nata-sched", ["src", "Cargo.toml"]),
+                         ("nata", ["src", "tests", "Cargo.toml"])):
         src_root = os.path.join(ROOT, "crates", crate)
         dst = os.path.join(base, "crates", crate)
         os.makedirs(dst)
@@ -175,15 +201,26 @@ def stage(work, name):
 
 def cargo(base, work, name, args):
     env = dict(os.environ, CARGO_TARGET_DIR=os.path.join(work, "target-" + name), CARGO_TERM_COLOR="never",
-               NATA_TPCH_DIR=os.path.join(ROOT, "data", "tpch-sf0.01"), NATA_REQUIRE_DUCKDB="1")
-    p = subprocess.run(["cargo"] + args, cwd=base, env=env, capture_output=True, text=True)
-    return p.returncode, p.stdout + p.stderr
+               NATA_TPCH_DIR=os.path.join(ROOT, "data", "tpch-sf0.01"), NATA_REQUIRE_DUCKDB="1", **NEW_ENV)
+    # own process group, killed on a timeout: a mutant that hangs a test must not hang the run (the test binary is a grandchild of cargo)
+    import signal
+    p = subprocess.Popen(["cargo"] + args, cwd=base, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    try:
+        out, _ = p.communicate(timeout=1500)
+        return p.returncode, out
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(p.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        out, _ = p.communicate()
+        return 124, (out or "") + "\ntest hang FAILED (timeout)"
 
 
-def run_groups(base, work, slot):
+def run_groups(base, work, slot, groups=GROUPS):
     """Run the test groups in order; return (all_passed, output of the first failing group, its name)."""
-    for g in GROUPS:
-        rc, out = cargo(base, work, slot, ["test", "--release", "--offline", "-p", "nata-parquet"] + g)
+    for g in groups:
+        rc, out = cargo(base, work, slot, ["test", "--release", "--offline"] + g)
         if rc != 0:
             return False, out, " ".join(g)
     return True, "", ""
@@ -205,15 +242,15 @@ def run_one(args):
             return n, "INVALID", "edit changes nothing"
         open(p, "w").write(t[: found[0].start()] + new + t[found[0].end():])
     if dry:
-        rc, out = cargo(base, work, slot_name, ["check", "--release", "--offline", "-p", "nata-parquet", "--tests"])
+        rc, out = cargo(base, work, slot_name, ["check", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--tests"])
         if rc != 0:
             return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
         return n, "compiles", ""
     # compile first, so that a compile error is INVALID and not a (false) catch
-    rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "--no-run"])
+    rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--no-run"])
     if rc != 0:
         return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
-    ok, out, group = run_groups(base, work, slot_name)
+    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else GROUPS)
     if ok:
         return n, "SURVIVED", "the tests cannot see this bug"
     failed = sorted(set(l.split()[1] for l in out.splitlines() if l.startswith("test ") and l.endswith("FAILED")))
@@ -228,7 +265,13 @@ def main():
     ap.add_argument("--jobs", type=int, default=3)
     ap.add_argument("--work", default=os.path.expanduser("~/nata-parquet-mutwork"))
     ap.add_argument("--out")
+    ap.add_argument("--groups", help="comma-separated words: run only the test groups whose arguments contain one of them (e.g. scenarios,fuzz_files)")
     a = ap.parse_args()
+    if a.groups:
+        words = a.groups.split(",")
+        global GROUPS, NEW_GROUPS
+        GROUPS = [g for g in GROUPS if any(w in g for w in words)]
+        NEW_GROUPS = [g for g in NEW_GROUPS if any(w in g for w in words)]
     if a.list:
         print("\n".join(M))
         return 0
@@ -241,7 +284,7 @@ def main():
     t0 = time.time()
     if not a.dry:
         base, _ = stage(a.work, "baseline")
-        ok, out, group = run_groups(base, a.work, "baseline")
+        ok, out, group = run_groups(base, a.work, "baseline", NEW_GROUPS)
         if not ok:
             print("BASELINE FAILED in group %s\n%s" % (group, out[-3000:]))
             return 1
