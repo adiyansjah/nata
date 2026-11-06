@@ -77,7 +77,7 @@ soft_step() {
 machine() {
   date -u; uname -a; echo "ARCH=$ARCH"; nproc; free -g | head -2
   lscpu | grep -E "Model name|Architecture|^CPU\(s\)|L2|L3" || true
-  curl -s -m 3 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type 2>/dev/null; echo
+  curl -s -m 3 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type 2>/dev/null | sed "s|.*/||"; echo
   echo "load average at start: $(cat /proc/loadavg)  [$(loadlabel)]"
   echo "toolchain: $RUSTUP_TOOLCHAIN"; rustc --version; cargo --version
   echo "seeds=$SEEDS trial_seeds=$TRIAL_SEEDS shuttle_seeds=$SHUTTLE_SEEDS jobs=$JOBS"

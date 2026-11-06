@@ -16,6 +16,17 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
+  leaks:
+    # No GCP project id or number, billing account, key or personal address may land in the public repository
+    # (scripts/check-leaks.sh; its own test plants each kind and must see it caught).
+    name: leak check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/check-leaks.sh --tree
+      - run: scripts/test-check-leaks.sh
+
   check:
     name: check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

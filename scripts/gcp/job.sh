@@ -28,7 +28,7 @@ run setup-duckdb bash -c 'mkdir -p "$WORK/bin" && cd "$WORK/bin" && command -v d
   tar -xzf duckdb.tar.gz && rm duckdb.tar.gz && duckdb --version'
 # One record per boot: which machine type each step really ran on (a fallback chain may change it).
 run "machine-$BOOT" bash -c '{ date -u; uname -a; nproc; free -g; lscpu | grep -E "Model name|Architecture|^CPU\(s\)|L2|L3"
-  curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type; echo
+  curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s|.*/||"; echo
   cat /proc/sys/kernel/random/boot_id; } > "$RESULTS/machine-'"$BOOT"'.txt"'
 
 case "$JOB" in
