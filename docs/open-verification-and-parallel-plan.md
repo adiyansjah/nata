@@ -175,3 +175,11 @@ Added during the wave: C7, the fairness overhead and the bridge on settled machi
 Not finishable in Group 3: item 35 (real clients) needs a server slice; it is listed so that it is not forgotten.
 
 Rough total GCP for phases C and E: about $4.5 to $5.
+
+## 8. State at the end of 2026-11-06: Groups 1 to 3 finished
+
+Every step of phases A to E is done and recorded, except item 35 (real clients), which needs a server (proposed: a small Postgres-wire
+slice right after slice 4). The results: `bench/results/20261106-*.md` and the Iceberg record's sections 14 to 17. The decisions:
+ADR 0001 amendment A1; revision notes of ADRs 0002, 0003, 0005 of 2026-11-06; ADR 0004 accepted. Slice 3 closed, slice 4's card accepted.
+Open performance and reliability work is no longer tracked here: it is the improvement register, `docs/improvements.md`, which each slice
+card now takes items from (`way-of-working.md`, card part 5). GCP spend on 2026-11-06: about $1.9 in 22 runs, every run under its cap.
