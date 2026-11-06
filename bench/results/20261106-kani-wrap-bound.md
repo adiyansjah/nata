@@ -37,3 +37,23 @@ Step 6 can therefore be adopted without losing the overflow guarantee of ADR 000
 What this does not show: the rest of `group_sums` (the group-id computation, the selection words, the NULL masks) is covered by the null-path
 tests and its 62 mutants, not by this proof; the proof is about the accumulation step only. Raw: `bench/results/raw/20261106-kani-solvers-arm64/`.
 The second part of the same job, the five division proofs retried with other solvers, is recorded below when it has run.
+
+## 2. The five division proofs with other solvers (same run)
+
+The five harnesses that timed out with Kani's default CaDiCaL back end on 2026-11-04 (3,600 s each; `bench/results/20261104-kani-nata-kernels.md`)
+were run once per other back end, 2,400 s each, 5 at a time on 64 GB (raw `table-solvers.txt`):
+
+| harness | kissat | z3 | cvc5 |
+|---|---|---|---|
+| `primitive_checked_div_i32_is_exact` | TIMEOUT 2,400 s | TIMEOUT 2,400 s | TIMEOUT 2,400 s |
+| `div_exact_matches_the_spec_rows1` / `rows2` | TIMEOUT / TIMEOUT | CBMC aborted (status 6) after 6 s / same | CBMC aborted after 5 s / same |
+| `div_const_left_exact_matches_the_spec_rows1` / `rows2` | TIMEOUT / TIMEOUT | CBMC aborted / same | CBMC aborted / same |
+
+**None of the five is proved by any back end within these limits.** The SMT back ends do not get as far as solving the four kernel harnesses
+(CBMC itself aborts while handing them over; not investigated further); on the 32-bit primitive all three time out. Decision (taken by the
+assistant under the owner's delegation, recorded in ADR 0003): these five stay an ACCEPTED TRUST POINT, not an open item. What the
+division kernels rest on instead: the kernel LOGIC proofs (`div_logic_matches_the_spec`, `div_const_left_logic_matches_the_spec`, rows 0-2,
+SUCCESSFUL) prove the kernels around the divide; the divide primitive itself is proved exact at 8 bits
+(`primitive_checked_div_i8_is_exact`) and is one generic implementation in Rust's standard library for all widths; the differential
+tests of the kernels against DuckDB and the decimal verification (56 of 56 mutants) exercise the 64-bit divide on real values. A larger
+machine or a dedicated bit-vector solver (Bitwuzla, not packaged for Debian) is the way to try again; it is not planned.

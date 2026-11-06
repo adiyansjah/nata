@@ -124,6 +124,10 @@ Kernel crate, lints and guarded expressions (`bench/results/20261104-kernel-lint
 
 ## Revision notes
 
+- 2026-11-06, **the five 64-bit (and one 32-bit) division proofs are an accepted trust point** (decided by the assistant under the owner's
+  delegation): retried with kissat, z3 and cvc5 (`bench/results/20261106-kani-wrap-bound.md` section 2) they still do not finish (timeouts;
+  the SMT back ends abort in CBMC). The kernels' division logic is proved separately, the primitive is proved exact at 8 bits and is one
+  generic std implementation for all widths, and the 64-bit divide is exercised by the DuckDB differential tests and the decimal mutants.
 - 2026-11-06, the step-6 wrapping accumulation of the NULL path is proved safe (`bench/results/20261106-kani-wrap-bound.md`): a Kani
   induction proof on the real accumulation code shows that `wrapping_add` equals the checked add for every input the grouped-sum sink can
   see (sums of i64 values or 0, counters of 0 or 1, fewer than 2^64 - 1 rows per group); a negative control and 3 mutants are caught. Step 6

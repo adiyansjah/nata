@@ -27,7 +27,7 @@ Written 2026-11-04. Every item is a test, proof or measurement (way-of-working.m
 
 | # | What to verify | How | Cost | Priority | Status |
 |---|---|---|---|---|---|
-| 11 | Kernels never overflow silently, mask errors by selection and validity, and sum exactly | Kani bounded proofs, mutation-checked | local | Gate | **done**: 62 of 62 harnesses, and the proofs are mutation-checked 15 of 15 (`bench/results/20261104-kani-kernels.md`) |
+| 11 | Kernels never overflow silently, mask errors by selection and validity, and sum exactly | Kani bounded proofs, mutation-checked | local | Gate | **done**: 62 of 62 harnesses, and the proofs are mutation-checked 15 of 15 (`bench/results/20261104-kani-kernels.md`) The five division proofs that timed out were retried with kissat, z3 and cvc5 on 2026-11-06 and still do not finish; they are an accepted trust point (ADR 0003 revision note). |
 | 12 | The lints catch every banned lenient arrow call; `arithmetic_side_effects` noise on a real crate | negative-test file that must fail clippy; noise count | local | Gate | **done** (`bench/results/20261104-kernel-lints-and-guards.md`) |
 | 13 | `WHERE x <> 0 AND 1/x > 1` and `CASE`-style guards work, including through wrapped arrow kernels | differential test against DuckDB | local | Gate | **done** (`bench/results/20261104-kernel-lints-and-guards.md`) |
 | 14 | The decimal rules are right in type and value | exhaustive small-precision enumeration against an independent big-integer reference, plus DuckDB | local | Gate | **done, full run on GCP** (`bench/results/20261104-decimal-verification.md`: 56 of 56 mutants, 0 failures) |
