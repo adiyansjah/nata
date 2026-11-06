@@ -5,6 +5,7 @@
 #   orchestrate.sh run     [options]   do it (needs --approved-usd, at least the printed bound)
 #   orchestrate.sh status  --run-id ID list the resources a run labelled
 #   orchestrate.sh cleanup --run-id ID delete everything a run labelled
+#   options include --data-gb N (data disk size, 10-1000, default 30; its price is in the worst case)
 #   orchestrate.sh recover --run-id ID [--force]  after the orchestrator died: look, pull before delete, delete only when the job
 #                                      has ended (or with --force), report the VM cost since creation (README "When the machine ...")
 #
@@ -57,6 +58,7 @@ while [ $# -gt 0 ]; do
     --approved-usd) APPROVED_USD=$2; shift 2 ;;
     --run-id) RUN_ID=$2; RUN_ID_GIVEN=1; shift 2 ;;
     --force) FORCE=1; shift ;;
+    --data-gb) DATA_GB=$2; shift 2 ;;
     --machines) MACHINES=$2; shift 2 ;;
     --zones) ZONES=$2; shift 2 ;;
     --max-vm-hours) MAX_VM_HOURS=$2; shift 2 ;;
@@ -68,6 +70,10 @@ while [ $# -gt 0 ]; do
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
+# The data disk holds the toolchain, the build cache, generated data and the results. 30 GB by default; the scale runs (SF100, about
+# 300 GB) pass --data-gb. Bounded so that a typo cannot create a multi-terabyte disk; its price is part of the worst case below.
+case "$DATA_GB" in ''|*[!0-9]*) echo "error: --data-gb must be a whole number of GB, got '$DATA_GB'" >&2; exit 2 ;; esac
+[ "$DATA_GB" -ge 10 ] && [ "$DATA_GB" -le 1000 ] || { echo "error: --data-gb must be between 10 and 1000, got $DATA_GB" >&2; exit 2; }
 OUT=${OUT:-$REPO/bench/gcp-runs/$RUN_ID}
 DISK="$RUN_ID-work"
 if [ -n "$VM_SA" ]; then

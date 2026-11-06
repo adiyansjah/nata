@@ -178,6 +178,19 @@ check "recover of a run with nothing labelled does nothing and says so" "[ $rc -
 new_world recnoid
 orch recover > "$T/o" 2>&1; rc=$?
 check "recover without --run-id is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"
+# ---------------------------------------------------------------- the large-disk path (--data-gb)
+new_world bigdisk
+orch plan --job ci --machines n4a-highcpu-8 > "$T/o30" 2>&1
+orch plan --job ci --machines n4a-highcpu-8 --data-gb 300 > "$T/o300" 2>&1
+w30=$(sed -n 's/^Worst-case cost.*\$\([0-9.]*\)$/\1/p' "$T/o30"); w300=$(sed -n 's/^Worst-case cost.*\$\([0-9.]*\)$/\1/p' "$T/o300")
+check "--data-gb 300: the plan says 300 GB data and the worst case grows with the disk" "grep -q '300 GB data' $T/o300 && awk -v a=$w30 -v b=$w300 'BEGIN { exit !(b > a) }'"
+orch run --job ci --approved-usd 2 --run-id bigdisk --data-gb 300 > "$T/o" 2>&1; rc=$?
+check "--data-gb 300: the data disk is created with --size 300GB and is gone afterwards" "[ $rc -eq 0 ] && grep 'disks create' $F/calls.log | grep -q -- '--size 300GB' && [ \$(left) -eq 0 ]"
+for badgb in 5 5000 abc ""; do
+  new_world badgb
+  orch run --job ci --approved-usd 2 --data-gb "$badgb" > "$T/o" 2>&1; rc=$?
+  check "--data-gb '$badgb' is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"
+done
 new_world saplan
 orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
 check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"
