@@ -315,6 +315,12 @@ case "$JOB" in
     run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  cgroupcheck)
+    # verification-plan item 9: the scan's default pool size under cgroup CPU quotas and affinity masks (scripts/cgroup-check.sh, needs
+    # sudo for systemd-run --scope; vm-startup.sh grants it on this throwaway VM for this job only).
+    run cg-gen bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run cg-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
+    run cg-check bash -c 'cd "$SRC" && { scripts/cgroup-check.sh "$WORK/target-ws/release/nata" data/tpch-sf1/lineitem.parquet "$RESULTS/cgroup"; echo "exit status: $?"; } > "$RESULTS/cgroup-run.txt" 2>&1; true' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
