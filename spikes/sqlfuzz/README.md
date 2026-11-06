@@ -66,3 +66,18 @@ subqueries in FROM, CTEs, scalar subqueries, `ORDER BY` on expressions with `LIM
 `DISTINCT ON`, or multi-key joins on strings with collation other than the default. Data is small (at most 25 rows); large-data effects (spill,
 parallel summation order) are not what this finds. No time-zone database other than DuckDB's own is tested (the target uses its own). Floating
 point comparison is tolerant by design, so a wrong 10th significant digit passes.
+
+
+## The subset of slice 4 against `nata sql` (card 0002, step 3)
+
+```bash
+python3 -I fuzz.py run-subset    --seed 20261106 --cases 20000 --jobs 4 --target-cmd "python3 -I adapters/nata_adapter.py"
+python3 -I fuzz.py replay-subset --seed S --batch B --query Q --target-cmd "python3 -I adapters/nata_adapter.py"     # from the three numbers a failure prints
+python3 -I fuzz.py prove-subset  --seed 1 --cases 8000                                                                 # the known-bad engines the subset can express
+python3 -I tests/test_subset.py                                                                                        # 6 tests; NATA_FUZZ_PROVE=1 adds the prove
+```
+
+`sqlfuzz/subset.py` generates `SELECT <expressions> FROM t1|t2 [WHERE ...] [LIMIT n [OFFSET m]]` over tables of every column type of the dialect (what it leaves out, and why, is its
+module doc); `adapters/nata_adapter.py` writes the tables to Parquet (row groups of 3 and 5 rows), runs each query through `nata sql --csv` (`NATA_BIN`, default `target/debug/nata`) and reads the CSV with the column
+types of the oracle's answer. The oracle runs twice, with and without DuckDB's optimizer, and either answer is accepted. Every difference is shrunk and classified from its shrunk query
+(`subset_cli.shrunk_class`): the classes that `docs/dialect.md` section 9 / 9b lists, or `BUG?`, which fails the run. Results: `bench/results/20261106-sql-execution.md`.
