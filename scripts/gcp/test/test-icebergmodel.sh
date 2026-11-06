@@ -7,6 +7,7 @@
 #   * a TIMEOUT, a NOT-RUN (budget spent), an ERROR and an unknown run name each make the verdict FAIL (exit 1); all-as-expected is PASS
 #   * three-writer runs get IC_TLC_TIMEOUT_BIG, the others IC_TLC_TIMEOUT; workers = nproc; heap scales with RAM (10000 on 16 GB, ~19800 on 32 GB)
 #   * a restart with IC_RESUME=1 repeats only the run that had not ended as expected
+#   * IC_MODEL_MUTANTS=1 adds the gating model-mutants phase (a surviving mutant fails the verdict); off by default
 # Against the old gcp-check.sh (no IC_MODE) the first checks fail: it would run rust-build, catalog-build and the rest.
 set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -100,6 +101,13 @@ W1=$WORKD; R1=$RES
 FAKE_LOG=$T/calls-resume.log; : > "$FAKE_LOG"
 env PATH="$BIN:$PATH" IC_WORK="$W1" IC_MODE=model IC_RESUME=1 FAKE_LOG="$FAKE_LOG" IC_MODEL_ONLY=live-2,three-store-ser bash "$TREE/gcp-check.sh" "$R1" > "$T/out-resume.txt" 2>&1; RC=$?
 check "resume: only three-store-ser is run again, live-2 is reused; the second verdict is PASS" "[ \"\$(cut -d' ' -f1 '$FAKE_LOG' | tr '\n' ' ')\" = 'three-store-ser ' ] && [ $RC -eq 0 ] && grep -q '(resumed)' '$R1/summary.txt' && tail -n 1 '$R1/summary.txt' | grep -q '^VERDICT PASS'"
+
+# 10b. IC_MODEL_MUTANTS=1 adds the model-mutants phase (gating); without it there are no mutants (checked in test 1)
+run_check mutants IC_MODEL_MUTANTS=1 FAKE_MUTANTS_CAUGHT=1 IC_MODEL_ONLY=live-2
+check "IC_MODEL_MUTANTS=1: phases are tools, model-lint, model-parse-and-edits, model-full, model-mutants; every mutant CAUGHT: exit 0, VERDICT PASS" "[ \"\$(phases)\" = 'tools model-lint model-parse-and-edits model-full model-mutants ' ] && [ $RC -eq 0 ] && grep -q '^VERDICT PASS' '$SUM' && grep -q '^---- model: mutants' '$SUM' && grep -q 'SUMMARY CAUGHT=' '$RES/model-mutants.txt' && ! grep -q -E 'SURVIVED=[1-9]' '$RES/model-mutants.txt'"
+check "IC_MODEL_MUTANTS=1 runs the mutant that reverts to the pairs rule (compaction-sees-new-pairs-only) and still no Rust, catalog or spike phase" "grep -q '^compaction-sees-new-pairs-only  *CAUGHT' '$RES/model-mutants.txt' && ! grep -q -E '^PHASE (rust|catalog|spike|interop|model-smoke)' '$SUM' && [ ! -e '$T/forbidden-calls.log' ]"
+run_check survivor IC_MODEL_MUTANTS=1 IC_MODEL_ONLY=live-2
+check "IC_MODEL_MUTANTS=1: a mutant that SURVIVES makes the verdict FAIL (exit 1) even though every model run is OK" "[ $RC -eq 1 ] && grep -q '^VERDICT FAIL' '$SUM' && grep -q '^PHASE model-full PASS' '$SUM' && grep -q '^PHASE model-mutants FAIL' '$SUM'"
 
 # 11. the cost plan for the job (nothing is called)
 bound=$(. "$REPO/scripts/gcp/prices.env"; awk -v r="$RATE_n4a_highcpu_16" -v h=3.0 -v ip="$IP_USD_PER_HOUR" -v dm="$DISK_USD_PER_GIB_MONTH_hyperdisk" -v b=20 -v d=30 -v x="$HYPERDISK_EXTRA_ALLOWANCE_USD" 'BEGIN { dh = dm / 730; printf "%.3f", r*h + ip*h + b*dh*h + d*dh*(h+0.5) + x }')

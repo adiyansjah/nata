@@ -35,10 +35,13 @@
 #                      covered.  model: the targeted model re-run of the `icebergmodel` GCP job: ONLY the phases
 #                      tools, model-lint, model-parse-and-edits and model-full (no Rust, no catalog, no spikes, no interop, no mutants),
 #                      model-full restricted to IC_MODEL_ONLY, each run cut to the time left in IC_MODEL_BUDGET. A TIMEOUT, ERROR or
-#                      NOT-RUN run, or any result other than the expected one, makes the verdict FAIL.
+#                      NOT-RUN run, or any result other than the expected one, makes the verdict FAIL. With IC_MODEL_MUTANTS=1 the phase
+#                      model-mutants (every mutant of mutate_model.py, as in mode full) runs too, after model-full.
 #   IC_MODEL_ONLY      mode model: comma-separated run names, done in this order (default: the 15 runs without a result in the first
 #                      GCP run, three-store-ser first and the liveness run live-3 last). `run_model.py --list` prints all names;
 #                      an unknown name is an error.
+#   IC_MODEL_MUTANTS   mode model: 1 also runs the phase model-mutants (default 0: no mutants, as before). Gating: a mutant that SURVIVED or is
+#                      INVALID makes the verdict FAIL. Not limited by IC_MODEL_BUDGET: each TLC run of a mutant has IC_MUTANT_TIMEOUT.
 #   IC_TLC_TIMEOUT_BIG mode model: seconds allowed for one three-writer run (three-* and live-3; default 4500); IC_TLC_TIMEOUT
 #                      (default 2700) applies to the others. In mode full IC_TLC_TIMEOUT applies to every run, as before.
 #   IC_MODEL_HEAP_MB   TLC heap in MB (default: 62% of the machine's RAM, at least 10000: 10000 on the 16 GB n4a-highcpu-8, about 19800
@@ -340,7 +343,11 @@ cp "$TOOLS/VERSIONS.txt" "$OUT/tool-versions.txt" 2> /dev/null || true
 [ "$MODE" = spikes ] || phase model-lint yes ph_model_lint
 [ "$MODE" = spikes ] || phase model-parse-and-edits yes ph_model_parse
 if [ "$MODE" = model ]; then
-  log "MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits and model-full; runs: $MODEL_ONLY"
+  if [ "${IC_MODEL_MUTANTS:-0}" = 1 ]; then
+    log "MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits, model-full and model-mutants; runs: $MODEL_ONLY"
+  else
+    log "MODE model (targeted re-run): only tools, model-lint, model-parse-and-edits and model-full; runs: $MODEL_ONLY"
+  fi
   log "limits: ${TLC_TIMEOUT}s per run, ${TLC_TIMEOUT_BIG}s per three-writer run (three-*, live-3), ${MODEL_BUDGET}s in total (each run is cut to the time left); TLC heap ${HEAP_MB} MB, ${NPROC} workers"
 else
 # 3. smoke: does TLC evaluate the spec?
@@ -365,7 +372,7 @@ fi
 if [ "$MODE" != spikes ]; then
   phase model-full yes ph_model_full
   cp "$OUT/model/model-summary.txt" "$OUT/model-summary.txt" 2> /dev/null || true
-  [ "$MODE" = model ] || phase model-mutants yes ph_model_mutants
+  if [ "$MODE" != model ] || [ "${IC_MODEL_MUTANTS:-0}" = 1 ]; then phase model-mutants yes ph_model_mutants; fi
 fi
 
 # ------------------------------------------------------------------------------------------------ verdict
@@ -377,7 +384,7 @@ fi
     echo "---- model: unmutated runs"
     cat "$OUT/model-summary.txt" 2> /dev/null || echo "(no model summary)"
   fi
-  if [ "$MODE" = full ]; then
+  if [ "$MODE" = full ] || { [ "$MODE" = model ] && [ "${IC_MODEL_MUTANTS:-0}" = 1 ]; }; then
     echo
     echo "---- model: mutants"
     sed -n '/^mutant /,$p' "$OUT/model-mutants.txt" 2> /dev/null || echo "(no mutant table)"

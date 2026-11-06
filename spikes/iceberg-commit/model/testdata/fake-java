@@ -4,6 +4,7 @@
 #   a normal configuration            -> "Model checking completed. No error has been found.", exit 0
 #   three-rest-snap-i4, canary-*      -> "Error: Invariant <I4_NoPhantom | the canary> is violated.", exit 12 (their expected outcome)
 #   a name listed in $FAKE_SLOW       -> sleeps $FAKE_SLOW_SECONDS (default 30) before answering, so a timeout can cut it
+#   a mutant's copy (cwd .../mutants-work/<name>) -> with FAKE_MUTANTS_CAUGHT=1 "Error: Invariant I2_NoLostUpdate is violated.", exit 12
 #   a name listed in $FAKE_BROKEN     -> prints a TLC evaluation error, exit 150
 # Every TLC call is appended to $FAKE_LOG (if set) as "<name> workers=<n> xmx=<MB>".
 case "$*" in
@@ -20,6 +21,10 @@ name=$(basename "$cfg" .cfg)
 [ -n "${FAKE_LOG:-}" ] && echo "$name workers=$workers xmx=$xmx" >> "$FAKE_LOG"
 case " ${FAKE_SLOW:-} " in *" $name "*) sleep "${FAKE_SLOW_SECONDS:-30}" ;; esac
 case " ${FAKE_BROKEN:-} " in *" $name "*) echo "Error: Evaluation error: fake"; exit 150 ;; esac
+# a mutant's private copy (mutate_model.py stages it under .../mutants-work/<name>): caught when $FAKE_MUTANTS_CAUGHT=1, else it survives
+case "$PWD" in */mutants-work/_baseline) ;; */mutants-work/*)
+  if [ "${FAKE_MUTANTS_CAUGHT:-0}" = 1 ]; then echo "Error: Invariant I2_NoLostUpdate is violated."; echo "7 states generated, 6 distinct states found, 1 states left on queue."; exit 12; fi ;;
+esac
 canary=$(grep -o 'Canary_[A-Za-z]*' "$cfg" | head -1)
 if [ -n "$canary" ]; then echo "Error: Invariant $canary is violated."; echo "7 states generated, 6 distinct states found, 1 states left on queue."; exit 12; fi
 if [ "$name" = three-rest-snap-i4 ]; then echo "Error: Invariant I4_NoPhantom is violated."; echo "7 states generated, 6 distinct states found, 1 states left on queue."; exit 12; fi
