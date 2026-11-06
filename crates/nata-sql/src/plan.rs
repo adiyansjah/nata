@@ -434,6 +434,7 @@ impl Scan {
             columns: Some(self.columns.iter().map(|c| c.name.clone()).collect()),
             filters: self.pushed.iter().map(PushedTerm::filter_text).collect(),
             prune: true,
+            late_materialization: false,
         }
     }
 

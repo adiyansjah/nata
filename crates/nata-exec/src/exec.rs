@@ -41,6 +41,9 @@ pub struct ExecConfig {
     pub ordered: bool,
     /// Where file handles come from; `None` opens real files. Tests substitute the fault opener of slice 3.
     pub opener: Option<Arc<dyn Opener>>,
+    /// Late materialization in the scan (register item P1): decode the columns of the pushed filter first, the others only for the rows that pass.
+    /// Same rows as without; off by default until the benchmark of step 4b decides.
+    pub late_materialization: bool,
 }
 
 impl ExecConfig {
@@ -51,6 +54,7 @@ impl ExecConfig {
             window: threads.saturating_mul(2),
             ordered: true,
             opener: None,
+            late_materialization: false,
         }
     }
 }
@@ -283,6 +287,7 @@ pub fn execute_observed(
 ) -> Result<ExecReport, ScanError> {
     let started = Instant::now();
     let mut options = plan.scan.scan_options();
+    options.late_materialization = cfg.late_materialization;
     if plan.scan.columns.is_empty() {
         // `SELECT 1 FROM 'f'`: no column is needed, but the scan delivers rows with at least one: the first one the scan supports
         options.columns = Some(vec![first_readable_column(&plan)?]);

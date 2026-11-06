@@ -21,6 +21,8 @@ GROUPS = [["-p", "nata-parquet", "--lib"], ["-p", "nata-parquet", "--test", "ada
 # Step 2b (parallel scan): mutants named par-* run these groups first, then the others. The scenario and fuzz sizes are reduced for the mutant runs.
 NEW_GROUPS = [["-p", "nata-parquet", "--test", "parallel"], ["-p", "nata-parquet", "--test", "scenarios"], ["-p", "nata", "--test", "scan_cli"],
               ["-p", "nata", "--test", "resource_bounds"], ["-p", "nata-parquet", "--test", "fuzz_files"]] + GROUPS
+# Step 4a (P1, late materialization): mutants named late-* run the dedicated test file first, then the others.
+LATE_GROUPS = [["-p", "nata-parquet", "--test", "late"]] + GROUPS
 NEW_ENV = {"NATA_SCENARIOS": "1200", "NATA_FUZZ_CASES": "300", "NATA_FILES": "1500", "NATA_BIG_GROUPS": "60"}
 
 A, F, R, C, E, S, K = "src/adapter.rs", "src/filter.rs", "src/reader.rs", "src/csv.rs", "src/error.rs", "src/schema.rs", "src/civil.rs"
@@ -156,6 +158,19 @@ M = {
  "par-panic-not-caught-at-the-task": (R, "match catch_unwind(AssertUnwindSafe(f)) {", "match Ok::<Result<T, ScanError>, Box<dyn std::any::Any + Send>>(f()) {"),
  # EQUIVALENT, removed: "par-serial-driver-reads-past-the-limit" (the second `lim.remaining == Some(0)` check of run_serial): feed() returns true when the limit is
  # reached and the loop breaks at once, and limit 0 is caught by the check before open_file, so the inner check can never be true.
+ # --- step 4a: late materialization (P1). The selection of step 1 and the columns of step 2 are the two places a late read can go wrong.
+ "late-selection-of-the-wrong-rows": (R, "masks.push(BooleanArray::from(mask));", "masks.push(BooleanArray::from(mask.iter().map(|b| !b).collect::<Vec<bool>>()));"),
+ "late-selection-shifted-by-one-row": (R, "masks.push(BooleanArray::from(mask));", "let mut mask = mask;\n            mask.rotate_left(1);\n            masks.push(BooleanArray::from(mask));"),
+ "late-selection-applied-twice": (R, "builder = builder.with_row_selection(s);", "builder = builder.with_row_selection(s.clone().and_then(&s));"),
+ "late-selection-never-applied": (R, "let selection = (selected < seen).then(|| RowSelection::from_filters(&masks));", "let selection: Option<RowSelection> = None;"),
+ "late-filter-columns-not-projected-when-also-selected": (R, "spec_ref.out.iter().filter_map(|(n, _)| leaf_index(n)),", "spec_ref.out.iter().filter(|(n, _)| !filter_names.contains(&n.as_str())).filter_map(|(n, _)| leaf_index(n)),"),
+ "late-output-columns-read-in-step-1-only": (R, "let mut builder = self.builder(source, &late.out_mask);", "let mut builder = self.builder(source, &late.filter_mask);"),
+ "late-output-read-even-when-no-row-passes": (R, "if selected == 0 {\n            return Ok(Step::Done);\n        }\n        let selection", "let selection"),
+ "late-filter-not-evaluated": (R, "let mask = filter::evaluate(&f.terms, &batch)\n                .map_err(|m| self.at(ErrorKind::Internal(redact(&m))))?;\n            selected +=", "let mask = vec![true; batch.num_rows()];\n            selected +="),
+ "late-row-count-of-the-footer-not-checked": (R, "self.check_row_count()?;\n        if selected == 0 {", "if selected == 0 {"),
+ "late-selected-rows-not-compared-with-the-rows-decoded": (R, "if got != selected {", "if false && got != selected {"),
+ "late-filter-batch-not-counted-on-the-gauge": (R, "let mut transient = Reservation::new(&stats.memory);\n            transient.grow(batch.get_array_memory_size() as u64);\n            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes());\n            if !column_types_are_as_requested(&batch, &late.filter_columns) {", "let transient = Reservation::new(&stats.memory);\n            if !column_types_are_as_requested(&batch, &late.filter_columns) {"),
+ "late-cancel-not-looked-at-in-step-2": (R, "for batch in reader {\n            if (self.cancel)() {\n                return Ok(Step::Cancelled);\n            }\n            let batch = batch.map_err(|e| self.corrupt(&e))?;\n            got +=", "for batch in reader {\n            let batch = batch.map_err(|e| self.corrupt(&e))?;\n            got +="),
 }
 
 
@@ -180,16 +195,19 @@ def stage(work, name):
     shutil.rmtree(base, ignore_errors=True)
     os.makedirs(os.path.join(base, "crates"))
     root = open(os.path.join(ROOT, "Cargo.toml")).read()
-    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan"]', root)
+    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan", "crates/nata-sql", "crates/nata-exec", "crates/nata-kernels"]', root)
     root = re.sub(r"exclude = \[[^\]]*\]\n", "", root)
     open(os.path.join(base, "Cargo.toml"), "w").write(root)
+    # nata depends on nata-sql and nata-exec since slice 4 (only their sources are needed to build the `nata` binary that the CLI tests run)
     for crate, parts in (("nata-parquet", ["src", "tests", "Cargo.toml"]), ("nata-scan", ["src", "Cargo.toml"]), ("nata-sched", ["src", "Cargo.toml"]),
-                         ("nata", ["src", "tests", "Cargo.toml"])):
+                         ("nata-sql", ["src", "corpus", "Cargo.toml"]), ("nata-exec", ["src", "Cargo.toml"]), ("nata-kernels", ["src", "Cargo.toml"]), ("nata", ["src", "tests", "Cargo.toml"])):
         src_root = os.path.join(ROOT, "crates", crate)
         dst = os.path.join(base, "crates", crate)
         os.makedirs(dst)
         for x in parts:
             s = os.path.join(src_root, x)
+            if not os.path.exists(s):
+                continue
             if os.path.isdir(s):
                 shutil.copytree(s, os.path.join(dst, x))
             else:
@@ -250,7 +268,7 @@ def run_one(args):
     rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--no-run"])
     if rc != 0:
         return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
-    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else GROUPS)
+    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else LATE_GROUPS if n.startswith("late-") else GROUPS)
     if ok:
         return n, "SURVIVED", "the tests cannot see this bug"
     failed = sorted(set(l.split()[1] for l in out.splitlines() if l.startswith("test ") and l.endswith("FAILED")))

@@ -154,6 +154,7 @@ pub fn scan(
         columns: columns.map(|c| c.iter().map(|s| (*s).to_string()).collect()),
         filters: filters.iter().map(|s| (*s).to_string()).collect(),
         prune,
+        late_materialization: late_default(),
     };
     let paths: Vec<PathBuf> = files.iter().map(|p| p.to_path_buf()).collect();
     let plan = ScanPlan::open(&paths, &options)?;
@@ -571,4 +572,10 @@ pub fn check_case(
         what: what.to_string(),
     };
     check_cases(duck, files, &[spec]).remove(0)
+}
+
+/// Late materialization (P1) for every scan the tests open through their helpers: off, unless `NATA_LATE_MATERIALIZATION=1`. Running the whole suite
+/// (and so the DuckDB differential files) with it set checks that the late read gives the rows of the default read.
+pub fn late_default() -> bool {
+    std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
 }

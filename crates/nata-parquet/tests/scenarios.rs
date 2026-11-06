@@ -222,6 +222,7 @@ fn run_one(
             .map(|c| c.iter().map(|x| (*x).to_string()).collect()),
         filters: s.filters.iter().map(|f| (*f).to_string()).collect(),
         prune: s.prune,
+        late_materialization: late_default(),
     };
     let plan = Arc::new(
         ScanPlan::open_with(files, &opts, opener.clone())

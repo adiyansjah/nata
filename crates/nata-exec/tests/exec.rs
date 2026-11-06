@@ -42,6 +42,7 @@ fn rows_come_in_file_order_for_any_thread_count_and_window() {
                 window,
                 ordered: true,
                 opener: None,
+                late_materialization: false,
             };
             let out = run_with(&q, &cfg).csv.expect("runs");
             assert_eq!(
@@ -488,6 +489,7 @@ fn a_limit_stops_the_scan_and_the_report_says_how_far_it_got() {
         window: 1,
         ordered: true,
         opener: None,
+        late_materialization: false,
     };
     for q in [
         format!("SELECT id FROM '{p}' LIMIT 3"),

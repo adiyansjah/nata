@@ -85,10 +85,21 @@ fn the_report_counts_files_row_groups_rows_and_bytes() {
         (u.row_groups_total, u.row_groups_skipped, u.row_groups_read),
         (5, 0, 5)
     );
-    assert_eq!(
-        u.bytes_read,
-        chunk_bytes(&f, &["id", "txt"], &[0, 1, 2, 3, 4])
-    );
+    if late_default() {
+        // late materialization (NATA_LATE_MATERIALIZATION=1): the row groups in which no row passes never read `txt`: strictly fewer bytes, and at least
+        // the filter column of every row group
+        assert!(
+            u.bytes_read < chunk_bytes(&f, &["id", "txt"], &[0, 1, 2, 3, 4])
+                && u.bytes_read >= chunk_bytes(&f, &["id"], &[0, 1, 2, 3, 4]),
+            "{}",
+            u.line()
+        );
+    } else {
+        assert_eq!(
+            u.bytes_read,
+            chunk_bytes(&f, &["id", "txt"], &[0, 1, 2, 3, 4])
+        );
+    }
     assert_eq!(
         u.rows_returned, r.rows_returned,
         "same rows with and without pruning"
@@ -202,6 +213,7 @@ fn tasks_are_independent_row_group_morsels() {
         columns: Some(vec!["id".into()]),
         filters: vec!["id < 2500".into()],
         prune: true,
+        late_materialization: late_default(),
     };
     let plan = ScanPlan::open(&[PathBuf::from(&f)], &options).expect("plan");
     let tasks = plan.tasks().expect("tasks");

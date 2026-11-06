@@ -381,6 +381,7 @@ fn scan_once(path: &Path, threads: usize, opener: Arc<FaultOpener>) -> (Result_,
         columns: None,
         filters: vec![],
         prune: true,
+        late_materialization: late_default(),
     };
     let paths = [path.to_path_buf()];
     let plan = match ScanPlan::open_with(&paths, &opts, opener) {
@@ -426,6 +427,7 @@ fn placeholder() -> Arc<ScanPlan> {
             columns: None,
             filters: vec![],
             prune: true,
+            late_materialization: late_default(),
         },
     )
     .expect("plan");

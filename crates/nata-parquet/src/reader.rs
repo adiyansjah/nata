@@ -36,7 +36,7 @@ use arrow_select::filter::filter_record_batch;
 use nata_scan::{Decision, Predicate, can_skip};
 use parquet::arrow::ProjectionMask;
 use parquet::arrow::arrow_reader::{
-    ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder,
+    ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder, RowSelection,
 };
 use parquet::errors::ParquetError;
 use parquet::file::reader::{ChunkReader, Length};
@@ -60,6 +60,11 @@ pub struct ScanOptions {
     pub filters: Vec<String>,
     /// Use the footer statistics to skip row groups. `false` reads every row group (the filter still applies); used by the tests and by `--no-prune`.
     pub prune: bool,
+    /// Late materialization (register item P1, `docs/slices/0002-select-where-limit.md` part 5): decode the columns the pushed filter needs first, evaluate
+    /// the exact row filter on them, and decode the output columns only for the rows that pass (a Parquet row selection). Same rows, same order, same
+    /// errors as the default (decode every column of the row group, then filter). Off by default until the benchmark of step 4b decides. Has no effect
+    /// without a filter.
+    pub late_materialization: bool,
 }
 
 /// One row group of one file, and what pruning decided.
@@ -79,6 +84,8 @@ pub struct FileScan {
     /// The names of the columns that the filter needs and the output wants, in the order of this file's schema, with their expected Arrow types.
     read_columns: Vec<(String, arrow_schema::DataType)>,
     out_columns: Vec<String>,
+    /// Set when the scan reads late (see [`ScanOptions::late_materialization`]) and there is a filter.
+    late: Option<Late>,
     terms: Arc<Vec<Term>>,
     row_groups: Vec<RowGroupInfo>,
     ctx: Arc<Ctx>,
@@ -107,6 +114,17 @@ impl FileScan {
             })
             .collect()
     }
+}
+
+/// What a task needs to read a row group in two steps: the columns of the filter first, then the output columns for the rows that passed.
+#[derive(Debug)]
+struct Late {
+    /// The columns the pushed filter needs (and nothing else).
+    filter_mask: ProjectionMask,
+    filter_columns: Vec<(String, arrow_schema::DataType)>,
+    /// The output columns (and nothing else): a column that is both filtered and selected is decoded in both steps.
+    out_mask: ProjectionMask,
+    out_types: Vec<(String, arrow_schema::DataType)>,
 }
 
 /// What every file and task of one plan shares: where handles come from and where the counts go.
@@ -574,6 +592,34 @@ fn read_file(
         .filter_map(|(n, _)| all.iter().find(|l| l.name == *n).map(|l| l.index))
         .collect();
     let mask = ProjectionMask::leaves(descr, indices);
+    let late = (options.late_materialization && !spec_ref.terms.is_empty()).then(|| {
+        let leaf_index = |name: &str| all.iter().find(|l| l.name == name).map(|l| l.index);
+        let mut filter_names: Vec<&str> = Vec::new();
+        for t in &spec_ref.terms {
+            if !filter_names.contains(&t.column.as_str()) {
+                filter_names.push(t.column.as_str());
+            }
+        }
+        let typed = |names: &dyn Fn(&str) -> bool| -> Vec<(String, arrow_schema::DataType)> {
+            read_columns
+                .iter()
+                .filter(|(n, _)| names(n))
+                .cloned()
+                .collect()
+        };
+        Late {
+            filter_mask: ProjectionMask::leaves(
+                descr,
+                filter_names.iter().filter_map(|n| leaf_index(n)),
+            ),
+            filter_columns: typed(&|n| filter_names.contains(&n)),
+            out_mask: ProjectionMask::leaves(
+                descr,
+                spec_ref.out.iter().filter_map(|(n, _)| leaf_index(n)),
+            ),
+            out_types: typed(&|n| spec_ref.out.iter().any(|(o, _)| o == n)),
+        }
+    });
 
     // pruning
     let predicate = Predicate::new(
@@ -626,6 +672,7 @@ fn read_file(
             mask,
             read_columns,
             out_columns: spec_ref.out.iter().map(|(n, _)| n.clone()).collect(),
+            late,
             terms: Arc::new(spec_ref.terms.clone()),
             row_groups,
             ctx: Arc::clone(ctx),
@@ -780,6 +827,28 @@ impl ChunkReader for CountingFile {
     }
 }
 
+/// One counting file handle shared by the two readers of a late-materializing task (and used by the one reader of the default task).
+#[derive(Clone)]
+struct SharedFile(Arc<CountingFile>);
+
+impl Length for SharedFile {
+    fn len(&self) -> u64 {
+        self.0.len()
+    }
+}
+
+impl ChunkReader for SharedFile {
+    type T = <CountingFile as ChunkReader>::T;
+
+    fn get_read(&self, start: u64) -> parquet::errors::Result<Self::T> {
+        self.0.get_read(start)
+    }
+
+    fn get_bytes(&self, start: u64, length: usize) -> parquet::errors::Result<bytes::Bytes> {
+        self.0.get_bytes(start, length)
+    }
+}
+
 /// Adds what a task did to the scan's counters when it ends, however it ends (done, cancelled, failed, panicked).
 struct Tally<'a> {
     stats: &'a ScanStats,
@@ -833,7 +902,6 @@ impl RowGroupTask {
         let f = &*self.file;
         let stats = &*f.ctx.stats;
         let (path, rg) = (&f.path, self.row_group);
-        let at = |kind: ErrorKind| ScanError::new(kind).in_file(path).in_row_group(rg);
         let abandoned = || {
             ScanStats::add(&stats.row_groups_abandoned, 1);
             Ok(TaskResult::Cancelled)
@@ -858,45 +926,108 @@ impl RowGroupTask {
             rows: 0,
             bytes: Arc::clone(&bytes),
         };
-        let source = CountingFile {
+        let source = SharedFile(Arc::new(CountingFile {
             file: handle,
             bytes: Arc::clone(&bytes),
             fail_after: fail_reads_after,
             delay: read_delay,
+        }));
+        let mut run = TaskRun {
+            task: self,
+            cancel,
+            out: TaskOutput {
+                batches: Vec::new(),
+                rows_read: 0,
+                rows_returned: 0,
+                bytes_read: 0,
+                mem: Reservation::new(&stats.memory),
+            },
+            task_peak: 0,
         };
-        let reader = ParquetRecordBatchReaderBuilder::new_with_metadata(source, f.meta.clone())
-            .with_projection(f.mask.clone())
-            .with_row_groups(vec![rg])
-            .with_batch_size(BATCH_ROWS)
-            .build()
-            .map_err(|e| parquet_error(&e, path, Some(rg)))?;
+        let step = match &f.late {
+            Some(late) => run.read_late(late, &source, &mut tally)?,
+            None => run.read_early(&source, &mut tally)?,
+        };
+        if step == Step::Cancelled {
+            return abandoned();
+        }
+        let TaskRun {
+            mut out, task_peak, ..
+        } = run;
+        out.bytes_read = bytes.load(Ordering::Relaxed);
+        ScanStats::add(&stats.row_groups_read, 1);
+        stats.largest_task.fetch_max(task_peak, Ordering::SeqCst);
+        Ok(TaskResult::Done(out))
+    }
+}
 
-        let mut out = TaskOutput {
-            batches: Vec::new(),
-            rows_read: 0,
-            rows_returned: 0,
-            bytes_read: 0,
-            mem: Reservation::new(&stats.memory),
-        };
-        let mut task_peak = 0u64;
+/// How the reading half of a task ended.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Step {
+    Done,
+    Cancelled,
+}
+
+/// A task while it runs: what it has produced so far, and the memory high-water mark.
+struct TaskRun<'a> {
+    task: &'a RowGroupTask,
+    cancel: &'a dyn Fn() -> bool,
+    out: TaskOutput,
+    task_peak: u64,
+}
+
+impl TaskRun<'_> {
+    fn at(&self, kind: ErrorKind) -> ScanError {
+        ScanError::new(kind)
+            .in_file(&self.task.file.path)
+            .in_row_group(self.task.row_group)
+    }
+
+    /// An error of a batch the reader failed to decode (a damaged page).
+    fn corrupt(&self, e: &impl std::fmt::Display) -> ScanError {
+        self.at(ErrorKind::Corrupt(redact(&e.to_string())))
+    }
+
+    fn builder(
+        &self,
+        source: &SharedFile,
+        mask: &ProjectionMask,
+    ) -> ParquetRecordBatchReaderBuilder<SharedFile> {
+        ParquetRecordBatchReaderBuilder::new_with_metadata(
+            source.clone(),
+            self.task.file.meta.clone(),
+        )
+        .with_projection(mask.clone())
+        .with_row_groups(vec![self.task.row_group])
+        .with_batch_size(BATCH_ROWS)
+    }
+
+    /// The default read: every column of the row group (output and filter) is decoded, then the exact filter is applied to each batch.
+    fn read_early(
+        &mut self,
+        source: &SharedFile,
+        tally: &mut Tally<'_>,
+    ) -> Result<Step, ScanError> {
+        let f = &*self.task.file;
+        let stats = &*f.ctx.stats;
+        let reader = self
+            .builder(source, &f.mask)
+            .build()
+            .map_err(|e| parquet_error(&e, &f.path, Some(self.task.row_group)))?;
         for batch in reader {
-            if cancel() {
-                return abandoned();
+            if (self.cancel)() {
+                return Ok(Step::Cancelled);
             }
-            let batch = batch.map_err(|e| {
-                ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
-                    .in_file(path)
-                    .in_row_group(rg)
-            })?;
-            out.rows_read += batch.num_rows() as u64;
+            let batch = batch.map_err(|e| self.corrupt(&e))?;
+            self.out.rows_read += batch.num_rows() as u64;
             tally.rows += batch.num_rows() as u64;
             // the decoded batch is held while it is filtered: counted until the end of this turn
             let mut transient = Reservation::new(&stats.memory);
             transient.grow(batch.get_array_memory_size() as u64);
-            task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
+            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes());
             // the types the pipeline relies on (dictionary strings, Decimal64) must be what came out
             if !column_types_are_as_requested(&batch, &f.read_columns) {
-                return Err(at(ErrorKind::Internal(
+                return Err(self.at(ErrorKind::Internal(
                     "the reader returned a column of another Arrow type than requested".into(),
                 )));
             }
@@ -904,7 +1035,7 @@ impl RowGroupTask {
                 Some(batch)
             } else {
                 let mask = filter::evaluate(&f.terms, &batch)
-                    .map_err(|m| at(ErrorKind::Internal(redact(&m))))?;
+                    .map_err(|m| self.at(ErrorKind::Internal(redact(&m))))?;
                 let selected = mask.iter().filter(|b| **b).count();
                 if selected == 0 {
                     None
@@ -913,48 +1044,140 @@ impl RowGroupTask {
                 } else {
                     Some(
                         filter_record_batch(&batch, &BooleanArray::from(mask))
-                            .map_err(|e| at(ErrorKind::Internal(redact(&e.to_string()))))?,
+                            .map_err(|e| self.at(ErrorKind::Internal(redact(&e.to_string()))))?,
                     )
                 }
             };
             if let Some(b) = kept {
-                let indices: Vec<usize> = f
-                    .out_columns
-                    .iter()
-                    .map(|n| {
-                        b.schema().index_of(n).map_err(|_| {
-                            at(ErrorKind::Internal(
-                                "an output column is missing from the batch".into(),
-                            ))
-                        })
-                    })
-                    .collect::<Result<_, _>>()?;
-                let projected = b
-                    .project(&indices)
-                    .map_err(|e| at(ErrorKind::Internal(redact(&e.to_string()))))?;
-                let mapped = match &f.ctx.map {
-                    Some(map) => map(projected).map_err(at)?,
-                    None => Some(projected),
-                };
-                if let Some(projected) = mapped {
-                    out.mem.grow(projected.get_array_memory_size() as u64);
-                    task_peak = task_peak.max(out.mem.bytes() + transient.bytes());
-                    out.rows_returned += projected.num_rows() as u64;
-                    out.batches.push(projected);
-                }
+                self.emit(&b, transient.bytes())?;
             }
         }
-        if out.rows_read != self.rows() {
-            return Err(at(ErrorKind::Corrupt(format!(
+        self.check_row_count()?;
+        Ok(Step::Done)
+    }
+
+    /// Late materialization (P1): step 1 decodes ONLY the filter columns of the whole row group and evaluates the exact filter on them, giving a row
+    /// selection; step 2 decodes ONLY the output columns, and only for the selected rows. Nothing is decoded in step 2 when no row passed, and no
+    /// selection is used when every row passed. The batches of step 2 are already filtered. Both steps share the task's one file handle.
+    fn read_late(
+        &mut self,
+        late: &Late,
+        source: &SharedFile,
+        tally: &mut Tally<'_>,
+    ) -> Result<Step, ScanError> {
+        let f = &*self.task.file;
+        let stats = &*f.ctx.stats;
+        let rg = self.task.row_group;
+        // step 1: the filter columns
+        let reader = self
+            .builder(source, &late.filter_mask)
+            .build()
+            .map_err(|e| parquet_error(&e, &f.path, Some(rg)))?;
+        let mut masks: Vec<BooleanArray> = Vec::new();
+        let (mut seen, mut selected) = (0u64, 0u64);
+        for batch in reader {
+            if (self.cancel)() {
+                return Ok(Step::Cancelled);
+            }
+            let batch = batch.map_err(|e| self.corrupt(&e))?;
+            let n = batch.num_rows() as u64;
+            seen += n;
+            self.out.rows_read += n;
+            tally.rows += n;
+            let mut transient = Reservation::new(&stats.memory);
+            transient.grow(batch.get_array_memory_size() as u64);
+            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes());
+            if !column_types_are_as_requested(&batch, &late.filter_columns) {
+                return Err(self.at(ErrorKind::Internal(
+                    "the reader returned a column of another Arrow type than requested".into(),
+                )));
+            }
+            let mask = filter::evaluate(&f.terms, &batch)
+                .map_err(|m| self.at(ErrorKind::Internal(redact(&m))))?;
+            selected += mask.iter().filter(|b| **b).count() as u64;
+            masks.push(BooleanArray::from(mask));
+        }
+        self.check_row_count()?;
+        if selected == 0 {
+            return Ok(Step::Done);
+        }
+        let selection = (selected < seen).then(|| RowSelection::from_filters(&masks));
+        drop(masks);
+        // step 2: the output columns, for the selected rows
+        let mut builder = self.builder(source, &late.out_mask);
+        if let Some(s) = selection {
+            builder = builder.with_row_selection(s);
+        }
+        let reader = builder
+            .build()
+            .map_err(|e| parquet_error(&e, &f.path, Some(rg)))?;
+        let mut got = 0u64;
+        for batch in reader {
+            if (self.cancel)() {
+                return Ok(Step::Cancelled);
+            }
+            let batch = batch.map_err(|e| self.corrupt(&e))?;
+            got += batch.num_rows() as u64;
+            let mut transient = Reservation::new(&stats.memory);
+            transient.grow(batch.get_array_memory_size() as u64);
+            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes());
+            if !column_types_are_as_requested(&batch, &late.out_types) {
+                return Err(self.at(ErrorKind::Internal(
+                    "the reader returned a column of another Arrow type than requested".into(),
+                )));
+            }
+            self.emit(&batch, transient.bytes())?;
+        }
+        if got != selected {
+            // the selection of step 1 and the rows of step 2 must be the same rows: never a wrong answer
+            return Err(self.at(ErrorKind::Internal(
+                "the rows decoded for the selection are not the rows the filter selected".into(),
+            )));
+        }
+        Ok(Step::Done)
+    }
+
+    /// The rows decoded must be the rows the footer counts.
+    fn check_row_count(&self) -> Result<(), ScanError> {
+        if self.out.rows_read != self.task.rows() {
+            return Err(self.at(ErrorKind::Corrupt(format!(
                 "the row group yielded {} rows but the footer says {}",
-                out.rows_read,
-                self.rows()
+                self.out.rows_read,
+                self.task.rows()
             ))));
         }
-        out.bytes_read = bytes.load(Ordering::Relaxed);
-        ScanStats::add(&stats.row_groups_read, 1);
-        stats.largest_task.fetch_max(task_peak, Ordering::SeqCst);
-        Ok(TaskResult::Done(out))
+        Ok(())
+    }
+
+    /// A batch that passed the filter: project it to the output columns, in the requested order, apply the per-batch map, and keep it. `transient` is the
+    /// size of the decoded batch that is still counted on the gauge.
+    fn emit(&mut self, b: &RecordBatch, transient: u64) -> Result<(), ScanError> {
+        let f = &*self.task.file;
+        let indices: Vec<usize> = f
+            .out_columns
+            .iter()
+            .map(|n| {
+                b.schema().index_of(n).map_err(|_| {
+                    self.at(ErrorKind::Internal(
+                        "an output column is missing from the batch".into(),
+                    ))
+                })
+            })
+            .collect::<Result<_, _>>()?;
+        let projected = b
+            .project(&indices)
+            .map_err(|e| self.at(ErrorKind::Internal(redact(&e.to_string()))))?;
+        let mapped = match &f.ctx.map {
+            Some(map) => map(projected).map_err(|k| self.at(k))?,
+            None => Some(projected),
+        };
+        if let Some(projected) = mapped {
+            self.out.mem.grow(projected.get_array_memory_size() as u64);
+            self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient);
+            self.out.rows_returned += projected.num_rows() as u64;
+            self.out.batches.push(projected);
+        }
+        Ok(())
     }
 }
 
@@ -991,6 +1214,8 @@ pub struct ScanReport {
     pub peak_open_files: u64,
     /// The highest number of footers held in memory at once.
     pub peak_footers: u64,
+    /// Late materialization was asked for (it has an effect only with a filter).
+    pub late_materialization: bool,
 }
 
 impl ScanReport {
@@ -1021,6 +1246,7 @@ impl ScanReport {
             largest_task_bytes: ScanStats::get(&st.largest_task),
             peak_open_files: st.handles.peak(),
             peak_footers: st.footers.peak(),
+            late_materialization: plan.options.late_materialization,
         }
     }
 
@@ -1040,7 +1266,7 @@ impl ScanReport {
             "off(--no-prune)".to_string()
         };
         format!(
-            "scan: files={} row_groups={} skipped={} read={} not_read={} rows_read={} rows_returned={} bytes_read={} columns_read={} morsel=row-group pruning={} files_opened={} abandoned={} threads={} order={} window={} peak_inflight_bytes={} largest_task_bytes={} peak_open_files={} peak_footers={}",
+            "scan: files={} row_groups={} skipped={} read={} not_read={} rows_read={} rows_returned={} bytes_read={} columns_read={} morsel=row-group pruning={} files_opened={} abandoned={} threads={} order={} window={} peak_inflight_bytes={} largest_task_bytes={} peak_open_files={} peak_footers={} late={}",
             self.files,
             self.row_groups_total,
             self.row_groups_skipped,
@@ -1061,7 +1287,8 @@ impl ScanReport {
             self.peak_inflight_bytes,
             self.largest_task_bytes,
             self.peak_open_files,
-            self.peak_footers
+            self.peak_footers,
+            u8::from(self.late_materialization)
         )
     }
 }

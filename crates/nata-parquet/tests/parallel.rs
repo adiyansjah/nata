@@ -26,6 +26,7 @@ fn options(columns: Option<&[&str]>, filters: &[&str], prune: bool) -> ScanOptio
         columns: columns.map(|c| c.iter().map(|s| (*s).to_string()).collect()),
         filters: filters.iter().map(|s| (*s).to_string()).collect(),
         prune,
+        late_materialization: late_default(),
     }
 }
 

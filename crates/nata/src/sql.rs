@@ -33,6 +33,7 @@ pub struct SqlArgs {
     pub window: Option<usize>,
     pub unordered: bool,
     pub report: bool,
+    pub late: bool,
 }
 
 /// Wraps stdout and remembers that the reader went away.
@@ -191,6 +192,7 @@ fn run_query(
         cfg.window = w;
     }
     cfg.ordered = !a.unordered;
+    cfg.late_materialization = a.late;
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
     let types: Vec<_> = planned.output.iter().map(|c| c.ty).collect();
     let plan = Arc::new(planned.plan);

@@ -6,24 +6,42 @@
 #      row groups skipped (>= 60% required), bytes read pruned / unpruned (<= 40% required), and the row count equal to DuckDB's.
 #   2. Scalability: the Q1 columns of `lineitem` (SF1, and SF10 if given) at 1, 2, 4 and 8 threads, window = threads and 2 x threads, with
 #      a twin of the 1- and 8-thread arms as the noise control; 8-thread throughput >= 5x the 1-thread figure required.
+#   3. (slice 4, step 4a; BLOCKS=late) P1 late materialization: `nata scan --count --no-prune` on the Q1 columns of `lineitem` with a filter that keeps
+#      10% and 100% of the rows, once on a column that is not projected (l_partkey) and once on a projected one (l_shipdate), at 8 threads, window 16:
+#      arms `early` (decode every column, then filter), `late` (`--late-materialization`) and `twin` (early again, the noise control), alternating
+#      early, late, twin in every round. Rule of the card (docs/slices/0002-select-where-limit.md part 5): keep it only if at 10% it is at least 1.2x
+#      faster and at 100% no slower than 1.05x, on SF1 and SF10 and both CPU types.
+#   4. (BLOCKS=footers) P2 footers read ahead and P10: 1,000 small files (generated here from SF1 `lineitem`, 4,000 rows and one row group each, never
+#      committed; under SCAN_WORK) scanned by `nata scan --count` at 8 threads with `--footers-ahead` 1 (slice 3), 8 (the configuration of the card),
+#      and 4 and 16 (information), twin of the 1; and `nata sql` over the same glob with the slice-4 binder (`--bind-all-footers`, ahead 1) against the
+#      P10 binder (first footer only, ahead 8). Rule: a scan of 1,000 small files at least 1.3x faster at 8 threads.
+#   BLOCKS (default "r2 scale") selects the blocks: any of r2, scale, late, footers. Exit 1 if a count differs from DuckDB's.
 # Every block waits for a settled machine first (scripts/gcp/settle.sh; its SETTLE line is the record). Wall time of the process; the
 # scan's own report (stderr) gives the row groups, bytes read and peak RSS. Exit 1 if a count differs from DuckDB's or a run fails; the
 # R2 and 5x verdicts are printed, not gating (they are what the slice's closeout reads).
 set -uo pipefail
+BLOCKS=" ${BLOCKS:-r2 scale} "; want() { case "$BLOCKS" in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
 HERE=$(cd "$(dirname "$0")" && pwd)
 NATA=$(realpath "${1:?nata binary}"); SF1=$(realpath "${2:?tpch-sf1 dir}"); SF10=${3:?tpch-sf10 dir or -}; OUT=${4:?out dir}; ROUNDS=${5:-5}
 mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
 SETTLE=$HERE/../../scripts/gcp/settle.sh
 settle() { [ -x "$SETTLE" ] && "$SETTLE" "$1" 0.5 "${SETTLE_MAX:-600}" | tee -a "$OUT/settle.txt"; echo "block $1 load at start: $(cut -d' ' -f1-3 /proc/loadavg)" >> "$OUT/settle.txt"; }
 CSV=$OUT/runs.csv; echo "block,arm,threads,window,round,secs,rows,row_groups,skipped,bytes_read,peak_rss_kib,exit" > "$CSV"; FAILED=0
-one() { # block arm threads window round file args...
-  local blk=$1 arm=$2 t=$3 w=$4 r=$5 f=$6; shift 6
+timed() { # block arm threads window round command... : the command prints the row count on stdout and the scan report (last line) on stderr
+  local blk=$1 arm=$2 t=$3 w=$4 r=$5; shift 5
   local s0 s1 rc rows rep
-  s0=$(date +%s.%N); rows=$("$NATA" scan "$f" --count --threads "$t" --window "$w" "$@" 2> "$OUT/.rep"); rc=$?; s1=$(date +%s.%N)
+  s0=$(date +%s.%N); rows=$("$@" 2> "$OUT/.rep"); rc=$?; s1=$(date +%s.%N)
   rep=$(tail -1 "$OUT/.rep"); kv() { sed -n "s/.* $1=\([^ ]*\).*/\1/p" <<< " $rep"; }
   echo "$blk,$arm,$t,$w,$r,$(awk -v a="$s0" -v b="$s1" 'BEGIN{printf "%.3f", b-a}'),$rows,$(kv row_groups),$(kv skipped),$(kv bytes_read),$(kv peak_rss_kib),$rc" >> "$CSV"
   [ "$rc" = 0 ] || { echo "FAIL $blk $arm t=$t w=$w round $r: exit $rc: $rep"; FAILED=1; }
 }
+one() { # block arm threads window round file args...
+  local blk=$1 arm=$2 t=$3 w=$4 r=$5 f=$6; shift 6
+  timed "$blk" "$arm" "$t" "$w" "$r" "$NATA" scan "$f" --count --threads "$t" --window "$w" "$@"
+}
+unset NATA_LATE_MATERIALIZATION     # the arms say what they mean by flags, never by the environment
+Q1COLS=l_returnflag,l_linestatus,l_quantity,l_extendedprice,l_discount,l_tax,l_shipdate
+if want r2; then
 # ---------------------------------------------------------------- R2
 # the sorted copy (about 200 MB at SF1) goes to SCAN_WORK, never under the results (which the orchestrator pulls every 2 minutes)
 SORTED=${SCAN_WORK:-$OUT}/.lineitem-sorted.parquet; mkdir -p "$(dirname "$SORTED")"
@@ -36,8 +54,9 @@ for r in $(seq 1 "$ROUNDS"); do
   one r2 unpruned 8 8 "$r" "$SORTED" --columns l_orderkey,l_extendedprice,l_shipdate "${F1[@]}" --no-prune
 done
 bad=$(awk -F, -v w="$want" '$1=="r2" && $7!=w' "$CSV" | wc -l); [ "$bad" = 0 ] || { echo "FAIL r2: $bad run(s) returned a count other than DuckDB's $want"; FAILED=1; }
+fi
+if want scale; then
 # ---------------------------------------------------------------- scalability
-Q1COLS=l_returnflag,l_linestatus,l_quantity,l_extendedprice,l_discount,l_tax,l_shipdate
 for sf in sf1 sf10; do
   dir=$([ $sf = sf1 ] && echo "$SF1" || echo "$SF10"); [ "$dir" = - ] && continue; F=$dir/lineitem.parquet; [ -f "$F" ] || continue
   want=$(duckdb -noheader -csv -c "SELECT count(*) FROM '$F';" | tail -1)
@@ -53,7 +72,33 @@ for sf in sf1 sf10; do
   done
   bad=$(awk -F, -v b="$sf" -v w="$want" '$1==b && $7!=w' "$CSV" | wc -l); [ "$bad" = 0 ] || { echo "FAIL $sf: $bad run(s) returned a count other than DuckDB's $want"; FAILED=1; }
 done
-rm -f "$SORTED" "$OUT/.rep"
+fi
+# ---------------------------------------------------------------- P1 late materialization (BLOCKS=late)
+if want late; then
+  for sf in sf1 sf10; do
+    dir=$([ $sf = sf1 ] && echo "$SF1" || echo "$SF10"); [ "$dir" = - ] && continue; F=$dir/lineitem.parquet; [ -f "$F" ] || continue
+    total=$(duckdb -noheader -csv -c "SELECT count(*) FROM '$F';" | tail -1)
+    # the thresholds that keep 10% of the rows (from DuckDB), and filters that keep every row; neither column is sorted in the file, so no row group is
+    # pruned (and --no-prune says so): the arms differ in the decoding only
+    pk10=$(duckdb -noheader -csv -c "SELECT quantile_disc(l_partkey, 0.1) FROM '$F';" | tail -1)
+    sd10=$(duckdb -noheader -csv -c "SELECT strftime(quantile_disc(l_shipdate, 0.1), '%Y-%m-%d') FROM '$F';" | tail -1)
+    want10_pk=$(duckdb -noheader -csv -c "SELECT count(*) FROM '$F' WHERE l_partkey <= $pk10;" | tail -1)
+    want10_sd=$(duckdb -noheader -csv -c "SELECT count(*) FROM '$F' WHERE l_shipdate <= DATE '$sd10';" | tail -1)
+    "$NATA" scan "$F" --count --columns "$Q1COLS" > /dev/null 2>&1    # warm-up (page cache)
+    # column "pk": the filter column is NOT projected; column "sd": it is (l_shipdate is one of the Q1 columns, so the late arm decodes it twice)
+    for combo in "pk 10 l_partkey<=$pk10 $want10_pk" "pk 100 l_partkey>=0 $total" "sd 10 l_shipdate<=$sd10 $want10_sd" "sd 100 l_shipdate>=1900-01-01 $total"; do
+      set -- $combo; col=$1; sel=$2; flt=$(sed -E 's/(<=|>=)/ \1 /' <<< "$3"); want_rows=$4; blk="late-$sf-$col-$sel"
+      settle "$blk"
+      for r in $(seq 1 "$ROUNDS"); do
+        one "$blk" early 8 16 "$r" "$F" --columns "$Q1COLS" --filter "$flt" --no-prune
+        one "$blk" late 8 16 "$r" "$F" --columns "$Q1COLS" --filter "$flt" --no-prune --late-materialization
+        one "$blk" twin 8 16 "$r" "$F" --columns "$Q1COLS" --filter "$flt" --no-prune
+      done
+      bad=$(awk -F, -v b="$blk" -v w="$want_rows" '$1==b && $7!=w' "$CSV" | wc -l); [ "$bad" = 0 ] || { echo "FAIL $blk: $bad run(s) returned a count other than DuckDB's $want_rows"; FAILED=1; }
+    done
+  done
+fi
+rm -f "${SORTED:-}" "$OUT/.rep"
 python3 -I - "$CSV" > "$OUT/summary.md" <<'PY'
 import csv, statistics as st, sys
 from collections import defaultdict
@@ -82,6 +127,21 @@ for sf in ("sf1", "sf10"):
         print(f"| {k[2]} | {k[3]} | {s:.3f} | {n/s/1e6:.1f} | {b/s:.2f} | {b/s/k[2]:.2f} | {med(k,'peak_rss_kib')/1024:.0f} | {twin} |")
     s8 = min(med((sf, "scan", 8, 8), "secs"), med((sf, "scan", 8, 16), "secs"))
     print(f"\n8-thread speed-up (best window): {b/s8:.2f}x (the card requires at least 5x): {'MET' if b/s8 >= 5 else 'NOT MET'}")
+
+late = sorted({k[0] for k in g if k[0].startswith("late-")})
+if late:
+    print("\n## P1 late materialization: `nata scan --count --no-prune`, the 7 Q1 columns, 8 threads, window 16 (median of the rounds; twin = the early arm again)")
+    print("| block | rows | early s | late s | early / late | twin / early | bytes read early | bytes read late | verdict |")
+    print("|---|---:|---:|---:|---:|---:|---:|---:|---|")
+    for b in late:
+        e, l, t = (b, "early", 8, 16), (b, "late", 8, 16), (b, "twin", 8, 16)
+        if not (g.get(e) and g.get(l)): continue
+        se, sl = med(e, "secs"), med(l, "secs"); ratio = se / sl
+        sel = b.rsplit("-", 1)[1]; col = b.split("-")[2]
+        if sel == "10": v = "speed-up %s (card: at least 1.2x%s)" % ("MET" if ratio >= 1.2 else "NOT MET", "" if col == "pk" else "; judged on the not-projected column, reported here")
+        else: v = "slowdown %s (card: late/early at most 1.05)" % ("MET" if sl / se <= 1.05 else "NOT MET")
+        tw = f"{med(t,'secs')/se:.2f}" if g.get(t) else "-"
+        print(f"| {b} | {g[e][0]['rows']} | {se:.3f} | {sl:.3f} | {ratio:.2f} | {tw} | {med(e,'bytes_read'):.0f} | {med(l,'bytes_read'):.0f} | {v} |")
 PY
 cat "$OUT/summary.md"
 [ "$(grep -c ',0$' "$CSV")" -gt 0 ] || { echo "nothing ran"; FAILED=1; }

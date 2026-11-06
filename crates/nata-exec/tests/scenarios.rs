@@ -186,6 +186,9 @@ fn run_one(
     sink_fails_after: Option<usize>,
     cancel: Option<&ScanCancel>,
 ) -> Run {
+    let mut cfg = cfg.clone();
+    cfg.late_materialization |= std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1");
+    let cfg = &cfg;
     let planned = plan_sql(sql, &FsSource).expect("the query plans");
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
     let types: Vec<_> = planned.output.iter().map(|c| c.ty).collect();
@@ -350,6 +353,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 window: 1,
                 ordered: true,
                 opener: Some(opener),
+                late_materialization: false,
             };
             run_one(&sql, &cfg, sink_fails, None)
         };
@@ -362,6 +366,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 window: 1,
                 ordered: true,
                 opener: Some(FaultOpener::new(&files, vec![])),
+                late_materialization: false,
             };
             run_one(&clean_sql, &cfg, None, None)
         };
@@ -379,6 +384,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 window: 1,
                 ordered: true,
                 opener: Some(FaultOpener::new(&files, vec![])),
+                late_materialization: false,
             };
             lines(&run_one(&unlimited, &cfg, None, None).csv)
         } else {
@@ -404,6 +410,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
             window: s.window,
             ordered: s.ordered,
             opener: Some(opener.clone()),
+            late_materialization: false,
         };
         let got = run_one(&sql, &cfg, sink_fails, Some(&cancel));
         if let Some(c) = canceller {

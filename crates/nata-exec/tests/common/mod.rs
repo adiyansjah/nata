@@ -103,7 +103,15 @@ pub struct Outcome {
 }
 
 /// The query's result as CSV text (header included), or the rendered error.
+/// `NATA_LATE_MATERIALIZATION=1` runs every query of these tests with late materialization in the scan (P1): the same rows are required.
+pub fn late_from_env() -> bool {
+    std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
+}
+
 pub fn run_with(sql: &str, cfg: &ExecConfig) -> Outcome {
+    let mut cfg = cfg.clone();
+    cfg.late_materialization |= late_from_env();
+    let cfg = &cfg;
     let planned = match plan_sql(sql, &FsSource) {
         Ok(p) => p,
         Err(e) => {

@@ -51,6 +51,10 @@ enum Command {
         /// After a successful run print the one-line report of the scan (as `nata scan`) and the peak resident memory on stderr. Developer option.
         #[arg(long)]
         report: bool,
+        /// Decode the filter columns first and the other columns only for the rows that pass the pushed filter (register item P1). Same rows as without.
+        /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
+        #[arg(long)]
+        late_materialization: bool,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -86,6 +90,10 @@ enum Command {
         /// Row groups in flight at once, running or finished and waiting for the writer (default: twice the thread count, chosen from the slice 3 benchmark: bench/results/20261106-scan-bench.md). Developer option.
         #[arg(long)]
         window: Option<usize>,
+        /// Decode the filter columns first and the other columns only for the rows that pass the filter (register item P1). Same rows as without.
+        /// Developer option, off by default until the benchmark decides; also on when the environment variable NATA_LATE_MATERIALIZATION is 1.
+        #[arg(long)]
+        late_materialization: bool,
     },
 }
 
@@ -106,7 +114,14 @@ pub(crate) fn peak_rss_kib() -> Option<u64> {
     line.split_whitespace().nth(1)?.parse().ok()
 }
 
+/// The developer switch for late materialization: the flag, or `NATA_LATE_MATERIALIZATION=1` (so that `nata-check` and the fuzzers, which run the
+/// command as a process, can run a whole query set in the late mode).
+pub(crate) fn late_materialization(flag: bool) -> bool {
+    flag || std::env::var("NATA_LATE_MATERIALIZATION").is_ok_and(|v| v == "1")
+}
+
 struct ScanArgs {
+    late: bool,
     count: bool,
     files: Vec<PathBuf>,
     columns: Option<Vec<String>>,
@@ -120,6 +135,7 @@ struct ScanArgs {
 
 fn scan(a: ScanArgs) -> ExitCode {
     let ScanArgs {
+        late,
         count,
         files,
         columns,
@@ -150,6 +166,7 @@ fn scan(a: ScanArgs) -> ExitCode {
         columns,
         filters,
         prune: !no_prune,
+        late_materialization: late,
     };
     let result = (|| {
         let plan = Arc::new(ScanPlan::open(&files, &options)?);
@@ -209,6 +226,7 @@ fn main() -> ExitCode {
             window,
             unordered,
             report,
+            late_materialization: late,
         } => {
             return sql::run(sql::SqlArgs {
                 command,
@@ -217,6 +235,7 @@ fn main() -> ExitCode {
                 window,
                 unordered,
                 report,
+                late: late_materialization(late),
             });
         }
         Command::Scan {
@@ -230,12 +249,14 @@ fn main() -> ExitCode {
             threads,
             unordered,
             window,
+            late_materialization: late,
         } => {
             if !csv && !count {
                 eprintln!("error: not supported yet: output other than --csv or --count");
                 return ExitCode::from(2);
             }
             return scan(ScanArgs {
+                late: late_materialization(late),
                 count,
                 files,
                 columns,

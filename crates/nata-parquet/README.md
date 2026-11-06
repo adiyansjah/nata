@@ -34,6 +34,16 @@ the default projection is all columns, so it touches all).
 
 Row-group selection: one whole row group per task (ADR 0001, revision note of 2026-11-05); no page index, no bloom filter, no row selection inside a row group.
 
+## Late materialization (register item P1, `ScanOptions::late_materialization`, `--late-materialization`)
+
+Off by default until the benchmark of step 4b decides (`docs/slices/0002-select-where-limit.md`, part 5). With a pushed filter, a row-group task reads in two steps: (1) only the filter's columns of the
+whole row group are decoded and the exact filter is evaluated on them, giving a Parquet `RowSelection`; (2) only the OUTPUT columns are decoded, only for the selected rows (nothing is read when no
+row passed, and no selection is used when every row passed). Both steps share the task's one file handle. A column that is both filtered and selected is decoded in both steps (the synchronous parquet-rs
+reader has no predicate cache). The rows, their order, the counters (`rows_read` counts the rows the filter looked at) and the errors are those of the default read; `bytes_read` can be lower. The cancel
+is looked at between batches in both steps. Without a filter it changes nothing. `NATA_LATE_MATERIALIZATION=1` turns it on for `nata scan`/`nata sql` and for the test suites (`late_default()`), which is
+how the DuckDB differential files and `nata-check` run in this mode. A finding: parquet-rs sizes the buffers of a string batch for the batch size, not for the rows selected, so a late batch of 200 rows can
+hold about 1 MB (`tests/late.rs`).
+
 ## The footer adapter (`src/adapter.rs`)
 
 Statistics are handed to `nata-scan` only when they are sound; otherwise the row group is kept. `min_value`/`max_value` only (the deprecated `min`/`max` are never used: the `parquet` crate
