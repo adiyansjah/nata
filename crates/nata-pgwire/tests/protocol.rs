@@ -696,6 +696,13 @@ fn extended_parameters_are_nodes_and_never_error_values() {
     c.bind(&[None, Some("1 + 2")], 0, 0);
     let r = c.sync();
     assert_eq!(error_field(&r[1].1, b'C'), Some("22P02"));
+    c.parse(&q, &[16, 23]);
+    c.bind(&[Some("TRUE"), Some("42")], 0, 0);
+    c.execute(0);
+    assert_eq!(
+        values(&c.sync()),
+        vec![vec![Some("t".into()), Some("42".into())]]
+    );
     // Unspecified types resolve to text; callers use an explicit cast for numeric contexts.
     c.parse(&q, &[]);
     c.bind(&[Some("hello"), None], 0, 0);

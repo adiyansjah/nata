@@ -111,7 +111,11 @@ MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > 
  'stalled-send-never-expires': ('crates/nata-pgwire/src/server.rs',
                                 'tokio::time::sleep(Duration::from_secs(2))',
                                 'tokio::time::sleep(Duration::from_secs(200))',
-                                'protocol')}
+                                'protocol'),
+ 'boolean-text-case-sensitive': ('crates/nata-pgwire/src/extended.rs',
+                                 '16 => match v.to_ascii_lowercase().as_str() {',
+                                 '16 => match v {',
+                                 'protocol')}
 
 def fingerprint():
     h = hashlib.sha256()

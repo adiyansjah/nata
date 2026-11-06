@@ -26,7 +26,8 @@ bound; implementing suspension needs a separate bounded portal lifecycle.
 Parameters are substituted as literal AST nodes, never pasted into the query.
 Text/string OIDs 25/1043 hold raw UTF8; numeric OIDs 20/21/23/700/701/1700 accept
 numeric dialect literals; OID 16 accepts true/false, t/f or 1/0; OID 1082 takes ISO
-date text. NULL is supported. Other OIDs return `0A000`. SMALLINT parameters widen
+date text. Boolean words are case-insensitive, including pgjdbc's TRUE/FALSE.
+NULL is supported. Other OIDs return `0A000`. SMALLINT parameters widen
 to INTEGER and FLOAT to DOUBLE, the dialect's available CAST types. Unspecified
 OID zero resolves to text (reported as 25); use `CAST($1 AS INTEGER)` for numeric
 contexts. Numeric OID 1700 does not specify precision/scale: cast it explicitly,
@@ -57,7 +58,7 @@ multi-statement messages return `0A000`.
 
 | Statement | Supported values / answer |
 |---|---|
-| `SET extra_float_digits = ...` (or `TO`) | -15, 0, 1, 2, 3; formatting remains shortest round-trip |
+| `SET extra_float_digits = ...` (or `TO`) | 0, 1, 2, 3; formatting remains shortest round-trip |
 | `SET application_name = '...'` | store for SHOW and report ParameterStatus |
 | `SET DateStyle = 'ISO'` | ISO / ISO, MDY / ISO, DMY accepted; report canonical ISO, MDY |
 | `SET client_encoding = 'UTF8'` | UTF8 / UTF-8 only; report UTF8 |

@@ -164,7 +164,7 @@ fn literal(oid: i32, value: Option<&str>) -> Result<Expr, WireError> {
             expr: Box::new(mk(ExprKind::Str(v.into()))),
             ty: DataType::Date,
         }),
-        16 => match v {
+        16 => match v.to_ascii_lowercase().as_str() {
             "true" | "t" | "1" => mk(ExprKind::Bool(true)),
             "false" | "f" | "0" => mk(ExprKind::Bool(false)),
             _ => return Err(WireError::new("22P02", "invalid boolean parameter")),

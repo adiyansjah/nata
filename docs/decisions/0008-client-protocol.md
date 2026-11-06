@@ -134,3 +134,104 @@ Dates outside years 1–9999 and embedded zero bytes return class 22 explicitly.
 Cancellation preserves an in-progress backend frame for up to one second before
 sending ErrorResponse; if the reader remains blocked the socket closes. Evidence
 and remaining certification: `bench/results/20261107-pgwire-server.md`.
+
+## Amendment, 2026-11-07: step 3 extended protocol, compatibility and admission
+
+**Decision (reasoned, locally checked):** implement unnamed Parse/Bind/Describe/
+Execute/Sync/Close/Flush, retaining text-only results. Reject **named** objects
+and **nonzero Execute max-rows** with 0A000. Alternative: named caches/suspended
+portals. They add retained plans, admissions and idle lifecycle bounds beyond
+this small slice; bounded unnamed state plus explicit client settings meets the
+card without unbounded caches or parked workers. Sync clears the extended error
+state and releases the portal; errors discard following work until Sync.
+
+Parameters become literal expression nodes at the parser-to-Nata-AST seam.
+The standalone parser supplies no nodes and continues to reject placeholders.
+No bound data is pasted into the user's SQL, nor used as an identifier/path.
+Boolean text is case-insensitive: the real pgjdbc probe sends TRUE, not just t.
+Unspecified OIDs resolve to text; explicit SQL CAST supplies numeric context.
+SMALLINT/FLOAT parameters widen to INTEGER/DOUBLE, the existing dialect CAST
+surface. Numeric OID 1700 has no precision/scale: a result depending on its value
+must be explicitly cast to stable metadata, or returns 0A000 before rows.
+Compare the bound result's wire types to Parse metadata before sending data.
+Bounds: 1,024 parameters and a conservative 1 MiB expansion budget (counts repeated
+references). Binary payloads are opaque to the codec and refused by the session
+with 0A000, including non-UTF8 bytes. NULL is distinct from empty string.
+
+**Driver bootstrap source audit (2026-11-07):**
+
+- [pgjdbc 42.7.7 ConnectionFactoryImpl](https://github.com/pgjdbc/pgjdbc/blob/REL42.7.7/pgjdbc/src/main/java/org/postgresql/core/v3/ConnectionFactoryImpl.java)
+  sends startup client_encoding UTF8, DateStyle ISO and TimeZone; optional
+  application_name/search_path/options/replication depend on properties. Its
+  initial query sets application_name when not sent in startup. For reported
+  version 16 it skips extra_float_digits; older-server paths set 2 or 3.
+  [Driver settings](https://jdbc.postgresql.org/documentation/use/) default to
+  binaryTransfer=true and prepareThreshold=5. Required here:
+  **prepareThreshold=0&binaryTransfer=false**, default fetch size zero.
+- [psycopg connection base](https://github.com/psycopg/psycopg/blob/master/psycopg/psycopg/_connection_base.py)
+  defaults to autocommit=false and sends BEGIN before the first operation;
+  nondefault isolation/read-only/deferrable options can extend BEGIN (refused).
+  libpq supplies startup user/database/client_encoding/application_name as
+  configured. [Preparation](https://www.psycopg.org/psycopg3/docs/advanced/prepare.html)
+  automatically names after five uses. Required here: **prepare_threshold=None**
+  and **%t placeholders** to force text parameter dumps; binary=False results.
+  Default %s adapts integers to binary even before preparation.
+- [psql startup](https://github.com/postgres/postgres/blob/master/src/bin/psql/startup.c)
+  uses libpq startup/ParameterStatus for version and encoding, and then user SQL;
+  no mandatory SQL bootstrap for `psql -X -c`. Startup application_name is allowed.
+  User psqlrc SQL, catalog backslash commands and completion are outside this
+  guarantee. The local extracted client was exercised, not installed system-wide.
+- [pgcli PGExecute](https://github.com/dbcli/pgcli/blob/main/pgcli/pgexecute.py)
+  uses psycopg, autocommit and a client encoding, registers type loaders, and
+  fetches connection metadata. Its `SELECT 1` connection probe and TIME ZONE
+  spellings are accepted. Without a supplied host it can query pg_settings for
+  unix_socket_directories (unsupported here). Its search-path
+  query uses unnest(current_schemas(true)), falling back to current_schemas(true);
+  both are unsupported. Completion queries pg_catalog
+  namespaces, relations, types and functions. Those remain explicit unsupported
+  errors, not fabricated catalog data. Full pgcli compatibility awaits item 35.
+
+The explicit SET/SHOW/version/current_setting/current_schema/transaction-marker
+allowlist is the [serve contract](../serve.md). It runs before nata-sql and does
+not widen the SQL dialect. Harmless formatting/search-path/timezone settings are
+stored no-ops; nonzero statement_timeout and semantic changes are refused rather
+than falsely promised. Report ParameterStatus for application_name, client_encoding,
+DateStyle, TimeZone and standard_conforming_strings. BEGIN/COMMIT/ROLLBACK are
+compatibility no-ops with I/T/E ReadyForQuery markers, not transactional isolation.
+
+**Diagnostics:** forward Nata's own syntax/bind/evaluation messages, retain the
+position in the original query and put column suggestions in Hint. Substitute
+parameter errors use generic text where a literal diagnostic could quote bound
+data. Foreign IO/library strings stay generic; no Detail with possible cells.
+Nata diagnostic families map to 42601 syntax, 42703 column, 42P01 relation/file,
+42883 function, 42804 type/rule mismatch, 22012 divide-by-zero, 22003 overflow/range,
+22P02 bad cast text, 0A000 unsupported, 57014 cancel, 08P01 protocol, 53300 session/
+admission limit; residual conversion errors use 22000 and internal errors XX000.
+The mapping is tested by diagnostic family; no change to CLI error classes.
+
+**Admission amendment under ADR 0002:** replace step 2's one global slot with a
+bounded semaphore, default slots = configured total CPU workers, configurable via
+--max-queries (1..=threads). Each admission receives floor(threads/slots) workers
+in the **existing** executor/scheduler; no new pool, runtime or spawn_blocking.
+Thus concurrently admitted scan workers never exceed the total worker budget;
+coordinators/planning/evaluation helpers remain bounded by admissions. Admission
+wait: five seconds, 53300. A frame unwritable for two seconds cancels its query
+and closes that socket, logging 57014; close avoids appending an error to a partial
+frame. Cancel/disconnect closes the bounded bridge and joins workers before
+release. Alternative: keep one slot or let stalled writers wait forever; the
+stalled-reader control demonstrates starvation. A shared multi-query scheduler
+would permit borrowing idle shares, but belongs to later scheduler work. The
+fixed-share design may underuse cores for a lone query; step 5 must measure that.
+
+**Measured, local x86-64 only:** recorded JDBC-like/psycopg-like sequences,
+error recovery and mutants, all SQL corpus rows through extended mode versus CLI,
+one nonreader plus eight completing clients, and actual driver outcomes/versions
+are in [step 3 results](../../bench/results/20261107-pgwire-extended.md).
+Default settings connect/read types but do **not** pass repeated preparation and
+binary parameters; this is a documented compatibility limit, not a default-driver
+certification. Confidence medium for the tested surface, reasoned for limits and
+worker-share sizing. No ARM64, two-CPU performance, SF10 RSS closure, full-domain
+date certification, sanitizer/leak certification or pgcli/ADBC claim. Step 4
+owns expanded hostile-sequence fuzz, contention and lifecycle checks. Revisit
+named/suspended support when item 35 requires it, or text client settings prove
+insufficient; revisit fixed shares after step-5 measurements.
