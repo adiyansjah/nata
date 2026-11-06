@@ -162,6 +162,9 @@ fn m07_limit_stop_wakes_a_worker_blocked_on_the_window_and_drops_everything() {
             assert_eq!(out.result, Ok(Finish::Stopped));
             common_checks(&model, &out.summary, 2, 1);
             assert_eq!(model.runs_of(0), 1);
+            // the window is 1: the slot of the result that satisfied the limit is released only after the claims were stopped, so no second task starts
+            assert_eq!(out.summary.claimed, 1, "{:?}", out.summary);
+            assert_eq!(model.runs_of(1), 0, "a second task was started after the limit");
         },
     );
 }

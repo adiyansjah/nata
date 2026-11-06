@@ -511,6 +511,11 @@ impl<W: Work> Scheduler<W> {
                     emitting = false;
                 }
             }
+            if stopped || sink_err.is_some() {
+                // enough (a satisfied limit), or the output is gone: stop the claims BEFORE the slot is released, or the freed slot lets a worker start one
+                // more task in the moment before the shutdown (a scan with `window = 1` and a limit read one row group too many under load)
+                sh.cancel_all();
+            }
             {
                 let mut g = lock(&sh.core);
                 g.released += 1;
