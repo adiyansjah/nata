@@ -248,6 +248,11 @@ case "$JOB" in
     # Intended machines: n4a-highcpu-8 and c3d-highcpu-8. The exit status is recorded and does not stop the job, so the results are kept.
     run ps-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run ps-all bash -c 'cd "$SRC" && spikes/parquet-scan/gcp-check.sh "$RESULTS/parquet-scan" > "$RESULTS/parquet-scan-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/parquet-scan-exit.txt"; true' ;;
+  icebergcs)
+    # verification-plan item 24 (real-store gap) and ADR 0005 rule 8: the catalog-less commit with its commit point (PutMode::Create of
+    # metadata/vN, GCS ifGenerationMatch=0) in a REAL bucket, and probes that the VM identity can write only there (IC_MODE=gcs). Needs
+    # spikes/iceberg-commit/gcs.env (git-ignored) and a VM run with --vm-service-account <the write-test account> --vm-storage-scope read-write.
+    run ic-gcs bash -c 'cd "$SRC/spikes/iceberg-commit" && IC_WORK="$WORK/ic-gcs-work" IC_RESUME=1 IC_MODE=gcs ./gcp-check.sh "$RESULTS/iceberg-gcs" > "$RESULTS/iceberg-gcs-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/iceberg-gcs-exit.txt"; true' ;;
   icebergspikes)
     # verification-plan items 24, 25, 30: the CODE side of the Iceberg commit check (Rust build and tests, the Apache REST reference fixture,
     # the commit spike against it and against conditional create, and the pyiceberg interop that the first run skipped) on another machine,

@@ -154,6 +154,11 @@ pub trait Catalog: Send + Sync {
     fn load(&self) -> Res<TableState>;
     fn commit(&self, req: &CommitReq) -> Result<TableState, CommitError>;
     fn describe(&self) -> String;
+    /// Called by the checker before it reads the table: a catalog whose metadata files are not on the local disk copies
+    /// them there (the checker replays the metadata history and looks for orphans on the local disk). Default: nothing.
+    fn prepare_check(&self) -> Res<()> {
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------- REST
@@ -340,7 +345,9 @@ impl Catalog for RestCatalog {
 /// NOT faithful for network failures (the FaultyCatalog adds those) or for PutMode::Update (not implemented locally).
 pub struct StoreCatalog {
     pub root: PathBuf,
-    store: object_store::local::LocalFileSystem,
+    store: Arc<dyn object_store::ObjectStore>,
+    /// Some("gs://bucket/prefix/<table>") when the metadata versions live in a real bucket (NATA_STORE_URL); None: local.
+    remote: Option<String>,
 }
 
 fn vpath(n: u64) -> object_store::path::Path {
@@ -348,10 +355,58 @@ fn vpath(n: u64) -> object_store::path::Path {
 }
 
 impl StoreCatalog {
+    /// Local by default. With NATA_STORE_URL=gs://BUCKET/PREFIX (and the `gcs` feature) the metadata versions -- the commit
+    /// point, created with PutMode::Create, i.e. GCS `ifGenerationMatch=0` -- live in that bucket under
+    /// PREFIX/<the table's local root path>, so every table of a suite run has its own key space; manifests and data files
+    /// stay on the local disk (they are not the atomic operation). Credentials: the VM's attached service account.
     pub fn new(root: PathBuf) -> Res<StoreCatalog> {
         std::fs::create_dir_all(root.join("metadata")).map_err(|e| e.to_string())?;
-        let store = object_store::local::LocalFileSystem::new_with_prefix(&root).map_err(|e| e.to_string())?;
-        Ok(StoreCatalog { root, store })
+        match std::env::var("NATA_STORE_URL").ok().filter(|v| !v.is_empty()) {
+            None => {
+                let store = object_store::local::LocalFileSystem::new_with_prefix(&root).map_err(|e| e.to_string())?;
+                Ok(StoreCatalog { root, store: Arc::new(store), remote: None })
+            }
+            Some(url) => Self::new_remote(root, &url),
+        }
+    }
+
+    #[cfg(feature = "gcs")]
+    fn new_remote(root: PathBuf, url: &str) -> Res<StoreCatalog> {
+        let rest = url.strip_prefix("gs://").ok_or_else(|| format!("NATA_STORE_URL must be gs://BUCKET/PREFIX, not '{url}'"))?;
+        let (bucket, prefix) = rest.split_once('/').unwrap_or((rest, ""));
+        if bucket.is_empty() {
+            return Err(format!("NATA_STORE_URL has no bucket: '{url}'"));
+        }
+        let table_key = format!("{}/{}", prefix.trim_matches('/'), root.display().to_string().trim_start_matches('/'));
+        let table_key = table_key.trim_start_matches('/').to_string();
+        let gcs = object_store::gcp::GoogleCloudStorageBuilder::from_env().with_bucket_name(bucket).build().map_err(|e| format!("GCS: {e}"))?;
+        let store = object_store::prefix::PrefixStore::new(gcs, object_store::path::Path::from(table_key.as_str()));
+        Ok(StoreCatalog { root, store: Arc::new(store), remote: Some(format!("gs://{bucket}/{table_key}")) })
+    }
+
+    #[cfg(not(feature = "gcs"))]
+    fn new_remote(_root: PathBuf, url: &str) -> Res<StoreCatalog> {
+        Err(format!("NATA_STORE_URL={url} needs the `gcs` feature (cargo build --features gcs)"))
+    }
+
+    /// Copies every metadata version from the bucket to the local root (only for a remote store).
+    fn mirror_metadata(&self) -> Res<usize> {
+        use futures::TryStreamExt;
+        use object_store::{ObjectStore, ObjectStoreExt};
+        if self.remote.is_none() {
+            return Ok(0);
+        }
+        let prefix = object_store::path::Path::from("metadata");
+        let metas: Vec<_> = futures::executor::block_on(self.store.list(Some(&prefix)).try_collect::<Vec<_>>()).map_err(|e| e.to_string())?;
+        for m in &metas {
+            let name = m.location.filename().ok_or("metadata object without a name")?.to_string();
+            let bytes = futures::executor::block_on(async {
+                let r = self.store.get(&m.location).await.map_err(|e| e.to_string())?;
+                r.bytes().await.map_err(|e| e.to_string())
+            })?;
+            std::fs::write(self.root.join("metadata").join(&name), &bytes).map_err(|e| format!("mirror {name}: {e}"))?;
+        }
+        Ok(metas.len())
     }
 
     /// Creates v1 with an empty table (no snapshots). Safe to call twice.
@@ -440,7 +495,14 @@ impl Catalog for StoreCatalog {
     }
 
     fn describe(&self) -> String {
-        format!("object store (conditional create) at {}", self.root.display())
+        match &self.remote {
+            None => format!("object store (conditional create) at {}", self.root.display()),
+            Some(r) => format!("object store (conditional create) at {r} (manifests and data at {})", self.root.display()),
+        }
+    }
+
+    fn prepare_check(&self) -> Res<()> {
+        self.mirror_metadata().map(|_| ())
     }
 }
 
@@ -504,6 +566,10 @@ impl Catalog for FaultyCatalog {
     fn load(&self) -> Res<TableState> {
         self.inner.load()
     }
+
+    fn prepare_check(&self) -> Res<()> {
+        self.inner.prepare_check()
+    }
     fn commit(&self, req: &CommitReq) -> Result<TableState, CommitError> {
         let n = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
         if let Some(ms) = self.plan.delay_ms.get(&n) {
@@ -526,5 +592,37 @@ impl Catalog for FaultyCatalog {
     }
     fn describe(&self) -> String {
         format!("{} + faults", self.inner.describe())
+    }
+}
+
+#[cfg(test)]
+mod store_url_tests {
+    use super::*;
+
+    #[test]
+    fn a_malformed_store_url_is_refused_before_anything_is_written() {
+        let d = std::env::temp_dir().join(format!("ic-url-{}", std::process::id()));
+        for bad in ["s3://b/p", "gs://", "/local/path"] {
+            let r = StoreCatalog::new_remote(d.clone(), bad);
+            assert!(r.is_err(), "{bad} must be refused");
+        }
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[cfg(not(feature = "gcs"))]
+    #[test]
+    fn a_remote_url_without_the_gcs_feature_is_an_error_not_a_silent_local_store() {
+        let d = std::env::temp_dir().join(format!("ic-url2-{}", std::process::id()));
+        let e = StoreCatalog::new_remote(d.clone(), "gs://bucket/prefix").err().unwrap_or_default();
+        assert!(e.contains("gcs"), "{e}");
+        let _ = std::fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn a_local_store_has_no_remote_and_mirrors_nothing() {
+        let d = std::env::temp_dir().join(format!("ic-url3-{}", std::process::id()));
+        let c = StoreCatalog { root: d.clone(), store: Arc::new(object_store::memory::InMemory::new()), remote: None };
+        assert_eq!(c.mirror_metadata().ok(), Some(0));
+        let _ = std::fs::remove_dir_all(&d);
     }
 }

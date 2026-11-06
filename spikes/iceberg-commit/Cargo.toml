@@ -29,6 +29,11 @@ bytes = "1"
 # The test double for the REST catalog (src/mock.rs), also used by `ic-spike mock`.
 tiny_http = "0.12"
 
+[features]
+# The metadata versions in a real Google Cloud Storage bucket (NATA_STORE_URL=gs://BUCKET/PREFIX): conditional create is
+# GCS's ifGenerationMatch=0. Off by default (pulls an HTTP and TLS stack).
+gcs = ["object_store/gcp"]
+
 [profile.release]
 opt-level = 2
 debug = "line-tables-only"

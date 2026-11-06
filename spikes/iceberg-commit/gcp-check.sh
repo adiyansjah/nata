@@ -68,7 +68,7 @@ PORT=${IC_PORT:-8181}
 SEEDS=${IC_SEEDS:-6}
 TLC_TIMEOUT=${IC_TLC_TIMEOUT:-2700}
 MODE=${IC_MODE:-full}
-case "$MODE" in full | model | spikes | polaris) ;; *) echo "IC_MODE must be full, model, spikes or polaris, not '$MODE'" >&2; exit 2 ;; esac
+case "$MODE" in full | model | spikes | polaris | gcs) ;; *) echo "IC_MODE must be full, model, spikes, polaris or gcs, not '$MODE'" >&2; exit 2 ;; esac
 # The default list of the targeted re-run: the 15 runs that had no result in the first GCP run (iceberg-full-arm64), cheapest guess
 # first is NOT knowable (the costs are unknown), so: the near-complete three-store-ser, then the I4 run, the 2-writer liveness run,
 # the 11 canaries, and the 3-writer liveness run (the most expensive unknown) last.
@@ -273,6 +273,62 @@ if [ "$MODE" = polaris ]; then
     log "secret scan: the Polaris client secret appears nowhere under the results directory"
   fi
   if [ "$FAILED" -eq 0 ]; then log "VERDICT PASS (the commit suite and the pyiceberg interop passed against Apache Polaris $POLARIS_VERSION; not covered: the TLA+ model, other catalogs, a real object store)"; exit 0; fi
+  log "VERDICT FAIL ($FAILED gating phase(s) failed; see the PHASE lines above and the per-phase files in $OUT)"
+  exit 1
+fi
+
+# ---- Real Google Cloud Storage (IC_MODE=gcs): the commit point of the catalog-less store mode (PutMode::Create of metadata/vN,
+# GCS ifGenerationMatch=0) in a REAL bucket, the dedicated write-test bucket, with the VM's attached service account (object
+# access on that one bucket, no project roles). The bucket name comes from gcs.env next to this script (git-ignored, uploaded
+# with the source): NATA_WTEST_BUCKET=<name>. Probes print HTTP status codes only, never a token or the project id.
+gcs_token() { curl -s -m 5 -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token | python3 -I -c 'import json,sys; print(json.load(sys.stdin)["access_token"])'; }
+gcs_code() { curl -s -o /dev/null -w '%{http_code}' -m 20 -H "Authorization: Bearer $(gcs_token)" "$@"; }
+ph_gcs_config() {
+  [ -f "$HERE/gcs.env" ] || { echo "gcs.env is missing next to gcp-check.sh (NATA_WTEST_BUCKET=<bucket>)"; return 1; }
+  . "$HERE/gcs.env"; [ -n "${NATA_WTEST_BUCKET:-}" ] || { echo "NATA_WTEST_BUCKET is empty in gcs.env"; return 1; }
+  gcs_token > /dev/null 2>&1 || { echo "no token from the metadata server: is a service account attached?"; return 1; }
+  echo "bucket configured; a token is available"
+}
+ph_gcs_rust_build() { rust_env && cd "$HERE" && cargo build --release --locked --bins --tests --features gcs; }
+ph_gcs_probes() {
+  need gcs-config || return 1
+  . "$HERE/gcs.env"; local b=$NATA_WTEST_BUCKET obj="ic-probe/$GCS_TAG/create-only" up="https://storage.googleapis.com/upload/storage/v1/b" bad=0 c
+  local pid; pid=$(curl -s -m 5 -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/project/project-id)
+  c=$(gcs_code -X POST --data-binary probe "$up/$b/o?uploadType=media&name=$obj&ifGenerationMatch=0")
+  echo "P1 create-only write to our bucket: HTTP $c (expected 200)"; [ "$c" = 200 ] || bad=1
+  c=$(gcs_code -X POST --data-binary probe2 "$up/$b/o?uploadType=media&name=$obj&ifGenerationMatch=0")
+  echo "P2 the same create-only write again: HTTP $c (expected 412, the precondition the commit relies on)"; [ "$c" = 412 ] || bad=1
+  c=$(gcs_code -X POST --data-binary probe "$up/gcp-public-data-landsat/o?uploadType=media&name=nata-probe-$GCS_TAG")
+  echo "P3 write to a bucket that is not ours (Google's public landsat bucket): HTTP $c (expected 403)"; [ "$c" = 403 ] || bad=1
+  c=$(gcs_code -X POST -H 'Content-Type: application/json' --data "{\"name\":\"nata-probe-$GCS_TAG\"}" "https://storage.googleapis.com/storage/v1/b?project=$pid")
+  echo "P4 create a bucket in the project: HTTP $c (expected 403)"; [ "$c" = 403 ] || bad=1
+  c=$(gcs_code "https://storage.googleapis.com/storage/v1/b?project=$pid")
+  echo "P5 list the project's buckets: HTTP $c (expected 403)"; [ "$c" = 403 ] || bad=1
+  c=$(gcs_code -X DELETE "https://storage.googleapis.com/storage/v1/b/$b/o/$(python3 -I -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$obj")")
+  echo "P6 delete our probe object: HTTP $c (expected 204)"; [ "$c" = 204 ] || bad=1
+  return $bad
+}
+ph_gcs_suite() {
+  need gcs-rust-build gcs-probes || return 1
+  . "$HERE/gcs.env"
+  rm -rf "$WORKBASE/suite-gcs"
+  NATA_STORE_URL="gs://$NATA_WTEST_BUCKET/ic-suite/$GCS_TAG" "$IC" suite --backend store --work "$WORKBASE/suite-gcs" --seeds "$SEEDS" ${IC_WRITERS:+--writers "$IC_WRITERS"}
+  local rc=$?
+  tar -czf "$OUT/journals-gcs.tgz" -C "$WORKBASE/suite-gcs" journals 2> /dev/null || true
+  return $rc
+}
+if [ "$MODE" = gcs ]; then
+  GCS_TAG="$(date -u +%Y%m%d-%H%M%S)-$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')"
+  log "MODE gcs: the commit suite of the catalog-less store mode with the metadata versions in a real GCS bucket (objects under ic-suite/$GCS_TAG, deleted by the bucket's one-day lifecycle), and the probes of what the VM's identity may do; nothing else"
+  phase gcs-config yes ph_gcs_config
+  phase gcs-rust-build yes ph_gcs_rust_build
+  phase gcs-probes yes ph_gcs_probes
+  phase spike-object-store-gcs yes ph_gcs_suite
+  { echo; echo "---- probes of the VM identity"; cat "$OUT/gcs-probes.txt" 2> /dev/null; echo "---- spike: catalog-less commit on real GCS"; tail -n 4 "$OUT/spike-object-store-gcs.txt" 2> /dev/null; } >> "$SUMMARY"
+  # neither the access token nor the project id may be in the results
+  pid=$(curl -s -m 5 -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/project/project-id 2> /dev/null)
+  if [ -n "$pid" ] && grep -rqaF "$pid" "$OUT" 2> /dev/null; then log "THE PROJECT ID IS IN THE RESULTS: remove it before they are copied anywhere"; FAILED=$((FAILED + 1)); else log "scan: the project id appears nowhere under the results directory"; fi
+  if [ "$FAILED" -eq 0 ]; then log "VERDICT PASS (probes as expected and the store commit suite passed with the metadata versions on real GCS; manifests and data files on the VM's disk; not covered: S3, Azure, other regions, a product catalog)"; exit 0; fi
   log "VERDICT FAIL ($FAILED gating phase(s) failed; see the PHASE lines above and the per-phase files in $OUT)"
   exit 1
 fi

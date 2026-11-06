@@ -118,6 +118,10 @@ fn short(set: &BTreeSet<i64>) -> String {
 
 pub fn check(catalog: &dyn Catalog, journal_dir: &Path) -> Report {
     let mut rep = Report::default();
+    if let Err(e) = catalog.prepare_check() {
+        rep.v("I1", format!("the catalog's metadata files could not be copied for the check: {e}"));
+        return rep;
+    }
     let state = match catalog.load() {
         Ok(s) => s,
         Err(e) => {
