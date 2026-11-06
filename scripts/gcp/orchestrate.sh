@@ -59,6 +59,7 @@ while [ $# -gt 0 ]; do
     --run-id) RUN_ID=$2; RUN_ID_GIVEN=1; shift 2 ;;
     --force) FORCE=1; shift ;;
     --data-gb) DATA_GB=$2; shift 2 ;;
+    --peers) PEERS=$2; shift 2 ;;
     --machines) MACHINES=$2; shift 2 ;;
     --zones) ZONES=$2; shift 2 ;;
     --max-vm-hours) MAX_VM_HOURS=$2; shift 2 ;;
@@ -74,6 +75,13 @@ done
 # 300 GB) pass --data-gb. Bounded so that a typo cannot create a multi-terabyte disk; its price is part of the worst case below.
 case "$DATA_GB" in ''|*[!0-9]*) echo "error: --data-gb must be a whole number of GB, got '$DATA_GB'" >&2; exit 2 ;; esac
 [ "$DATA_GB" -ge 10 ] && [ "$DATA_GB" -le 1000 ] || { echo "error: --data-gb must be between 10 and 1000, got $DATA_GB" >&2; exit 2; }
+# --peers K: K more VMs of the same machine type in the same zone (a multi-VM run, e.g. the network exchange between machines). A peer
+# has only a boot disk and runs no job; the main VM (the driver) gets their internal addresses in /mnt/work/PEERS (its own first) and the
+# run's throwaway key as /mnt/work/peer_key, and starts the processes on them itself over the private network. Peers are not recreated
+# after a preemption (the driver's job sees a lost peer as a failed scenario); they carry the run's label, so the cleanup deletes them.
+PEERS=${PEERS:-0}
+case "$PEERS" in ''|*[!0-9]*) echo "error: --peers must be a whole number, got '$PEERS'" >&2; exit 2 ;; esac
+[ "$PEERS" -le 7 ] || { echo "error: --peers must be at most 7, got $PEERS" >&2; exit 2; }
 OUT=${OUT:-$REPO/bench/gcp-runs/$RUN_ID}
 DISK="$RUN_ID-work"
 if [ -n "$VM_SA" ]; then
@@ -127,7 +135,7 @@ bound_usd() {
   worst=$(for m in $MACHINES; do rate_of "$m"; done | sort -g | tail -1)
   if [ "$DISK_CLASS" = hyperdisk-balanced ]; then dm=$DISK_USD_PER_GIB_MONTH_hyperdisk; extra=$HYPERDISK_EXTRA_ALLOWANCE_USD; else dm=$DISK_USD_PER_GIB_MONTH_pd; fi
   awk -v r="$worst" -v h="$MAX_VM_HOURS" -v ip="$IP_USD_PER_HOUR" -v dm="$dm" -v b="$BOOT_GB" -v d="$DATA_GB" -v x="$extra" \
-    'BEGIN { dh = dm / 730; printf "%.3f", r*h + ip*h + b*dh*h + d*dh*(h+0.5) + x }'
+    -v k="$PEERS" 'BEGIN { dh = dm / 730; printf "%.3f", (1+k)*(r*h + ip*h + b*dh*h) + d*dh*(h+0.5) + x }'
 }
 
 leak_per_day() { awk -v dm="$([ "$DISK_CLASS" = hyperdisk-balanced ] && echo "$DISK_USD_PER_GIB_MONTH_hyperdisk" || echo "$DISK_USD_PER_GIB_MONTH_pd")" -v d="$DATA_GB" 'BEGIN { printf "%.3f", d*dm/30 }'; }
@@ -145,6 +153,7 @@ Provisioning: Spot, termination action DELETE, no service account, no scopes
 Limits:      at most $MAX_VM_HOURS VM-hours in total over all VMs; at most $MAX_PREEMPTIONS preemptions;
              each VM also carries its own --max-run-duration, so it deletes itself even if this script dies
 Disks:       $BOOT_GB GB boot (deleted with the VM) + $DATA_GB GB data (kept until the end of the run)
+Peers:       $PEERS more VM(s) of the same machine type, boot disk only, same zone, same label (the driver reaches them over the private network)
 
 Worst-case cost (prices.env, dearest machine of the chain for all VM-hours): \$$bound
 If this script died with the VM already gone, only the data disk would remain: about \$$(leak_per_day) per day.
@@ -198,6 +207,28 @@ create_vm_any() { # $1 max-run-duration seconds ; sets VM, MACHINE_USED
   return 1
 }
 
+create_peers() { # once per run, next to the first main VM; writes PEERS and peer_key onto the driver's data disk
+  [ "$PEERS" -gt 0 ] || return 0
+  [ -z "${PEERS_DONE:-}" ] || return 0
+  local i name ips="" ip myip remaining=$1
+  for i in $(seq 1 "$PEERS"); do
+    name="$RUN_ID-peer$i"
+    G compute instances create "$name" --zone "$ZONE" --machine-type "$MACHINE_USED" \
+        --provisioning-model SPOT --instance-termination-action DELETE --max-run-duration "${remaining}s" \
+        --image-family "$IMAGE" --image-project debian-cloud --boot-disk-size "${BOOT_GB}GB" --boot-disk-type "$DISK_CLASS" \
+        --labels "nata-run=$RUN_ID" --no-service-account --no-scopes --metadata block-project-ssh-keys=TRUE,nata-peer=1 \
+        --metadata-from-file "startup-script=$HERE/vm-startup.sh,ssh-keys=$OUT/ssh-keys.meta" >> "$OUT/gcloud.log" 2>&1 \
+      || { log "could not create peer $name"; return 1; }
+    ip=$(G compute instances describe "$name" --zone "$ZONE" --format='value(networkInterfaces[0].networkIP)' 2>/dev/null)
+    [ -n "$ip" ] || { log "peer $name has no internal address"; return 1; }
+    ips="$ips $ip"; log "created peer $name ($MACHINE_USED, internal $ip)"
+  done
+  myip=$(G compute instances describe "$VM" --zone "$ZONE" --format='value(networkInterfaces[0].networkIP)' 2>/dev/null)
+  printf '%s\n' $myip $ips | vm_ssh 'cat > /mnt/work/PEERS' || return 1
+  vm_ssh 'umask 077; cat > /mnt/work/peer_key' < "$OUT/key" || return 1
+  PEERS_DONE=1
+}
+
 pull_state() { # copy state, results and logs from the data disk; only replace local files if the copy is whole
   local tmp="$OUT/.incoming"; rm -rf "$tmp"; mkdir -p "$tmp"
   if vm_ssh 'cd /mnt/work && tar -czf - state results logs 2>/dev/null' | tar -xzf - -C "$tmp" 2>/dev/null; then
@@ -228,6 +259,7 @@ monitor_vm() {
   done
   # After a preemption the data disk already holds the source and START, so the startup script resumes the job by itself.
   if ! vm_ssh 'test -f /mnt/work/START' > /dev/null 2>&1; then
+    create_peers "$(( budget_seconds - used_seconds ))" || { FINAL_PEERS="the peers could not be created"; RESULT=failed; return; }
     upload_source > /dev/null 2>&1 || { RESULT=stuck; return; }
   fi
   while true; do
@@ -354,7 +386,7 @@ do_run() {
   local bound; bound=$(bound_usd)
   [ -n "$APPROVED_USD" ] || die "a real run needs --approved-usd (at least \$$bound, the worst case for this plan); try '$0 plan' first"
   le "$bound" "$APPROVED_USD" || die "the worst case is \$$bound but only \$$APPROVED_USD was approved; nothing was called"
-  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|kani-solvers|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergcs|icebergpolaris|pushpin|netexchsim|parquetscan|failmodel|failmodel-retry|opsbeyond|spillbench|sqlfuzz|parquetwrite|icebergplan|icebergplan-mut) ;; *) die "unknown job $JOB" ;; esac
+  case "$JOB" in ci|bench|all|genops|verify|hashops|kani|kani-mut|decimal|parmut|parmut-hashops|crates|fairness-bench|bridge|perf|cpack|hashtests|kani-crate|kani-solvers|nullpath|armcheck|kani-mut-crate|timing|armcheck-retry|objscan|simharness|iceberg|iceberg-smoke|icebergmodel|icebergspikes|icebergcs|icebergpolaris|pushpin|netexchsim|netexchreal|parquetscan|failmodel|failmodel-retry|opsbeyond|spillbench|sqlfuzz|parquetwrite|icebergplan|icebergplan-mut) ;; *) die "unknown job $JOB" ;; esac
   [ -n "$PROJECT" ] || PROJECT=$("$GCLOUD" config get-value project 2>/dev/null)
   [ -n "$PROJECT" ] || die "no project: pass --project or set one with gcloud"
   mkdir -p "$OUT"; : > "$OUT/gcloud.log"

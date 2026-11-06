@@ -289,6 +289,10 @@ case "$JOB" in
     run sb-build bash -c 'cd "$SRC/spikes/operators-beyond" && RUSTFLAGS= cargo build --release && ./test-spill-summary.sh > "$RESULTS/spill-summary-test.txt" 2>&1'
     run sb-sf1 bash -c 'cd "$SRC/spikes/operators-beyond" && { SPILL_ROOT="$WORK/spill-sf1" ./spill-bench.sh "$SRC/data/tpch-sf1" "$RESULTS/spill-sf1" 7 "1 4 8"; echo "exit status: $?"; } > "$RESULTS/spill-sf1-run.txt" 2>&1; rm -rf "$WORK/spill-sf1"; true'
     run sb-sf10 bash -c 'cd "$SRC/spikes/operators-beyond" && { SPILL_ROOT="$WORK/spill-sf10" ./spill-bench.sh "$SRC/data/tpch-sf10" "$RESULTS/spill-sf10" 3 "8"; echo "exit status: $?"; } > "$RESULTS/spill-sf10-run.txt" 2>&1; rm -rf "$WORK/spill-sf10"; true' ;;
+  netexchreal)
+    # verification-plan item 28, STAGE B: the TCP exchange between SEPARATE VMs (spikes/net-exchange/real-check.sh). Needs a multi-VM run:
+    # orchestrate.sh run --job netexchreal --peers 3 (4 nodes); this VM is the driver and starts the nodes on the peers over the private network.
+    run nr-all bash -c 'cd "$SRC/spikes/net-exchange" && ./real-check.sh "$RESULTS/net-exchange-real" > "$RESULTS/net-exchange-real-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/net-exchange-real-exit.txt"; true' ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;

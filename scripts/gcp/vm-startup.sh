@@ -6,6 +6,17 @@ exec > >(tee -a /var/log/nata-startup.log) 2>&1
 set -u
 MNT=/mnt/work
 DEV=/dev/disk/by-id/google-work
+# A PEER of a multi-VM run (orchestrate.sh --peers K, attribute nata-peer=1) has no data disk and runs no job: the driver VM of the run
+# reaches it over the private network with the run's throwaway key and starts the processes itself. It gets the user `nata` with
+# passwordless sudo (the partition test drops its traffic with iptables): the peer has no service account and no scopes, so root on it
+# reaches nothing outside it. Nothing else happens on a peer.
+if [ "$(curl -s -m 5 -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/nata-peer 2>/dev/null)" = 1 ]; then
+  id nata > /dev/null 2>&1 || useradd -m -s /bin/bash nata
+  echo 'nata ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nata-peer && chmod 440 /etc/sudoers.d/nata-peer
+  command -v iptables > /dev/null || { apt-get update -qq; apt-get install -y -qq iptables; }
+  touch /var/run/nata-peer-ready
+  exit 0
+fi
 for _ in $(seq 1 90); do [ -e "$DEV" ] && break; sleep 2; done
 blkid "$DEV" > /dev/null 2>&1 || mkfs.ext4 -q -F "$DEV"
 mkdir -p "$MNT"

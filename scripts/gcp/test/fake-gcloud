@@ -32,7 +32,10 @@ case "$1 $2 $3" in
     done; exit 0 ;;
   "compute instances create")
     name=$4; machine=$(arg --machine-type "$@"); disk=$(arg --disk "$@" | sed -n 's/^name=\([^,]*\),.*/\1/p')
-    for need in "--provisioning-model SPOT" "--instance-termination-action DELETE" "--max-run-duration" "auto-delete=no" "nata-run=" "startup-script=" "block-project-ssh-keys=TRUE"; do
+    needs="--provisioning-model SPOT|--instance-termination-action DELETE|--max-run-duration|nata-run=|startup-script=|block-project-ssh-keys=TRUE"
+    has "--disk " && needs="$needs|auto-delete=no"   # a peer of a multi-VM run has no data disk
+    IFS='|' read -ra needl <<< "$needs"
+    for need in "${needl[@]}"; do
       has "$need" || { echo "FAKE: instance create without required flag: $need" >&2; exit 2; }
     done
     # the VM identity: NONE, or exactly one user-created service account with exactly one storage scope (read-only or read-write) and no other scope
@@ -43,7 +46,9 @@ case "$1 $2 $3" in
       echo "$all" | grep -qE -- '--service-account=[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]*\.iam\.gserviceaccount\.com( |$)' || { echo "FAKE: instance create without an identity decision (needs --no-service-account or a user-created --service-account)" >&2; exit 2; }
       echo "$all" | grep -qE -- '--scopes=https://www\.googleapis\.com/auth/devstorage\.read_(only|write)( |$)' || { echo "FAKE: a service account without exactly one storage scope, read-only or read-write" >&2; exit 2; }
     fi
-    [ -d "$FAKE/disks/$disk" ] || { echo "ERROR: disk $disk not found" >&2; exit 1; }
+    if [ -n "$disk" ]; then [ -d "$FAKE/disks/$disk" ] || { echo "ERROR: disk $disk not found" >&2; exit 1; }; fi
+    [ -n "$disk" ] || has "nata-peer=1" || { echo "FAKE: a VM without a data disk must be a peer (nata-peer=1)" >&2; exit 2; }
+    [ "${FAKE_PEER_FAILS:-0}" = 1 ] && has "nata-peer=1" && { echo "ERROR: quota exceeded (peer)" >&2; exit 1; }
     in_list "$machine" "${FAKE_FAIL_MACHINES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED for $machine" >&2; exit 1; }
     in_list "$zone" "${FAKE_FAIL_VM_ZONES:-}" && { echo "ERROR: ZONE_RESOURCE_POOL_EXHAUSTED in $zone" >&2; exit 1; }
     [ "${FAKE_CREATE_ALWAYS_FAIL:-0}" = 1 ] && { echo "ERROR: quota exceeded" >&2; exit 1; }
@@ -63,6 +68,7 @@ case "$1 $2 $3" in
     [ -d "$v" ] || { echo "ERROR: The resource '$name' was not found" >&2; exit 1; }
     idx=$(cat "$v/idx")
     if has natIP; then echo "10.0.0.$idx"; exit 0; fi
+    if has networkIP; then echo "10.128.0.$idx"; exit 0; fi
     if has creationTimestamp; then cat "$v/created"; exit 0; fi
     if has machineType; then cat "$v/machine"; exit 0; fi
     polls=$(( $(cat "$v/polls") + 1 )); echo "$polls" > "$v/polls"
@@ -70,7 +76,7 @@ case "$1 $2 $3" in
     if [ "$limit" -gt 0 ] && [ "$polls" -ge "$limit" ]; then rm -rf "$v"; echo "ERROR: not found (preempted)" >&2; exit 1; fi
     # The job makes progress only once the orchestrator has delivered the source (START).
     d="$FAKE/disks/$(cat "$v/disk")"
-    if [ -f "$d/START" ]; then
+    if [ -n "$(cat "$v/disk")" ] && [ -f "$d/START" ]; then
       mkdir -p "$d/state"
       done_n=$(ls "$d/state" | grep -c '^step-.*\.done$')
       for _ in $(seq 1 "${FAKE_STEPS_PER_POLL:-2}"); do

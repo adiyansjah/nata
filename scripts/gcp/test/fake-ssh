@@ -13,6 +13,8 @@ case "$cmd" in
   *mountpoint*) exit 0 ;;
   *"test -f /mnt/work/START"*) [ -f "$d/START" ]; exit $? ;;
   *"tar -xzf -"*) cat > /dev/null; echo "upload" >> "$FAKE/uploads.log"; touch "$d/START"; exit 0 ;;
+  *"cat > /mnt/work/PEERS"*) cat > "$d/PEERS"; cp "$d/PEERS" "$FAKE/PEERS.received"; exit 0 ;;
+  *"cat > /mnt/work/peer_key"*) cat > "$d/peer_key"; cp "$d/peer_key" "$FAKE/peer_key.received"; exit 0 ;;
   *"tar -czf -"*) mkdir -p "$d/state" "$d/results" "$d/logs"; tar -czf - -C "$d" state results logs; exit 0 ;;
 esac
 echo "FAKE ssh: unhandled command: $cmd" >&2; exit 99

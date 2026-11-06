@@ -191,6 +191,22 @@ for badgb in 5 5000 abc ""; do
   orch run --job ci --approved-usd 2 --data-gb "$badgb" > "$T/o" 2>&1; rc=$?
   check "--data-gb '$badgb' is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"
 done
+# ---------------------------------------------------------------- multi-VM runs (--peers K)
+new_world peersplan
+orch plan --job ci --machines n4a-highcpu-8 > "$T/o0" 2>&1; orch plan --job ci --machines n4a-highcpu-8 --peers 3 > "$T/o3" 2>&1
+w0=$(sed -n 's/^Worst-case cost.*\$\([0-9.]*\)$/\1/p' "$T/o0"); w3=$(sed -n 's/^Worst-case cost.*\$\([0-9.]*\)$/\1/p' "$T/o3")
+check "--peers 3: the plan names the peers and the worst case is about 4 machines" "grep -q '^Peers: *3 more VM' $T/o3 && awk -v a=$w0 -v b=$w3 'BEGIN { exit !(b > 3.5*a*0.9 && b < 4*a) }'"
+new_world peers
+orch run --job ci --approved-usd 5 --run-id peers --peers 2 > "$T/o" 2>&1; rc=$?
+check "--peers 2: the run finishes and creates the main VM and 2 peers" "[ $rc -eq 0 ] && [ \$(grep -c 'instances create' $F/calls.log) -eq 3 ]"
+check "a peer has no data disk, no service account, nata-peer=1, and the run's label" "grep 'instances create peers-peer' $F/calls.log | grep -v -- '--disk ' | grep -- '--no-service-account' | grep -- 'nata-peer=1' | grep -q 'nata-run=peers'"
+check "the driver got PEERS (its own address first, then the 2 peers) and the run key, before the source" "[ \$(wc -l < $F/PEERS.received) -eq 3 ] && cmp -s $F/peer_key.received $O/key && [ \$(grep -n 'PEERS' $F/calls.log | head -1 | cut -d: -f1) -lt \$(grep -n 'tar -xzf' $F/calls.log | head -1 | cut -d: -f1) ]"
+check "everything is gone afterwards, peers included" "[ \$(left) -eq 0 ]"
+new_world peerfail
+FAKE_PEER_FAILS=1 orch run --job ci --approved-usd 5 --run-id peerfail --peers 1 > "$T/o" 2>&1; rc=$?
+check "a peer that cannot be created fails the run, the source is never delivered, and nothing is left" "[ $rc -ne 0 ] && ! grep -q 'tar -xzf' $F/calls.log && [ \$(left) -eq 0 ]"
+for badp in 8 x; do new_world badp; orch run --job ci --approved-usd 5 --peers "$badp" > "$T/o" 2>&1; rc=$?
+  check "--peers '$badp' is refused before anything is called" "[ $rc -eq 2 ] && [ ! -e $F/calls.log ]"; done
 new_world saplan
 orch plan --job ci --vm-service-account nata-objscan-ro@some-project.iam.gserviceaccount.com > "$T/o" 2>&1; rc=$?
 check "plan shows the VM identity, and still calls nothing" "[ $rc -eq 0 ] && grep -q 'VM identity: service account nata-objscan-ro@some-project.iam.gserviceaccount.com with the read-only Cloud Storage scope only' $T/o && [ ! -e $F/calls.log ]"
