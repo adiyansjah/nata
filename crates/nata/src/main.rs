@@ -62,13 +62,13 @@ enum Command {
         /// Do not use row-group statistics to skip row groups (for checking the pruning; the filter still applies).
         #[arg(long)]
         no_prune: bool,
-        /// Worker threads (default: the available parallelism). Memory is bounded by the window (default: this number) times the largest row group.
+        /// Worker threads (default: the available parallelism). Memory is bounded by the window (default: twice this number) times the largest row group.
         #[arg(long)]
         threads: Option<usize>,
         /// Print rows as row groups finish, in no promised order (default: the order of the files, row groups and rows, for any thread count).
         #[arg(long)]
         unordered: bool,
-        /// Row groups in flight at once, running or finished and waiting for the writer (default: the thread count). Developer option.
+        /// Row groups in flight at once, running or finished and waiting for the writer (default: twice the thread count, chosen from the slice 3 benchmark: bench/results/20261106-scan-bench.md). Developer option.
         #[arg(long)]
         window: Option<usize>,
     },
@@ -144,7 +144,8 @@ fn scan(a: ScanArgs) -> ExitCode {
         let io_error = |e: std::io::Error| ScanError::new(ErrorKind::Io(e.to_string()));
         let cfg = ParallelConfig {
             threads,
-            window: window.unwrap_or(threads),
+            // 2 x threads: on SF10 the 8-thread scan is 1.4x faster than with window = threads on both CPU types (scan benchmark)
+            window: window.unwrap_or(threads.saturating_mul(2)),
             ordered: !unordered,
         };
         let report = if count {

@@ -1,0 +1,32 @@
+## R2: pruning on SF1 lineitem sorted by l_shipdate, 122,880-row groups, the 1994 predicate, 8 threads
+row groups skipped: 41 of 49 (83.7%; R2 requires at least 60%): MET
+bytes read pruned / unpruned: 9875418 / 60285563 = 16.4% (the card requires at most 40%): MET
+wall: pruned 0.016 s, unpruned 0.030 s; rows returned 909455 (equal to DuckDB's in every run)
+
+## Scalability, sf1, the 7 Q1 columns, --count (median of the rounds; the twin is the same arm again)
+| threads | window | median s | rows/s (M) | speed-up vs 1 thread | efficiency | peak RSS MB | twin / arm |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 0.139 | 43.2 | 1.00 | 1.00 | 13 | 0.99 |
+| 1 | 2 | 0.128 | 46.9 | 1.09 | 1.09 | 13 | - |
+| 2 | 2 | 0.078 | 76.9 | 1.78 | 0.89 | 19 | - |
+| 2 | 4 | 0.064 | 93.8 | 2.17 | 1.09 | 20 | - |
+| 4 | 4 | 0.051 | 117.7 | 2.73 | 0.68 | 32 | - |
+| 4 | 8 | 0.041 | 146.4 | 3.39 | 0.85 | 36 | - |
+| 8 | 8 | 0.045 | 133.4 | 3.09 | 0.39 | 59 | 1.02 |
+| 8 | 16 | 0.042 | 142.9 | 3.31 | 0.41 | 81 | - |
+
+8-thread speed-up (best window): 3.31x (the card requires at least 5x): NOT MET
+
+## Scalability, sf10, the 7 Q1 columns, --count (median of the rounds; the twin is the same arm again)
+| threads | window | median s | rows/s (M) | speed-up vs 1 thread | efficiency | peak RSS MB | twin / arm |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 1.338 | 44.8 | 1.00 | 1.00 | 16 | 1.01 |
+| 1 | 2 | 1.122 | 53.5 | 1.19 | 1.19 | 16 | - |
+| 2 | 2 | 0.644 | 93.1 | 2.08 | 1.04 | 23 | - |
+| 2 | 4 | 0.510 | 117.6 | 2.62 | 1.31 | 24 | - |
+| 4 | 4 | 0.343 | 174.9 | 3.90 | 0.98 | 36 | - |
+| 4 | 8 | 0.243 | 246.9 | 5.51 | 1.38 | 40 | - |
+| 8 | 8 | 0.215 | 279.0 | 6.22 | 0.78 | 67 | 1.00 |
+| 8 | 16 | 0.149 | 402.6 | 8.98 | 1.12 | 102 | - |
+
+8-thread speed-up (best window): 8.98x (the card requires at least 5x): MET

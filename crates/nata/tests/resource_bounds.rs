@@ -294,15 +294,21 @@ fn peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbou
     ] {
         let err = slow_consumer_scan(&file, &extra);
         let peak = report_field(&err, "peak_rss_kib");
-        let bound = bound_kib(threads);
+        // the bound is in terms of the window the scan really used (its default is 2 x threads since 2026-11-06)
+        let window = report_field(&err, "window");
+        assert!(
+            window >= threads,
+            "the window ({window}) is at least the thread count ({threads}): {err}"
+        );
+        let bound = bound_kib(window);
         assert!(
             peak <= bound,
-            "{extra:?}: peak RSS {peak} KiB is above the bound {bound} KiB (base {base_kib}, M = {m} bytes, window {threads}): {err}"
+            "{extra:?}: peak RSS {peak} KiB is above the bound {bound} KiB (base {base_kib}, M = {m} bytes, window {window}): {err}"
         );
         // our own accounting is within the window times the largest task, and the largest task is within K x M
         let inflight = report_field(&err, "peak_inflight_bytes");
         let largest = report_field(&err, "largest_task_bytes");
-        assert!(inflight <= threads * largest, "{err}");
+        assert!(inflight <= window * largest, "{err}");
         assert!(
             (largest as f64) <= K * m as f64,
             "the scan's own accounting of one row group ({largest}) is within {K} x the independent size {m}"

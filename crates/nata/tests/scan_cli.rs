@@ -101,7 +101,25 @@ fn limit_columns_and_default_columns() {
     let d = dir("limit");
     let a = d.join("a.parquet");
     write(&a, 0, 30);
-    // one thread: the window is one row group, so exactly one is read (with more threads some are read ahead and dropped)
+    // one thread and a window of one row group: exactly one is read (a larger window reads ahead and drops the rest)
+    let out = nata(&[
+        "scan",
+        a.to_str().expect("p"),
+        "--limit",
+        "3",
+        "--threads",
+        "1",
+        "--window",
+        "1",
+        "--csv",
+    ]);
+    assert_eq!(text(&out.stdout), "id,txt\n0,t0\n1,t1\n2,t2\n");
+    assert!(
+        text(&out.stderr).contains("read=1 not_read=2"),
+        "{}",
+        text(&out.stderr)
+    );
+    // the default window is 2 x threads: at most 2 row groups are read for the same limit, and the rows are the same
     let out = nata(&[
         "scan",
         a.to_str().expect("p"),
@@ -112,10 +130,11 @@ fn limit_columns_and_default_columns() {
         "--csv",
     ]);
     assert_eq!(text(&out.stdout), "id,txt\n0,t0\n1,t1\n2,t2\n");
+    let e = text(&out.stderr);
     assert!(
-        text(&out.stderr).contains("read=1 not_read=2"),
-        "{}",
-        text(&out.stderr)
+        e.contains("window=2")
+            && (e.contains("read=1 not_read=2") || e.contains("read=2 not_read=1")),
+        "{e}"
     );
     let out = nata(&[
         "scan",
