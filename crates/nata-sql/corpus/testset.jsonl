@@ -1,0 +1,413 @@
+{"id": "t0001", "q": "SELECT * FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0002", "q": "select * from 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0003", "q": "SeLeCt * FrOm 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0004", "q": "SELECT a FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0005", "q": "SELECT a, b, c FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0006", "q": "SELECT a AS x FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0007", "q": "SELECT a AS \"Quoted Alias\", b AS \"x\"\"y\" FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0008", "q": "SELECT *, a FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0009", "q": "SELECT a, * FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0010", "q": "SELECT 1 FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0011", "q": "SELECT 1, 2.5, 'x', NULL, DATE '2020-01-01' FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0012", "q": "SELECT a + 1 AS a1, a * 2 AS a2, a / 2 AS a3 FROM 'a.parquet' LIMIT 3", "expect": "accept", "tag": "structure"}
+{"id": "t0013", "q": "SELECT * FROM 'a.parquet' LIMIT 0", "expect": "accept", "tag": "structure"}
+{"id": "t0014", "q": "SELECT * FROM 'a.parquet' LIMIT 10", "expect": "accept", "tag": "structure"}
+{"id": "t0015", "q": "SELECT * FROM 'a.parquet' LIMIT 10 OFFSET 5", "expect": "accept", "tag": "structure"}
+{"id": "t0016", "q": "SELECT * FROM 'a.parquet' LIMIT 10 OFFSET 0", "expect": "accept", "tag": "structure"}
+{"id": "t0017", "q": "SELECT * FROM 'a.parquet' LIMIT 18446744073709551615", "expect": "accept", "tag": "structure"}
+{"id": "t0018", "q": "SELECT * FROM 'a.parquet' LIMIT 5;", "expect": "accept", "tag": "structure"}
+{"id": "t0019", "q": "SELECT * FROM 'a.parquet' WHERE a = 1;", "expect": "accept", "tag": "structure"}
+{"id": "t0020", "q": "SELECT * FROM 'a.parquet';", "expect": "accept", "tag": "structure"}
+{"id": "t0021", "q": "SELECT * FROM 'a.parquet' WHERE a > 1 LIMIT 5 OFFSET 2", "expect": "accept", "tag": "structure"}
+{"id": "t0022", "q": "EXPLAIN SELECT * FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0023", "q": "EXPLAIN ANALYZE SELECT * FROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0024", "q": "explain analyze select a from 'a.parquet' where a > 1 limit 2", "expect": "accept", "tag": "structure"}
+{"id": "t0025", "q": "EXPLAIN SELECT a, b + 1 AS c FROM 'a.parquet' WHERE a = 1 LIMIT 5 OFFSET 1", "expect": "accept", "tag": "structure"}
+{"id": "t0026", "q": "SELECT * FROM 'dir/*.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0027", "q": "SELECT * FROM 's3://bucket/x/**/*.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0028", "q": "SELECT * FROM '/abs/path with space.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0029", "q": "SELECT * FROM 'it''s.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0030", "q": "SELECT * FROM 'données/é.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0031", "q": "SELECT * FROM ''", "expect": "accept", "tag": "structure"}
+{"id": "t0032", "q": "SELECT * FROM 'a.parquet' WHERE a = 'multi\nline'", "expect": "accept", "tag": "structure"}
+{"id": "t0033", "q": "SELECT * FROM 'a.parquet' WHERE TRUE", "expect": "accept", "tag": "structure"}
+{"id": "t0034", "q": "SELECT * FROM 'a.parquet' WHERE a IS NULL AND NOT FALSE", "expect": "accept", "tag": "structure"}
+{"id": "t0035", "q": "SELECT\n  a,\n  b\nFROM 'a.parquet'\nWHERE a = 1\nLIMIT 2", "expect": "accept", "tag": "structure"}
+{"id": "t0036", "q": "SELECT\ta\tFROM\t'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0037", "q": "SELECT a -- comment\nFROM 'a.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0038", "q": "SELECT /* c */ a FROM /* d */ 'a.parquet' /* e */ WHERE /* f */ a = 1", "expect": "accept", "tag": "structure"}
+{"id": "t0039", "q": "  SELECT a FROM 'a.parquet'  ", "expect": "accept", "tag": "structure"}
+{"id": "t0040", "q": "SELECT a FROM 'a.parquet' -- trailing comment", "expect": "accept", "tag": "structure"}
+{"id": "t0041", "q": "SELECT a FROM 'a.parquet' /* nested /* comment */ */", "expect": "accept", "tag": "structure"}
+{"id": "t0042", "q": "SELECT l_orderkey, l_extendedprice * (1 - l_discount) AS net FROM 'lineitem.parquet' WHERE l_shipdate >= DATE '1994-01-01' AND l_shipdate < DATE '1995-01-01' AND l_discount BETWEEN 0.05 AND 0.07 LIMIT 10", "expect": "accept", "tag": "structure"}
+{"id": "t0043", "q": "SELECT l_orderkey, l_linenumber, l_shipdate, l_extendedprice FROM 'lineitem.parquet' WHERE l_shipdate >= DATE '1994-01-01' AND l_shipdate < DATE '1995-01-01'", "expect": "accept", "tag": "structure"}
+{"id": "t0044", "q": "SELECT l_returnflag, l_linestatus, l_discount FROM 'lineitem.parquet' WHERE l_discount >= 0.055 AND l_returnflag = 'R'", "expect": "accept", "tag": "structure"}
+{"id": "t0045", "q": "SELECT * FROM 'nation.parquet' WHERE n_comment IS NOT NULL AND n_regionkey <> 2", "expect": "accept", "tag": "structure"}
+{"id": "t0046", "q": "SELECT l_orderkey FROM 'lineitem.parquet' WHERE l_shipmode = 'AIR'", "expect": "accept", "tag": "structure"}
+{"id": "t0047", "q": "SELECT n_nosuchcolumn FROM 'nation.parquet'", "expect": "accept", "tag": "structure"}
+{"id": "t0048", "q": "SELECT 1 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0049", "q": "SELECT 0 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0050", "q": "SELECT 42 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0051", "q": "SELECT 2147483648 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0052", "q": "SELECT 9223372036854775808 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0053", "q": "SELECT 1.5 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0054", "q": "SELECT 0.1 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0055", "q": "SELECT 123456789012345678901234567890.12 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0056", "q": "SELECT 1e400 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0057", "q": "SELECT 1E-7 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0058", "q": "SELECT 1.5e+3 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0059", "q": "SELECT .5 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0060", "q": "SELECT 5. AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0061", "q": "SELECT 007 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0062", "q": "SELECT 0.10 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0063", "q": "SELECT 'x' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0064", "q": "SELECT '' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0065", "q": "SELECT 'it''s' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0066", "q": "SELECT 'Straße' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0067", "q": "SELECT 'a--b' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0068", "q": "SELECT '/* c */' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0069", "q": "SELECT NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0070", "q": "SELECT DATE '1994-01-01' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0071", "q": "SELECT date '2000-02-29' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0072", "q": "SELECT a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0073", "q": "SELECT A_b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0074", "q": "SELECT _x AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0075", "q": "SELECT a$b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0076", "q": "SELECT é AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0077", "q": "SELECT \"select\" AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0078", "q": "SELECT \"A b\" AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0079", "q": "SELECT \"a\"\"b\" AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0080", "q": "SELECT \"日本語\" AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0081", "q": "SELECT date AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0082", "q": "SELECT -a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0083", "q": "SELECT - a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0084", "q": "SELECT - -a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0085", "q": "SELECT -(-a) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0086", "q": "SELECT -0.0 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0087", "q": "SELECT -1 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0088", "q": "SELECT NOT a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0089", "q": "SELECT NOT NOT a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0090", "q": "SELECT NOT (a AND b) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0091", "q": "SELECT a + b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0092", "q": "SELECT a - b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0093", "q": "SELECT a * b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0094", "q": "SELECT a / b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0095", "q": "SELECT a % b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0096", "q": "SELECT a + b * c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0097", "q": "SELECT (a + b) * c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0098", "q": "SELECT a - b - c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0099", "q": "SELECT a - (b - c) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0100", "q": "SELECT a / b / c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0101", "q": "SELECT a * b % c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0102", "q": "SELECT -a * b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0103", "q": "SELECT a - -b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0104", "q": "SELECT a * -b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0105", "q": "SELECT a + b + c + d AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0106", "q": "SELECT l_extendedprice * (1 - l_discount) * (1 + l_tax) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0107", "q": "SELECT 1 + 2 * 3 - 4 / 5 % 6 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0108", "q": "SELECT a = b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0109", "q": "SELECT a <> b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0110", "q": "SELECT a != b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0111", "q": "SELECT a < b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0112", "q": "SELECT a <= b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0113", "q": "SELECT a > b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0114", "q": "SELECT a >= b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0115", "q": "SELECT a + 1 = b * 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0116", "q": "SELECT (a = b) = c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0117", "q": "SELECT a AND b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0118", "q": "SELECT a OR b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0119", "q": "SELECT a AND b OR c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0120", "q": "SELECT a OR b AND c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0121", "q": "SELECT (a OR b) AND c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0122", "q": "SELECT a OR b OR c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0123", "q": "SELECT a AND b AND c AND d AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0124", "q": "SELECT NOT a AND b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0125", "q": "SELECT NOT a = b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0126", "q": "SELECT a = 1 AND b = 2 OR c = 3 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0127", "q": "SELECT a = 1 OR b = 2 AND c = 3 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0128", "q": "SELECT NOT a OR NOT b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0129", "q": "SELECT a AND NOT b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0130", "q": "SELECT a BETWEEN 1 AND 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0131", "q": "SELECT a NOT BETWEEN 1 AND 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0132", "q": "SELECT a BETWEEN b + 1 AND c * 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0133", "q": "SELECT a BETWEEN 0.05 AND 0.07 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0134", "q": "SELECT d BETWEEN DATE '1994-01-01' AND DATE '1994-12-31' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0135", "q": "SELECT a BETWEEN 1 AND 2 AND b = 3 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0136", "q": "SELECT a = b BETWEEN 1 AND 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0137", "q": "SELECT a BETWEEN 1 AND 2 = c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0138", "q": "SELECT a IN (1) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0139", "q": "SELECT a IN (1, 2, 3) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0140", "q": "SELECT a NOT IN (1, 2) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0141", "q": "SELECT a IN ('x', 'y') AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0142", "q": "SELECT a IN (1, NULL) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0143", "q": "SELECT a IN (b, c + 1) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0144", "q": "SELECT a IN (DATE '2020-01-01') AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0145", "q": "SELECT a + 1 IN (2, 3) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0146", "q": "SELECT a IN (1, 2) AND b IN (3) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0147", "q": "SELECT a IS NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0148", "q": "SELECT a IS NOT NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0149", "q": "SELECT a + 1 IS NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0150", "q": "SELECT NOT a IS NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0151", "q": "SELECT a IS NULL AND b IS NOT NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0152", "q": "SELECT (a = b) IS NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0153", "q": "SELECT a = b IS NULL AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0154", "q": "SELECT CASE WHEN a THEN b END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0155", "q": "SELECT CASE WHEN a THEN b ELSE c END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0156", "q": "SELECT CASE WHEN a > 1 THEN 'x' WHEN a > 0 THEN 'y' ELSE 'z' END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0157", "q": "SELECT CASE a WHEN 1 THEN 'one' WHEN 2 THEN 'two' END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0158", "q": "SELECT CASE a + 1 WHEN 1 THEN b ELSE c END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0159", "q": "SELECT CASE WHEN a THEN CASE WHEN b THEN 1 ELSE 2 END ELSE 3 END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0160", "q": "SELECT CASE WHEN a IS NULL THEN 0 ELSE a END + 1 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0161", "q": "SELECT case when a then b else c end AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0162", "q": "SELECT CAST(a AS BOOLEAN) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0163", "q": "SELECT CAST(a AS INTEGER) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0164", "q": "SELECT CAST(a AS INT) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0165", "q": "SELECT CAST(a AS BIGINT) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0166", "q": "SELECT CAST(a AS DOUBLE) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0167", "q": "SELECT CAST(a AS DOUBLE PRECISION) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0168", "q": "SELECT CAST(a AS DECIMAL) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0169", "q": "SELECT CAST(a AS DECIMAL(10)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0170", "q": "SELECT CAST(a AS DECIMAL(10,2)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0171", "q": "SELECT CAST(a AS NUMERIC(38,0)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0172", "q": "SELECT CAST(a AS VARCHAR) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0173", "q": "SELECT CAST(a AS DATE) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0174", "q": "SELECT cast(a as decimal(15, 2)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0175", "q": "SELECT a::INTEGER AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0176", "q": "SELECT 1.5::DECIMAL(5,2) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0177", "q": "SELECT -a::INTEGER AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0178", "q": "SELECT a::INT::BIGINT AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0179", "q": "SELECT a::DOUBLE PRECISION AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0180", "q": "SELECT a::VARCHAR = 'x' AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0181", "q": "SELECT a + b::DECIMAL(10,2) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0182", "q": "SELECT (a + b)::BIGINT AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0183", "q": "SELECT a // b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0184", "q": "SELECT a // b * c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0185", "q": "SELECT 1 + 2 // 3 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0186", "q": "SELECT a//b AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0187", "q": "SELECT a % b // c AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0188", "q": "SELECT TRUE AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0189", "q": "SELECT FALSE AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0190", "q": "SELECT a = TRUE AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0191", "q": "SELECT a <> false AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0192", "q": "SELECT NOT TRUE AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0193", "q": "SELECT CASE WHEN TRUE THEN 1 ELSE 2 END AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0194", "q": "SELECT true AND false OR a AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0195", "q": "SELECT CAST(CAST(a AS BIGINT) AS DOUBLE) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0196", "q": "SELECT CAST('1.5' AS DECIMAL(5,2)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0197", "q": "SELECT CAST(NULL AS INTEGER) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0198", "q": "SELECT CAST(a + 1 AS BIGINT) * 2 AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0199", "q": "SELECT CAST(a AS DECIMAL(15,2)) / CAST(b AS DECIMAL(15,2)) AS r FROM 'f.parquet'", "expect": "accept", "tag": "select-item"}
+{"id": "t0200", "q": "SELECT * FROM 'f.parquet' WHERE NOT a", "expect": "accept", "tag": "where"}
+{"id": "t0201", "q": "SELECT * FROM 'f.parquet' WHERE NOT NOT a", "expect": "accept", "tag": "where"}
+{"id": "t0202", "q": "SELECT * FROM 'f.parquet' WHERE NOT (a AND b)", "expect": "accept", "tag": "where"}
+{"id": "t0203", "q": "SELECT * FROM 'f.parquet' WHERE a = b", "expect": "accept", "tag": "where"}
+{"id": "t0204", "q": "SELECT * FROM 'f.parquet' WHERE a <> b", "expect": "accept", "tag": "where"}
+{"id": "t0205", "q": "SELECT * FROM 'f.parquet' WHERE a != b", "expect": "accept", "tag": "where"}
+{"id": "t0206", "q": "SELECT * FROM 'f.parquet' WHERE a < b", "expect": "accept", "tag": "where"}
+{"id": "t0207", "q": "SELECT * FROM 'f.parquet' WHERE a <= b", "expect": "accept", "tag": "where"}
+{"id": "t0208", "q": "SELECT * FROM 'f.parquet' WHERE a > b", "expect": "accept", "tag": "where"}
+{"id": "t0209", "q": "SELECT * FROM 'f.parquet' WHERE a >= b", "expect": "accept", "tag": "where"}
+{"id": "t0210", "q": "SELECT * FROM 'f.parquet' WHERE a + 1 = b * 2", "expect": "accept", "tag": "where"}
+{"id": "t0211", "q": "SELECT * FROM 'f.parquet' WHERE (a = b) = c", "expect": "accept", "tag": "where"}
+{"id": "t0212", "q": "SELECT * FROM 'f.parquet' WHERE a AND b", "expect": "accept", "tag": "where"}
+{"id": "t0213", "q": "SELECT * FROM 'f.parquet' WHERE a OR b", "expect": "accept", "tag": "where"}
+{"id": "t0214", "q": "SELECT * FROM 'f.parquet' WHERE a AND b OR c", "expect": "accept", "tag": "where"}
+{"id": "t0215", "q": "SELECT * FROM 'f.parquet' WHERE a OR b AND c", "expect": "accept", "tag": "where"}
+{"id": "t0216", "q": "SELECT * FROM 'f.parquet' WHERE (a OR b) AND c", "expect": "accept", "tag": "where"}
+{"id": "t0217", "q": "SELECT * FROM 'f.parquet' WHERE a OR b OR c", "expect": "accept", "tag": "where"}
+{"id": "t0218", "q": "SELECT * FROM 'f.parquet' WHERE a AND b AND c AND d", "expect": "accept", "tag": "where"}
+{"id": "t0219", "q": "SELECT * FROM 'f.parquet' WHERE NOT a AND b", "expect": "accept", "tag": "where"}
+{"id": "t0220", "q": "SELECT * FROM 'f.parquet' WHERE NOT a = b", "expect": "accept", "tag": "where"}
+{"id": "t0221", "q": "SELECT * FROM 'f.parquet' WHERE a = 1 AND b = 2 OR c = 3", "expect": "accept", "tag": "where"}
+{"id": "t0222", "q": "SELECT * FROM 'f.parquet' WHERE a = 1 OR b = 2 AND c = 3", "expect": "accept", "tag": "where"}
+{"id": "t0223", "q": "SELECT * FROM 'f.parquet' WHERE NOT a OR NOT b", "expect": "accept", "tag": "where"}
+{"id": "t0224", "q": "SELECT * FROM 'f.parquet' WHERE a AND NOT b", "expect": "accept", "tag": "where"}
+{"id": "t0225", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1 AND 2", "expect": "accept", "tag": "where"}
+{"id": "t0226", "q": "SELECT * FROM 'f.parquet' WHERE a NOT BETWEEN 1 AND 2", "expect": "accept", "tag": "where"}
+{"id": "t0227", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN b + 1 AND c * 2", "expect": "accept", "tag": "where"}
+{"id": "t0228", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 0.05 AND 0.07", "expect": "accept", "tag": "where"}
+{"id": "t0229", "q": "SELECT * FROM 'f.parquet' WHERE d BETWEEN DATE '1994-01-01' AND DATE '1994-12-31'", "expect": "accept", "tag": "where"}
+{"id": "t0230", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1 AND 2 AND b = 3", "expect": "accept", "tag": "where"}
+{"id": "t0231", "q": "SELECT * FROM 'f.parquet' WHERE a = b BETWEEN 1 AND 2", "expect": "accept", "tag": "where"}
+{"id": "t0232", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1 AND 2 = c", "expect": "accept", "tag": "where"}
+{"id": "t0233", "q": "SELECT * FROM 'f.parquet' WHERE a IN (1)", "expect": "accept", "tag": "where"}
+{"id": "t0234", "q": "SELECT * FROM 'f.parquet' WHERE a IN (1, 2, 3)", "expect": "accept", "tag": "where"}
+{"id": "t0235", "q": "SELECT * FROM 'f.parquet' WHERE a NOT IN (1, 2)", "expect": "accept", "tag": "where"}
+{"id": "t0236", "q": "SELECT * FROM 'f.parquet' WHERE a IN ('x', 'y')", "expect": "accept", "tag": "where"}
+{"id": "t0237", "q": "SELECT * FROM 'f.parquet' WHERE a IN (1, NULL)", "expect": "accept", "tag": "where"}
+{"id": "t0238", "q": "SELECT * FROM 'f.parquet' WHERE a IN (b, c + 1)", "expect": "accept", "tag": "where"}
+{"id": "t0239", "q": "SELECT * FROM 'f.parquet' WHERE a IN (DATE '2020-01-01')", "expect": "accept", "tag": "where"}
+{"id": "t0240", "q": "SELECT * FROM 'f.parquet' WHERE a + 1 IN (2, 3)", "expect": "accept", "tag": "where"}
+{"id": "t0241", "q": "SELECT * FROM 'f.parquet' WHERE a IN (1, 2) AND b IN (3)", "expect": "accept", "tag": "where"}
+{"id": "t0242", "q": "SELECT * FROM 'f.parquet' WHERE a IS NULL", "expect": "accept", "tag": "where"}
+{"id": "t0243", "q": "SELECT * FROM 'f.parquet' WHERE a IS NOT NULL", "expect": "accept", "tag": "where"}
+{"id": "t0244", "q": "SELECT * FROM 'f.parquet' WHERE a + 1 IS NULL", "expect": "accept", "tag": "where"}
+{"id": "t0245", "q": "SELECT * FROM 'f.parquet' WHERE NOT a IS NULL", "expect": "accept", "tag": "where"}
+{"id": "t0246", "q": "SELECT * FROM 'f.parquet' WHERE a IS NULL AND b IS NOT NULL", "expect": "accept", "tag": "where"}
+{"id": "t0247", "q": "SELECT * FROM 'f.parquet' WHERE (a = b) IS NULL", "expect": "accept", "tag": "where"}
+{"id": "t0248", "q": "SELECT * FROM 'f.parquet' WHERE a = b IS NULL", "expect": "accept", "tag": "where"}
+{"id": "t0249", "q": "SELECT * FROM 'f.parquet' WHERE CASE WHEN a > 1 THEN 'x' WHEN a > 0 THEN 'y' ELSE 'z' END", "expect": "accept", "tag": "where"}
+{"id": "t0250", "q": "SELECT * FROM 'f.parquet' WHERE CASE WHEN a IS NULL THEN 0 ELSE a END + 1", "expect": "accept", "tag": "where"}
+{"id": "t0251", "q": "SELECT * FROM 'f.parquet' WHERE a::VARCHAR = 'x'", "expect": "accept", "tag": "where"}
+{"id": "t0252", "q": "SELECT * FROM 'f.parquet' WHERE a = TRUE", "expect": "accept", "tag": "where"}
+{"id": "t0253", "q": "SELECT * FROM 'f.parquet' WHERE a <> false", "expect": "accept", "tag": "where"}
+{"id": "t0254", "q": "SELECT * FROM 'f.parquet' WHERE NOT TRUE", "expect": "accept", "tag": "where"}
+{"id": "t0255", "q": "SELECT * FROM 'f.parquet' WHERE true AND false OR a", "expect": "accept", "tag": "where"}
+{"id": "t0256", "q": "SELECT count(*) FROM 'f.parquet'", "expect": "refuse", "tag": "aggregate"}
+{"id": "t0257", "q": "SELECT sum(a) AS s FROM 'f.parquet'", "expect": "refuse", "tag": "aggregate"}
+{"id": "t0258", "q": "SELECT abs(a) FROM 'f.parquet'", "expect": "refuse", "tag": "function"}
+{"id": "t0259", "q": "SELECT * FROM 'f.parquet' WHERE lower(a) = 'x'", "expect": "refuse", "tag": "function"}
+{"id": "t0260", "q": "SELECT coalesce(a, 0) FROM 'f.parquet'", "expect": "refuse", "tag": "function"}
+{"id": "t0261", "q": "SELECT \"abs\"(a) FROM 'f.parquet'", "expect": "refuse", "tag": "function"}
+{"id": "t0262", "q": "SELECT a FROM 'f.parquet' GROUP BY a", "expect": "refuse", "tag": "group-by"}
+{"id": "t0263", "q": "SELECT a FROM 'f.parquet' GROUP BY a HAVING a > 1", "expect": "refuse", "tag": "having"}
+{"id": "t0264", "q": "SELECT a FROM 'f.parquet' ORDER BY a", "expect": "refuse", "tag": "order-by"}
+{"id": "t0265", "q": "SELECT a FROM 'f.parquet' ORDER BY a DESC LIMIT 3", "expect": "refuse", "tag": "order-by"}
+{"id": "t0266", "q": "SELECT a FROM 'f.parquet' JOIN 'g.parquet' ON a = b", "expect": "refuse", "tag": "join"}
+{"id": "t0267", "q": "SELECT a FROM 'f.parquet' LEFT JOIN 'g.parquet' ON a = b", "expect": "refuse", "tag": "join"}
+{"id": "t0268", "q": "SELECT a FROM 'f.parquet', 'g.parquet'", "expect": "refuse", "tag": "join"}
+{"id": "t0269", "q": "SELECT a FROM 'f.parquet' CROSS JOIN 'g.parquet'", "expect": "refuse", "tag": "join"}
+{"id": "t0270", "q": "SELECT a FROM 'f.parquet' NATURAL JOIN 'g.parquet'", "expect": "refuse", "tag": "join"}
+{"id": "t0271", "q": "SELECT a FROM (SELECT a FROM 'f.parquet')", "expect": "refuse", "tag": "subquery-from"}
+{"id": "t0272", "q": "SELECT (SELECT 1) FROM 'f.parquet'", "expect": "refuse", "tag": "subquery-scalar"}
+{"id": "t0273", "q": "SELECT a FROM 'f.parquet' WHERE a IN (SELECT b FROM 'g.parquet')", "expect": "refuse", "tag": "subquery-in"}
+{"id": "t0274", "q": "SELECT a FROM 'f.parquet' WHERE EXISTS (SELECT 1 FROM 'g.parquet')", "expect": "refuse", "tag": "exists"}
+{"id": "t0275", "q": "SELECT a FROM 'f.parquet' UNION SELECT a FROM 'g.parquet'", "expect": "refuse", "tag": "setop"}
+{"id": "t0276", "q": "SELECT a FROM 'f.parquet' INTERSECT SELECT a FROM 'g.parquet'", "expect": "refuse", "tag": "setop"}
+{"id": "t0277", "q": "SELECT a FROM 'f.parquet' EXCEPT SELECT a FROM 'g.parquet'", "expect": "refuse", "tag": "setop"}
+{"id": "t0278", "q": "WITH t AS (SELECT 1) SELECT * FROM 'f.parquet'", "expect": "refuse", "tag": "with"}
+{"id": "t0279", "q": "VALUES (1), (2)", "expect": "refuse", "tag": "values"}
+{"id": "t0280", "q": "SELECT row_number() OVER () FROM 'f.parquet'", "expect": "refuse", "tag": "window"}
+{"id": "t0281", "q": "SELECT DISTINCT a FROM 'f.parquet'", "expect": "refuse", "tag": "distinct"}
+{"id": "t0282", "q": "SELECT DISTINCT ON (a) a FROM 'f.parquet'", "expect": "refuse", "tag": "distinct-on"}
+{"id": "t0283", "q": "SELECT * FROM 'f.parquet' WHERE a LIKE 'x%'", "expect": "refuse", "tag": "like"}
+{"id": "t0284", "q": "SELECT * FROM 'f.parquet' WHERE a NOT LIKE 'x%'", "expect": "refuse", "tag": "like"}
+{"id": "t0285", "q": "SELECT * FROM 'f.parquet' WHERE a ILIKE 'x%'", "expect": "refuse", "tag": "ilike"}
+{"id": "t0286", "q": "SELECT * FROM 'f.parquet' WHERE a SIMILAR TO 'x'", "expect": "refuse", "tag": "similar"}
+{"id": "t0287", "q": "SELECT a || b FROM 'f.parquet'", "expect": "refuse", "tag": "concat"}
+{"id": "t0288", "q": "SELECT 'a' || 'b' FROM 'f.parquet'", "expect": "refuse", "tag": "concat"}
+{"id": "t0289", "q": "SELECT a // b || c FROM 'f.parquet'", "expect": "refuse", "tag": "concat-after-int-div"}
+{"id": "t0290", "q": "SELECT CAST(a AS TINYINT) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0291", "q": "SELECT CAST(a AS SMALLINT) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0292", "q": "SELECT a::TINYINT FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0293", "q": "SELECT ALL a FROM 'f.parquet'", "expect": "refuse", "tag": "select-all"}
+{"id": "t0294", "q": "SELECT a FROM 'f.parquet' LIMIT 1 OFFSET 1 ROWS", "expect": "refuse", "tag": "offset-rows"}
+{"id": "t0295", "q": "SELECT a / / b FROM 'f.parquet'", "expect": "refuse", "tag": "int-div-space"}
+{"id": "t0296", "q": "SELECT a FROM 'f.parquet';;", "expect": "refuse", "tag": "double-semicolon"}
+{"id": "t0297", "q": ";SELECT a FROM 'f.parquet'", "expect": "refuse", "tag": "leading-semicolon"}
+{"id": "t0298", "q": "SELECT a FROM 'f.parquet'; SELECT b FROM 'f.parquet';", "expect": "refuse", "tag": "semicolon-then-select"}
+{"id": "t0299", "q": "SELECT DATE '2020-01-01' + INTERVAL 1 DAY FROM 'f.parquet'", "expect": "refuse", "tag": "interval"}
+{"id": "t0300", "q": "SELECT TIMESTAMP '2020-01-01 00:00:00' FROM 'f.parquet'", "expect": "refuse", "tag": "timestamp-literal"}
+{"id": "t0301", "q": "SELECT +a FROM 'f.parquet'", "expect": "refuse", "tag": "unary-plus"}
+{"id": "t0302", "q": "SELECT a ^ 2 FROM 'f.parquet'", "expect": "refuse", "tag": "power"}
+{"id": "t0303", "q": "SELECT * FROM 'f.parquet' WHERE a IS DISTINCT FROM b", "expect": "refuse", "tag": "is-distinct"}
+{"id": "t0304", "q": "SELECT * FROM 'f.parquet' WHERE a IS TRUE", "expect": "refuse", "tag": "is-true"}
+{"id": "t0305", "q": "SELECT a FROM 'f.parquet' AS t", "expect": "refuse", "tag": "table-alias"}
+{"id": "t0306", "q": "SELECT a FROM 'f.parquet' t", "expect": "refuse", "tag": "table-alias"}
+{"id": "t0307", "q": "SELECT a FROM f", "expect": "refuse", "tag": "table-name"}
+{"id": "t0308", "q": "SELECT a FROM \"f\"", "expect": "refuse", "tag": "table-name"}
+{"id": "t0309", "q": "SELECT 1", "expect": "refuse", "tag": "no-from"}
+{"id": "t0310", "q": "SELECT 1 + 1 AS two", "expect": "refuse", "tag": "no-from"}
+{"id": "t0311", "q": "SELECT a b FROM 'f.parquet'", "expect": "refuse", "tag": "alias-without-as"}
+{"id": "t0312", "q": "SELECT a + 1 x FROM 'f.parquet'", "expect": "refuse", "tag": "alias-without-as"}
+{"id": "t0313", "q": "SELECT t.a FROM 'f.parquet'", "expect": "refuse", "tag": "qualified"}
+{"id": "t0314", "q": "SELECT t.* FROM 'f.parquet'", "expect": "refuse", "tag": "qualified-star"}
+{"id": "t0315", "q": "SELECT * EXCLUDE (a) FROM 'f.parquet'", "expect": "refuse", "tag": "star-exclude"}
+{"id": "t0316", "q": "SELECT a FROM 'f.parquet' OFFSET 5", "expect": "refuse", "tag": "offset-only"}
+{"id": "t0317", "q": "SELECT a FROM 'f.parquet' LIMIT 5, 10", "expect": "refuse", "tag": "limit-comma"}
+{"id": "t0318", "q": "SELECT a FROM 'f.parquet' OFFSET 1 LIMIT 2", "expect": "refuse", "tag": "offset-first"}
+{"id": "t0319", "q": "SELECT a FROM 'f.parquet' LIMIT ALL", "expect": "refuse", "tag": "limit-all"}
+{"id": "t0320", "q": "SELECT a FROM 'f.parquet' LIMIT 1 + 1", "expect": "refuse", "tag": "limit-expr"}
+{"id": "t0321", "q": "SELECT a FROM 'f.parquet' LIMIT -1", "expect": "refuse", "tag": "limit-negative"}
+{"id": "t0322", "q": "SELECT a FROM 'f.parquet' LIMIT 1.5", "expect": "refuse", "tag": "limit-decimal"}
+{"id": "t0323", "q": "SELECT a FROM 'f.parquet' LIMIT 10 %", "expect": "refuse", "tag": "limit-percent"}
+{"id": "t0324", "q": "SELECT a FROM 'f.parquet' LIMIT 18446744073709551616", "expect": "refuse", "tag": "limit-too-big"}
+{"id": "t0325", "q": "SELECT * FROM 'f.parquet' WHERE a = $1", "expect": "refuse", "tag": "parameter"}
+{"id": "t0326", "q": "SELECT * FROM 'f.parquet' WHERE a = ?", "expect": "refuse", "tag": "parameter"}
+{"id": "t0327", "q": "SELECT [1, 2] FROM 'f.parquet'", "expect": "refuse", "tag": "list"}
+{"id": "t0328", "q": "SELECT {'a': 1} FROM 'f.parquet'", "expect": "refuse", "tag": "struct"}
+{"id": "t0329", "q": "SELECT a FROM 'f.parquet' FETCH FIRST 5 ROWS ONLY", "expect": "refuse", "tag": "fetch"}
+{"id": "t0330", "q": "INSERT INTO t VALUES (1)", "expect": "refuse", "tag": "insert"}
+{"id": "t0331", "q": "CREATE TABLE t (a INT)", "expect": "refuse", "tag": "create"}
+{"id": "t0332", "q": "DELETE FROM 'f.parquet'", "expect": "refuse", "tag": "delete"}
+{"id": "t0333", "q": "COPY (SELECT 1) TO 'x.csv'", "expect": "refuse", "tag": "copy"}
+{"id": "t0334", "q": "SET threads = 1", "expect": "refuse", "tag": "set"}
+{"id": "t0335", "q": "SELECT a FROM 'f.parquet'; SELECT b FROM 'f.parquet'", "expect": "refuse", "tag": "two-statements"}
+{"id": "t0336", "q": "SELECT TRY_CAST(a AS INTEGER) FROM 'f.parquet'", "expect": "refuse", "tag": "try-cast"}
+{"id": "t0337", "q": "SELECT CAST(a AS TIMESTAMP) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0338", "q": "SELECT CAST(a AS VARCHAR(10)) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0339", "q": "SELECT CAST(a AS INTEGER[]) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0340", "q": "SELECT CAST(a AS REAL) FROM 'f.parquet'", "expect": "refuse", "tag": "type"}
+{"id": "t0341", "q": "SELECT E'a\\n' FROM 'f.parquet'", "expect": "refuse", "tag": "string-prefix"}
+{"id": "t0342", "q": "SELECT a COLLATE nocase FROM 'f.parquet'", "expect": "refuse", "tag": "collate"}
+{"id": "t0343", "q": "SELECT a AT TIME ZONE 'UTC' FROM 'f.parquet'", "expect": "refuse", "tag": "at-time-zone"}
+{"id": "t0344", "q": "SELECT * FROM 'f.parquet' USING SAMPLE 10%", "expect": "refuse", "tag": "sample"}
+{"id": "t0345", "q": "SELECT a FROM 'f.parquet' QUALIFY a > 1", "expect": "refuse", "tag": "qualify"}
+{"id": "t0346", "q": "SELECT a FROM 'f.parquet' WINDOW w AS ()", "expect": "refuse", "tag": "window-clause"}
+{"id": "t0347", "q": "SELECT list_transform(a, x -> x) FROM 'f.parquet'", "expect": "refuse", "tag": "lambda"}
+{"id": "t0348", "q": "SELECT a ->> 'b' FROM 'f.parquet'", "expect": "refuse", "tag": "json-arrow"}
+{"id": "t0349", "q": "EXPLAIN (ANALYZE) SELECT 1 FROM 'f.parquet'", "expect": "refuse", "tag": "explain-options"}
+{"id": "t0350", "q": "EXPLAIN VERBOSE SELECT 1 FROM 'f.parquet'", "expect": "refuse", "tag": "explain-verbose"}
+{"id": "t0351", "q": "DESCRIBE SELECT 1 FROM 'f.parquet'", "expect": "refuse", "tag": "describe"}
+{"id": "t0352", "q": "PRAGMA version", "expect": "refuse", "tag": "pragma"}
+{"id": "t0353", "q": "FROM 'f.parquet' SELECT a", "expect": "refuse", "tag": "from-first"}
+{"id": "t0354", "q": "", "expect": "refuse", "tag": "empty"}
+{"id": "t0355", "q": "SELECT", "expect": "refuse", "tag": "only-select"}
+{"id": "t0356", "q": "-- nothing", "expect": "refuse", "tag": "only-comment"}
+{"id": "t0357", "q": "SELECT 'abc FROM 'f.parquet'", "expect": "refuse", "tag": "unterminated-string"}
+{"id": "t0358", "q": "SELECT \"abc FROM 'f.parquet'", "expect": "refuse", "tag": "unterminated-ident"}
+{"id": "t0359", "q": "SELECT a /* FROM 'f.parquet'", "expect": "refuse", "tag": "unterminated-comment"}
+{"id": "t0360", "q": "SELECT a FROM", "expect": "refuse", "tag": "missing-path"}
+{"id": "t0361", "q": "SELECT a FROM 'f.parquet' WHERE", "expect": "refuse", "tag": "missing-expr"}
+{"id": "t0362", "q": "SELECT a FROM 'f.parquet' WHERE a = = 1", "expect": "refuse", "tag": "double-op"}
+{"id": "t0363", "q": "SELECT (a FROM 'f.parquet'", "expect": "refuse", "tag": "unbalanced"}
+{"id": "t0364", "q": "SELECT a) FROM 'f.parquet'", "expect": "refuse", "tag": "unbalanced"}
+{"id": "t0365", "q": "SELECT select FROM 'f.parquet'", "expect": "refuse", "tag": "keyword-as-name"}
+{"id": "t0366", "q": "SELECT a AS from FROM 'f.parquet'", "expect": "refuse", "tag": "keyword-as-name"}
+{"id": "t0367", "q": "SELECT * FROM 'f.parquet' WHERE a IN ()", "expect": "refuse", "tag": "empty-in"}
+{"id": "t0368", "q": "SELECT CASE END FROM 'f.parquet'", "expect": "refuse", "tag": "case-no-when"}
+{"id": "t0369", "q": "SELECT CASE WHEN a THEN b FROM 'f.parquet'", "expect": "refuse", "tag": "case-no-end"}
+{"id": "t0370", "q": "SELECT CAST(a AS) FROM 'f.parquet'", "expect": "refuse", "tag": "cast-no-type"}
+{"id": "t0371", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1", "expect": "refuse", "tag": "between-no-and"}
+{"id": "t0372", "q": "SELECT a, FROM 'f.parquet'", "expect": "refuse", "tag": "trailing-comma"}
+{"id": "t0373", "q": "SELECT a FROM 'f.parquet' garbage", "expect": "refuse", "tag": "trailing-junk"}
+{"id": "t0374", "q": "SELECT a FROM 'f.parquet' WHERE a = 1 2", "expect": "refuse", "tag": "trailing-junk2"}
+{"id": "t0375", "q": "SELECT \"\" FROM 'f.parquet'", "expect": "refuse", "tag": "empty-ident"}
+{"id": "t0376", "q": "SELECT * FROM 'f.parquet' WHERE a = b = c", "expect": "edge", "tag": "chained-comparison"}
+{"id": "t0377", "q": "SELECT * FROM 'f.parquet' WHERE a < b < c", "expect": "edge", "tag": "chained-comparison"}
+{"id": "t0378", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1 AND 2 BETWEEN 3 AND 4", "expect": "edge", "tag": "chained-between"}
+{"id": "t0379", "q": "SELECT * FROM 'f.parquet' WHERE a IN (1) IN (2)", "expect": "edge", "tag": "chained-in"}
+{"id": "t0380", "q": "SELECT * FROM 'f.parquet' WHERE a BETWEEN 1 AND 2 AND b", "expect": "edge", "tag": "between-and-precedence"}
+{"id": "t0381", "q": "SELECT * FROM 'f.parquet' WHERE NOT a NOT BETWEEN 1 AND 2", "expect": "edge", "tag": "not-between-not"}
+{"id": "t0382", "q": "SELECT 1a FROM 'f.parquet'", "expect": "edge", "tag": "number-trailing-letter"}
+{"id": "t0383", "q": "SELECT 1e FROM 'f.parquet'", "expect": "edge", "tag": "number-trailing-e"}
+{"id": "t0384", "q": "SELECT 0x1F FROM 'f.parquet'", "expect": "edge", "tag": "hex"}
+{"id": "t0385", "q": "SELECT 1_000 FROM 'f.parquet'", "expect": "edge", "tag": "underscore-number"}
+{"id": "t0386", "q": "SELECT 1.e2, 1.2.3 FROM 'f.parquet'", "expect": "edge", "tag": "dot-number"}
+{"id": "t0387", "q": "SELECT a#b FROM 'f.parquet'", "expect": "edge", "tag": "hash-ident"}
+{"id": "t0388", "q": "SELECT @a FROM 'f.parquet'", "expect": "edge", "tag": "at-ident"}
+{"id": "t0389", "q": "SELECT 😀 FROM 'f.parquet'", "expect": "edge", "tag": "emoji-ident"}
+{"id": "t0390", "q": "SELECT 'a' 'b' FROM 'f.parquet'", "expect": "edge", "tag": "adjacent-strings"}
+{"id": "t0391", "q": "SELECT `a` FROM 'f.parquet'", "expect": "edge", "tag": "backtick-ident"}
+{"id": "t0392", "q": "SELECT [a] FROM 'f.parquet'", "expect": "edge", "tag": "bracket-ident"}
+{"id": "t0393", "q": "SELECT a AS 'x' FROM 'f.parquet'", "expect": "edge", "tag": "single-quote-alias"}
+{"id": "t0394", "q": "SELECT * FROM \"f.parquet\"", "expect": "edge", "tag": "double-quote-path"}
+{"id": "t0395", "q": "SELECT * FROM 'f.parquet' WHERE a IS NULL = b", "expect": "edge", "tag": "is-null-eq"}
+{"id": "t0396", "q": "SELECT * FROM 'f.parquet' WHERE a = NOT b", "expect": "edge", "tag": "not-in-prefix"}
+{"id": "t0397", "q": "SELECT a--1 FROM 'f.parquet'", "expect": "edge", "tag": "minus-minus"}
+{"id": "t0398", "q": "SELECT a - - 1 FROM 'f.parquet'", "expect": "edge", "tag": "neg-neg-space"}
+{"id": "t0399", "q": ";", "expect": "edge", "tag": "semicolon-only"}
+{"id": "t0400", "q": "SELECT a FROM 'f.parquet'", "expect": "edge", "tag": "nonascii-whitespace"}
+{"id": "t0401", "q": "SELECT a\r\nFROM 'f.parquet'", "expect": "edge", "tag": "cr-lf"}
+{"id": "t0402", "q": "SELECT\u000ba FROM 'f.parquet'", "expect": "edge", "tag": "nul-byte-free-control"}
+{"id": "t0403", "q": "SELECT ‘a’ FROM 'f.parquet'", "expect": "edge", "tag": "unicode-quotes"}
+{"id": "t0404", "q": "SELECT 1 − 1 FROM 'f.parquet'", "expect": "edge", "tag": "unicode-minus"}
+{"id": "t0405", "q": "SELECT a FROM 'f.parquet' LIMIT 0 OFFSET 0", "expect": "edge", "tag": "limit-zero-offset"}
+{"id": "t0406", "q": "SELECT a FROM 'f.parquet' LIMIT 007", "expect": "edge", "tag": "limit-leading-zero"}
+{"id": "t0407", "q": "SELECT a FROM 'f.parquet' LIMIT 1e3", "expect": "edge", "tag": "limit-exponent"}
+{"id": "t0408", "q": "SELECT DATE '1994-1-1' FROM 'f.parquet'", "expect": "edge", "tag": "date-bad-shape"}
+{"id": "t0409", "q": "SELECT DATE '1994-13-45' FROM 'f.parquet'", "expect": "edge", "tag": "date-invalid-day"}
+{"id": "t0410", "q": "SELECT DATE 'hello' FROM 'f.parquet'", "expect": "edge", "tag": "date-not-a-date"}
+{"id": "t0411", "q": "SELECT date AS date FROM 'f.parquet'", "expect": "edge", "tag": "date-as-name"}
+{"id": "t0412", "q": "SELECT a as b from 'f.parquet' where a between 1 and 2 limit 1 offset 1", "expect": "edge", "tag": "as-keyword-lower"}
+{"id": "t0413", "q": "SELECT ((((((((((a)))))))))) FROM 'f.parquet'", "expect": "edge", "tag": "deep-parens"}

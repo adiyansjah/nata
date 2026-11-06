@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/nata", "crates/nata-bench", "crates/nata-check", "crates/nata-kernels", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan"]
+members = ["crates/nata", "crates/nata-sql", "crates/nata-bench", "crates/nata-check", "crates/nata-kernels", "crates/nata-parquet", "crates/nata-sched", "crates/nata-scan"]
 exclude = ["spikes"]
 
 [workspace.package]

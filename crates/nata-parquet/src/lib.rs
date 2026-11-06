@@ -20,6 +20,7 @@ pub use error::{ErrorKind, ScanError};
 pub use opener::{FsOpener, OpenFile, OpenFor, Opener};
 pub use parallel::{ParallelConfig, ScanCancel, run_parallel, run_parallel_with};
 pub use reader::{
-    RowGroupTask, ScanOptions, ScanPlan, ScanReport, TaskOutput, TaskResult, run_serial,
+    RowGroupTask, ScanOptions, ScanPlan, ScanReport, TaskOutput, TaskResult, read_leaves,
+    run_serial,
 };
 pub use stats::ScanStats;

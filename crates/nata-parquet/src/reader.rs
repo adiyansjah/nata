@@ -420,6 +420,22 @@ impl ScanPlan {
     }
 }
 
+/// The top-level columns of the Parquet file at `path`, in file order, from its FOOTER alone (no data page is read): the schema a front end binds names
+/// against. A column of a kind the scan does not support is listed with its reason (`Leaf::kind` is an `Err`); it is an error only if a query touches it.
+/// Errors name the file, as everywhere in the scan.
+pub fn read_leaves(path: &Path) -> Result<Vec<Leaf>, ScanError> {
+    guarded(path, None, || {
+        let OpenFile { mut file, .. } = FsOpener
+            .open(path, OpenFor::Footer(0))
+            .map_err(|e| io_error(&e, path))?;
+        check_magic(&mut file, path)?;
+        let meta = ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
+            .map_err(|e| parquet_error(&e, path, None))?;
+        leaves(meta.metadata().file_metadata().schema_descr())
+            .map_err(|m| ScanError::not_supported(m).in_file(path))
+    })
+}
+
 /// The magic numbers at both ends of the file. `parquet-rs` reads the footer only, so a file whose first four bytes are wrong would still decode: it is
 /// refused here. `PARE` is an encrypted file (not supported).
 fn check_magic(file: &mut File, path: &Path) -> Result<(), ScanError> {
