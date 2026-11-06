@@ -12,6 +12,7 @@ fn serve_help_and_limits() {
         "--unsafe-listen",
         "--max-connections",
         "--threads",
+        "--max-queries",
         "trust authentication",
         "no TLS",
     ] {
@@ -21,6 +22,7 @@ fn serve_help_and_limits() {
         ("--max-connections", "0"),
         ("--max-connections", "65"),
         ("--threads", "0"),
+        ("--max-queries", "0"),
     ] {
         let out = Command::new(env!("CARGO_BIN_EXE_nata"))
             .args(["serve", flag, value])

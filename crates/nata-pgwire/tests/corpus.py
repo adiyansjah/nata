@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Raw simple-query protocol versus `nata sql --csv` for check/queries/sql.
+"""Raw extended-query protocol versus `nata sql --csv` for check/queries/sql.
 Usage: corpus.py --nata target/debug/nata --data /on-disk/data
 Generate inputs with scripts/gen-sql-check-data.sh and gen-tpch.sh (unset AI_AGENT).
 No third-party client library. Compares every successful row, names, NULLs and
@@ -40,7 +40,10 @@ def connect(port):
         if t==b'Z':return s
 
 def run(s,q):
-    s.sendall(packet(b'Q',q.encode()+b'\0'))
+    # Parse, Bind, Describe portal, Execute all, Sync (unnamed, text).
+    s.sendall(packet(b'P',b'\0'+q.encode()+b'\0\0\0')+
+              packet(b'B',b'\0\0\0\0\0\0\0\0')+
+              packet(b'D',b'P\0')+packet(b'E',b'\0\0\0\0\0')+packet(b'S',b''))
     names=[];oids=[];rows=[];errors=[];command=None;tags=[]
     while True:
         t,b=message(s);tags.append(t)

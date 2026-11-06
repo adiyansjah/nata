@@ -103,6 +103,25 @@ impl SqlError {
     }
 
     /// True for the errors the front end raises about the query's size or depth (dialect section 8, "Limits").
+    /// PostgreSQL adapter codes for Nata-owned diagnostic families.
+    pub fn sqlstate(&self) -> &'static str {
+        match self.class {
+            ErrorClass::Syntax => "42601",
+            ErrorClass::Bind if self.message.starts_with("unknown column") => "42703",
+            ErrorClass::Bind
+                if self.message.starts_with("no file matches")
+                    || self.message.starts_with("cannot list the files")
+                    || self.message.starts_with("cannot read the source") =>
+            {
+                "42P01"
+            }
+            ErrorClass::Bind => "42804",
+            ErrorClass::NotSupported if self.message.starts_with("function calls") => "42883",
+            ErrorClass::NotSupported => "0A000",
+            ErrorClass::Execution => "42P01",
+        }
+    }
+
     pub fn is_limit(&self) -> bool {
         self.class == ErrorClass::Syntax && self.message.starts_with(LIMIT_PREFIX)
     }

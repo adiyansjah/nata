@@ -27,7 +27,7 @@ impl Server {
             tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("runtime").block_on(async move {
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("listen");
                 let address = listener.local_addr().expect("address"); address_tx.send(address).expect("send");
-                let config = Config {listen:address, unsafe_listen:false, max_connections:max, threads:2, metrics:Some(m)};
+                let config = Config {listen:address, unsafe_listen:false, max_connections:max, threads:2, max_queries:2, metrics:Some(m)};
                 tokio::select! { r = serve_listener(listener,config) => panic!("server ended {r:?}"), _ = stopped => {} }
             });
         });
@@ -96,7 +96,7 @@ impl Client {
                 _ => {}
             }
         }
-        assert_eq!(tags, b"RSSSSSSKZ");
+        assert_eq!(tags, b"RSSSSSSSSKZ");
         Self {
             socket,
             key,
@@ -286,7 +286,7 @@ fn large() -> String {
 fn recorded_simple_error_empty_types_nulls_and_terminate() {
     let s = Server::start(4);
     let mut c = s.client();
-    assert_eq!(c.startup, b"RSSSSSSKZ");
+    assert_eq!(c.startup, b"RSSSSSSSSKZ");
     let m = c.query(&format!("SELECT * FROM '{}'", fixture()));
     assert_eq!(tags(&m), b"TDDDCZ");
     assert_eq!(m[m.len() - 2].1, b"SELECT 3\0");
@@ -322,7 +322,7 @@ fn recorded_simple_error_empty_types_nulls_and_terminate() {
     let q = format!("SELECT 'é',\n missing FROM '{}'", fixture());
     let e = c.query(&q);
     assert_eq!(tags(&e), b"EZ");
-    assert_eq!(error_field(&e[0].1, b'C'), Some("42804"));
+    assert_eq!(error_field(&e[0].1, b'C'), Some("42703"));
     assert_eq!(error_field(&e[0].1, b'P'), Some("14"));
     let e = c.query("SELECT @");
     assert_eq!(error_field(&e[0].1, b'C'), Some("42601"));
@@ -447,6 +447,7 @@ fn malformed_lengths_startup_ssl_and_max_connections() {
         listen: "127.0.0.1:0".parse().expect("addr"),
         unsafe_listen: false,
         max_connections: 0,
+        max_queries: 1,
         threads: 1,
         metrics: None,
     };
@@ -516,6 +517,7 @@ fn unsafe_listen_requires_explicit_flag() {
         listen: SocketAddr::new(std::net::Ipv4Addr::UNSPECIFIED.into(), 5432),
         unsafe_listen: false,
         max_connections: 64,
+        max_queries: 1,
         threads: 1,
         metrics: None,
     };
@@ -559,4 +561,358 @@ fn exceptional_date_domains_and_zero_bytes_are_explicit_conversion_errors() {
         assert!(!result[1].1.windows(7).any(|w| w == b"private"));
         std::fs::remove_file(file).expect("remove");
     }
+}
+
+impl Client {
+    fn frame(&mut self, tag: u8, body: &[u8]) {
+        self.socket
+            .write_all(&codec::packet(tag, body).expect("packet"))
+            .expect("send");
+    }
+    fn parse(&mut self, q: &str, oids: &[i32]) {
+        let mut b = format!("\0{q}\0").into_bytes();
+        b.extend((oids.len() as i16).to_be_bytes());
+        for o in oids {
+            b.extend(o.to_be_bytes());
+        }
+        self.frame(b'P', &b);
+    }
+    fn bind(&mut self, params: &[Option<&str>], format: i16, result: i16) {
+        let mut b = b"\0\0\0\x01".to_vec();
+        b.extend(format.to_be_bytes());
+        b.extend((params.len() as i16).to_be_bytes());
+        for p in params {
+            match p {
+                None => b.extend((-1i32).to_be_bytes()),
+                Some(v) => {
+                    b.extend((v.len() as i32).to_be_bytes());
+                    b.extend(v.as_bytes());
+                }
+            }
+        }
+        b.extend(1i16.to_be_bytes());
+        b.extend(result.to_be_bytes());
+        self.frame(b'B', &b);
+    }
+    fn execute(&mut self, limit: i32) {
+        self.frame(b'E', &[vec![0], limit.to_be_bytes().to_vec()].concat());
+    }
+    fn sync(&mut self) -> Vec<(u8, Vec<u8>)> {
+        self.frame(b'S', b"");
+        self.result()
+    }
+}
+#[test]
+fn extended_recorded_sequences_and_sync_recovery() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    let q = format!("SELECT i, $1 AS p FROM '{}' LIMIT 1", fixture());
+    // JDBC shape: Parse Bind Describe(portal) Execute Sync. No duplicate RowDescription at Execute.
+    c.parse(&q, &[23]);
+    c.bind(&[Some("7")], 0, 0);
+    c.frame(b'D', b"P\0");
+    c.execute(0);
+    let r = c.sync();
+    assert_eq!(tags(&r), b"12TDCZ");
+    assert_eq!(values(&r)[0][1], Some("7".into()));
+    // Psycopg shape: Parse Describe(statement) Flush, Bind Execute Sync, repeated unnamed parse.
+    c.parse(&q, &[23]);
+    c.frame(b'D', b"S\0");
+    c.frame(b'H', b"");
+    assert_eq!(read(&mut c.socket).0, b'1');
+    let (t, b) = read(&mut c.socket);
+    assert_eq!(t, b't');
+    assert_eq!(b, b"\0\x01\0\0\0\x17");
+    assert_eq!(read(&mut c.socket).0, b'T');
+    c.bind(&[None], 0, 0);
+    c.execute(0);
+    assert_eq!(values(&c.sync())[0][1], None);
+    c.frame(b'C', b"P\0");
+    c.frame(b'C', b"S\0");
+    assert_eq!(tags(&c.sync()), b"33Z");
+    c.parse("SET extra_float_digits = 3", &[]);
+    c.frame(b'D', b"S\0");
+    c.bind(&[], 0, 0);
+    c.frame(b'D', b"P\0");
+    c.execute(0);
+    assert_eq!(tags(&c.sync()), b"1tn2nCZ");
+    // Errors at Parse, Bind and Execute each suppress later work, then Sync restores normal operation.
+    for stage in 0..3 {
+        if stage == 0 {
+            c.parse("SELECT @", &[]);
+        } else {
+            c.parse(&q, &[23]);
+            c.bind(&[Some("7")], if stage == 1 { 1 } else { 0 }, 0);
+            if stage == 2 {
+                c.execute(1);
+            }
+        }
+        c.parse(&q, &[23]);
+        c.bind(&[Some("8")], 0, 0);
+        c.execute(0);
+        let r = c.sync();
+        assert_eq!(r.iter().filter(|m| m.0 == b'E').count(), 1);
+        assert!(values(&r).is_empty());
+        c.parse(&q, &[23]);
+        c.bind(&[Some("9")], 0, 0);
+        c.frame(b'D', b"P\0");
+        c.execute(0);
+        assert_eq!(values(&c.sync())[0][1], Some("9".into()));
+    }
+    // Execution error after a successful Parse/Bind must also recover.
+    let bad = format!("SELECT CAST(s AS INTEGER) FROM '{}'", fixture());
+    c.parse(&bad, &[]);
+    c.bind(&[], 0, 0);
+    c.execute(0);
+    let r = c.sync();
+    assert!(r.iter().any(|m| m.0 == b'E'));
+    c.parse(&q, &[23]);
+    c.bind(&[Some("10")], 0, 0);
+    c.execute(0);
+    assert_eq!(values(&c.sync())[0][1], Some("10".into()));
+    c.frame(b'P', format!("named\0{q}\0\0\x01\0\0\0\x17").as_bytes());
+    let r = c.sync();
+    assert_eq!(error_field(&r[0].1, b'C'), Some("0A000"));
+    c.parse(&q, &[23]);
+    c.bind(&[Some("1")], 0, 1);
+    let r = c.sync();
+    assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
+}
+#[test]
+fn extended_parameters_are_nodes_and_never_error_values() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let q = format!("SELECT $1 AS p, $2 AS n FROM '{}' LIMIT 1", fixture());
+    let attack = "x' FROM 'no-file'; SELECT 'secret-cell";
+    c.parse(&q, &[25, 23]);
+    c.bind(&[Some(attack), Some("42")], 0, 0);
+    c.frame(b'D', b"P\0");
+    c.execute(0);
+    assert_eq!(
+        values(&c.sync()),
+        vec![vec![Some(attack.into()), Some("42".into())]]
+    );
+    c.parse(&q, &[25, 23]);
+    c.bind(&[None, Some("1 + 2")], 0, 0);
+    let r = c.sync();
+    assert_eq!(error_field(&r[1].1, b'C'), Some("22P02"));
+    // Unspecified types resolve to text; callers use an explicit cast for numeric contexts.
+    c.parse(&q, &[]);
+    c.bind(&[Some("hello"), None], 0, 0);
+    c.execute(0);
+    assert_eq!(values(&c.sync())[0], vec![Some("hello".into()), None]);
+    let q = format!("SELECT CAST($1 AS DATE) FROM '{}' LIMIT 1", fixture());
+    c.parse(&q, &[25]);
+    c.bind(&[Some("secret-cell")], 0, 0);
+    c.execute(0);
+    let r = c.sync();
+    assert_eq!(
+        error_field(&r.iter().find(|m| m.0 == b'E').expect("error").1, b'C'),
+        Some("22P02")
+    );
+    assert!(
+        !r.iter()
+            .any(|(_, b)| b.windows(11).any(|v| v == b"secret-cell"))
+    );
+}
+#[test]
+fn session_chatter_status_and_transaction_markers() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    for q in [
+        "SET extra_float_digits = 3",
+        "SET application_name = 'driver'",
+        "SET DateStyle TO 'ISO'",
+        "SET client_encoding = 'UTF8'",
+        "SET TimeZone = 'UTC'",
+        "SET TIME ZONE 'UTC'",
+        "SET search_path = public",
+        "SET statement_timeout = 0",
+        "SET standard_conforming_strings = on",
+    ] {
+        let r = c.query(q);
+        assert!(!r.iter().any(|m| m.0 == b'E'), "{q}: {r:?}");
+        assert_eq!(r.iter().find(|m| m.0 == b'C').expect("command").1, b"SET\0");
+        let status = r.iter().any(|m| m.0 == b'S');
+        assert_eq!(
+            status,
+            q.contains("application_name")
+                || q.contains("DateStyle")
+                || q.contains("client_encoding")
+                || (q.contains("TimeZone") || q.contains("TIME ZONE"))
+                || q.contains("standard_conforming_strings")
+        );
+    }
+    for (q, v) in [
+        ("SELECT 1", "1"),
+        ("SHOW application_name", "driver"),
+        ("SHOW TIME ZONE", "UTC"),
+        ("SELECT current_setting('client_encoding')", "UTF8"),
+        ("SELECT current_schema()", "public"),
+        ("SELECT version()", "PostgreSQL 16.0 (Nata compatibility)"),
+    ] {
+        assert_eq!(values(&c.query(q)), vec![vec![Some(v.into())]]);
+    }
+    for q in [
+        "SET statement_timeout = 100",
+        "SET client_encoding = 'LATIN1'",
+        "SET work_mem = '1GB'",
+        "SHOW unknown",
+        "SET standard_conforming_strings = off",
+    ] {
+        assert_eq!(error_field(&c.query(q)[0].1, b'C'), Some("0A000"));
+    }
+    let r = c.query("BEGIN;");
+    assert_eq!(r.last().expect("ready").1, b"T");
+    let r = c.query("SELECT @");
+    assert_eq!(r.last().expect("ready").1, b"E");
+    let r = c.query("ROLLBACK;");
+    assert_eq!(r.last().expect("ready").1, b"I");
+    c.query("BEGIN");
+    let r = c.query("COMMIT");
+    assert_eq!(r.last().expect("ready").1, b"I");
+}
+#[test]
+fn sqlstate_table_preserves_nata_diagnostics_and_hints() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let f = fixture();
+    for (expr, code) in [
+        ("@", "42601"),
+        ("nope", "42703"),
+        ("mystery(i)", "42883"),
+        ("i = 'x'", "42804"),
+        ("i / 0", "22012"),
+        ("bi + 1", "22003"),
+        ("CAST(s AS INTEGER)", "22P02"),
+        ("i LIKE 'x'", "0A000"),
+    ] {
+        let r = c.query(&format!("SELECT {expr} FROM '{f}'"));
+        let e = &r.iter().find(|m| m.0 == b'E').expect("error").1;
+        assert_eq!(error_field(e, b'C'), Some(code), "{expr}: {e:?}");
+        assert!(error_field(e, b'P').is_some());
+        assert!(!e.windows(11).any(|v| v == b"secret-cell"));
+        if code == "42703" {
+            assert_eq!(error_field(e, b'M'), Some("unknown column \"nope\""));
+        }
+        if code == "22012" {
+            assert!(
+                error_field(e, b'M')
+                    .expect("message")
+                    .contains("Guard it with CASE")
+            );
+        }
+    }
+    let r = c.query("SELECT x FROM 'missing-step3.parquet'");
+    assert_eq!(error_field(&r[0].1, b'C'), Some("42P01"));
+    let r = c.query(&format!("SELECT ii FROM '{f}'"));
+    assert!(
+        error_field(&r[0].1, b'H')
+            .expect("hint")
+            .contains("did you mean")
+    );
+}
+#[test]
+fn stalled_reader_does_not_starve_eight_other_sessions() {
+    let s = Server::start(16);
+    let mut stalled = s.client();
+    stalled.send_query(&format!("SELECT s FROM '{}'", large()));
+    assert_eq!(read(&mut stalled.socket).0, b'T');
+    wait_until(|| s.metrics.rows_produced.load(Ordering::SeqCst) > 32);
+    std::thread::sleep(Duration::from_millis(250));
+    // Step 2's one admission cannot finish any of these before the 1.5s deadline.
+    let start = Instant::now();
+    std::thread::scope(|scope| {
+        for _ in 0..8 {
+            let address = s.address;
+            let q = format!("SELECT si FROM '{}' LIMIT 1", fixture());
+            scope.spawn(move || {
+                let sock = TcpStream::connect(address).expect("connect");
+                sock.set_read_timeout(Some(Duration::from_millis(1500)))
+                    .expect("timeout");
+                let mut c = Client::start(sock);
+                assert_eq!(values(&c.query(&q)), vec![vec![Some("-32768".into())]]);
+            });
+        }
+    });
+    assert!(start.elapsed() < Duration::from_millis(1500));
+    // With no cancel/disconnect from the client, the 2s unwritable deadline releases all workers.
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+}
+
+#[test]
+fn extended_all_types_match_simple_and_parameter_metadata_is_stable() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let q = format!("SELECT * FROM '{}'", fixture());
+    let simple = c.query(&q);
+    c.parse(&q, &[]);
+    c.bind(&[], 0, 0);
+    c.frame(b'D', b"P\0");
+    c.execute(0);
+    let extended = c.sync();
+    assert_eq!(values(&simple), values(&extended));
+    assert_eq!(simple[0], extended[2]);
+    // Numeric OID has no precision/scale in Parse. Require an explicit CAST if a bound value changes the result type.
+    let q = format!("SELECT $1 AS n FROM '{}' LIMIT 1", fixture());
+    c.parse(&q, &[1700]);
+    c.bind(&[Some("1.25")], 0, 0);
+    c.execute(0);
+    let r = c.sync();
+    assert_eq!(
+        error_field(&r.iter().find(|m| m.0 == b'E').expect("error").1, b'C'),
+        Some("0A000")
+    );
+    let q = format!(
+        "SELECT CAST($1 AS DECIMAL(10,2)) AS n FROM '{}' LIMIT $2",
+        fixture()
+    );
+    c.parse(&q, &[1700, 23]);
+    c.bind(&[Some("1.25"), Some("1")], 0, 0);
+    c.execute(0);
+    assert_eq!(values(&c.sync()), vec![vec![Some("1.25".into())]]);
+}
+
+#[test]
+fn startup_chatter_and_binary_payload_refusals() {
+    let s = Server::start(2);
+    let mut socket = s.socket();
+    let mut b = 196608i32.to_be_bytes().to_vec();
+    b.extend(b"user\0test\0database\0nata\0application_name\0startup driver\0TimeZone\0UTC\0\0");
+    socket
+        .write_all(&codec::packet(0, &b).expect("packet")[1..])
+        .expect("startup");
+    let mut statuses = Vec::new();
+    loop {
+        let (t, b) = read(&mut socket);
+        assert_ne!(t, b'E');
+        if t == b'S' {
+            statuses.push(b);
+        }
+        if t == b'Z' {
+            break;
+        }
+    }
+    assert!(statuses.contains(&b"application_name\0startup driver\0".to_vec()));
+    assert!(statuses.contains(&b"TimeZone\0UTC\0".to_vec()));
+    let mut c = s.client();
+    let q = format!("SELECT $1 AS p FROM '{}' LIMIT 1", fixture());
+    c.parse(&q, &[23]);
+    // Invalid UTF8 binary data is still a supported frame with an unsupported format.
+    let b = b"\0\0\0\x01\0\x01\0\x01\0\0\0\x01\xff\0\0";
+    c.frame(b'B', b);
+    let r = c.sync();
+    assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
+    for (v, code) in [("1.5", "22P02"), ("2147483648", "22003")] {
+        c.parse(&q, &[23]);
+        c.bind(&[Some(v)], 0, 0);
+        let r = c.sync();
+        assert_eq!(error_field(&r[1].1, b'C'), Some(code));
+    }
+    let long = "x".repeat(600_000);
+    let q = format!("SELECT $1 AS a, $1 AS b FROM '{}' LIMIT 1", fixture());
+    c.parse(&q, &[25]);
+    c.bind(&[Some(&long)], 0, 0);
+    let r = c.sync();
+    assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
 }

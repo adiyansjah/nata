@@ -40,3 +40,16 @@ pub fn plan_sql_with(
 mod parse_tests;
 #[cfg(test)]
 mod testutil;
+
+/// Protocol adapter: callers supply literal AST nodes. Standalone SQL rejects placeholders.
+pub fn plan_parameters(
+    sql: &str,
+    params: &[ast::Expr],
+    source: &dyn SourceProvider,
+) -> Result<Planned> {
+    parse::on_big_stack(|| {
+        let q = parse::parse_query_params_here(sql, params)?;
+        let bound = bind::bind(&q, source)?;
+        plan::plan(bound)
+    })?
+}

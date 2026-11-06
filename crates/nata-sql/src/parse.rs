@@ -67,6 +67,11 @@ pub fn parse_query(text: &str) -> Result<ast::Query> {
 
 /// As [`parse_query`], on the CURRENT thread, which must have a stack of at least [`WORKER_STACK_BYTES`].
 pub fn parse_query_here(text: &str) -> Result<ast::Query> {
+    parse_query_params_here(text, &[])
+}
+
+/// Protocol adapter: substitute literal expression nodes, never SQL text.
+pub fn parse_query_params_here(text: &str, params: &[ast::Expr]) -> Result<ast::Query> {
     let prepared = prepare(text)?;
     let dialect = PostgreSqlDialect {};
     let parsed = Parser::new(&dialect)
@@ -77,6 +82,7 @@ pub fn parse_query_here(text: &str) -> Result<ast::Query> {
         Err(e) => Err(map_error(text, e)),
         Ok(stmts) => {
             let conv = Conv {
+                params,
                 toks: &prepared.tokens,
                 int_div_at: &prepared.int_div_at,
                 end: Pos::end_of(text),
@@ -474,6 +480,7 @@ fn variant<T: std::fmt::Debug>(x: &T) -> String {
 }
 
 struct Conv<'a> {
+    params: &'a [ast::Expr],
     toks: &'a [TokenWithSpan],
     int_div_at: &'a [Pos],
     /// The end of the text, computed once (it is the place of an error "at the end of the input").
@@ -804,6 +811,39 @@ impl Conv<'_> {
         let end = self.end();
         match e {
             sp::Expr::Value(v) => match &v.value {
+                sp::Value::Placeholder(name) if !self.params.is_empty() => {
+                    let i = name
+                        .strip_prefix('$')
+                        .and_then(|n| n.parse::<usize>().ok())
+                        .filter(|i| *i > 0)
+                        .ok_or_else(|| {
+                            SqlError::syntax(sp_pos(v.span), "invalid parameter index")
+                        })?;
+                    let mut e = self
+                        .params
+                        .get(i - 1)
+                        .ok_or_else(|| SqlError::bind(sp_pos(v.span), "missing parameter"))?;
+                    while let ast::ExprKind::Cast { expr, .. } = &e.kind {
+                        e = expr;
+                    }
+                    if let ast::ExprKind::Number(n) = &e.kind
+                        && n.bytes().all(|c| c.is_ascii_digit())
+                    {
+                        return n
+                            .parse::<u64>()
+                            .map(|n| (n, Span(sp_pos(v.span))))
+                            .map_err(|_| {
+                                SqlError::bind(
+                                    sp_pos(v.span),
+                                    "LIMIT/OFFSET parameter out of range",
+                                )
+                            });
+                    }
+                    Err(SqlError::bind(
+                        sp_pos(v.span),
+                        "LIMIT/OFFSET parameter must be a nonnegative whole number",
+                    ))
+                }
                 sp::Value::Number(s, false) if s.bytes().all(|c| c.is_ascii_digit()) => s
                     .parse::<u64>()
                     .map(|n| (n, Span(sp_pos(v.span))))
@@ -1222,6 +1262,29 @@ impl Conv<'_> {
                     sp::Value::Number(s, false) => {
                         check_number_text(s, pos)?;
                         mk(ExprKind::Number(s.clone()), pos)
+                    }
+                    sp::Value::Placeholder(name) if !self.params.is_empty() => {
+                        let i = name
+                            .strip_prefix('$')
+                            .and_then(|n| n.parse::<usize>().ok())
+                            .filter(|i| *i > 0)
+                            .ok_or_else(|| SqlError::syntax(pos, "invalid parameter index"))?;
+                        let mut value = self
+                            .params
+                            .get(i - 1)
+                            .cloned()
+                            .ok_or_else(|| SqlError::bind(pos, "missing parameter"))?;
+                        // Parameter trees contain only a literal and at most a cast/sign.
+                        fn locate(e: &mut ast::Expr, pos: Pos) {
+                            e.span = ast::Span(pos);
+                            match &mut e.kind {
+                                ast::ExprKind::Cast { expr, .. }
+                                | ast::ExprKind::Unary { expr, .. } => locate(expr, pos),
+                                _ => {}
+                            }
+                        }
+                        locate(&mut value, pos);
+                        value
                     }
                     sp::Value::SingleQuotedString(s) => mk(ExprKind::Str(s.clone()), pos),
                     sp::Value::Null => mk(ExprKind::Null, pos),

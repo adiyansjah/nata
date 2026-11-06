@@ -137,13 +137,22 @@ pub fn decode(bytes: &[u8], startup: bool) -> Result<Message> {
                 let formats = c.formats()?;
                 let n = c.count(4)?;
                 let params = (0..n)
-                    .map(|_| match c.i32()? {
+                    .map(|i| match c.i32()? {
                         -1 => Ok(None),
-                        n if n >= 0 => Ok(Some(
-                            std::str::from_utf8(c.take(n as usize)?)
-                                .map_err(|_| Invalid)?
-                                .to_owned(),
-                        )),
+                        n if n >= 0 => {
+                            let bytes = c.take(n as usize)?;
+                            let format = if formats.len() == 1 {
+                                formats[0]
+                            } else {
+                                formats.get(i).copied().unwrap_or(0)
+                            };
+                            // Binary payload is opaque; the session rejects its format with 0A000.
+                            Ok(Some(if format != 0 {
+                                String::new()
+                            } else {
+                                std::str::from_utf8(bytes).map_err(|_| Invalid)?.to_owned()
+                            }))
+                        }
                         _ => Err(Invalid),
                     })
                     .collect::<Result<_>>()?;

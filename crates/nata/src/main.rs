@@ -28,7 +28,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Serve Postgres wire 3.0 SIMPLE queries (trust authentication, no TLS).
+    /// Serve Postgres wire 3.0 simple and unnamed extended queries (trust authentication, no TLS).
     Serve {
         /// Bind address. Loopback only unless --unsafe-listen is explicitly given.
         #[arg(long, default_value = "127.0.0.1:5432")]
@@ -39,9 +39,12 @@ enum Command {
         /// Authenticated sessions (1..=64); eight additional bounded startup/cancel slots.
         #[arg(long, default_value_t = 64)]
         max_connections: usize,
-        /// CPU workers for the one admitted query (default: available parallelism).
+        /// Total CPU worker budget shared by admitted queries (default: available parallelism).
         #[arg(long)]
         threads: Option<usize>,
+        /// Concurrent queries (default: CPU worker budget).
+        #[arg(long)]
+        max_queries: Option<usize>,
     },
     /// Start a node.
     Run,
@@ -264,6 +267,7 @@ fn main() -> ExitCode {
             unsafe_listen,
             max_connections,
             threads,
+            max_queries,
         } => {
             std::panic::set_hook(Box::new(|_| {
                 let _ = writeln!(std::io::stderr(), "error: internal server error");
@@ -272,6 +276,11 @@ fn main() -> ExitCode {
                 listen,
                 unsafe_listen,
                 max_connections,
+                max_queries: max_queries.unwrap_or_else(|| {
+                    threads.unwrap_or_else(|| {
+                        std::thread::available_parallelism().map_or(1, usize::from)
+                    })
+                }),
                 threads: threads.unwrap_or_else(|| {
                     std::thread::available_parallelism().map_or(1, std::num::NonZero::get)
                 }),
