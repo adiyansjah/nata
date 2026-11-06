@@ -677,20 +677,28 @@ impl<'a> Binder<'a> {
         self.need_boolean(&left, what)?;
         self.need_boolean(&r, what)?;
         let pos = left.pos;
-        let mut operands: Vec<Expr> = Vec::new();
-        for mut side in [left, r] {
-            let same = matches!(
-                (&side.kind, is_and),
+        let same = |e: &Expr| {
+            matches!(
+                (&e.kind, is_and),
                 (ExprKind::And(_), true) | (ExprKind::Or(_), false)
-            );
-            if same {
-                match take_kind(&mut side) {
-                    ExprKind::And(v) | ExprKind::Or(v) => operands.extend(v),
-                    _ => {}
-                }
-            } else {
-                operands.push(side);
+            )
+        };
+        // a chain `a AND b AND c ...` is one node: the left operand's list is extended, not copied
+        let mut operands: Vec<Expr> = if same(&left) {
+            match take_kind(&mut left) {
+                ExprKind::And(v) | ExprKind::Or(v) => v,
+                _ => Vec::new(),
             }
+        } else {
+            vec![left]
+        };
+        if same(&r) {
+            match take_kind(&mut r) {
+                ExprKind::And(v) | ExprKind::Or(v) => operands.extend(v),
+                _ => {}
+            }
+        } else {
+            operands.push(r);
         }
         let kind = if is_and {
             ExprKind::And(operands)

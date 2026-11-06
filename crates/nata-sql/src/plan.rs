@@ -465,75 +465,139 @@ fn literal_sql(v: &Value, ty: SqlType) -> String {
     }
 }
 
-/// An expression as SQL, every operator parenthesised, columns by name.
-pub fn render_expr(e: &Expr, names: &[String]) -> String {
-    let r = |x: &Expr| render_expr(x, names);
-    match &e.kind {
-        ExprKind::Column(i) => names
-            .get(*i)
-            .map_or_else(|| format!("#{i}"), |n| quote_ident(n)),
-        ExprKind::Literal(v) => literal_sql(v, e.ty),
-        ExprKind::Neg(x) => format!("(-{})", r(x)),
-        ExprKind::Not(x) => format!("(NOT {})", r(x)),
-        ExprKind::Arith { op, left, right } => {
-            format!("({} {} {})", r(left), op.symbol(), r(right))
-        }
-        ExprKind::Cmp { op, left, right } => format!("({} {} {})", r(left), op.symbol(), r(right)),
-        ExprKind::And(v) => format!("({})", v.iter().map(r).collect::<Vec<_>>().join(" AND ")),
-        ExprKind::Or(v) => format!("({})", v.iter().map(r).collect::<Vec<_>>().join(" OR ")),
-        ExprKind::IsNull { expr, negated } => {
-            format!(
-                "({} IS {}NULL)",
-                r(expr),
-                if *negated { "NOT " } else { "" }
-            )
-        }
-        ExprKind::Between {
-            expr,
-            low,
-            high,
-            negated,
-        } => format!(
-            "({} {}BETWEEN {} AND {})",
-            r(expr),
-            if *negated { "NOT " } else { "" },
-            r(low),
-            r(high)
-        ),
-        ExprKind::InList {
-            expr,
-            list,
-            negated,
-        } => format!(
-            "({} {}IN ({}))",
-            r(expr),
-            if *negated { "NOT " } else { "" },
-            list.iter().map(r).collect::<Vec<_>>().join(", ")
-        ),
-        ExprKind::Case {
-            operand,
-            whens,
-            else_,
-        } => {
-            let mut s = String::from("CASE");
-            if let Some(o) = operand {
-                s.push(' ');
-                s.push_str(&r(o));
+enum W<'a> {
+    E(&'a Expr),
+    T(String),
+    S(&'static str),
+}
+
+/// An expression as SQL, every operator parenthesised, columns by name. Written with a work list, not recursion: a chain of 10,000 terms is a tree
+/// 10,000 deep.
+pub fn render_expr(root: &Expr, names: &[String]) -> String {
+    let mut out = String::new();
+    let mut stack: Vec<W<'_>> = vec![W::E(root)];
+    // pieces are pushed in reverse order
+    while let Some(w) = stack.pop() {
+        let e = match w {
+            W::T(t) => {
+                out.push_str(&t);
+                continue;
             }
-            for (c, v) in whens {
-                s.push_str(&format!(" WHEN {} THEN {}", r(c), r(v)));
+            W::S(t) => {
+                out.push_str(t);
+                continue;
             }
-            s.push_str(&format!(" ELSE {} END", r(else_)));
-            s
-        }
-        ExprKind::Cast { expr, implicit } => {
-            if *implicit {
-                format!("{}::{}", r(expr), e.ty)
-            } else {
-                format!("CAST({} AS {})", r(expr), e.ty)
+            W::E(e) => e,
+        };
+        match &e.kind {
+            ExprKind::Column(i) => {
+                out.push_str(
+                    &names
+                        .get(*i)
+                        .map_or_else(|| format!("#{i}"), |n| quote_ident(n)),
+                );
+            }
+            ExprKind::Literal(v) => out.push_str(&literal_sql(v, e.ty)),
+            ExprKind::Neg(x) => stack.extend([W::S(")"), W::E(x), W::S("(-")]),
+            ExprKind::Not(x) => stack.extend([W::S(")"), W::E(x), W::S("(NOT ")]),
+            ExprKind::Arith { op, left, right } => stack.extend([
+                W::S(")"),
+                W::E(right),
+                W::T(format!(" {} ", op.symbol())),
+                W::E(left),
+                W::S("("),
+            ]),
+            ExprKind::Cmp { op, left, right } => stack.extend([
+                W::S(")"),
+                W::E(right),
+                W::T(format!(" {} ", op.symbol())),
+                W::E(left),
+                W::S("("),
+            ]),
+            ExprKind::And(v) | ExprKind::Or(v) => {
+                let sep = if matches!(e.kind, ExprKind::And(_)) {
+                    " AND "
+                } else {
+                    " OR "
+                };
+                stack.push(W::S(")"));
+                for (k, x) in v.iter().enumerate().rev() {
+                    stack.push(W::E(x));
+                    if k > 0 {
+                        stack.push(W::S(sep));
+                    }
+                }
+                stack.push(W::S("("));
+            }
+            ExprKind::IsNull { expr, negated } => stack.extend([
+                W::S(if *negated {
+                    " IS NOT NULL)"
+                } else {
+                    " IS NULL)"
+                }),
+                W::E(expr),
+                W::S("("),
+            ]),
+            ExprKind::Between {
+                expr,
+                low,
+                high,
+                negated,
+            } => stack.extend([
+                W::S(")"),
+                W::E(high),
+                W::S(" AND "),
+                W::E(low),
+                W::S(if *negated {
+                    " NOT BETWEEN "
+                } else {
+                    " BETWEEN "
+                }),
+                W::E(expr),
+                W::S("("),
+            ]),
+            ExprKind::InList {
+                expr,
+                list,
+                negated,
+            } => {
+                stack.push(W::S("))"));
+                for (k, x) in list.iter().enumerate().rev() {
+                    stack.push(W::E(x));
+                    if k > 0 {
+                        stack.push(W::S(", "));
+                    }
+                }
+                stack.extend([
+                    W::S(if *negated { " NOT IN (" } else { " IN (" }),
+                    W::E(expr),
+                    W::S("("),
+                ]);
+            }
+            ExprKind::Case {
+                operand,
+                whens,
+                else_,
+            } => {
+                stack.extend([W::S(" END"), W::E(else_), W::S(" ELSE ")]);
+                for (c, v) in whens.iter().rev() {
+                    stack.extend([W::E(v), W::S(" THEN "), W::E(c), W::S(" WHEN ")]);
+                }
+                if let Some(o) = operand {
+                    stack.extend([W::E(o), W::S(" ")]);
+                }
+                stack.push(W::S("CASE"));
+            }
+            ExprKind::Cast { expr, implicit } => {
+                if *implicit {
+                    stack.extend([W::T(format!("::{}", e.ty)), W::E(expr)]);
+                } else {
+                    stack.extend([W::T(format!(" AS {})", e.ty)), W::E(expr), W::S("CAST(")]);
+                }
             }
         }
     }
+    out
 }
 
 impl LogicalPlan {
