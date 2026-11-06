@@ -218,3 +218,27 @@ mutants. Results are `pgwire-protocol.txt`, `pgwire-live.txt`, and
 No client dependency installation, performance benchmark, or cloud run is claimed
 by adding this job. See `bench/results/20261107-pgwire-reliability.md` for the
 exact approved-run commands and the remaining step-5 measurements.
+
+## `pgwirebench` and `item35`: slice 4b measurements
+
+`pgwirebench` builds the release server and CLI, checks one million ordered BIGINT
+rows against DuckDB/raw/psql, then times five alternating warm-cache rounds with
+identical twin arms at one/eight workers. Each timed block requires load below
+0.5. It records streaming ratios against the fixed 1.20 ceiling, first DataRow
+versus producer completion (including bounded-bridge backpressure), 64 concurrent
+versus sequential connections (2.0 ceiling), fixed admission share, and named/text/
+binary parameter roundtrip costs. Queue wait is measured only around semaphore
+acquisition; `worker_share` is the configured share, not CPU utilization. The
+permanent one-byte/ms test records peak RSS and produced rows separately. Results
+are small JSON/CSV/text files; generated Parquet and build caches stay on WORK.
+
+`item35` installs distribution psql/JDK and official Maven's latest stable 42.x
+pgjdbc, plus PyPI psycopg binary, pgcli, ADBC PostgreSQL and pyarrow. It records
+versions, runs nata-check's SQL oracle, all successful SQL corpus queries through
+each default client, native type/preparation/error/cancel probes, and a transparent
+frontend trace that omits cancel secrets and parameter payloads. Exact text
+mismatches remain recorded; a second typed comparison distinguishes PostgreSQL
+boolean/float spellings and native client formatting from incorrect values.
+Default ADBC catalog bootstrap failures are recorded without emulating catalogs
+or introducing COPY. Neither job launches cloud resources itself; plan each
+architecture before an explicitly approved run.

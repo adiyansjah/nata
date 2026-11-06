@@ -312,6 +312,15 @@ case "$JOB" in
     run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  pgwirebench|item35)
+    run pw-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata -p nata-check'
+    if [ "$JOB" = item35 ]; then
+      run pw-data bash -c 'cd "$SRC" && scripts/gen-tpch.sh 0.01 data/client-check && scripts/gen-sql-check-data.sh data/client-check'
+      run pw-oracle bash -c 'cd "$SRC" && "$WORK/target-ws/release/nata-check" --candidate "$WORK/target-ws/release/nata" --data data/client-check --queries check/queries/sql > "$RESULTS/item35-oracle.txt" 2>&1'
+      run pw-clients bash -c 'bash "$SRC/crates/nata-bench/pgwire-job.sh" clients'
+    else
+      run pw-bench bash -c 'bash "$SRC/crates/nata-bench/pgwire-job.sh" bench > "$RESULTS/pgwire-bench.txt" 2>&1'
+    fi ;;
   pgwirecheck)
     # Local step-4 replay only: prepared here, never launches cloud resources itself.
     run pgwire-protocol bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-pgwire > "$RESULTS/pgwire-protocol.txt" 2>&1'

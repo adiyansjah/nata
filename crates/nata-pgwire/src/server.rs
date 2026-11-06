@@ -688,11 +688,13 @@ async fn session_loop(
                 .await;
                 let _ = writeln!(
                     io::stderr(),
-                    "session={} duration_us={} rows={} state={}",
+                    "session={} duration_us={} rows={} state={} queue_wait_us={} worker_share={}",
                     registered.id,
                     started.elapsed().as_micros(),
                     session_rows,
-                    result.as_ref().map_or_else(|e| e.code, |_| "00000")
+                    result.as_ref().map_or_else(|e| e.code, |_| "00000"),
+                    0,
+                    0
                 );
                 if let Err(e) = result {
                     state.failed();
@@ -723,11 +725,13 @@ async fn session_loop(
                     stop,
                     cancelled: Arc::clone(&cancelled),
                 });
+                let queued = Instant::now();
                 let permit = tokio::select! {
                     p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(&queries).acquire_owned()) => p.ok().and_then(Result::ok),
                     _ = stopped.changed() => None,
                     _ = disconnected.changed() => None,
                 };
+                let queue_wait_us = queued.elapsed().as_micros();
                 let mut description = Vec::new();
                 let expected = portal.as_ref().map(|p| p.statement.description.clone());
                 let mut transport_failed = false;
@@ -767,6 +771,11 @@ async fn session_loop(
                                         progress.as_deref(),
                                     )
                                 }));
+                            let _ = writeln!(
+                                io::stderr(),
+                                "scan_end_us={}",
+                                started.elapsed().as_micros()
+                            );
                             let final_result =
                                 outcome.unwrap_or_else(|_| Err(WireError::internal()));
                             let _ = tx.blocking_send(Event::Finished(final_result));
@@ -831,11 +840,13 @@ async fn session_loop(
                 };
                 let _ = writeln!(
                     io::stderr(),
-                    "session={} duration_us={} rows={} state={}",
+                    "session={} duration_us={} rows={} state={} queue_wait_us={} worker_share={}",
                     registered.id,
                     started.elapsed().as_micros(),
                     rows,
-                    result.as_ref().map_or_else(|e| e.code, |_| "00000")
+                    result.as_ref().map_or_else(|e| e.code, |_| "00000"),
+                    queue_wait_us,
+                    threads
                 );
                 if transport_failed || *disconnected.borrow() {
                     return Ok(());

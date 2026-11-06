@@ -42,6 +42,9 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in perf|timing) ;; *) false ;; esac &&
 }
 # The Iceberg commit jobs build a Python venv for the independent-reader check (pyiceberg); the job runs without sudo, so install it here.
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke|icebergspikes|icebergpolaris|slice4bench|slice4close) python3 -m venv --help > /dev/null 2>&1 && python3 -c "import ensurepip" 2> /dev/null || apt-get install -y -qq python3-venv ;; esac
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in pgwirebench|item35)
+  apt-get update -qq && apt-get install -y -qq postgresql-client python3-venv default-jdk-headless ;;
+esac
 # The network-exchange job (verification-plan item 28, spikes/net-exchange/gcp-check.sh) builds Linux network namespaces with `tc netem`: that needs
 # root, iproute2 (ip, tc), ethtool (segmentation offload off, so that netem loss is per packet) and the sch_netem module. The job runs as the
 # unprivileged `nata`, so it is given passwordless sudo on THIS VM only: the VM is a throwaway with no service account and no scopes
