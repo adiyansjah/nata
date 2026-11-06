@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import resource
+import shutil
 import statistics as st
 import subprocess as sp
 import sys
@@ -19,10 +20,22 @@ nata, planner = map(lambda x: str(Path(x).resolve()), sys.argv[1:3])
 sf1, sf10, work, out = map(lambda x: Path(x).resolve(), sys.argv[3:])
 work.mkdir(parents=True, exist_ok=True)
 out.mkdir(parents=True, exist_ok=True)
+# A preempted step can restart against its old scratch/results directory.
+shutil.rmtree(work/'small', ignore_errors=True)
+(work/'sorted.parquet').unlink(missing_ok=True)
+for name in ['settle.txt','reports.txt']:
+    (out/name).write_text('')
 root = Path(__file__).resolve().parents[2]
 con = duckdb.connect()
 con.execute('SET threads=1')
 rows = []
+fields = ['block','arm','threads','round','secs','peak_rss_kib','peak_open_files','peak_footers']
+with (out/'runs.csv').open('w') as f:
+    csv.DictWriter(f,fieldnames=fields).writeheader()
+def record(row):
+    rows.append(row)
+    with (out/'runs.csv').open('a') as f:
+        csv.DictWriter(f,fieldnames=fields).writerow(row)
 settled = True
 
 def settle(label):
@@ -46,7 +59,7 @@ def sample(block, arm, threads, round_, cmd):
     report = dict(re.findall(r'(\w+)=([0-9]+)', p.stderr.decode()))
     with (out/'reports.txt').open('a') as f:
         f.write(f'{block}/{arm}/{threads}/{round_}: {p.stderr.decode()}\n')
-    rows.append(dict(block=block, arm=arm, threads=threads, round=round_, secs=secs,
+    record(dict(block=block, arm=arm, threads=threads, round=round_, secs=secs,
                      peak_rss_kib=report.get('peak_rss_kib', ''),
                      peak_open_files=report.get('peak_open_files',''),
                      peak_footers=report.get('peak_footers','')))
@@ -77,13 +90,13 @@ for name,q in corpus:
     duckplan(q)
     for r in range(5):
         vals=list(map(float,run([planner,str(qp)],True).stdout.split()))
-        rows.append(dict(block='plan-'+name,arm='nata',threads=1,round=r,secs=st.median(vals)))
+        record(dict(block='plan-'+name,arm='nata',threads=1,round=r,secs=st.median(vals)))
         vals=[]
         for _ in range(20):
             start=time.perf_counter(); duckplan(q); vals.append(time.perf_counter()-start)
-        rows.append(dict(block='plan-'+name,arm='duckdb',threads=1,round=r,secs=st.median(vals)))
+        record(dict(block='plan-'+name,arm='duckdb',threads=1,round=r,secs=st.median(vals)))
         vals=list(map(float,run([planner,str(qp)],True).stdout.split()))
-        rows.append(dict(block='plan-'+name,arm='twin',threads=1,round=r,secs=st.median(vals)))
+        record(dict(block='plan-'+name,arm='twin',threads=1,round=r,secs=st.median(vals)))
 
 for sf,d in [('sf1',sf1),('sf10',sf10)]:
     f=d/'lineitem.parquet'; q=example(f)
@@ -134,7 +147,7 @@ for i in range(1,10000): os.link(seed,small/f'{i:05}.parquet')
 q=f"SELECT l_orderkey FROM '{small}/*.parquet'"
 assert len(run(sqlcmd(q,8),True).stdout.splitlines()) == 10001
 sample('files10000','sql',8,0,sqlcmd(q,8))
-sample('files10000','scan',8,0,[nata,'scan',str(small/'*.parquet'),'--columns','l_orderkey','--csv','--threads','8','--window','16'])
+sample('files10000','scan',8,0,[nata,'scan',*map(str,sorted(small.glob('*.parquet'))),'--columns','l_orderkey','--csv','--threads','8','--window','16'])
 # Full SF10 scan through SQL; output cost included. No materialization in driver.
 q=f"SELECT l_orderkey FROM '{sf10}/lineitem.parquet'"
 sample('resource-sf10','sql',8,0,sqlcmd(q,8))

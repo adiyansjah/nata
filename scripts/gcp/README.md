@@ -192,3 +192,18 @@ remain enabled; the remaining CLI and resource tests still run instrumented.
 no CI job: shared CI runner noise makes it unsuitable for this performance gate.
 The stored baseline, observed twin spread and fail/pass demonstrations belong beside
 results. `test-regress.sh` exercises passing, slowdown, missing and invalid inputs.
+
+After a completed `slice4close` run, reduce its two raw benchmark directories:
+
+```bash
+python3 crates/nata-bench/regression-summary.py RESULTS_DIR new-medians.csv
+crates/nata-bench/regress.sh crates/nata-bench/baselines/slice4-arm64.csv new-medians.csv
+```
+
+Use the baseline for the same CPU type; `slice4-x86.csv` is the other baseline.
+The reducer gates the planning corpus median, SQL example/full-execution medians,
+and the scan benchmark at one/eight threads on SF1/SF10. The full benchmark
+summary still checks each query's planning target; this reducer does not replace
+those per-query verdicts. Its optional final argument selects SQL rounds, used
+for the closeout's disjoint baseline/held-out demonstration. Never regenerate a
+baseline merely to accept a slowdown; explain it and record the decision.
