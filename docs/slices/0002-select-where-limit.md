@@ -79,7 +79,8 @@ The open register items on this slice's path (the scan under `nata sql`, its sch
 | P2 footers read ahead within the window | taken in | Keep it if a scan of 1,000 small files is at least 1.3x faster at 8 threads and the open-file and footer bounds of slice 3 still hold under the `ulimit` test | the 10,000-file test and a many-small-files benchmark; peak open files and footers from the report |
 | R4 Parquet page checksums | taken in | Verify a page's CRC when the file has one (on by default; a corrupt page is an error naming the file and row group); its cost must stay under 5% on a file with checksums, or it becomes an option | the fuzz test on files written WITH checksums: its "different rows" class must be 0 for them; the cost measured with a control arm |
 | R9 nightly CI for the deep checks | taken in | - | the nightly job must go red on one known-bad scheduler mutant (it can fail) and green on main |
-| R6 report the dependency panics upstream | deferred | a public issue under the owner's account: the owner's decision; the panics stay caught | - |
+| R6a report the delta-byte-array panic upstream | deferred to the owner | a public issue under the owner's account (draft ready); the panics stay caught | - |
+| R6b upgrade past 60.1.0 (#11691 fixed upstream) | taken in if the next arrow-rs release lands during the slice | the whole test, differential and fuzz suite must pass on the new version | the existing suites |
 | P5 overflow-check elision | deferred to slice 5 | this slice's arithmetic is per-row projection, where the checks cost about 0-5% | - |
 | R1 memory manager | deferred, written before slice 5 | this slice's operators stream; no operator holds memory beyond the scan's window | - |
 
