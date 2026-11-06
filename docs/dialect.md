@@ -75,6 +75,29 @@ suggests the closest existing column name ("did you mean `l_orderkey`?") when on
 Limits: a query text of at most 1 MB, nesting (parentheses, `CASE`, unary operators) at most 1,000 deep, and at most 10,000 terms in one
 chain of the same binary operator; beyond them, a positioned error before parsing.
 
+## 8b. Readings decided while building the front end (2026-11-06)
+
+The front end of slice 4 found ten places where this page was silent; the strict reading is the rule (decided by the assistant under the
+owner's delegation, `bench/results/20261106-sql-frontend.md`):
+1. **Unaliased output names** are PostgreSQL's: a column keeps its name (also under a `CAST`), a `CASE` is `case`, any other expression is
+   `?column?`. DuckDB names an expression by its text: the differential check compares rows, and test queries alias their expressions.
+2. **`DECIMAL` without arguments** is `DECIMAL(18,3)` and `DECIMAL(p)` is `DECIMAL(p,0)` (DuckDB's defaults).
+3. **Float arithmetic** (`d + d`, `-d`, `d + 1`) and **comparing a float with an integer** are `not supported yet` in this slice; a float
+   with a decimal is a bind error (`decimal-rules.md` section 4); `REAL` and `DOUBLE` are two types, and comparing them is a bind error.
+4. **CAST** converts between the numeric types, from and to `VARCHAR` for numbers, booleans and dates, and from `VARCHAR` to `DOUBLE`;
+   boolean to and from numbers and `DOUBLE` to `VARCHAR` are `not supported yet`; a meaningless cast (date to integer) is a bind error.
+   `TINYINT` and `SMALLINT` are column types but not `CAST` targets yet.
+5. **`IN` lists hold literals only** (an expression in the list is `not supported yet`). `x = NULL` is not folded: it is NULL for every
+   row, so `WHERE x = NULL` keeps nothing.
+6. **The size limits** (1 MB, nesting 1,000, chains of 10,000) are `syntax` errors starting "query too large or too deeply nested:". A chain
+   counts each operator kind separately per nesting level; `::` and `IS` count as operators.
+7. **An ambiguous name** cannot arise yet (no name can refer to an output column; a source with two columns of one name is refused when its
+   footer is read). Two output columns with one name are allowed.
+8. **Reserved words** are DuckDB's 112 (a superset of the words of this page): a column named `end` or `order` needs quotes.
+9. **`LIMIT` and `OFFSET`:** a negative, fractional or too large number is a `bind` error; a non-literal, `OFFSET` without `LIMIT`, and
+   `OFFSET m ROWS` are `not supported yet`; `LIMIT 5, 10` is a syntax error.
+10. **A negative literal is typed by its value:** `-2147483648` is an `INTEGER`, `-9223372036854775808` a `BIGINT`.
+
 ## 9. Where this differs from DuckDB 2.0.0
 
 | case | DuckDB | Nata |
