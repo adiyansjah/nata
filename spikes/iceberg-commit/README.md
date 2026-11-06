@@ -10,6 +10,9 @@ sources, model, bounds, mutants and the GCP results: `bench/results/20261104-ice
 | `model/run_model.py`, `tlc_runner.py` | runs the unmutated model: every configuration, the one that must fail (I4 under snapshot isolation), liveness, canaries |
 | `model/lint_spec.py`, `test_model_tools.py` | static checks and tests of the harness (no TLC needed) |
 | `src/`, `tests/` | Rust: writers (correct + 3 known-bad), fault injection, REST and object-store catalogs, the checker, a mock catalog for unit tests |
+| `src/trace.rs`, `tests/trace.rs` | the trace instrumentation (`IC_TRACE=<dir>`, off by default) and its tests |
+| `model/TraceSpec.tla`, `trace_to_tla.py`, `trace_check.py` | trace validation, the code gate: the model restricted to what the code did (below) |
+| `model/mutate_trace_check.py`, `testdata/traces/` | mutation check of the trace checker: 20 corrupted traces and 23 mutants of the translator, `TraceSpec` and the runner |
 | `scripts/` | pinned tool download (`tools.env`), reference catalog build and start, pyiceberg interop check |
 | `gcp-check.sh <results-dir>` | everything above on a clean Debian VM; exit 0 only if every gating phase passed |
 
@@ -44,3 +47,14 @@ API, and the suite reaches it with OAuth client credentials from the environment
 `scripts/interop_check.py`). Polaris refuses local-disk storage and an in-memory metastore unless told otherwise (`ALLOW_INSECURE_STORAGE_TYPES`, `ignore-severe-issues`); those settings are
 the reason this proves the commit path of the REST protocol against Polaris's implementation and says nothing about a production deployment of it (database metastore, object storage, authorization at
 scale). Tests of the scripts: `scripts/gcp/test/test-icebergpolaris.sh` (against a fake server that checks the credential format, the token request and the order of the management calls).
+
+## Trace validation (the code against the model)
+
+Record: section 15 of `bench/results/20261104-iceberg-commit.md`. Object-store backend only. Needs a JDK and `tla2tools.jar` (`scripts/setup-tools.sh <dir>`).
+
+```bash
+cd spikes/iceberg-commit && cargo build --release
+IC_TRACE=$PWD/../../target-traces ./target/release/ic-spike suite --backend store --work /path/to/work     # one trace per table
+python3 -I model/trace_check.py --jar <tla2tools.jar> --java <java> --traces <the IC_TRACE dir> --out <results dir>
+python3 -I model/mutate_trace_check.py --jar <tla2tools.jar> --java <java> --out <results dir> --model-mutants    # the checker is itself mutation-checked
+```

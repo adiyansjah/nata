@@ -1,0 +1,256 @@
+{"a": "meta", "expect": "pass", "mode": "correct", "scenario": "stress-1", "seq": 1, "sub": 1, "table": "stress_correct_1"}
+{"a": "plan", "isolation": "serializable", "keys": ["a", "b"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w0o0", "rows": [[0, "a"], [1, "b"], [2, "a"], [3, "b"], [4, "a"], [5, "b"], [6, "a"], [7, "b"], [8, "a"], [9, "b"], [10, "a"], [11, "b"]], "seq": 2, "sub": 2, "ver": 1}
+{"a": "planned", "inputs": 0, "op": "w0o0", "rows": 12, "seq": 3, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w0o0", "seq": 4, "sub": 1}
+{"a": "upload-finish", "op": "w0o0", "seq": 5, "sub": 1}
+{"a": "upload-await", "op": "w0o0", "seq": 6, "sub": 1}
+{"a": "build", "att": 1, "base": 1, "op": "w0o0", "seq": 7, "sub": 1}
+{"a": "send", "att": 1, "exp": 1, "op": "w0o0", "seq": 8, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 1, "dup": 0, "exp": 1, "keep": false, "op": "w0o0", "seq": 9, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 1, "dup": 0, "exp": 1, "keep": false, "new": 2, "op": "w0o0", "res": "ok", "seq": 9, "sub": 0}
+{"a": "receive", "att": 1, "op": "w0o0", "res": "ok", "seq": 10, "sub": 1}
+{"a": "outcome", "op": "w0o0", "res": "acked", "seq": 11, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "compact", "max_attempts": 8, "mode": "correct", "op": "w3o0", "rows": [], "seq": 12, "sub": 2, "ver": 2}
+{"a": "plan", "isolation": "serializable", "keys": ["b"], "kind": "delete", "max_attempts": 8, "mode": "correct", "op": "w1o0", "rows": [], "seq": 13, "sub": 2, "ver": 2}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w2o0", "rows": [[2000000, "a"]], "seq": 14, "sub": 2, "ver": 2}
+{"a": "plan", "isolation": "serializable", "keys": ["c"], "kind": "delete", "max_attempts": 8, "mode": "correct", "op": "w4o0", "rows": [], "seq": 15, "sub": 2, "ver": 2}
+{"a": "planned", "inputs": 1, "op": "w3o0", "rows": 12, "seq": 16, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w3o0", "seq": 17, "sub": 1}
+{"a": "upload-finish", "op": "w3o0", "seq": 18, "sub": 1}
+{"a": "upload-await", "op": "w3o0", "seq": 19, "sub": 1}
+{"a": "build", "att": 1, "base": 2, "op": "w3o0", "seq": 20, "sub": 1}
+{"a": "planned", "inputs": 0, "op": "w2o0", "rows": 1, "seq": 21, "sub": 1, "targets": 0}
+{"a": "planned", "inputs": 0, "op": "w1o0", "rows": 0, "seq": 22, "sub": 1, "targets": 6}
+{"a": "planned", "inputs": 0, "op": "w4o0", "rows": 0, "seq": 23, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w4o0", "seq": 24, "sub": 1}
+{"a": "upload-begin", "op": "w2o0", "seq": 25, "sub": 1}
+{"a": "upload-begin", "op": "w1o0", "seq": 26, "sub": 1}
+{"a": "send", "att": 1, "exp": 2, "op": "w3o0", "seq": 27, "sub": 1}
+{"a": "drop", "att": 1, "op": "w3o0", "seq": 28, "sub": 1}
+{"a": "upload-finish", "op": "w4o0", "seq": 29, "sub": 1}
+{"a": "upload-finish", "op": "w1o0", "seq": 30, "sub": 1}
+{"a": "upload-finish", "op": "w2o0", "seq": 31, "sub": 1}
+{"a": "timeout", "att": 1, "op": "w3o0", "seq": 32, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "unknown", "op": "w3o0", "seq": 33, "sub": 2, "ver": 2}
+{"a": "build", "att": 2, "base": 2, "op": "w3o0", "seq": 34, "sub": 1}
+{"a": "upload-await", "op": "w4o0", "seq": 35, "sub": 1}
+{"a": "upload-await", "op": "w2o0", "seq": 36, "sub": 1}
+{"a": "upload-await", "op": "w1o0", "seq": 37, "sub": 1}
+{"a": "build", "att": 1, "base": 2, "op": "w4o0", "seq": 38, "sub": 1}
+{"a": "build", "att": 1, "base": 2, "op": "w2o0", "seq": 39, "sub": 1}
+{"a": "send", "att": 2, "exp": 2, "op": "w3o0", "seq": 40, "sub": 1}
+{"a": "drop", "att": 2, "op": "w3o0", "seq": 41, "sub": 1}
+{"a": "build", "att": 1, "base": 2, "op": "w1o0", "seq": 42, "sub": 1}
+{"a": "send", "att": 1, "exp": 2, "op": "w4o0", "seq": 43, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 2, "dup": 0, "exp": 2, "keep": false, "op": "w4o0", "seq": 44, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 2, "dup": 0, "exp": 2, "keep": false, "new": 3, "op": "w4o0", "res": "ok", "seq": 44, "sub": 0}
+{"a": "send", "att": 1, "exp": 2, "op": "w2o0", "seq": 45, "sub": 1}
+{"a": "timeout", "att": 2, "op": "w3o0", "seq": 46, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 2, "keep": false, "op": "w2o0", "seq": 48, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 2, "keep": false, "op": "w2o0", "res": "conflict", "seq": 48, "sub": 0}
+{"a": "send", "att": 1, "exp": 2, "op": "w1o0", "seq": 49, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "unknown", "op": "w3o0", "seq": 47, "sub": 2, "ver": 3}
+{"a": "receive", "att": 1, "op": "w4o0", "res": "ok", "seq": 50, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 2, "keep": false, "op": "w1o0", "seq": 51, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 2, "keep": false, "op": "w1o0", "res": "conflict", "seq": 51, "sub": 0}
+{"a": "build", "att": 3, "base": 3, "op": "w3o0", "seq": 52, "sub": 1}
+{"a": "receive", "att": 1, "op": "w2o0", "res": "conflict", "seq": 53, "sub": 1}
+{"a": "outcome", "op": "w4o0", "res": "acked", "seq": 55, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w2o0", "seq": 54, "sub": 2, "ver": 3}
+{"a": "receive", "att": 1, "op": "w1o0", "res": "conflict", "seq": 57, "sub": 1}
+{"a": "send", "att": 3, "exp": 3, "op": "w3o0", "seq": 58, "sub": 1}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 3, "dup": 0, "exp": 3, "keep": false, "op": "w3o0", "seq": 59, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 3, "dup": 0, "exp": 3, "keep": false, "new": 4, "op": "w3o0", "res": "ok", "seq": 59, "sub": 0}
+{"a": "plan", "isolation": "serializable", "keys": ["b"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w4o1", "rows": [[4001000, "b"], [4001001, "b"]], "seq": 56, "sub": 2, "ver": 3}
+{"a": "build", "att": 2, "base": 3, "op": "w2o0", "seq": 60, "sub": 1}
+{"a": "recover-abort", "att": 1, "from": "conflict", "op": "w1o0", "seq": 61, "sub": 2, "ver": 4}
+{"a": "receive", "att": 3, "op": "w3o0", "res": "ok", "seq": 62, "sub": 1}
+{"a": "outcome", "op": "w1o0", "res": "aborted", "seq": 63, "sub": 1}
+{"a": "send", "att": 2, "exp": 3, "op": "w2o0", "seq": 64, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 4, "dup": 0, "exp": 3, "keep": false, "op": "w2o0", "seq": 65, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 4, "dup": 0, "exp": 3, "keep": false, "op": "w2o0", "res": "conflict", "seq": 65, "sub": 0}
+{"a": "plan", "isolation": "serializable", "keys": ["c"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w1o1", "rows": [[1001000, "c"], [1001001, "c"]], "seq": 66, "sub": 2, "ver": 4}
+{"a": "outcome", "op": "w3o0", "res": "acked", "seq": 67, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["c"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w3o1", "rows": [[3001000, "c"]], "seq": 68, "sub": 2, "ver": 4}
+{"a": "planned", "inputs": 0, "op": "w4o1", "rows": 2, "seq": 69, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w4o1", "seq": 70, "sub": 1}
+{"a": "receive", "att": 2, "op": "w2o0", "res": "conflict", "seq": 71, "sub": 1}
+{"a": "upload-finish", "op": "w4o1", "seq": 73, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "conflict", "op": "w2o0", "seq": 72, "sub": 2, "ver": 4}
+{"a": "planned", "inputs": 0, "op": "w1o1", "rows": 2, "seq": 74, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w1o1", "seq": 75, "sub": 1}
+{"a": "build", "att": 3, "base": 4, "op": "w2o0", "seq": 76, "sub": 1}
+{"a": "upload-finish", "op": "w1o1", "seq": 77, "sub": 1}
+{"a": "planned", "inputs": 0, "op": "w3o1", "rows": 1, "seq": 78, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w3o1", "seq": 79, "sub": 1}
+{"a": "upload-await", "op": "w4o1", "seq": 80, "sub": 1}
+{"a": "upload-await", "op": "w1o1", "seq": 81, "sub": 1}
+{"a": "upload-finish", "op": "w3o1", "seq": 82, "sub": 1}
+{"a": "send", "att": 3, "exp": 4, "op": "w2o0", "seq": 83, "sub": 1}
+{"a": "build", "att": 1, "base": 3, "op": "w4o1", "seq": 84, "sub": 1}
+{"a": "build", "att": 1, "base": 4, "op": "w1o1", "seq": 85, "sub": 1}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 4, "dup": 1, "exp": 4, "keep": true, "op": "w2o0", "seq": 86, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 4, "dup": 1, "exp": 4, "keep": true, "new": 5, "op": "w2o0", "res": "ok", "seq": 86, "sub": 0}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 5, "dup": 2, "exp": 4, "keep": false, "op": "w2o0", "seq": 87, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 5, "dup": 2, "exp": 4, "keep": false, "op": "w2o0", "res": "conflict", "seq": 87, "sub": 0}
+{"a": "upload-await", "op": "w3o1", "seq": 88, "sub": 1}
+{"a": "build", "att": 1, "base": 4, "op": "w3o1", "seq": 89, "sub": 1}
+{"a": "send", "att": 1, "exp": 3, "op": "w4o1", "seq": 90, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 5, "dup": 0, "exp": 3, "keep": false, "op": "w4o1", "seq": 91, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 5, "dup": 0, "exp": 3, "keep": false, "op": "w4o1", "res": "conflict", "seq": 91, "sub": 0}
+{"a": "send", "att": 1, "exp": 4, "op": "w1o1", "seq": 92, "sub": 1}
+{"a": "drop", "att": 1, "op": "w1o1", "seq": 93, "sub": 1}
+{"a": "receive", "att": 3, "op": "w2o0", "res": "ok", "seq": 94, "sub": 1}
+{"a": "receive", "att": 1, "op": "w4o1", "res": "conflict", "seq": 95, "sub": 1}
+{"a": "send", "att": 1, "exp": 4, "op": "w3o1", "seq": 97, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 5, "dup": 0, "exp": 4, "keep": false, "op": "w3o1", "seq": 98, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 5, "dup": 0, "exp": 4, "keep": false, "op": "w3o1", "res": "conflict", "seq": 98, "sub": 0}
+{"a": "timeout", "att": 1, "op": "w1o1", "seq": 99, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w4o1", "seq": 96, "sub": 2, "ver": 5}
+{"a": "outcome", "op": "w2o0", "res": "acked", "seq": 101, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w2o1", "rows": [[2001000, "a"]], "seq": 102, "sub": 2, "ver": 5}
+{"a": "receive", "att": 1, "op": "w3o1", "res": "conflict", "seq": 103, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "unknown", "op": "w1o1", "seq": 100, "sub": 2, "ver": 5}
+{"a": "build", "att": 2, "base": 5, "op": "w4o1", "seq": 105, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w3o1", "seq": 104, "sub": 2, "ver": 5}
+{"a": "build", "att": 2, "base": 5, "op": "w1o1", "seq": 106, "sub": 1}
+{"a": "build", "att": 2, "base": 5, "op": "w3o1", "seq": 107, "sub": 1}
+{"a": "send", "att": 2, "exp": 5, "op": "w4o1", "seq": 108, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 5, "dup": 0, "exp": 5, "keep": false, "op": "w4o1", "seq": 109, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 5, "dup": 0, "exp": 5, "keep": false, "new": 6, "op": "w4o1", "res": "ok", "seq": 109, "sub": 0}
+{"a": "planned", "inputs": 0, "op": "w2o1", "rows": 1, "seq": 110, "sub": 1, "targets": 0}
+{"a": "send", "att": 2, "exp": 5, "op": "w1o1", "seq": 111, "sub": 1}
+{"a": "send", "att": 2, "exp": 5, "op": "w3o1", "seq": 112, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 6, "dup": 0, "exp": 5, "keep": false, "op": "w3o1", "seq": 113, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 6, "dup": 0, "exp": 5, "keep": false, "op": "w3o1", "res": "conflict", "seq": 113, "sub": 0}
+{"a": "upload-begin", "op": "w2o1", "seq": 114, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 6, "dup": 1, "exp": 5, "keep": true, "op": "w1o1", "seq": 115, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 6, "dup": 1, "exp": 5, "keep": true, "op": "w1o1", "res": "conflict", "seq": 115, "sub": 0}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 6, "dup": 2, "exp": 5, "keep": false, "op": "w1o1", "seq": 116, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 6, "dup": 2, "exp": 5, "keep": false, "op": "w1o1", "res": "conflict", "seq": 116, "sub": 0}
+{"a": "receive", "att": 2, "op": "w4o1", "res": "ok", "seq": 117, "sub": 1}
+{"a": "upload-finish", "op": "w2o1", "seq": 118, "sub": 1}
+{"a": "receive", "att": 2, "op": "w3o1", "res": "conflict", "seq": 119, "sub": 1}
+{"a": "receive", "att": 2, "op": "w1o1", "res": "conflict", "seq": 121, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "conflict", "op": "w3o1", "seq": 120, "sub": 2, "ver": 6}
+{"a": "build", "att": 3, "base": 6, "op": "w3o1", "seq": 123, "sub": 1}
+{"a": "outcome", "op": "w4o1", "res": "acked", "seq": 124, "sub": 1}
+{"a": "upload-await", "op": "w2o1", "seq": 125, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "conflict", "op": "w1o1", "seq": 122, "sub": 2, "ver": 6}
+{"a": "build", "att": 1, "base": 5, "op": "w2o1", "seq": 127, "sub": 1}
+{"a": "build", "att": 3, "base": 6, "op": "w1o1", "seq": 128, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w4o2", "rows": [[4002000, "a"], [4002001, "a"]], "seq": 126, "sub": 2, "ver": 6}
+{"a": "send", "att": 3, "exp": 6, "op": "w3o1", "seq": 129, "sub": 1}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 6, "dup": 0, "exp": 6, "keep": false, "op": "w3o1", "seq": 130, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 6, "dup": 0, "exp": 6, "keep": false, "new": 7, "op": "w3o1", "res": "ok", "seq": 130, "sub": 0}
+{"a": "send", "att": 1, "exp": 5, "op": "w2o1", "seq": 131, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 7, "dup": 0, "exp": 5, "keep": false, "op": "w2o1", "seq": 132, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 7, "dup": 0, "exp": 5, "keep": false, "op": "w2o1", "res": "conflict", "seq": 132, "sub": 0}
+{"a": "receive", "att": 3, "op": "w3o1", "res": "ok", "seq": 133, "sub": 1}
+{"a": "send", "att": 3, "exp": 6, "op": "w1o1", "seq": 134, "sub": 1}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 7, "dup": 0, "exp": 6, "keep": false, "op": "w1o1", "seq": 135, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 7, "dup": 0, "exp": 6, "keep": false, "op": "w1o1", "res": "conflict", "seq": 135, "sub": 0}
+{"a": "planned", "inputs": 0, "op": "w4o2", "rows": 2, "seq": 136, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w4o2", "seq": 137, "sub": 1}
+{"a": "receive", "att": 1, "op": "w2o1", "res": "conflict", "seq": 138, "sub": 1}
+{"a": "upload-finish", "op": "w4o2", "seq": 140, "sub": 1}
+{"a": "outcome", "op": "w3o1", "res": "acked", "seq": 141, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w3o2", "rows": [[3002000, "a"], [3002001, "a"], [3002002, "a"]], "seq": 142, "sub": 2, "ver": 7}
+{"a": "receive", "att": 3, "op": "w1o1", "res": "conflict", "seq": 143, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w2o1", "seq": 139, "sub": 2, "ver": 7}
+{"a": "upload-await", "op": "w4o2", "seq": 145, "sub": 1}
+{"a": "recover-retry", "att": 3, "from": "conflict", "op": "w1o1", "seq": 144, "sub": 2, "ver": 7}
+{"a": "build", "att": 2, "base": 7, "op": "w2o1", "seq": 146, "sub": 1}
+{"a": "build", "att": 1, "base": 6, "op": "w4o2", "seq": 147, "sub": 1}
+{"a": "build", "att": 4, "base": 7, "op": "w1o1", "seq": 148, "sub": 1}
+{"a": "planned", "inputs": 0, "op": "w3o2", "rows": 3, "seq": 149, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w3o2", "seq": 150, "sub": 1}
+{"a": "send", "att": 2, "exp": 7, "op": "w2o1", "seq": 151, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 7, "dup": 0, "exp": 7, "keep": false, "op": "w2o1", "seq": 152, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 7, "dup": 0, "exp": 7, "keep": false, "new": 8, "op": "w2o1", "res": "ok", "seq": 152, "sub": 0}
+{"a": "send", "att": 1, "exp": 6, "op": "w4o2", "seq": 153, "sub": 1}
+{"a": "upload-finish", "op": "w3o2", "seq": 154, "sub": 1}
+{"a": "send", "att": 4, "exp": 7, "op": "w1o1", "seq": 155, "sub": 1}
+{"a": "deliver-intent", "att": 4, "cas": true, "cur": 8, "dup": 0, "exp": 7, "keep": false, "op": "w1o1", "seq": 156, "sub": 0}
+{"a": "deliver", "att": 4, "cas": true, "cur": 8, "dup": 0, "exp": 7, "keep": false, "op": "w1o1", "res": "conflict", "seq": 156, "sub": 0}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 8, "dup": 0, "exp": 6, "keep": false, "op": "w4o2", "seq": 157, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 8, "dup": 0, "exp": 6, "keep": false, "op": "w4o2", "res": "conflict", "seq": 157, "sub": 0}
+{"a": "receive", "att": 2, "op": "w2o1", "res": "ok", "seq": 158, "sub": 1}
+{"a": "upload-await", "op": "w3o2", "seq": 159, "sub": 1}
+{"a": "build", "att": 1, "base": 7, "op": "w3o2", "seq": 160, "sub": 1}
+{"a": "receive", "att": 4, "op": "w1o1", "res": "conflict", "seq": 161, "sub": 1}
+{"a": "outcome", "op": "w2o1", "res": "acked", "seq": 163, "sub": 1}
+{"a": "receive", "att": 1, "op": "w4o2", "res": "conflict", "seq": 164, "sub": 1}
+{"a": "recover-retry", "att": 4, "from": "conflict", "op": "w1o1", "seq": 162, "sub": 2, "ver": 8}
+{"a": "send", "att": 1, "exp": 7, "op": "w3o2", "seq": 167, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 8, "dup": 0, "exp": 7, "keep": false, "op": "w3o2", "seq": 168, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 8, "dup": 0, "exp": 7, "keep": false, "op": "w3o2", "res": "conflict", "seq": 168, "sub": 0}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w4o2", "seq": 165, "sub": 2, "ver": 8}
+{"a": "build", "att": 5, "base": 8, "op": "w1o1", "seq": 169, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["c"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w2o2", "rows": [[2002000, "c"], [2002001, "c"]], "seq": 166, "sub": 2, "ver": 8}
+{"a": "build", "att": 2, "base": 8, "op": "w4o2", "seq": 170, "sub": 1}
+{"a": "receive", "att": 1, "op": "w3o2", "res": "conflict", "seq": 171, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w3o2", "seq": 172, "sub": 2, "ver": 8}
+{"a": "build", "att": 2, "base": 8, "op": "w3o2", "seq": 173, "sub": 1}
+{"a": "send", "att": 5, "exp": 8, "op": "w1o1", "seq": 174, "sub": 1}
+{"a": "deliver-intent", "att": 5, "cas": true, "cur": 8, "dup": 0, "exp": 8, "keep": false, "op": "w1o1", "seq": 175, "sub": 0}
+{"a": "deliver", "att": 5, "cas": true, "cur": 8, "dup": 0, "exp": 8, "keep": false, "new": 9, "op": "w1o1", "res": "ok", "seq": 175, "sub": 0}
+{"a": "send", "att": 2, "exp": 8, "op": "w4o2", "seq": 176, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w4o2", "seq": 177, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w4o2", "res": "conflict", "seq": 177, "sub": 0}
+{"a": "send", "att": 2, "exp": 8, "op": "w3o2", "seq": 178, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w3o2", "seq": 179, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w3o2", "res": "conflict", "seq": 179, "sub": 0}
+{"a": "planned", "inputs": 0, "op": "w2o2", "rows": 2, "seq": 180, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w2o2", "seq": 181, "sub": 1}
+{"a": "receive", "att": 5, "op": "w1o1", "res": "ok", "seq": 182, "sub": 1}
+{"a": "upload-finish", "op": "w2o2", "seq": 183, "sub": 1}
+{"a": "receive", "att": 2, "op": "w4o2", "res": "conflict", "seq": 184, "sub": 1}
+{"a": "receive", "att": 2, "op": "w3o2", "res": "conflict", "seq": 186, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "conflict", "op": "w4o2", "seq": 185, "sub": 2, "ver": 9}
+{"a": "outcome", "op": "w1o1", "res": "acked", "seq": 188, "sub": 1}
+{"a": "upload-await", "op": "w2o2", "seq": 189, "sub": 1}
+{"a": "recover-retry", "att": 2, "from": "conflict", "op": "w3o2", "seq": 187, "sub": 2, "ver": 9}
+{"a": "plan", "isolation": "serializable", "keys": ["c"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w1o2", "rows": [[1002000, "c"], [1002001, "c"]], "seq": 190, "sub": 2, "ver": 9}
+{"a": "build", "att": 3, "base": 9, "op": "w4o2", "seq": 191, "sub": 1}
+{"a": "build", "att": 1, "base": 8, "op": "w2o2", "seq": 192, "sub": 1}
+{"a": "build", "att": 3, "base": 9, "op": "w3o2", "seq": 193, "sub": 1}
+{"a": "send", "att": 3, "exp": 9, "op": "w4o2", "seq": 194, "sub": 1}
+{"a": "send", "att": 1, "exp": 8, "op": "w2o2", "seq": 195, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w2o2", "seq": 196, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 9, "dup": 0, "exp": 8, "keep": false, "op": "w2o2", "res": "conflict", "seq": 196, "sub": 0}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 9, "dup": 0, "exp": 9, "keep": false, "op": "w4o2", "seq": 197, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 9, "dup": 0, "exp": 9, "keep": false, "new": 10, "op": "w4o2", "res": "ok", "seq": 197, "sub": 0}
+{"a": "send", "att": 3, "exp": 9, "op": "w3o2", "seq": 198, "sub": 1}
+{"a": "deliver-intent", "att": 3, "cas": true, "cur": 10, "dup": 0, "exp": 9, "keep": false, "op": "w3o2", "seq": 199, "sub": 0}
+{"a": "deliver", "att": 3, "cas": true, "cur": 10, "dup": 0, "exp": 9, "keep": false, "op": "w3o2", "res": "conflict", "seq": 199, "sub": 0}
+{"a": "planned", "inputs": 0, "op": "w1o2", "rows": 2, "seq": 200, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w1o2", "seq": 201, "sub": 1}
+{"a": "receive", "att": 1, "op": "w2o2", "res": "conflict", "seq": 202, "sub": 1}
+{"a": "upload-finish", "op": "w1o2", "seq": 204, "sub": 1}
+{"a": "recover-retry", "att": 1, "from": "conflict", "op": "w2o2", "seq": 203, "sub": 2, "ver": 10}
+{"a": "receive", "att": 3, "op": "w4o2", "res": "ok", "seq": 205, "sub": 1}
+{"a": "receive", "att": 3, "op": "w3o2", "res": "conflict", "seq": 206, "sub": 1}
+{"a": "build", "att": 2, "base": 10, "op": "w2o2", "seq": 208, "sub": 1}
+{"a": "upload-await", "op": "w1o2", "seq": 209, "sub": 1}
+{"a": "recover-retry", "att": 3, "from": "conflict", "op": "w3o2", "seq": 207, "sub": 2, "ver": 10}
+{"a": "outcome", "op": "w4o2", "res": "acked", "seq": 210, "sub": 1}
+{"a": "build", "att": 4, "base": 10, "op": "w3o2", "seq": 211, "sub": 1}
+{"a": "crash", "att": 0, "op": "w1o2", "seq": 212, "step": "after-files", "sub": 1}
+{"a": "send", "att": 2, "exp": 10, "op": "w2o2", "seq": 213, "sub": 1}
+{"a": "deliver-intent", "att": 2, "cas": true, "cur": 10, "dup": 0, "exp": 10, "keep": false, "op": "w2o2", "seq": 214, "sub": 0}
+{"a": "deliver", "att": 2, "cas": true, "cur": 10, "dup": 0, "exp": 10, "keep": false, "new": 11, "op": "w2o2", "res": "ok", "seq": 214, "sub": 0}
+{"a": "send", "att": 4, "exp": 10, "op": "w3o2", "seq": 215, "sub": 1}
+{"a": "deliver-intent", "att": 4, "cas": true, "cur": 11, "dup": 0, "exp": 10, "keep": false, "op": "w3o2", "seq": 216, "sub": 0}
+{"a": "deliver", "att": 4, "cas": true, "cur": 11, "dup": 0, "exp": 10, "keep": false, "op": "w3o2", "res": "conflict", "seq": 216, "sub": 0}
+{"a": "receive", "att": 2, "op": "w2o2", "res": "ok", "seq": 217, "sub": 1}
+{"a": "receive", "att": 4, "op": "w3o2", "res": "conflict", "seq": 218, "sub": 1}
+{"a": "recover-retry", "att": 4, "from": "conflict", "op": "w3o2", "seq": 219, "sub": 2, "ver": 11}
+{"a": "outcome", "op": "w2o2", "res": "acked", "seq": 220, "sub": 1}
+{"a": "build", "att": 5, "base": 11, "op": "w3o2", "seq": 221, "sub": 1}
+{"a": "send", "att": 5, "exp": 11, "op": "w3o2", "seq": 222, "sub": 1}
+{"a": "deliver-intent", "att": 5, "cas": true, "cur": 11, "dup": 0, "exp": 11, "keep": false, "op": "w3o2", "seq": 223, "sub": 0}
+{"a": "deliver", "att": 5, "cas": true, "cur": 11, "dup": 0, "exp": 11, "keep": false, "new": 12, "op": "w3o2", "res": "ok", "seq": 223, "sub": 0}
+{"a": "receive", "att": 5, "op": "w3o2", "res": "ok", "seq": 224, "sub": 1}
+{"a": "outcome", "op": "w3o2", "res": "acked", "seq": 225, "sub": 1}
+{"a": "final", "rows": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1001000, 1001001, 2000000, 2001000, 2002000, 2002001, 3001000, 3002000, 3002001, 3002002, 4001000, 4001001, 4002000, 4002001], "seq": 227, "sub": 1, "ver": 12}

@@ -1,0 +1,53 @@
+{"a": "meta", "expect": "pass", "mode": "correct", "scenario": "crash-delete-after-files", "seq": 1, "sub": 1, "table": "crash_delete_after_files"}
+{"a": "plan", "isolation": "serializable", "keys": ["a", "b"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w0o0", "rows": [[0, "a"], [1, "b"], [2, "a"], [3, "b"], [4, "a"], [5, "b"]], "seq": 2, "sub": 2, "ver": 1}
+{"a": "planned", "inputs": 0, "op": "w0o0", "rows": 6, "seq": 3, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w0o0", "seq": 4, "sub": 1}
+{"a": "upload-finish", "op": "w0o0", "seq": 5, "sub": 1}
+{"a": "upload-await", "op": "w0o0", "seq": 6, "sub": 1}
+{"a": "build", "att": 1, "base": 1, "op": "w0o0", "seq": 7, "sub": 1}
+{"a": "send", "att": 1, "exp": 1, "op": "w0o0", "seq": 8, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 1, "dup": 0, "exp": 1, "keep": false, "op": "w0o0", "seq": 9, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 1, "dup": 0, "exp": 1, "keep": false, "new": 2, "op": "w0o0", "res": "ok", "seq": 9, "sub": 0}
+{"a": "receive", "att": 1, "op": "w0o0", "res": "ok", "seq": 10, "sub": 1}
+{"a": "outcome", "op": "w0o0", "res": "acked", "seq": 11, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["a"], "kind": "delete", "max_attempts": 8, "mode": "correct", "op": "w1o0", "rows": [], "seq": 12, "sub": 2, "ver": 2}
+{"a": "planned", "inputs": 0, "op": "w1o0", "rows": 0, "seq": 13, "sub": 1, "targets": 3}
+{"a": "upload-begin", "op": "w1o0", "seq": 14, "sub": 1}
+{"a": "upload-finish", "op": "w1o0", "seq": 15, "sub": 1}
+{"a": "upload-await", "op": "w1o0", "seq": 16, "sub": 1}
+{"a": "crash", "att": 0, "op": "w1o0", "seq": 17, "step": "after-files", "sub": 1}
+{"a": "outcome", "op": "w1o0", "res": "crashed", "seq": 18, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["b"], "kind": "append", "max_attempts": 8, "mode": "correct", "op": "w2o0", "rows": [[2000000, "b"], [2000001, "b"]], "seq": 19, "sub": 2, "ver": 2}
+{"a": "planned", "inputs": 0, "op": "w2o0", "rows": 2, "seq": 20, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w2o0", "seq": 21, "sub": 1}
+{"a": "upload-finish", "op": "w2o0", "seq": 22, "sub": 1}
+{"a": "upload-await", "op": "w2o0", "seq": 23, "sub": 1}
+{"a": "build", "att": 1, "base": 2, "op": "w2o0", "seq": 24, "sub": 1}
+{"a": "send", "att": 1, "exp": 2, "op": "w2o0", "seq": 25, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 2, "dup": 0, "exp": 2, "keep": false, "op": "w2o0", "seq": 26, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 2, "dup": 0, "exp": 2, "keep": false, "new": 3, "op": "w2o0", "res": "ok", "seq": 26, "sub": 0}
+{"a": "receive", "att": 1, "op": "w2o0", "res": "ok", "seq": 27, "sub": 1}
+{"a": "outcome", "op": "w2o0", "res": "acked", "seq": 28, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["b"], "kind": "delete", "max_attempts": 8, "mode": "correct", "op": "w3o0", "rows": [], "seq": 29, "sub": 2, "ver": 3}
+{"a": "planned", "inputs": 0, "op": "w3o0", "rows": 0, "seq": 30, "sub": 1, "targets": 5}
+{"a": "upload-begin", "op": "w3o0", "seq": 31, "sub": 1}
+{"a": "upload-finish", "op": "w3o0", "seq": 32, "sub": 1}
+{"a": "upload-await", "op": "w3o0", "seq": 33, "sub": 1}
+{"a": "build", "att": 1, "base": 3, "op": "w3o0", "seq": 34, "sub": 1}
+{"a": "send", "att": 1, "exp": 3, "op": "w3o0", "seq": 35, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 3, "keep": false, "op": "w3o0", "seq": 36, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 3, "dup": 0, "exp": 3, "keep": false, "new": 4, "op": "w3o0", "res": "ok", "seq": 36, "sub": 0}
+{"a": "receive", "att": 1, "op": "w3o0", "res": "ok", "seq": 37, "sub": 1}
+{"a": "outcome", "op": "w3o0", "res": "acked", "seq": 38, "sub": 1}
+{"a": "plan", "isolation": "serializable", "keys": ["b"], "kind": "compact", "max_attempts": 8, "mode": "correct", "op": "w4o0", "rows": [], "seq": 39, "sub": 2, "ver": 4}
+{"a": "planned", "inputs": 2, "op": "w4o0", "rows": 3, "seq": 40, "sub": 1, "targets": 0}
+{"a": "upload-begin", "op": "w4o0", "seq": 41, "sub": 1}
+{"a": "upload-finish", "op": "w4o0", "seq": 42, "sub": 1}
+{"a": "upload-await", "op": "w4o0", "seq": 43, "sub": 1}
+{"a": "build", "att": 1, "base": 4, "op": "w4o0", "seq": 44, "sub": 1}
+{"a": "send", "att": 1, "exp": 4, "op": "w4o0", "seq": 45, "sub": 1}
+{"a": "deliver-intent", "att": 1, "cas": true, "cur": 4, "dup": 0, "exp": 4, "keep": false, "op": "w4o0", "seq": 46, "sub": 0}
+{"a": "deliver", "att": 1, "cas": true, "cur": 4, "dup": 0, "exp": 4, "keep": false, "new": 5, "op": "w4o0", "res": "ok", "seq": 46, "sub": 0}
+{"a": "receive", "att": 1, "op": "w4o0", "res": "ok", "seq": 47, "sub": 1}
+{"a": "outcome", "op": "w4o0", "res": "acked", "seq": 48, "sub": 1}
+{"a": "final", "rows": [0, 2, 4], "seq": 50, "sub": 1, "ver": 5}
