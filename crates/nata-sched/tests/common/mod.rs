@@ -58,6 +58,11 @@ pub struct Model {
     pub spin_tasks: Vec<usize>,
     /// These task ids panic.
     pub panic_tasks: Vec<usize>,
+    /// (task id, n): the task does not finish until `n` tasks have stopped because of a cancellation (or it is cancelled itself). It makes a lower
+    /// task depend on a higher task being told to stop.
+    pub wait_for_stopped: Vec<(usize, usize)>,
+    /// (task id, other id): the task does not start its work until the other task has been started.
+    pub wait_for_started: Vec<(usize, usize)>,
     /// Times each task id was run (index = id).
     pub runs: Vec<AtomicUsize>,
     /// Times each file was opened.
@@ -80,6 +85,8 @@ impl Model {
             fail_tasks: vec![],
             spin_tasks: vec![],
             panic_tasks: vec![],
+            wait_for_stopped: vec![],
+            wait_for_started: vec![],
             runs: (0..(n * 10 + 10)).map(|_| AtomicUsize::new(0)).collect(),
             opens: (0..n).map(|_| AtomicUsize::new(0)).collect(),
             live: Arc::new(AtomicUsize::new(0)),
@@ -135,6 +142,16 @@ impl Work for Model {
         self.runs[task.id].fetch_add(1, Ordering::SeqCst);
         if self.panic_tasks.contains(&task.id) {
             panic!("model task {} panics", task.id);
+        }
+        if let Some((_, other)) = self.wait_for_started.iter().find(|(id, _)| *id == task.id) {
+            while self.runs[*other].load(Ordering::SeqCst) == 0 && !cancel.is_cancelled() {
+                yield_now();
+            }
+        }
+        if let Some((_, n)) = self.wait_for_stopped.iter().find(|(id, _)| *id == task.id) {
+            while self.stopped.load(Ordering::SeqCst) < *n && !cancel.is_cancelled() {
+                yield_now();
+            }
         }
         if self.spin_tasks.contains(&task.id) {
             while !cancel.is_cancelled() {

@@ -231,6 +231,10 @@ fn a_file_that_cannot_be_opened_has_its_place_in_the_order() {
         assert_eq!(out.result, Err(ModelErr::Open(1)));
         assert_eq!(got, vec![0, 1, 2]);
         assert_eq!(
+            out.summary.claimed, 4,
+            "three tasks and the file that failed"
+        );
+        assert_eq!(
             model.opens[2].load(std::sync::atomic::Ordering::SeqCst),
             0,
             "files after the failure are never opened (single opener, in order)"
@@ -342,4 +346,27 @@ fn a_run_with_no_files_and_one_with_empty_files_finish() {
         assert_eq!(out.result, Ok(Finish::Complete));
         assert_eq!(out.summary.files_opened, 100);
     }
+}
+
+#[test]
+fn an_error_cancels_the_tasks_above_it_even_while_a_lower_task_is_still_running() {
+    // task 1 fails once task 2 has started. Task 0 (below it) does not finish until task 2 (above it) has been told to stop; task 2 spins until it is told. Only the failure of
+    // task 1 can tell task 2, because the consumer cannot reach task 1's error before task 0 is done. (Not a loom model: two spinning threads make
+    // loom's depth-first search follow the spinning forever.) A watchdog turns the hang of a broken scheduler into a failure.
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut m = Model::new(vec![3]);
+        m.fail_tasks = vec![1];
+        m.spin_tasks = vec![2];
+        m.wait_for_stopped = vec![(0, 1)];
+        m.wait_for_started = vec![(1, 2)];
+        let model = Arc::new(m);
+        let (got, out) = run_collect(&model, cfg(3, 3, true));
+        let _ = tx.send((got, out.result));
+    });
+    let (got, result) = rx
+        .recv_timeout(Duration::from_secs(20))
+        .expect("the scheduler hangs: a failed task did not cancel the tasks above it");
+    assert_eq!(result, Err(ModelErr::Task(1)));
+    assert_eq!(got, vec![0]);
 }
