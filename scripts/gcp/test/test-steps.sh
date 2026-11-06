@@ -10,11 +10,17 @@ W=$(mktemp -d); export WORK=$W
 cat > "$W/job.sh" <<'JOB'
 source "$LIB"
 step a bash -c 'echo run >> "$WORK/runs.a"'
-step slow bash -c 'echo run >> "$WORK/runs.slow"; sleep "${SLOW_SECONDS:-1}"'
+step slow bash "$WORK/slow.sh"
 shards sweep 4 bash -c 'echo "$SHARD" >> "$WORK/runs.sweep"'
 step z bash -c 'echo run >> "$WORK/runs.z"'
 finish_job
 JOB
+# Keep multiple descendant generations alive (do not let bash exec the final sleep).
+cat > "$W/slow.sh" <<'SLOW'
+echo run >> "$WORK/runs.slow"
+bash -c 'sleep "${SLOW_SECONDS:-1}" & echo $! > "$WORK/slow.pid"; wait' &
+wait
+SLOW
 export LIB=$HERE/../lib.sh
 
 # 1. SIGTERM (a preemption notice) in the middle of the slow step.
@@ -24,7 +30,7 @@ check "SIGTERM stops the job with 143" "[ $rc -eq 143 ]"
 check "the interrupted step is marked and not done" "[ -f $W/state/slow.interrupted ] && [ ! -f $W/state/slow.done ]"
 check "the completed step stays done" "[ -f $W/state/a.done ]"
 sleep 0.5
-check "the slow step's child was killed too" "! pgrep -x sleep -a | grep -q 'sleep 30'"
+check "the slow step's child was killed too" "! ps -p \$(cat $W/slow.pid) -o stat= | grep -q '^[^Z]'"
 
 # 2. Restart: only unfinished work reruns.
 SLOW_SECONDS=1 bash "$W/job.sh" > "$W/out2" 2>&1

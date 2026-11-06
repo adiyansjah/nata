@@ -21,10 +21,11 @@ step() {
   rm -f "$STATE/$name.interrupted"
   printf '{"step":"%s","boot_id":"%s","started":"%s"}\n' "$name" "$(boot_id)" "$(now)" > "$STATE/$name.started.json"
   echo "[$(now)] run  $name"
-  "$@" > "$LOGS/$name.log" 2>&1 &
+  # Give the entire step its own process group, including nested shells and workers.
+  setsid "$@" > "$LOGS/$name.log" 2>&1 &
   local child=$!
   # A preemption notice (SIGTERM) stops the child tree and leaves a marker; no ".done", so it reruns.
-  trap 'pkill -TERM -P '"$child"' 2>/dev/null; kill -TERM '"$child"' 2>/dev/null; wait '"$child"' 2>/dev/null; : > "'"$STATE/$name"'.interrupted"; exit 143' TERM INT
+  trap 'kill -TERM -- -'"$child"' 2>/dev/null; kill -KILL -- -'"$child"' 2>/dev/null; wait '"$child"' 2>/dev/null; : > "'"$STATE/$name"'.interrupted"; exit 143' TERM INT
   local rc=0
   wait "$child" || rc=$?
   trap - TERM INT
