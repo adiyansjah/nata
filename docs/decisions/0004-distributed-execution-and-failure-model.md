@@ -1,6 +1,6 @@
 # 0004: Distributed execution and its failure model
 
-Status: proposed (draft written 2026-11-04 with the model; amended 2026-11-05 with the transport findings; not accepted, see the revision notes for the acceptance condition)
+Status: accepted (by the assistant under the owner's delegation of 2026-11-06, when its acceptance condition was met: stage B of plan item 28 ran and passed, see the revision notes)
 Date: 2026-11-04
 
 ## Context
@@ -64,5 +64,13 @@ simulation harness (item 23) must be able to inject message loss, duplication an
 The first distributed slice runs; streaming consumers are added; the coordinator must survive its own failure.
 
 ## Revision notes
+
+- 2026-11-06, **accepted** (by the assistant under the owner's delegation): the acceptance condition of 2026-11-05 is met. Stage B of
+  plan item 28 ran between 4 separate VMs on a real network (`bench/results/20261106-net-exchange-real.md`): exact results in 3 reps,
+  cancel reaches every node within 0.25 s, a killed node is detected by every survivor within 0.23 s, a partition is detected by the
+  liveness timer at 3.3 s (3 s timeout), no process is left on any VM. Rules 8 to 10 (stream handshake, credit from the round trip,
+  liveness timer) hold on a real network. Still true and unchanged: rules 1 to 7 (task re-run, fencing, coordinator, `release`) are checked
+  as a model only; no code may depend on them until a distributed slice builds and tests them. The multi-VM orchestrator mode that the
+  2026-11-05 note deferred was built on 2026-11-06 at the owner's request to finish Group 3.
 
 - 2026-11-05, **amended, still proposed.** Rules 8 to 10 (stream handshake, credit sized from the round trip, liveness timer) were added from the transport spike (`bench/results/20261105-net-exchange.md`: 24 to 26 of 26 checks on ARM64 and x86-64 in network namespaces, 8 of 8 mutants of the transport caught). **Acceptance condition:** the owner accepts this ADR when stage B has run (the exchange between separate VMs, plan item 28, which needs a multi-VM mode in the orchestrator) or when the first distributed slice is designed, whichever comes first. **Owner decision, 2026-11-05: no multi-VM mode in the orchestrator is built now; stage B waits for the design of the first distributed slice.** Until then no code may depend on rules 1 to 7: they are checked as a model and, for the transport, in a simulated network on one VM; none of them has run on real code, and the query-level rules (task re-run, fencing, coordinator, `release`) have not run on any transport.

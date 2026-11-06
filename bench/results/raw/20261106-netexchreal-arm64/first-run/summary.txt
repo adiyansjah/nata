@@ -1,0 +1,42 @@
+stage B: 4 nodes on separate VMs: 10.128.0.23 10.128.0.24 10.128.0.25 10.128.0.28 (node 0 is this driver); rows per node 20000000, credit 4194304, 3 reps
+peer 1 (10.128.0.24): ready, binary copied, ping RTT avg 0.287 ms, machine 8 Model name:                              Neoverse-N3 
+peer 2 (10.128.0.25): ready, binary copied, ping RTT avg 0.235 ms, machine 8 Model name:                              Neoverse-N3 
+peer 3 (10.128.0.28): ready, binary copied, ping RTT avg 0.281 ms, machine 8 Model name:                              Neoverse-N3 
+SETTLE s1-rep1: settled, load 0.16 after 0 s (limit 0.5)
+S1 rep 1: slowest node 0.521 s, 960043312 bytes sent in total, 1843 MB/s across the cluster
+SETTLE s1-rep2: settled, load 0.16 after 0 s (limit 0.5)
+S1 rep 2: slowest node 0.521 s, 960043312 bytes sent in total, 1843 MB/s across the cluster
+SETTLE s1-rep3: settled, load 0.16 after 0 s (limit 0.5)
+S1 rep 3: slowest node 0.503 s, 960043312 bytes sent in total, 1909 MB/s across the cluster
+CHECK s1-real-exact PASS (every node's rows and checksum equal the expected, buffered/in-flight <= credit, 3 reps)
+in-process baseline on the driver (same shuffle, no sockets): INPROC nodes=4 rows_per_node=20000000 bytes_moved=960043312 secs=0.226 mb_per_s=4250.0
+SETTLE s3-65536: settled, load 0.16 after 0 s (limit 0.5)
+S3 credit 65536: 0.314 s, 764 MB/s
+CHECK s3-credit-65536-exact PASS 
+SETTLE s3-262144: settled, load 0.16 after 0 s (limit 0.5)
+S3 credit 262144: 0.307 s, 782 MB/s
+CHECK s3-credit-262144-exact PASS 
+SETTLE s3-1048576: settled, load 0.16 after 0 s (limit 0.5)
+S3 credit 1048576: 0.296 s, 811 MB/s
+CHECK s3-credit-1048576-exact PASS 
+SETTLE s3-4194304: settled, load 0.15 after 0 s (limit 0.5)
+S3 credit 4194304: 0.291 s, 825 MB/s
+CHECK s3-credit-4194304-exact PASS 
+S4 node 0: exit 3 after 0.24 s: ERROR node=0 kind=cancelled at_ms=231 msg="cancelled"
+S4 node 1: exit 4 after 0.24 s: ERROR node=1 kind=peer-lost at_ms=27 msg="peer lost: connection closed before the end of the stream"
+S4 node 2: exit 4 after 0.24 s: ERROR node=2 kind=peer-lost at_ms=27 msg="peer lost: connection closed before the end of the stream"
+S4 node 3: exit 3 after 0.24 s: ERROR node=3 kind=cancelled at_ms=27 msg="cancelled"
+CHECK s4-cancel-stops-every-node PASS (node 0 exits 3, the others 3 or 4, all within 15 s)
+CHECK s4-no-process-left FAIL (3 left)
+S5 node 0: exit 4 after 0.23 s: ERROR node=0 kind=peer-lost at_ms=3233 msg="peer lost: write failed: Broken pipe (os error 32)"
+S5 node 1: exit 4 after 0.23 s: ERROR node=1 kind=peer-lost at_ms=3025 msg="peer lost: peer lost: io: Connection reset by peer (os error 104)"
+S5 node 2: exit 4 after 0.23 s: ERROR node=2 kind=peer-lost at_ms=3033 msg="peer lost: io: Connection reset by peer (os error 104)"
+S5 node 3: exit 255 after 0.23 s: 
+CHECK s5-kill-survivors-fail-fast PASS (every survivor exits 4 or 3 within 5 s; none exits 0)
+S6 node 0: exit 4 after 3.30 s: ERROR node=0 kind=peer-lost at_ms=6301 msg="peer lost: silent for 3008 ms"
+S6 node 1: exit 4 after 3.31 s: ERROR node=1 kind=peer-lost at_ms=6101 msg="peer lost: connection closed before the end of the stream"
+S6 node 2: exit 4 after 3.31 s: ERROR node=2 kind=peer-lost at_ms=6100 msg="peer lost: silent for 3000 ms"
+S6 node 3: exit 4 after 3.31 s: ERROR node=3 kind=peer-lost at_ms=6100 msg="peer lost: silent for 3000 ms"
+CHECK s6-partition-detected-by-liveness-timer PASS (every node exits 4 or 3 between 3000 ms - 0.5 s and + 5 s; slowest 3.31 s)
+CHECK no-process-left FAIL (3 left)
+VERDICT FAIL (2 check(s) failed; see the CHECK lines)

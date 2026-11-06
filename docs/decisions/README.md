@@ -7,7 +7,7 @@ One file per architecture decision, `NNNN-title.md`, copied from `0000-template.
 | [0001](0001-pipeline-model.md) | Pipeline model | accepted 2026-11-05 |
 | [0002](0002-async-runtime-and-threading.md) | Async runtime and threading | accepted 2026-11-05 |
 | [0003](0003-batch-format-and-expression-kernels.md) | Batch format and expression kernels | accepted 2026-11-05 |
-| [0004](0004-distributed-execution-and-failure-model.md) | Distributed execution and its failure model (draft, amended 2026-11-05) | proposed (acceptance condition in its revision notes) |
+| [0004](0004-distributed-execution-and-failure-model.md) | Distributed execution and its failure model (draft, amended 2026-11-05) | accepted 2026-11-06 (by the assistant under the owner's delegation; condition met: stage B passed) |
 | [0005](0005-table-format-and-catalog.md) | Table format and catalog, Iceberg first | accepted in part 2026-11-05 (rules 1-7; rule 8 open) |
 | [0006](0006-testing-strategy.md) | Testing strategy: differential, mutation-checked, deterministic simulation | accepted 2026-11-05 |
 
