@@ -105,5 +105,10 @@ C=$(sed -n "s/^settle_before() {.*run \"settle-\$1\" bash -c '\([^']*\)' \"\$1\"
 echo "0.05 0.10 0.10 1/100 1" > "$T/quiet"; echo "9.00 5.00 2.00 1/100 1" > "$T/busy"
 out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/quiet" bash -c "${C/ 600;/ 600;}" lbl 2>&1); echo "$out" | grep -q '^SETTLE lbl: settled, load 0.05 after 0 s' && ok "settle step: a quiet machine settles at once" || bad "settle quiet: $out"
 out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/busy" SETTLE_POLL=1 bash -c "${C/ 600;/ 1;}" lbl 2>&1); rc=$?; echo "$out" | grep -q '^SETTLE lbl: NOT SETTLED, load 9.00' && [ $rc = 0 ] && ok "settle step: a busy machine is given up on cleanly (exit 0, says NOT SETTLED)" || bad "settle busy rc=$rc: $out"
+# slice4bench (step 4b of slice 4): the data, BOTH builds of nata (the default and --no-default-features, for the R4 cost arm), the pyarrow venv and the one
+# benchmark step, in that order, and nothing of another job
+sb=$(steps slice4bench | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+[ "$sb" = "STEP s4-gen-sf1 STEP s4-gen-sf10 STEP s4-build STEP s4-pyarrow STEP s4-bench " ] && ok "slice4bench runs s4-gen-sf1, s4-gen-sf10, s4-build, s4-pyarrow, s4-bench only, in that order" || bad "slice4bench steps: $sb"
+grep -q -- '--no-default-features' "$HERE/job.sh" && grep -q 'BLOCKS="late footers crc"' "$HERE/job.sh" && ok "slice4bench builds the build without the page checksum and runs the late, footers and crc blocks" || bad "slice4bench is missing the no-default-features build or a block"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

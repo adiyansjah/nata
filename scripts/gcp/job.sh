@@ -309,6 +309,16 @@ case "$JOB" in
     run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  slice4bench)
+    # slice 4, step 4b (docs/slices/0002-select-where-limit.md part 5; record bench/results/20261106-slice4-carried-in.md): the paired benchmarks of the carried-in
+    # improvements, all in crates/nata-bench/scan-bench.sh: P1 late materialization against the early read (BLOCKS=late), P2 footers read ahead and P10 on 1,000
+    # small files (footers), R4 the cost of the page-checksum verification (crc: two builds of the same code, the second with --no-default-features, and a
+    # checksummed copy of lineitem written by pyarrow in a venv). Intended machines: n4a-highcpu-8 and c3d-highcpu-8, one run each; the owner approves the cost first.
+    run s4-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
+    run s4-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
+    run s4-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata && CARGO_TARGET_DIR="$WORK/target-nocrc" cargo build --release -p nata --no-default-features'
+    run s4-pyarrow bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet pyarrow && "$WORK/venv/bin/python" -c "import pyarrow; print(pyarrow.__version__)"'
+    run s4-bench bash -c 'cd "$SRC" && { BLOCKS="late footers crc" NATA_NOCRC="$WORK/target-nocrc/release/nata" PYARROW_PYTHON="$WORK/venv/bin/python" SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/slice4-bench" 5; echo "exit status: $?"; } > "$RESULTS/slice4-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
   cgroupcheck)
     # verification-plan item 9: the scan's default pool size under cgroup CPU quotas and affinity masks (scripts/cgroup-check.sh, needs
     # sudo for systemd-run --scope; vm-startup.sh grants it on this throwaway VM for this job only).
