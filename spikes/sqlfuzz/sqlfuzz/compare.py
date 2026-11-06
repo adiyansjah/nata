@@ -32,10 +32,10 @@ def row_eq(r1, r2, decs):
 def compare(oracle, target, ordered, strict_types=False):
     """None if equal, else a short reason. Both results are `engine.Result`."""
     if not oracle.ok:
-        return None if not target.ok else "oracle raised an error but the target answered: " + oracle.error[:100]
+        return None if not target.ok else "oracle raised an error but the target answered: " + oracle.error[:300]
     if not target.ok:
         if "not supported yet" in target.error.lower(): return "SKIP"
-        return "target raised an error but the oracle answered: " + target.error[:100]
+        return "target raised an error but the oracle answered: " + target.error[:300]
     if len(oracle.cols) != len(target.cols): return f"column count {len(oracle.cols)} vs {len(target.cols)}"
     decs = [t.upper().startswith("DECIMAL") for t in oracle.types]
     if strict_types and target.types and [t.upper() for t in oracle.types] != [t.upper() for t in target.types]:

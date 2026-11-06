@@ -1,6 +1,6 @@
 """Commands of the slice 4 subset fuzzer: `run-subset` (oracle DuckDB, target a command adapter such as adapters/nata_adapter.py), `replay-subset` (one
 query of a seed), `prove-subset` (the known-bad engines of faults.py that the subset can express must be caught, the control clean)."""
-import json, os, random, shlex, sys, time
+import json, os, random, re, shlex, sys, time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 
@@ -27,7 +27,7 @@ def build(seed, batch, per_db, max_rows):
 
 
 # differences that the dialect page lists (docs/dialect.md section 9, docs/decimal-rules.md section 9): counted in their own classes, never as bugs
-LISTED = [("common decimal type", "listed: CASE of decimals beyond 38 digits is a bind error (decimal-rules 9)"),
+LISTED = [("CASE results (", "listed: CASE of decimals beyond 38 digits is a bind error (decimal-rules 9)"),
           ("digits, above the maximum", "listed: decimal result beyond 38 digits is a bind error (decimal-rules 3)"),
           ("scale would be", "listed: decimal result scale beyond 38 is a bind error (decimal-rules 3)")]
 
@@ -97,7 +97,7 @@ def checker(args, faults, cls):
     oracle = DuckDB(args.duckdb)
     oracle_raw = DuckDB(args.duckdb, session_extra=ORACLE_SESSION[:])
     if args.target_cmd: target = Command(shlex.split(args.target_cmd))
-    else: target = DuckDB(args.duckdb)
+    else: target = DuckDB(args.duckdb, session_extra=[e for f in faults for e in (FAULTS[f][1] or [])])
 
     def still_fails(query, tables):
         setup = subset.setup_sql(tables)
@@ -115,27 +115,34 @@ def shrunk_class(why, sql):
     docs/dialect.md section 9 or docs/decimal-rules.md section 9 lists and that are consequences of one rule of Nata: errors are raised only for the rows an
     operand or a branch is evaluated for. Anything else is a candidate bug (class `BUG?`) and fails the run."""
     up = sql.upper()
+    m = re.match(r"row \d+ differs: oracle (.*) vs target (.*)$", why)
+    if m and m.group(1) != m.group(2) and re.sub(r"'(-?)0\.", r"'\1.", m.group(1)) == re.sub(r"'(-?)0\.", r"'\1.", m.group(2)):
+        # the same text but for the zero before the point: a DECIMAL(p,p) (the precision of a literal below one, or of a decimal % result) prints without it
+        return "listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9)"
+    if why.startswith("target raised an error") and "decimal overflow" in why and " % " in sql:
+        return "listed: the tight result type of a decimal % is narrower than DuckDB's, so a later operation can overflow where DuckDB's does not (decimal-rules 9)"
     if why.startswith("target raised an error"):
         if "NULL" in up:
-            return "listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9)"
+            return "listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b)"
         return "BUG? nata-error: " + classify(why)
     if why.startswith("oracle raised an error"):
         if " OR " in up or " AND " in up:
-            return "listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 4)"
+            return "listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b)"
         if "CASE" in up:
-            return "listed: DuckDB evaluates a constant expression of a CASE branch when planning; Nata only for the rows that take it (dialect 6)"
+            return "listed: DuckDB evaluates a constant expression of a CASE condition when planning; Nata only for the rows that reach it (dialect 9b)"
         if "LIMIT" in up:
-            return "listed: DuckDB evaluated rows beyond the limit (optimizer off); Nata stops at offset + n (dialect 7)"
+            return "listed: DuckDB evaluated rows beyond the limit (optimizer off); Nata stops at offset + n (dialect 9b)"
         return "BUG? oracle-error-nata-answered"
     return "BUG? " + classify(why)
 
 
 def cmd_run(args):
+    faults = [x for x in (args.fault or "").split(",") if x]
     stats = {"queries": 0, "oracle_errors": 0, "skipped": 0, "diffs": 0, "rows": 0, "optimizer_dependent": 0, "listed": 0, "classes": Counter(), "skip_reasons": Counter()}
     found, t0 = [], time.time()
     batches = max(1, args.cases // args.per_db)
     with ThreadPoolExecutor(args.jobs) as ex:
-        for st, diffs, case in ex.map(lambda b: run_batch(args, args.seed, b), range(batches)):
+        for st, diffs, case in ex.map(lambda b: run_batch(args, args.seed, b, faults), range(batches)):
             merge(stats, st); found += [(d, case) for d in diffs]
     print(f"seed {args.seed}  queries {stats['queries']}  oracle-errors {stats['oracle_errors']} ({100 * stats['oracle_errors'] // max(1, stats['queries'])}%)  "
           f"rows-compared {stats['rows']}  optimizer-dependent-in-duckdb {stats['optimizer_dependent']}  nata-not-supported {stats['skipped']}  "
@@ -147,7 +154,7 @@ def cmd_run(args):
 
     def work(item):
         (seed, batch, qid, why, sql), (tables, queries) = item
-        sh = shrink(queries[qid], tables, checker(args, [], reason_class(why)), max_checks=args.shrink_checks)
+        sh = shrink(queries[qid], tables, checker(args, faults, reason_class(why)), max_checks=args.shrink_checks)
         return item, sh
     with ThreadPoolExecutor(args.jobs) as ex:
         results = list(ex.map(work, found[:args.shrink]))
@@ -174,10 +181,13 @@ def cmd_replay(args):
     tables, queries = build(args.seed, args.batch, args.per_db, args.max_rows)
     setup = subset.setup_sql(tables)
     idx = range(len(queries)) if args.query < 0 else [args.query]
-    oracle = DuckDB(args.duckdb); target = Command(shlex.split(args.target_cmd)) if args.target_cmd else DuckDB(args.duckdb)
+    faults = [x for x in (args.fault or "").split(",") if x]
+    F = frozenset(faults)
+    extra = [e for f in faults for e in (FAULTS[f][1] or [])]
+    oracle = DuckDB(args.duckdb); target = Command(shlex.split(args.target_cmd)) if args.target_cmd else DuckDB(args.duckdb, session_extra=extra)
     for i in idx:
         sql = queries[i].sql(NO)
-        ro, rt = oracle.run(setup, [(0, sql)])[0], target.run(setup, [(0, sql)])[0]
+        ro, rt = oracle.run(setup, [(0, sql)])[0], target.run(setup, [(0, queries[i].sql(F))])[0]
         why = compare(ro, rt, True)
         print(f"query {i}: {sql}\n  oracle: {ro.rows if ro.ok else 'ERROR ' + ro.error}\n  target: {rt.rows if rt.ok else 'ERROR ' + rt.error}\n  -> {why or 'same'}")
     return 0

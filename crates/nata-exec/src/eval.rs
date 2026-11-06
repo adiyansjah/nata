@@ -117,6 +117,12 @@ impl<'a> Evaluator<'a> {
                 }
                 Ok(sel.iter().copied().filter(|r| taken[*r as usize]).collect())
             }
+            ExprKind::Between {
+                expr,
+                low,
+                high,
+                negated,
+            } => self.filter_between(expr, low, high, *negated, e, sel),
             _ => {
                 let c = self.eval(e, sel)?;
                 let v = c.bools()?;
@@ -127,6 +133,50 @@ impl<'a> Evaluator<'a> {
                     .collect())
             }
         }
+    }
+
+    /// `x BETWEEN lo AND hi` in a `WHERE` is `x >= lo AND x <= hi` (`NOT BETWEEN`: `x < lo OR x > hi`) with the narrowing of a top-level `AND` / `OR`: the upper
+    /// bound is evaluated only for the rows whose lower bound is TRUE (`NOT BETWEEN`: not TRUE).
+    #[inline(never)]
+    fn filter_between(
+        &self,
+        expr: &Expr,
+        low: &Expr,
+        high: &Expr,
+        negated: bool,
+        e: &Expr,
+        sel: &[u32],
+    ) -> R<Vec<u32>> {
+        let x = self.eval(expr, sel)?;
+        let lo = self.eval(low, sel)?;
+        let (op1, op2) = if negated {
+            (CmpOp::Lt, CmpOp::Gt)
+        } else {
+            (CmpOp::Ge, CmpOp::Le)
+        };
+        let first = compare(op1, &x, &lo, sel, e.pos)?;
+        let fv = first.bools()?;
+        let first_true = |r: &u32| first.valid[*r as usize] && fv[*r as usize];
+        let open: Vec<u32> = sel
+            .iter()
+            .copied()
+            .filter(|r| first_true(r) != negated)
+            .collect();
+        let hi = self.eval(high, &open)?;
+        let second = compare(op2, &x, &hi, &open, e.pos)?;
+        let sv = second.bools()?;
+        let second_true = |r: &u32| second.valid[*r as usize] && sv[*r as usize];
+        Ok(sel
+            .iter()
+            .copied()
+            .filter(|r| {
+                if negated {
+                    first_true(r) || second_true(r)
+                } else {
+                    first_true(r) && second_true(r)
+                }
+            })
+            .collect())
     }
 
     /// Evaluate `e` for the rows `sel`.
@@ -814,6 +864,9 @@ mod tests {
         assert_eq!(dec(ArithOp::Add, big - 1, 0, 1, 0, 38, 0), Ok(big));
         // an operand that does not fit once rescaled is an overflow even if the sum would fit: (38,2) + (38,38) at scale 38
         assert_eq!(dec(ArithOp::Add, 1, 0, 0, 38, 38, 38), Err("overflow"));
+        // ... also when the exact sum would fit: 1 + (-0.99999...) = 0.00000...1 (DuckDB errors too; decimal-rules section 3)
+        assert_eq!(dec(ArithOp::Add, 1, 0, -(big), 38, 38, 38), Err("overflow"));
+        assert_eq!(dec(ArithOp::Sub, 1, 0, big, 38, 38, 38), Err("overflow"));
         // a capped multiplication: (18,2) * (18,2) -> (18,4): 10^15 * 10^15 does not fit 18 digits
         assert_eq!(
             dec(ArithOp::Mul, 10i128.pow(17), 2, 10i128.pow(17), 2, 18, 4),

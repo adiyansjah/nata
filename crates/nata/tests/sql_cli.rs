@@ -475,3 +475,35 @@ fn a_closed_stdout_ends_the_query_quietly_with_exit_code_zero() {
         );
     }
 }
+
+#[test]
+fn every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet() {
+    let (_d, p) = std_file("unsupported");
+    for q in [
+        format!("SELECT count(*) FROM '{p}'"),
+        format!("SELECT id FROM '{p}' GROUP BY id"),
+        format!("SELECT id FROM '{p}' ORDER BY id"),
+        "SELECT 1".to_string(),
+        format!("SELECT x.id FROM '{p}' x JOIN '{p}' y ON x.id = y.id"),
+        format!("SELECT abs(a) FROM '{p}'"),
+        format!("SELECT id FROM '{p}' WHERE s LIKE 'a%'"),
+        format!("SELECT NULLIF(a, 1) FROM '{p}'"),
+        format!("SELECT TRY_CAST(a AS INTEGER) FROM '{p}'"),
+        format!("SELECT CAST(a AS TINYINT) FROM '{p}'"),
+        format!("SELECT id FROM '{p}' OFFSET 2"),
+        format!("SELECT id FROM '{p}' LIMIT ALL"),
+        format!("SELECT id FROM '{p}' LIMIT 1 + 1"),
+        "SELECT id FROM 's3://bucket/x.parquet'".to_string(),
+        format!("SELECT id FROM '{p}' WHERE a IN (id, 2)"),
+        format!("SELECT DISTINCT id FROM '{p}'"),
+        "WITH x AS (SELECT 1) SELECT * FROM x".to_string(),
+        "SELECT id FROM (SELECT 1) t".to_string(),
+    ] {
+        let out = nata(&["sql", "--csv", "-c", &q]);
+        let err = text(&out.stderr);
+        assert_eq!(out.status.code(), Some(2), "{q}: {err}");
+        assert!(out.stdout.is_empty(), "{q}");
+        assert!(err.starts_with("error: not supported yet: "), "{q}: {err}");
+        assert!(err.contains("line 1, column"), "{q}: {err}");
+    }
+}

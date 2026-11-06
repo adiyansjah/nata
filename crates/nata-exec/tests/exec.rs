@@ -168,6 +168,13 @@ fn errors_are_raised_only_for_selected_valid_rows() {
         )),
         ids((0..N).filter(|i| a(*i).is_some_and(|x| x != 0 && 10 / x > 1)))
     );
+    // `a <> 0` alone would be pushed into the scan: written as an expression it stays in the executor's filter, where the AND narrows the rows
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE a + 0 <> 0 AND 10 // a > 1"
+        )),
+        ids((0..N).filter(|i| a(*i).is_some_and(|x| x != 0 && 10 / x > 1)))
+    );
     // so does OR (a NULL first operand leaves the row undecided: the division runs, and a NULL a gives NULL, not an error)
     assert_eq!(
         rows(&format!(
@@ -196,6 +203,20 @@ fn case_evaluates_only_the_branch_a_row_takes() {
         "SELECT CASE WHEN a = 0 THEN 0 ELSE 100 // a END AS q FROM '{p}' WHERE a IS NOT NULL"
     );
     assert_eq!(rows(&q).len(), 17);
+    // the same with the failing expression in the THEN branch: it runs only for the rows whose condition is TRUE
+    assert_eq!(
+        rows(&format!(
+            "SELECT CASE WHEN a <> 0 THEN 100 // a ELSE 0 END AS q FROM '{p}' WHERE a IS NOT NULL"
+        ))
+        .len(),
+        17
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT CASE a WHEN 0 THEN 0 WHEN 1 THEN 100 // (a - 1 + 1) ELSE 100 // (a - a + 1) END AS q FROM '{p}' WHERE id IN (2, 8, 4)"
+        )),
+        vec!["0", "100", "100"]
+    );
     // the ELSE branch runs for the rows no WHEN took, also when it would fail for the others
     assert!(
         run(&format!(
@@ -393,6 +414,19 @@ fn strings_dates_and_booleans() {
             "SELECT id FROM '{p}' WHERE s = 'alpha' AND id < 9"
         )),
         vec!["0", "4", "8"]
+    );
+    // a comparison that stays in the executor (the CASE keeps it from being pushed into the scan): bytewise, not case-insensitive
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE CASE WHEN id >= 0 THEN s END < 'b' AND id < 6"
+        )),
+        vec!["0", "1", "4", "5"]
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE CASE WHEN id >= 0 THEN s END = 'beta' AND id < 6"
+        )),
+        Vec::<String>::new()
     );
     assert_eq!(
         rows(&format!(
@@ -689,5 +723,25 @@ fn a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_mat
             "SELECT (a BETWEEN 1 AND 10 // a) AS x FROM '{p}' WHERE id IN (2, 3, 4)"
         )),
         vec!["false", "NULL", "true"]
+    );
+    // in a WHERE only the rows whose lower bound is TRUE reach the upper bound: id 3 has a NULL a, so its upper bound (a division by zero) never runs;
+    // as a value the upper bound runs for it (the lower bound is NULL, not FALSE) and the projection fails
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE a BETWEEN 1 AND 10 // (id - 3)"
+        )),
+        ids((0..N).filter(|i| a(*i).is_some_and(|x| x >= 1 && *i != 3 && x <= 10 / (*i - 3))))
+    );
+    assert!(
+        run(&format!(
+            "SELECT (a BETWEEN 1 AND 10 // (id - 3)) AS x FROM '{p}'"
+        ))
+        .is_err()
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT id FROM '{p}' WHERE a NOT BETWEEN 2 AND 10 // (id - 2)"
+        )),
+        ids((0..N).filter(|i| a(*i).is_some_and(|x| x < 2 || x > 10 / (*i - 2))))
     );
 }

@@ -5,7 +5,7 @@ applied together) of a source file; the tests run on a private copy of the three
   SURVIVED = the tests pass: a gap in the TESTS (fix the tests, never weaken the mutant)
   INVALID  = the edit does not apply exactly once, changes nothing, or the copy does not compile; an INVALID mutant counts as neither caught nor missed
              and fails the run
-Suites: `exec` runs `cargo test --release -p nata-exec` (unit tests, tests/exec.rs, the in-process scenarios); `cli` runs the `sql_cli` and
+Suites: `exec` runs `cargo test -p nata-exec` (unit tests, tests/exec.rs, the in-process scenarios); `cli` runs the `sql_cli` and
 `sql_reliability` tests of the `nata` crate (the process: exit codes, output, SIGINT, closed stdout). A `cli` mutant is run with the `cli` suite only.
 The unmutated copy runs first and must pass. The real tree is hashed before and after and must not change. The match ignores whitespace, so rustfmt does
 not break the mutants.
@@ -56,6 +56,7 @@ M = {
  "where-and-evaluates-every-operand-on-all-rows": ("exec", [(EV, "rows = self.filter_rows(p, &rows)?;", "rows = { let t = self.filter_rows(p, sel)?; rows.into_iter().filter(|r| t.contains(r)).collect() };")]),
  "and-or-in-a-projection-evaluate-every-operand": ("exec", [(EV, ".filter(|r| { let i = *r as usize; !(acc.valid[i] && v[i] != is_and) }) .collect() };", ".collect() };")]),
  "between-upper-bound-evaluated-for-every-row": ("exec", [(EV, "let hi = self.eval(high, &rest)?;", "let hi = self.eval(high, sel)?;")]),
+ "where-between-evaluates-the-upper-bound-for-every-row": ("exec", [(EV, "let open: Vec<u32> = sel.iter().copied().filter(|r| first_true(r) != negated).collect();", "let open: Vec<u32> = sel.to_vec();")]),
  "in-list-null-element-ignored": ("exec", [(EV, "if !it.valid[i] { null_seen = true; }", "if !it.valid[i] { }")]),
  "nan-below-everything": ("exec", [(EV, "(Comparer::F64, Data::F64(a), Data::F64(b)) => cmp_float(a[i], b[i]),", "(Comparer::F64, Data::F64(a), Data::F64(b)) => a[i].partial_cmp(&b[i]).unwrap_or(Ordering::Less),")]),
  "string-compare-case-insensitive": ("exec", [(EV, "a.get(i).as_bytes().cmp(b.get(i).as_bytes())", "a.get(i).to_lowercase().cmp(&b.get(i).to_lowercase())")]),
@@ -74,7 +75,7 @@ M = {
  "sigint-exits-with-1": ("cli", [(SQL, "say(&note); return ExitCode::from(130);", "say(&note); return ExitCode::from(1);")]),
  "caret-under-the-wrong-column": ("cli", [(OUT, "\" \".repeat(pre.len() + (at - from))", "\" \".repeat(pre.len() + (at - from) + 1)")]),
  "explain-analyze-counts-the-wrong-rows": ("cli", [(EXP, "ops.limit_in, ops.rows_out", "ops.rows_out, ops.limit_in")]),
- "explain-analyze-time-not-masked-differs": ("cli", [(EXP, "\"total: rows returned={}, time={} wall\\n\",", "\"total: rows returned={}, time={} wall \\n\",")]),
+ "explain-analyze-project-rows-are-the-filters-rows": ("cli", [(EXP, "ops.project_rows,", "ops.filter_rows,")]),
 }
 
 
@@ -112,7 +113,7 @@ def stage(work):
 def cargo(base, work, args, timeout=1500):
     env = dict(os.environ, CARGO_TARGET_DIR=os.path.join(work, "target"), CARGO_TERM_COLOR="never", CARGO_NET_OFFLINE="true")
     try:
-        p = subprocess.run(["cargo", "test", "--release", "--no-fail-fast"] + args, cwd=base, env=env, capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(["cargo", "test", "--no-fail-fast"] + args, cwd=base, env=env, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return 99, "timeout"
     return p.returncode, p.stdout + p.stderr

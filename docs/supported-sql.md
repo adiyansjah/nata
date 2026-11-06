@@ -1,9 +1,99 @@
 # Supported SQL
 
-This page is the contract: if it is not listed here, it is not supported, and
-Nata must answer `not supported yet: <what>`.
+This page is the contract: if it is not listed here, it is not supported, and Nata must answer `not supported yet: <what>`. The rules behind it are
+`docs/dialect.md` (names, literals, operators, NULL, CASE and CAST, LIMIT, errors, the differences from DuckDB) and `docs/decimal-rules.md` (numbers).
+Slice 4 (card `docs/slices/0002-select-where-limit.md`) built this: `crates/nata-sql` (parse, bind, plan) and `crates/nata-exec` (execution).
 
-Currently supported: nothing. `nata sql` returns `not supported yet: SQL execution`.
+```
+nata sql -c "<query>"        the query is the argument ...
+nata sql < query.sql         ... or stdin (at most 1 MiB)
+  --csv                      CSV (header row, NULL as NULL; the text nata-check compares) instead of an aligned table
+  --threads N                worker threads (default: the available parallelism)
+  --window N, --unordered    developer options: row groups in flight; rows in the order row groups finish
+  --report                   developer option: after a successful run, the scan's one-line report and the peak resident memory on stderr
+```
+
+`EXPLAIN` and `EXPLAIN ANALYZE` print their plan as text, with or `--csv` or without it.
+
+Exit codes: `0` success (also when the reader of stdout went away: `nata sql ... | head` is quiet); `1` a data or I/O error (a missing, truncated or damaged
+file, a division by zero or an overflow in the data); `2` `not supported yet`, a syntax or bind error, a wrong use of the command; `130` interrupted
+(Ctrl-C: the query stops, every thread is joined, every handle and buffer is released). If rows were printed before an error, the exit code is not 0 and
+the message says that the output is INCOMPLETE. Errors name the class, the message, the line and column, and put a caret under the position; they quote the
+query and never a value from the data. A failure that comes from a file names the file and the row group.
+
+## What works
+
+Every example runs: `check/queries/sql/` runs 251 of them against DuckDB (`nata-check`), `check/queries/sql-differences/` the 33 deliberate differences.
+
+| construct | example |
+|---|---|
+| `SELECT <list> FROM '<file or glob>'`; a trailing `;` | `SELECT l_orderkey, l_quantity FROM 'lineitem.parquet';` |
+| a glob: the files in byte order of their names, one schema | `SELECT id FROM 'data/parts/*.parquet'` |
+| `*` | `SELECT * FROM 'nation.parquet'` |
+| unquoted names fold to lower case, `"quoted"` names are exact | `SELECT L_ORDERKEY, "l_quantity" FROM 'lineitem.parquet'` |
+| `AS` alias (required for an alias) | `SELECT l_extendedprice * (1 - l_discount) AS net FROM 'lineitem.parquet'` |
+| `WHERE <boolean>` | `... WHERE l_quantity > 49 AND l_shipmode = 'AIR'` |
+| `LIMIT n`, `LIMIT n OFFSET m` (rows in file order) | `... LIMIT 10 OFFSET 20` |
+| integer literals (INTEGER, BIGINT, then decimals up to 38 digits) | `SELECT 42, 3000000000, 99999999999999999999 FROM 't.parquet'` |
+| exact decimal literals | `0.1`, `1.50`, `1e2` (exact, not a float) |
+| string, date, boolean, NULL literals | `'it''s'`, `DATE '1994-01-01'`, `TRUE`, `NULL` (typed by its context) |
+| `+ - * % //` on integers (checked against the width of the type) | `SELECT a * 2 + 1, a % 3, a // 2 FROM 't.parquet'` |
+| `+ - * / %` on decimals and integers (exact, `decimal-rules.md`) | `SELECT price * (1 - discount) * (1 + tax) FROM 't.parquet'` |
+| unary minus | `SELECT -a, -price FROM 't.parquet'` |
+| `= <> != < <= > >=` on numbers, text (bytewise), dates, booleans, floats (NaN equals NaN and is the largest, `-0.0 = 0.0`) | `... WHERE d >= CAST('Infinity' AS DOUBLE)` |
+| `AND`, `OR`, `NOT` (three-valued) | `... WHERE NOT (a > 0 AND f) OR s IS NULL` |
+| `IS NULL`, `IS NOT NULL` | `... WHERE s IS NOT NULL` |
+| `[NOT] BETWEEN x AND y` | `... WHERE dt BETWEEN DATE '1994-01-01' AND DATE '1994-12-31'` |
+| `[NOT] IN (literal, ...)` | `... WHERE s IN ('a', 'b', NULL)` |
+| `CASE WHEN ... THEN ... [ELSE ...] END` and `CASE x WHEN v THEN ... END` | `SELECT CASE WHEN i < 0 THEN 'neg' WHEN i = 0 THEN 'zero' ELSE 'pos' END AS sign FROM 't.parquet'` |
+| `CAST(x AS BOOLEAN / INTEGER / BIGINT / DECIMAL(p,s) / DOUBLE / VARCHAR / DATE)` and `x::type` | `SELECT CAST(price AS DECIMAL(10,1)), id::VARCHAR, CAST('2024-02-29' AS DATE) FROM 't.parquet'` |
+| `EXPLAIN <select>`: the plan (scan with the pushed conjuncts and the columns read, filter, projection, limit) | `EXPLAIN SELECT id FROM 't.parquet' WHERE i > 1 AND i + 1 < 10 LIMIT 3` |
+| `EXPLAIN ANALYZE <select>`: runs the query (the rows are not printed) and adds the rows and the time of every operator and the scan's report | `EXPLAIN ANALYZE SELECT ... FROM 'lineitem.parquet' WHERE ...` |
+
+Column types read from Parquet: `BOOLEAN`, `TINYINT`, `SMALLINT`, `INTEGER`, `BIGINT`, `REAL` (FLOAT), `DOUBLE`, `DECIMAL(p,s)` with p up to 38, `VARCHAR`,
+`DATE`. The result of the plan of `EXPLAIN` for the example above:
+
+```
+Limit 3 offset 0
+  Project id: INTEGER
+    Filter ((i + 1) < 10)
+      Scan 't.parquet' (1 file)
+        columns: id, i
+        pushed: i > 1
+```
+
+`column <op> literal` conjuncts, `IS [NOT] NULL` and `column BETWEEN literal AND literal` are pushed into the scan (they prune row groups by their statistics and
+are enforced by the scan's exact row filter); everything else is evaluated by the executor on Arrow batches with checked integer and exact decimal arithmetic.
+What is evaluated for which rows, and so which errors appear, is `docs/dialect.md` section 9b: an error is raised only for a row that reaches the operation
+with valid operands (`WHERE b <> 0 AND a // b > 1` never divides by zero; a `CASE` evaluates only the branch a row takes).
+
+Results stream: the rows are printed as the row groups come, in the order of the files, row groups and rows (also with many threads); the aligned table
+takes its column widths from the header and the first 1,000 rows (a wider cell later is printed in full). Memory is the scan's: the window of row groups in flight
+times the largest row group, plus the evaluator's temporaries for one batch of 8,192 rows.
+
+## Differences from DuckDB
+
+`docs/dialect.md` section 9 (and `docs/decimal-rules.md` section 9) lists every one with its example; the differential queries for them are in
+`check/queries/sql-differences/` and `check/queries/decimal-differences/`. The ones a user meets first: `/` is an exact decimal (DuckDB: a DOUBLE), quoted
+names are case-sensitive, `1 = '1'` is a bind error, a string is cast only from its plain form, a `WHERE` needs a boolean, a decimal literal below one is a
+`DECIMAL(p,p)` printed without the leading zero, and an operation fails only for the rows that reach it.
+
+## Not supported yet (each answers `not supported yet: <what>` with a position, and each is a test)
+
+| construct | example | when |
+|---|---|---|
+| `GROUP BY`, `HAVING`, aggregates (`COUNT`, `SUM`, ...) | `SELECT count(*) FROM 't.parquet'` | slice 5 |
+| `ORDER BY` | `... ORDER BY id` | slice 6 |
+| joins, subqueries, `WITH`, `DISTINCT`, set operations, more than one source, a table name, `SELECT` without `FROM` | `SELECT 1`, `SELECT * FROM a JOIN b ON ...` | 7 and later |
+| functions (`ABS`, `COALESCE`, `NULLIF`, `TRY`, `LIKE`, `SUBSTR`, date functions, ...) | `SELECT abs(a) FROM 't.parquet'` | the function slices |
+| float arithmetic (`d + d`, `-d`), a float compared with an integer, `CAST(d AS VARCHAR)`, `CAST(bool AS INTEGER)` | `SELECT d + d FROM 't.parquet'` | not specified yet |
+| `date + integer`, intervals | `SELECT dt + 1 FROM 't.parquet'` | the date-function slice |
+| an expression in an `IN` list, `TRY_CAST`, `CAST(x AS TINYINT / SMALLINT / REAL)` | `... WHERE a IN (id, 2)` | not specified yet |
+| non-literal `LIMIT`/`OFFSET`, `OFFSET` without `LIMIT`, `LIMIT ALL` | `LIMIT 1 + 1` | not specified yet |
+| `TIMESTAMP`, `BLOB`, unsigned integer and nested columns | a column of such a type, when the query reads it | later slices |
+| remote paths (`s3://`, `https://`) | `FROM 's3://bucket/x.parquet'` | slice 12 and later |
+
+An unknown column is a bind error with a suggestion, not a `not supported yet`.
 
 ## Developer command (not SQL)
 

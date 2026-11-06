@@ -107,5 +107,29 @@ owner's delegation, `bench/results/20261106-sql-frontend.md`):
 | `date + integer`: `DATE '1994-01-01' + 1` | `1994-01-02` | `not supported yet` (intervals come with the date-function slice) |
 | float literal syntax (`1.5e0`) | `DOUBLE` | exact decimal (`decimal-rules.md`) |
 | division and the other numeric differences | | `decimal-rules.md` section 9 |
+| `ti + 1` with `ti` a TINYINT (or SMALLINT) column | the literal takes the column's type: TINYINT, overflow at 127 | INTEGER (the literal is typed by its value, section 3; the wider type wins): `128`. Comparisons do narrow a literal to the column |
+| a decimal literal below one: `0.1`, `.5`, `0.000` | `DECIMAL(18,1)`, printed `0.1` | `DECIMAL(1,1)` (section 3), printed `.1`, as DuckDB prints every `DECIMAL(p,p)`; `CAST(0.20 AS VARCHAR)` is `.20` |
+| `WHERE i` with an integer `i` | the integer is read as a boolean | bind error: a `WHERE` needs a boolean |
+| `CAST('1.5' AS INTEGER)`, `'1e2'`, `'0x10'`, `'1_000'` to an integer | converts (rounding, hex, underscores) | error: an integer is an optional sign and digits (spaces around are trimmed) |
+| `CAST(s AS BOOLEAN)` with `'t'`, `'yes'`, `'1'`, `'on'` | converts | error: only `true` and `false`, in any case |
+| `CAST(s AS DATE)` with `'2024/02/29'`, `'2024-2-9'`, `'2024-02-29 10:00:00'` | converts | error: `YYYY-MM-DD` of a date that exists (spaces around are trimmed) |
+| `d IN (CAST(1.5 AS DOUBLE))` | allowed | `not supported yet`: the list holds literals (a `CAST` of a literal is not one) |
+| what is evaluated for which rows | see section 9b | see section 9b |
+
+## 9b. What is evaluated for which rows (decided while building step 3, 2026-11-06)
+
+Errors (division by zero, overflow, a value that does not convert) are raised only for a row that reaches the operation with valid (non-NULL) operands. The
+executor evaluates:
+- **`AND`, `OR`:** the next operand only for the rows the earlier ones left undecided (`AND`: TRUE or NULL so far; `OR`: FALSE or NULL). In a `WHERE`
+  only TRUE rows matter, so a top-level `AND` also drops the rows whose earlier operand is NULL. DuckDB evaluates every operand of an `AND`/`OR` in a projection.
+- **`CASE`:** a branch only for the rows that take it. **`BETWEEN`:** the upper bound only for the rows the lower bound did not decide as FALSE (in a `WHERE`: only for the rows whose lower bound is TRUE).
+- **`LIMIT`:** the select list is evaluated for the first `offset + n` rows the `WHERE` keeps and for no later row (the rows `OFFSET` drops are still
+  evaluated), as DuckDB does with its limit pushed below the projection. The `WHERE` is never skipped: it decides which rows count.
+- **an operand next to a NULL:** both operands of `+ - * % // =` and the rest are evaluated for the selected rows; DuckDB does not evaluate the other
+  operand when one is a constant NULL (`(a * -1) + CAST(NULL AS INTEGER)` is NULL there, an overflow error here for `a = -2147483648`).
+- **constant expressions:** `CAST('abc' AS INTEGER)` as a `CASE` condition fails only for a row that reaches that condition; DuckDB evaluates it when it plans the
+  query and fails even if every row takes an earlier branch (in a result, a select item or with no row selected DuckDB does not fail either).
+
+These are consequences of one rule (a row that does not reach an operation cannot make it fail), so each is a difference in which errors appear, never in a value.
 
 The differential check (`nata-check`) holds each row as a Nata-only expectation, as `check/queries/decimal-differences/` does for numbers.

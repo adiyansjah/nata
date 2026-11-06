@@ -99,7 +99,8 @@ The open register items on this slice's path (the scan under `nata sql`, its sch
 
 ## 6. Closeout (fill in when done)
 
-- Progress, 2026-11-06: step 2, the SQL front end, is built as `crates/nata-sql` (parse behind the token guard on a 16 MB thread, bind with the exact types of the dialect, the logical plan with the R2 pushdown, the plan text); checks and mutants in `bench/results/20261106-sql-frontend.md`. Step 3 (execution, `nata sql`, `EXPLAIN ANALYZE`, CLI) is not started.
+- Progress, 2026-11-06: step 2, the SQL front end, is built as `crates/nata-sql` (parse behind the token guard on a 16 MB thread, bind with the exact types of the dialect, the logical plan with the R2 pushdown, the plan text); checks and mutants in `bench/results/20261106-sql-frontend.md`.
+- Progress, 2026-11-06: step 3, execution, is built as `crates/nata-exec` and `nata sql` (filter and projection inside the scan tasks on strict, checked, selection-aware evaluation, offset and limit that stop the scan, `EXPLAIN` / `EXPLAIN ANALYZE`, cancellation by limit, closed stdout, Ctrl-C and errors, CSV and table output); the `differential` CI job is gating (`nata-check` on 284 new queries plus the existing sets with a PENDING list, and 20,000 fuzzed queries); checks, differences by class, mutants and the readings decided are in `bench/results/20261106-sql-execution.md`. Step 4 (benchmarks on GCP, ARM64 and x86-64, the closeout) is not started.
 - Results file:
 - ADR updated (amendment or revision note), confidence and what changed: ADR 0007 written and accepted 2026-11-06 (step 0, before the parser work); `docs/dialect.md`
 - Benchmark added to the regression set, baseline numbers:
