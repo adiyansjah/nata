@@ -167,7 +167,9 @@ M = {
  "late-selection-never-applied": (R, "let selection = (selected < seen).then(|| RowSelection::from_filters(&masks));", "let selection: Option<RowSelection> = None;"),
  "late-filter-columns-not-projected-when-also-selected": (R, "spec_ref.out.iter().filter_map(|(n, _)| leaf_index(n)),", "spec_ref.out.iter().filter(|(n, _)| !filter_names.contains(&n.as_str())).filter_map(|(n, _)| leaf_index(n)),"),
  "late-output-columns-read-in-step-1-only": (R, "let mut builder = self.builder(source, &late.out_mask);", "let mut builder = self.builder(source, &late.filter_mask);"),
- "late-output-read-even-when-no-row-passes": (R, "if selected == 0 {\n            return Ok(Step::Done);\n        }\n        let selection", "let selection"),
+ # EQUIVALENT mutant, removed: "late-output-read-even-when-no-row-passes" (step 2 is no longer skipped when no row was selected). With nothing selected the row
+ # selection skips every row, parquet-rs then fetches no byte and returns no batch, so nothing observable changes: the test that would see an output column being
+ # read (`a_filter_that_keeps_nothing_decodes_only_the_filter_column`, bytes_read at a third of the default read) passes with the edit. Run on 2026-11-06.
  "late-filter-not-evaluated": (R, "let mask = filter::evaluate(&f.terms, &batch)\n                .map_err(|m| self.at(ErrorKind::Internal(redact(&m))))?;\n            selected +=", "let mask = vec![true; batch.num_rows()];\n            selected +="),
  "late-row-count-of-the-footer-not-checked": (R, "self.check_row_count()?;\n        if selected == 0 {", "if selected == 0 {"),
  "late-selected-rows-not-compared-with-the-rows-decoded": (R, "if got != selected {", "if false && got != selected {"),

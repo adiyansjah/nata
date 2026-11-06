@@ -464,3 +464,262 @@ fn the_decimal_and_date_columns_survive_the_selection() {
     assert!(a.csv.lines().count() > 20, "{}", a.csv.lines().count());
     assert_eq!(a.csv, b.csv);
 }
+
+/// `clean` with the footer's row count of row group `rg` raised by `extra`: the pages hold fewer rows than the footer says (a damaged or lying footer).
+fn with_inflated_row_count(clean: &[u8], rg: usize, extra: i64) -> Vec<u8> {
+    use parquet::file::metadata::{ParquetMetaDataReader, ParquetMetaDataWriter};
+    let n = clean.len();
+    let footer_len = u32::from_le_bytes(clean[n - 8..n - 4].try_into().expect("4 bytes")) as usize;
+    let body_end = n - 8 - footer_len;
+    let meta = ParquetMetaDataReader::new()
+        .parse_and_finish(&bytes::Bytes::copy_from_slice(clean))
+        .expect("footer");
+    let groups: Vec<_> = meta
+        .row_groups()
+        .iter()
+        .enumerate()
+        .map(|(i, g)| {
+            if i == rg {
+                g.clone()
+                    .into_builder()
+                    .set_num_rows(g.num_rows() + extra)
+                    .build()
+                    .expect("row group")
+            } else {
+                g.clone()
+            }
+        })
+        .collect();
+    let new = meta.into_builder().set_row_groups(groups).build();
+    let mut out = clean[..body_end].to_vec();
+    ParquetMetaDataWriter::new(&mut out, &new)
+        .finish()
+        .expect("footer written");
+    out
+}
+
+#[test]
+fn a_row_group_that_holds_fewer_rows_than_its_footer_says_is_an_error_in_both_reads() {
+    let dir = scratch("late-footer-rows");
+    let clean = dir.join("clean.parquet");
+    write_shapes(&clean, 0, 200, 50);
+    let lying = dir.join("lying.parquet");
+    std::fs::write(
+        &lying,
+        with_inflated_row_count(&std::fs::read(&clean).expect("read"), 2, 5),
+    )
+    .expect("write");
+    // the footer of the clean file is rewritten faithfully: the same rows
+    let files = vec![lying.clone()];
+    for late in [false, true] {
+        for filters in [vec!["id >= 0"], vec!["id >= 120", "a IS NOT NULL"]] {
+            let r = run(
+                &files,
+                &opts(Some(&["id", "s"]), &filters, false, late),
+                2,
+                None,
+                None,
+            );
+            let e = r
+                .report
+                .as_ref()
+                .expect_err("the footer lies about row group 2");
+            assert_eq!(e.row_group, Some(2), "late {late}: {e}");
+            assert!(
+                e.to_string().contains("yielded") && e.to_string().contains("footer says"),
+                "late {late}: {e}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_cancel_is_looked_at_between_the_batches_of_both_steps() {
+    // 5 batches per step: the cancellation closure is asked once before the handle is opened and once per batch of step 1 and of step 2. A cancel that
+    // arrives at ANY of those points ends the task as cancelled; one that never arrives lets it finish.
+    use nata_parquet::TaskResult;
+    use std::cell::Cell;
+    let dir = scratch("late-cancel-points");
+    let p = dir.join("five.parquet");
+    common::genfiles::write_ids(&p, 0, 8192 * 5, 8192 * 5);
+    let files = vec![p];
+    for late in [false, true] {
+        // every row passes the filter, so step 2 has no selection and reads all five batches
+        let plan = ScanPlan::open(
+            &files,
+            &opts(Some(&["cat", "x"]), &["id >= 0"], false, late),
+        )
+        .expect("plan");
+        let task = plan
+            .open_file(0)
+            .expect("footer")
+            .tasks()
+            .pop()
+            .expect("one row group");
+        let asked = Cell::new(0usize);
+        let done = task
+            .run_cancellable(&|| {
+                asked.set(asked.get() + 1);
+                false
+            })
+            .expect("runs");
+        assert!(matches!(done, TaskResult::Done(_)));
+        let total = asked.get();
+        assert_eq!(
+            total,
+            if late { 1 + 5 + 5 } else { 1 + 5 },
+            "late {late}: how often the cancel was asked"
+        );
+        for k in 1..=total {
+            let n = Cell::new(0usize);
+            let r = task
+                .run_cancellable(&|| {
+                    n.set(n.get() + 1);
+                    n.get() >= k
+                })
+                .expect("runs");
+            assert!(
+                matches!(r, TaskResult::Cancelled),
+                "late {late}: a cancel at question {k} of {total} must stop the task"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_filter_columns_being_decoded_in_step_1_are_counted_even_when_nothing_is_kept() {
+    // no row passes, so step 2 never runs and the output holds nothing: the only decoded bytes are the batches of step 1, and they must be on the gauge
+    let dir = scratch("late-transient");
+    let f = dir.join("a.parquet");
+    common::genfiles::write_ids(&f, 0, 20_000, 20_000);
+    let files = vec![f];
+    for threads in [0, 2] {
+        let r = run(
+            &files,
+            &opts(Some(&["cat"]), &["id IS NULL"], false, true),
+            threads,
+            None,
+            None,
+        );
+        let rep = r.report.expect("scan");
+        assert_eq!(rep.rows_returned, 0);
+        assert_eq!(rep.rows_read, 20_000);
+        assert!(
+            rep.largest_task_bytes >= 8192 * 8 && rep.peak_inflight_bytes >= 8192 * 8,
+            "a batch of 8,192 ids is at least 64 KiB: {}",
+            rep.line()
+        );
+        assert_eq!(r.plan.stats().memory.now(), 0);
+    }
+}
+
+/// `clean` with the footer of column `col` of row group `rg` cut to `keep` fifths of its bytes and of its values: the column chunk (five equal data pages, no
+/// dictionary, no statistics) yields fewer rows than the others (a damaged footer; parquet-rs reads a chunk by its byte range).
+fn with_short_column(clean: &[u8], rg: usize, col: usize, keep: i64) -> Vec<u8> {
+    use parquet::file::metadata::{ParquetMetaDataReader, ParquetMetaDataWriter};
+    let n = clean.len();
+    let footer_len = u32::from_le_bytes(clean[n - 8..n - 4].try_into().expect("4 bytes")) as usize;
+    let body_end = n - 8 - footer_len;
+    let meta = ParquetMetaDataReader::new()
+        .parse_and_finish(&bytes::Bytes::copy_from_slice(clean))
+        .expect("footer");
+    let groups: Vec<_> = meta
+        .row_groups()
+        .iter()
+        .enumerate()
+        .map(|(i, g)| {
+            if i != rg {
+                return g.clone();
+            }
+            let columns: Vec<_> = g
+                .columns()
+                .iter()
+                .enumerate()
+                .map(|(c, cc)| {
+                    if c != col {
+                        return cc.clone();
+                    }
+                    let (bytes, values) = (cc.compressed_size(), cc.num_values());
+                    assert_eq!((bytes % 5, values % 5), (0, 0), "five equal pages");
+                    cc.clone()
+                        .into_builder()
+                        .set_num_values(values / 5 * keep)
+                        .set_total_compressed_size(bytes / 5 * keep)
+                        .set_total_uncompressed_size(bytes / 5 * keep)
+                        .build()
+                        .expect("column")
+                })
+                .collect();
+            g.clone()
+                .into_builder()
+                .set_column_metadata(columns)
+                .build()
+                .expect("row group")
+        })
+        .collect();
+    let new = meta.into_builder().set_row_groups(groups).build();
+    let mut out = clean[..body_end].to_vec();
+    ParquetMetaDataWriter::new(&mut out, &new)
+        .finish()
+        .expect("footer written");
+    out
+}
+
+#[test]
+fn an_output_column_shorter_than_the_filter_column_is_an_error_in_the_late_read_never_fewer_rows() {
+    // 5,000 rows in one row group, five equal pages of 1,000 values per column. The footer is cut so that `v` has 4 of its 5 pages (4,000 values): the filter column `id` yields 5,000 rows in
+    // step 1, the output column 4,000 in step 2, and the rows decoded for the selection are not the rows the filter selected. The check of that equality
+    // is what turns it into an error (without it the scan would return 4,000 rows for a filter that selected 5,000).
+    let dir = scratch("late-short-column");
+    let clean = dir.join("clean.parquet");
+    let n = 5_000i64;
+    let id: ArrayRef = Arc::new(Int64Array::from_iter_values(0..n));
+    let v: ArrayRef = Arc::new(Int64Array::from_iter_values((0..n).map(|i| i * 3)));
+    let batch = RecordBatch::try_from_iter([("id", id), ("v", v)]).expect("batch");
+    let props = WriterProperties::builder()
+        .set_data_page_size_limit(8_000)
+        .set_write_batch_size(1_000)
+        .set_dictionary_enabled(false)
+        .set_statistics_enabled(parquet::file::properties::EnabledStatistics::None)
+        .build();
+    let mut w = ArrowWriter::try_new(
+        File::create(&clean).expect("create"),
+        batch.schema(),
+        Some(props),
+    )
+    .expect("writer");
+    w.write(&batch).expect("write");
+    w.close().expect("close");
+    let short = dir.join("short.parquet");
+    std::fs::write(
+        &short,
+        with_short_column(&std::fs::read(&clean).expect("read"), 0, 1, 4),
+    )
+    .expect("write");
+    // the clean file reads the same in both modes, and a filter that keeps every row, or a 90% selection, makes step 2 read the short column
+    for filter in ["id >= 0", "id >= 500"] {
+        let ok = run(
+            std::slice::from_ref(&clean),
+            &opts(Some(&["v"]), &[filter], false, true),
+            1,
+            None,
+            None,
+        );
+        assert!(ok.report.is_ok(), "{filter}");
+        let r = run(
+            std::slice::from_ref(&short),
+            &opts(Some(&["v"]), &[filter], false, true),
+            1,
+            None,
+            None,
+        );
+        let e = r.report.as_ref().expect_err(&format!(
+            "{filter}: the output column is shorter than the filter column"
+        ));
+        assert_eq!(e.row_group, Some(0), "{e}");
+        assert!(
+            e.to_string().contains("not the rows the filter selected"),
+            "{filter}: {e}"
+        );
+    }
+}
