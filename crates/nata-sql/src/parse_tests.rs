@@ -371,3 +371,141 @@ fn a_tree_node_is_a_number_with_its_text() {
         .collect();
     assert_eq!(texts, ["0.10", "1e2", ".5", "5."]);
 }
+
+/// One wide schema for every path of the test set: the columns the queries mention.
+fn wide_source() -> crate::source::MemSource {
+    use nata_parquet::schema::Kind;
+    let cols: Vec<(&str, Result<Kind, &str>)> = vec![
+        (
+            "a",
+            Ok(Kind::Int {
+                bits: 32,
+                signed: true,
+            }),
+        ),
+        (
+            "b",
+            Ok(Kind::Int {
+                bits: 64,
+                signed: true,
+            }),
+        ),
+        (
+            "c",
+            Ok(Kind::Decimal {
+                precision: 15,
+                scale: 2,
+            }),
+        ),
+        ("d", Ok(Kind::Float64)),
+        ("f", Ok(Kind::Float32)),
+        ("s", Ok(Kind::Utf8)),
+        ("dt", Ok(Kind::Date)),
+        ("é", Ok(Kind::Bool)),
+        (
+            "l_orderkey",
+            Ok(Kind::Int {
+                bits: 64,
+                signed: true,
+            }),
+        ),
+        (
+            "l_linenumber",
+            Ok(Kind::Int {
+                bits: 32,
+                signed: true,
+            }),
+        ),
+        (
+            "l_extendedprice",
+            Ok(Kind::Decimal {
+                precision: 15,
+                scale: 2,
+            }),
+        ),
+        (
+            "l_discount",
+            Ok(Kind::Decimal {
+                precision: 15,
+                scale: 2,
+            }),
+        ),
+        (
+            "l_tax",
+            Ok(Kind::Decimal {
+                precision: 15,
+                scale: 2,
+            }),
+        ),
+        ("l_shipdate", Ok(Kind::Date)),
+        ("l_returnflag", Ok(Kind::Utf8)),
+        ("l_shipmode", Ok(Kind::Utf8)),
+        ("n_comment", Ok(Kind::Utf8)),
+        (
+            "n_regionkey",
+            Ok(Kind::Int {
+                bits: 32,
+                signed: true,
+            }),
+        ),
+    ];
+    let mut s = crate::source::MemSource::new();
+    for f in [
+        "f.parquet",
+        "a.parquet",
+        "lineitem.parquet",
+        "nation.parquet",
+        "dir/*.parquet",
+        "data/*.parquet",
+        "it's.parquet",
+        "données/é.parquet",
+        "/abs/path with space.parquet",
+        "",
+    ] {
+        s = s.file(f, &cols);
+    }
+    s
+}
+
+#[test]
+fn mangled_queries_through_bind_and_plan_never_panic_and_every_error_has_a_position() {
+    let seed: u64 = std::env::var("NATA_SQL_FUZZ_SEED")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(20_261_106);
+    let n: u64 = std::env::var("NATA_SQL_FUZZ_N")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10_000);
+    let src = wide_source();
+    let base = accepted_queries();
+    let (mut planned, mut refused) = (0u64, 0u64);
+    let mut check = |label: &str, q: &str| {
+        let r = catch_unwind(std::panic::AssertUnwindSafe(|| crate::plan_sql(q, &src)))
+            .unwrap_or_else(|_| panic!("PANIC ({label}): {q:?}"));
+        match r {
+            Ok(_) => planned += 1,
+            Err(e) => {
+                refused += 1;
+                assert!(
+                    e.pos.line >= 1
+                        && e.pos.col >= 1
+                        && !e.message.starts_with("internal error")
+                        && e.class != ErrorClass::Execution,
+                    "({label}) {q:?} -> {e}"
+                );
+            }
+        }
+    };
+    for q in &base {
+        check("test set", q);
+    }
+    for i in 0..n {
+        check(&format!("seed {seed} query {i}"), &mangled(&base, seed, i));
+    }
+    eprintln!(
+        "bind and plan: {} test-set queries and {n} mangled ones (seed {seed}): {planned} planned, {refused} refused with a class and a position",
+        base.len()
+    );
+    assert!(planned > 300 && refused > 1000);
+}

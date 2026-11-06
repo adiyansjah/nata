@@ -31,8 +31,8 @@ M = {
  "offset-off-by-one": (P, "offset: offset.unwrap_or(0),", "offset: offset.unwrap_or(0).saturating_add(1),"),
  "limit-printed-below-the-filter": [
    (P, 'if let Some(l) = &self.limit { line(depth, format!("Limit {} offset {}", l.n, l.offset)); depth += 1; }', ""),
-   (P, 'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names))); depth += 1; }',
-       'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names))); depth += 1; } if let Some(l) = &self.limit { line(depth, format!("Limit {} offset {}", l.n, l.offset)); depth += 1; }')],
+   (P, 'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names)),); depth += 1; }',
+       'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names)),); depth += 1; } if let Some(l) = &self.limit { line(depth, format!("Limit {} offset {}", l.n, l.offset)); depth += 1; }')],
  # ---- binder and typing
  "quoted-name-folded-to-lower-case": (B, "if id.quoted { id.name.clone() } else {", "if false { id.name.clone() } else {"),
  "string-compared-with-number-accepted": (T, "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) {", "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) || (l == SqlType::Varchar && r.is_exact_numeric()) || (r == SqlType::Varchar && l.is_exact_numeric()) {"),

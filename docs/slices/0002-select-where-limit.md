@@ -99,6 +99,7 @@ The open register items on this slice's path (the scan under `nata sql`, its sch
 
 ## 6. Closeout (fill in when done)
 
+- Progress, 2026-11-06: step 2, the SQL front end, is built as `crates/nata-sql` (parse behind the token guard on a 16 MB thread, bind with the exact types of the dialect, the logical plan with the R2 pushdown, the plan text); checks and mutants in `bench/results/20261106-sql-frontend.md`. Step 3 (execution, `nata sql`, `EXPLAIN ANALYZE`, CLI) is not started.
 - Results file:
 - ADR updated (amendment or revision note), confidence and what changed: ADR 0007 written and accepted 2026-11-06 (step 0, before the parser work); `docs/dialect.md`
 - Benchmark added to the regression set, baseline numbers:
