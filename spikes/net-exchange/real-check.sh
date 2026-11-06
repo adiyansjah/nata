@@ -76,7 +76,8 @@ run_secs() { local m=0 s i; for i in $(seq 0 $((N - 1))); do s=$(kv "$RUN/node$i
 bytes_moved() { local t=0 b i; for i in $(seq 0 $((N - 1))); do b=$(kv "$RUN/node$i.out" bytes_sent); t=$((t + ${b:-0})); done; echo "$t"; }
 SETTLE_SH="$HERE/../../scripts/gcp/settle.sh"
 settle() { [ -x "$SETTLE_SH" ] && "$SETTLE_SH" "$1" 0.5 "${NX_SETTLE_MAX:-300}" | tee -a "$SUMMARY"; return 0; }
-leftover() { local n=0 i; n=$(pgrep -fc "netx node" || true); for i in $(seq 1 $((N - 1))); do n=$((n + $(rsh "${IPS[$i]}" 'pgrep -fc "netx node" || true'))); done; echo "$n"; }
+# '[n]etx node' does not match the pgrep (or the shell running it) itself: the first run counted each peer's own pgrep shell (3 "left")
+leftover() { local n=0 i; n=$(pgrep -fc '[n]etx node' || true); for i in $(seq 1 $((N - 1))); do n=$((n + $(rsh "${IPS[$i]}" "pgrep -fc '[n]etx node' || true"))); done; echo "$n"; }
 
 # ---------------------------------------------------------------- S1
 say "S1 correctness and throughput"
@@ -115,7 +116,7 @@ l=$(leftover); check s4-no-process-left "$([ "$l" = 0 ] && echo 0 || echo 1)" "(
 # ---------------------------------------------------------------- S5
 say "S5 kill -9 of node $((N - 1))"
 launch s5 --rows "$BIG" --batch-rows $((N * 1024)) --credit-bytes $((1 << 20)) --dead-ms 20000 --connect-timeout-s 60
-sleep 3; tk=$(now_ns); rsh "${IPS[$((N - 1))]}" 'pkill -9 -f "netx node"'; wait_nodes
+sleep 3; tk=$(now_ns); rsh "${IPS[$((N - 1))]}" "pkill -9 -f '[n]etx node'"; wait_nodes
 bad=0
 for i in $(seq 0 $((N - 1))); do
   rc=$(exit_code "$i"); el=$(awk -v a="$tk" -v b="$(exit_ns "$i")" 'BEGIN{printf "%.2f", (b-a)/1e9}'); log "S5 node $i: exit $rc after $el s: $(head -c 140 "$RUN/node$i.out")"
