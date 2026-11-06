@@ -542,7 +542,10 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
                 let p = path.clone();
                 let opener = FaultOpener::new(std::slice::from_ref(&path), vec![]);
                 let o2 = opener.clone();
-                std::thread::spawn(move || {
+                // the case runs in a helper thread so that a hang becomes a timeout; it is JOINED after its result arrives, so that the final
+                // count of live threads sees only threads of the scan (found 2026-11-06 under AddressSanitizer: an unjoined helper still
+                // exiting was counted as "a thread of a scan is still alive")
+                let helper = std::thread::spawn(move || {
                     let (res, plan) = scan_once(&p, t, o2);
                     let st = plan.stats();
                     let clean_state = (st.handles.now(), st.footers.now(), st.memory.now());
@@ -551,6 +554,7 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
                 let (res, state) = rx
                     .recv_timeout(Duration::from_secs(20))
                     .unwrap_or_else(|_| panic!("HANG ({t} threads): {what}"));
+                helper.join().expect("the fuzz case's helper thread");
                 assert_eq!(
                     state,
                     (0, 0, 0),
