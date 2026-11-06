@@ -124,6 +124,11 @@ Kernel crate, lints and guarded expressions (`bench/results/20261104-kernel-lint
 
 ## Revision notes
 
+- 2026-11-06, **the kernels that run under `nata sql` are not the proved ones yet**: the slice 4 executor (`crates/nata-exec`) implements
+  the same strict rules (checked integers, exact decimals, errors only for selected valid rows) as its own scalar loops, because
+  `nata-kernels` covers only `i64`. The Kani proofs of this ADR therefore cover `nata-kernels` and not what `nata sql` runs; the executor is
+  checked by the differential against DuckDB (293 queries), 60,000 fuzzed queries and 47 mutants, which can show bugs but not their absence.
+  Closing this is register item R12 (`docs/improvements.md`), planned for slice 5.
 - 2026-11-06, **the five 64-bit (and one 32-bit) division proofs are an accepted trust point** (decided by the assistant under the owner's
   delegation): retried with kissat, z3 and cvc5 (`bench/results/20261106-kani-wrap-bound.md` section 2) they still do not finish (timeouts;
   the SMT back ends abort in CBMC). The kernels' division logic is proved separately, the primitive is proved exact at 8 bits and is one
