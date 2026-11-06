@@ -25,6 +25,12 @@ pub struct Metrics {
     pub rows_produced: AtomicU64,
     pub running: AtomicUsize,
     pub sessions: AtomicUsize,
+    pub registered: AtomicUsize,
+    pub objects: nata_parquet::stats::Gauge,
+    pub admitted: nata_parquet::stats::Gauge,
+    /// Up to 64 completed scans; gauges remain inspectable after release.
+    pub scans: Mutex<Vec<Arc<nata_parquet::ScanStats>>>,
+    pub opener: Option<Arc<dyn nata_parquet::Opener>>,
 }
 struct Counted {
     metrics: Option<Arc<Metrics>>,
@@ -108,14 +114,19 @@ struct Registered {
     id: i32,
     registry: Registry,
     session: Arc<Session>,
+    metrics: Option<Arc<Metrics>>,
 }
 impl Drop for Registered {
     fn drop(&mut self) {
         self.session.cancel();
-        self.registry
+        let mut registry = self
+            .registry
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .remove(&self.id);
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        registry.remove(&self.id);
+        if let Some(m) = &self.metrics {
+            m.registered.store(registry.len(), Ordering::SeqCst);
+        }
     }
 }
 struct Reader(tokio::task::JoinHandle<()>);
@@ -239,11 +250,15 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
                     return;
                 }
                 r.insert(id, Arc::clone(&session));
+                if let Some(m) = &metrics {
+                    m.registered.store(r.len(), Ordering::SeqCst);
+                }
             }
             let registration = Registered {
                 id,
                 registry,
                 session,
+                metrics: metrics.clone(),
             };
             if let Some(m) = &metrics {
                 m.sessions.fetch_add(1, Ordering::SeqCst);
@@ -376,8 +391,7 @@ async fn session_loop(
             }
         }
     }));
-    let mut statement: Option<Statement> = None;
-    let mut portal: Option<Portal> = None;
+    let mut objects = Objects::new(metrics.clone());
     let mut failed = false;
     while let Some(m) = input.recv().await {
         let m = match m {
@@ -392,7 +406,9 @@ async fn session_loop(
         }
         if matches!(m, Message::Sync) {
             failed = false;
-            portal = None;
+            if state.transaction == b'I' {
+                objects.portals.clear();
+            }
             write
                 .write_all(&codec::packet(b'Z', &[state.transaction]).map_err(io::Error::other)?)
                 .await?;
@@ -411,12 +427,14 @@ async fn session_loop(
         let mut mode = 0;
         let mut params = Vec::new();
         let mut parsed = None;
+        let mut object_name = String::new();
+        let mut portal: Option<Portal> = None;
         let mut error = None;
         let mut sql = String::new();
         match m {
             Message::Query(q) => {
-                statement = None;
-                portal = None;
+                objects.statements.remove("");
+                objects.portals.remove("");
                 sql = q;
             }
             Message::Parse {
@@ -424,8 +442,15 @@ async fn session_loop(
                 sql: q,
                 types,
             } => {
-                statement = None;
-                match Statement::new(&name, q, types).and_then(|s| Ok((s.dummy()?, s))) {
+                object_name = name.clone();
+                if name.is_empty() {
+                    objects.statements.remove("");
+                }
+                match objects
+                    .check_statement(&name, &q)
+                    .and_then(|()| Statement::new(&name, q, types))
+                    .and_then(|s| Ok((s.dummy()?, s)))
+                {
                     Ok((p, s)) => {
                         params = p;
                         sql = s.sql.clone();
@@ -442,31 +467,25 @@ async fn session_loop(
                 params: p,
                 results,
             } => {
-                let result = extended::unnamed(&name)
-                    .and_then(|()| extended::unnamed(&name_s))
-                    .and_then(|()| extended::formats(&formats, p.len()))
-                    .and_then(|()| {
-                        extended::formats(
-                            &results,
-                            statement.as_ref().map_or(0, |s| {
-                                if s.description.len() >= 7 {
-                                    i16::from_be_bytes([s.description[5], s.description[6]])
-                                        as usize
-                                } else {
-                                    0
-                                }
-                            }),
-                        )
-                    })
-                    .and_then(|()| {
-                        statement
-                            .as_ref()
-                            .ok_or_else(|| WireError::new("26000", "no unnamed statement"))
-                    })
-                    .and_then(|s| s.bind(&p));
+                if name.is_empty() {
+                    objects.portals.remove("");
+                }
+                let result = objects.check_portal(&name).and_then(|()| {
+                    let s = objects
+                        .statements
+                        .get(&name_s)
+                        .ok_or_else(|| WireError::new("26000", "unknown prepared statement"))?;
+                    extended::formats(&formats, p.len())?;
+                    extended::formats(&results, column_count(&s.description))?;
+                    let p = crate::binary::parameters(&s.types, &formats, &p)?;
+                    let mut bound = s.bind(&p)?;
+                    bound.results = results;
+                    objects.check_portal_bytes(&name, &bound)?;
+                    Ok(bound)
+                });
                 match result {
                     Ok(p) => {
-                        portal = Some(p);
+                        objects.portals.insert(name, p);
                         write
                             .write_all(&codec::packet(b'2', b"").map_err(io::Error::other)?)
                             .await?;
@@ -476,19 +495,23 @@ async fn session_loop(
                 }
             }
             Message::Describe(target, name) => {
-                let result = extended::unnamed(&name).and_then(|()| {
+                object_name = name.clone();
+                let result = (|| {
                     if target == b'S' {
-                        let s = statement
-                            .as_ref()
-                            .ok_or_else(|| WireError::new("26000", "no unnamed statement"))?;
+                        let s = objects
+                            .statements
+                            .get(&name)
+                            .ok_or_else(|| WireError::new("26000", "unknown prepared statement"))?;
                         Ok((s.sql.clone(), s.dummy()?))
                     } else {
-                        let p = portal
-                            .as_ref()
-                            .ok_or_else(|| WireError::new("34000", "no unnamed portal"))?;
+                        let p = objects
+                            .portals
+                            .get(&name)
+                            .ok_or_else(|| WireError::new("34000", "unknown portal"))?;
+                        portal = Some(p.clone());
                         Ok((p.statement.sql.clone(), p.params.clone()))
                     }
-                });
+                })();
                 match result {
                     Ok((q, p)) => {
                         sql = q;
@@ -498,38 +521,39 @@ async fn session_loop(
                     Err(e) => error = Some(e),
                 }
             }
-            Message::Close(target, name) => match extended::unnamed(&name) {
-                Ok(()) => {
-                    if target == b'S' {
-                        statement = None;
-                    } else {
-                        portal = None;
-                    }
-                    write
-                        .write_all(&codec::packet(b'3', b"").map_err(io::Error::other)?)
-                        .await?;
-                    continue;
-                }
-                Err(e) => error = Some(e),
-            },
+            Message::Close(target, name) => {
+                let exists = if target == b'S' {
+                    objects.statements.remove(&name).is_some()
+                } else {
+                    objects.portals.remove(&name).is_some()
+                };
+                // PostgreSQL Close is idempotent, including absent named objects.
+                let _ = exists;
+                write
+                    .write_all(&codec::packet(b'3', b"").map_err(io::Error::other)?)
+                    .await?;
+                continue;
+            }
             Message::Execute(name, limit) => {
-                let result = extended::unnamed(&name)
-                    .and_then(|()| {
-                        if limit != 0 {
-                            Err(WireError::unsupported(
+                let result = (|| {
+                    let p = objects
+                        .portals
+                        .get(&name)
+                        .ok_or_else(|| WireError::new("34000", "unknown portal"))?;
+                    if limit != 0 {
+                        // Drivers also use max-rows=1 for ROLLBACK/SET. A command
+                        // with no result columns cannot suspend or exceed this limit.
+                        if column_count(&p.statement.description) != 0 {
+                            return Err(WireError::unsupported(
                                 "nonzero Execute max-rows; use fetch size 0",
-                            ))
-                        } else {
-                            Ok(())
+                            ));
                         }
-                    })
-                    .and_then(|()| {
-                        portal
-                            .as_ref()
-                            .ok_or_else(|| WireError::new("34000", "no unnamed portal"))
-                    });
+                    }
+                    Ok(p)
+                })();
                 match result {
                     Ok(p) => {
+                        portal = Some(p.clone());
                         sql = p.statement.sql.clone();
                         params = p.params.clone();
                     }
@@ -556,7 +580,11 @@ async fn session_loop(
             let mut next_state = state.clone();
             let chatter = next_state.evaluate(&sql);
             if mode == 2 {
-                let types = &statement.as_ref().expect("described statement").types;
+                let types = &objects
+                    .statements
+                    .get(&object_name)
+                    .expect("described statement")
+                    .types;
                 let mut body = (types.len() as i16).to_be_bytes().to_vec();
                 for t in types {
                     body.extend((if *t == 0 { 25i32 } else { *t }).to_be_bytes());
@@ -586,6 +614,18 @@ async fn session_loop(
                         }
                     } else if let Some(r) = chatter? {
                         if mode == 0 {
+                            if let Some(target) = &r.deallocate {
+                                if let Some(name) = target {
+                                    if objects.statements.remove(name).is_none() {
+                                        return Err(WireError::new(
+                                            "26000",
+                                            "unknown prepared statement",
+                                        ));
+                                    }
+                                } else {
+                                    objects.statements.clear();
+                                }
+                            }
                             state = next_state;
                             session_rows = r.rows.len();
                         }
@@ -595,8 +635,19 @@ async fn session_loop(
                             } else {
                                 codec::description(&r.fields)
                             };
+                            let packet = packet.map_err(|_| WireError::internal())?;
+                            let packet = if mode == 3 {
+                                crate::binary::packet(
+                                    packet,
+                                    &codec::description(&r.fields)
+                                        .map_err(|_| WireError::internal())?,
+                                    &portal.as_ref().expect("portal").results,
+                                )?
+                            } else {
+                                packet
+                            };
                             write
-                                .write_all(&packet.map_err(|_| WireError::internal())?)
+                                .write_all(&packet)
                                 .await
                                 .map_err(|_| WireError::internal())?;
                         }
@@ -612,9 +663,14 @@ async fn session_loop(
                             }
                             for row in r.rows {
                                 write
-                                    .write_all(
-                                        &codec::row(&row).map_err(|_| WireError::internal())?,
-                                    )
+                                    .write_all(&crate::binary::packet(
+                                        codec::row(&row).map_err(|_| WireError::internal())?,
+                                        &codec::description(&r.fields)
+                                            .map_err(|_| WireError::internal())?,
+                                        &portal
+                                            .as_ref()
+                                            .map_or_else(Vec::new, |p| p.results.clone()),
+                                    )?)
                                     .await
                                     .map_err(|_| WireError::internal())?;
                             }
@@ -643,7 +699,13 @@ async fn session_loop(
                     failed = !simple;
                     send_wire_error(&mut write, &e, &sql).await;
                 } else if mode == 1 {
-                    statement = parsed;
+                    if let Some(mut s) = parsed {
+                        if let Ok(Some(r)) = state.clone().evaluate(&sql) {
+                            s.description =
+                                codec::description(&r.fields).map_err(io::Error::other)?;
+                        }
+                        objects.statements.insert(object_name.clone(), s);
+                    }
                     write
                         .write_all(&codec::packet(b'1', b"").map_err(io::Error::other)?)
                         .await?;
@@ -682,6 +744,10 @@ async fn session_loop(
                             // A single admission owns the coordinator and at most `threads` scheduler workers.
                             let _permit = permit;
                             if let Some(m) = &progress {
+                                m.admitted.add(1);
+                            }
+                            let _admission = Admission(progress.clone());
+                            if let Some(m) = &progress {
                                 m.running.fetch_add(1, Ordering::SeqCst);
                             }
                             let _counted = Counted {
@@ -713,13 +779,16 @@ async fn session_loop(
                                 _ = stopped.changed() => return Err(WireError::cancel()),
                                 _ = disconnected.changed() => return Err(WireError::cancel()),
                                 event = rx.recv() => match event {
-                                    Some(Event::Packet(p)) => {
+                                    Some(Event::Packet(mut p)) => {
                                         if p[0]==b'T' {
                                             if mode==1 {description=p;continue;}
                                             if !simple && mode!=2 && expected.as_ref().is_some_and(|e| !extended::same_types(e,&p)) {
                                                 return Err(WireError::unsupported("parameter changes result type; use an explicit SQL CAST"));
                                             }
                                             if mode==0 && !simple {continue;}
+                                        }
+                                        if let Some(portal) = &portal {
+                                            p = crate::binary::packet(p, &portal.statement.description, &portal.results)?;
                                         }
                                         // Keep the SAME write future across cancel: restarting write_all would
                                         // duplicate a prefix, dropping it could leave half a frame on the wire.
@@ -784,7 +853,9 @@ async fn session_loop(
                         if let Some(s) = &mut parsed {
                             s.description = description;
                         }
-                        statement = parsed;
+                        if let Some(s) = parsed {
+                            objects.statements.insert(object_name.clone(), s);
+                        }
                         write
                             .write_all(&codec::packet(b'1', b"").map_err(io::Error::other)?)
                             .await?;
@@ -797,6 +868,14 @@ async fn session_loop(
                     }
                 }
             }
+        }
+        if mode == 0
+            && state.transaction == b'I'
+            && (simple
+                || sql.trim().eq_ignore_ascii_case("COMMIT")
+                || sql.trim().eq_ignore_ascii_case("ROLLBACK"))
+        {
+            objects.portals.clear();
         }
         if simple {
             write
@@ -988,10 +1067,14 @@ fn produce(
     let fields: Vec<_> = p.output.iter().map(|c| (c.name.clone(), c.ty)).collect();
     send(encode(codec::description(&fields))?)?;
     let mut rows = 0u64;
-    let result = nata_exec::execute(
+    let mut config = nata_exec::ExecConfig::new(threads);
+    config.opener = metrics.and_then(|m| m.opener.clone());
+    let mut observed = nata_exec::Observed::default();
+    let result = nata_exec::execute_observed(
         Arc::new(p.plan),
-        &nata_exec::ExecConfig::new(threads),
+        &config,
         Some(token),
+        &mut observed,
         |batch| {
             for i in 0..batch.num_rows() {
                 if cancelled.load(Ordering::SeqCst) {
@@ -1023,6 +1106,16 @@ fn produce(
             Ok(())
         },
     );
+    if let Some(m) = metrics
+        && let Some(stats) = observed.stats
+    {
+        let mut scans = m.scans.lock().expect("scan metrics");
+        // A bounded ring for lifecycle tests; never retain query plans or SQL.
+        if scans.len() == 64 {
+            scans.remove(0);
+        }
+        scans.push(stats);
+    }
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());
     }
@@ -1053,4 +1146,116 @@ fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
         }
         _ => s,
     })
+}
+
+struct Admission(Option<Arc<Metrics>>);
+impl Drop for Admission {
+    fn drop(&mut self) {
+        if let Some(m) = &self.0 {
+            m.admitted.sub(1);
+        }
+    }
+}
+struct ObjectMap<T> {
+    map: HashMap<String, T>,
+    metrics: Option<Arc<Metrics>>,
+}
+impl<T> ObjectMap<T> {
+    fn get(&self, name: &str) -> Option<&T> {
+        self.map.get(name)
+    }
+    fn insert(&mut self, name: String, value: T) {
+        if self.map.insert(name, value).is_none()
+            && let Some(m) = &self.metrics
+        {
+            m.objects.add(1);
+        }
+    }
+    fn remove(&mut self, name: &str) -> Option<T> {
+        let value = self.map.remove(name);
+        if value.is_some()
+            && let Some(m) = &self.metrics
+        {
+            m.objects.sub(1);
+        }
+        value
+    }
+    fn clear(&mut self) {
+        if let Some(m) = &self.metrics {
+            m.objects.sub(self.map.len() as u64);
+        }
+        self.map.clear();
+    }
+}
+impl<T> Drop for ObjectMap<T> {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+struct Objects {
+    statements: ObjectMap<Statement>,
+    portals: ObjectMap<Portal>,
+}
+impl Objects {
+    fn new(metrics: Option<Arc<Metrics>>) -> Self {
+        Self {
+            statements: ObjectMap {
+                map: HashMap::new(),
+                metrics: metrics.clone(),
+            },
+            portals: ObjectMap {
+                map: HashMap::new(),
+                metrics,
+            },
+        }
+    }
+    fn check_statement(&self, name: &str, sql: &str) -> Result<(), WireError> {
+        if !name.is_empty() && self.statements.get(name).is_some() {
+            return Err(WireError::new("42P05", "prepared statement already exists"));
+        }
+        let bytes: usize = self
+            .statements
+            .map
+            .iter()
+            .map(|(n, s)| n.len() + s.sql.len())
+            .sum();
+        if self.statements.map.len() >= 256 || bytes + name.len() + sql.len() > 4 * codec::MAX_SQL {
+            return Err(WireError::new(
+                "54000",
+                "prepared statement budget exceeded",
+            ));
+        }
+        Ok(())
+    }
+    fn check_portal(&self, name: &str) -> Result<(), WireError> {
+        if !name.is_empty() && self.portals.get(name).is_some() {
+            return Err(WireError::new("42P03", "portal already exists"));
+        }
+        if self.portals.map.len() >= 256 {
+            return Err(WireError::new("54000", "portal count exceeded"));
+        }
+        Ok(())
+    }
+    fn check_portal_bytes(&self, name: &str, portal: &Portal) -> Result<(), WireError> {
+        fn size(p: &Portal) -> usize {
+            // Parameter AST source expansion is bounded to MAX_SQL at Bind. Charge the
+            // full allowance (including node overhead), rather than undercount literals.
+            p.statement.sql.len() + p.statement.description.len() + codec::MAX_SQL * 4
+        }
+        let bytes: usize = self
+            .portals
+            .map
+            .iter()
+            .map(|(n, p)| n.len() + size(p))
+            .sum();
+        if bytes + name.len() + size(portal) > 16 * codec::MAX_SQL {
+            return Err(WireError::new("54000", "portal byte budget exceeded"));
+        }
+        Ok(())
+    }
+}
+pub(crate) fn column_count(description: &[u8]) -> usize {
+    description
+        .get(5..7)
+        .map_or(0, |n| i16::from_be_bytes([n[0], n[1]]) as usize)
 }

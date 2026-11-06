@@ -75,7 +75,7 @@ MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > 
                                    'protocol'),
  'execute-row-limit-ignored': ('crates/nata-pgwire/src/server.rs', 'if limit != 0 {', 'if false {', 'protocol'),
  'binary-formats-accepted': ('crates/nata-pgwire/src/extended.rs',
-                             'if formats.iter().any(|f| *f != 0) {',
+                             'if formats.iter().any(|f| !matches!(*f, 0 | 1)) {',
                              'if false {',
                              'protocol'),
  'parameter-text-lost': ('crates/nata-pgwire/src/extended.rs',
@@ -116,6 +116,24 @@ MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > 
                                  '16 => match v.to_ascii_lowercase().as_str() {',
                                  '16 => match v {',
                                  'protocol')}
+
+MUTANTS.update({
+ 'rowless-limit-refused': (SERVER, 'if column_count(&p.statement.description) != 0 {', 'if true {', 'protocol'),
+ 'session-cancellation-disabled': (SERVER, '            a.cancel();', '            let _ = a;', 'reliability'),
+ 'unbounded-bridge-slow-reader': (SERVER, 'mpsc::channel(32)', 'mpsc::channel(1_100_000)', 'reliability'),
+ 'live-decoder-guard-removed': (CODEC, 'if n > self.0.len() {', 'if false {', 'reliability'),
+ 'session-registry-leaked-after-kill': (SERVER, 'registry.remove(&self.id);', 'registry.get(&self.id);', 'reliability'),
+ 'named-statement-not-stored': (SERVER, 'self.map.insert(name, value).is_none()', 'name.is_empty() && self.map.insert(name, value).is_none()', 'protocol'),
+ 'named-overwrite-allowed': (SERVER, '!name.is_empty() && self.statements.get(name).is_some()', 'false && !name.is_empty() && self.statements.get(name).is_some()', 'protocol'),
+ 'portal-survives-sync': (SERVER, "if state.transaction == b'I' {\n                objects.portals.clear();", "if false {\n                objects.portals.clear();", 'protocol'),
+ 'statement-count-cap-removed': (SERVER, 'self.statements.map.len() >= 256', 'false', 'protocol'),
+ 'statement-byte-cap-removed': (SERVER, 'bytes + name.len() + sql.len() > 4 * codec::MAX_SQL', 'false', 'protocol'),
+ 'portal-byte-cap-removed': (SERVER, 'bytes + name.len() + size(portal) > 16 * codec::MAX_SQL', 'false', 'protocol'),
+ 'deallocate-does-not-clear': (SERVER, 'objects.statements.clear();', 'objects.statements.remove("nonexistent");', 'protocol'),
+ 'binary-integer-wrong-endian': ('crates/nata-pgwire/src/binary.rs', '23 => i32::from_be_bytes(b.as_slice().try_into().map_err(|_| invalid())?)', '23 => i32::from_le_bytes(b.as_slice().try_into().map_err(|_| invalid())?)', 'protocol'),
+ 'binary-date-wrong-epoch': ('crates/nata-pgwire/src/binary.rs', 'from_ymd_opt(2000, 1, 1)', 'from_ymd_opt(1970, 1, 1)', 'protocol'),
+ 'admission-not-released-after-kill': (SERVER, 'let _permit = permit;', 'let _permit = permit; std::mem::forget(_permit);', 'reliability'),
+})
 
 def fingerprint():
     h = hashlib.sha256()

@@ -14,6 +14,7 @@ nata-exec = { path = "../nata-exec" }
 nata-parquet = { path = "../nata-parquet", default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "sync", "time", "macros"] }
 getrandom = "0.3"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 arrow-array = "60"

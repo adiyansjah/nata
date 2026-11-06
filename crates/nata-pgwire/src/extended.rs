@@ -1,4 +1,4 @@
-//! Bounded unnamed statement/portal state. Values enter the planner as literal nodes.
+//! Bounded named and unnamed statement/portal state. Values enter the planner as literal nodes.
 use crate::{codec, server::WireError};
 use nata_sql::ast::{DataType, Expr, ExprKind, Span, UnOp};
 use nata_sql::{Pos, types::SqlType};
@@ -17,10 +17,10 @@ pub(crate) struct Statement {
 pub(crate) struct Portal {
     pub statement: Statement,
     pub params: Vec<Expr>,
+    pub results: Vec<i16>,
 }
 impl Statement {
-    pub fn new(name: &str, sql: String, mut types: Vec<i32>) -> Result<Self, WireError> {
-        unnamed(name)?;
+    pub fn new(_name: &str, sql: String, mut types: Vec<i32>) -> Result<Self, WireError> {
         let tokens = Tokenizer::new(&PostgreSqlDialect {}, &sql)
             .tokenize()
             .map_err(|_| WireError::new("42601", "invalid query tokens"))?;
@@ -69,6 +69,7 @@ impl Statement {
         }
         Ok(Portal {
             statement: self.clone(),
+            results: Vec::new(),
             params: self
                 .types
                 .iter()
@@ -94,17 +95,8 @@ impl Statement {
             .collect()
     }
 }
-pub(crate) fn unnamed(name: &str) -> Result<(), WireError> {
-    if name.is_empty() {
-        Ok(())
-    } else {
-        Err(WireError::unsupported(
-            "named statements/portals; pgjdbc: prepareThreshold=0; psycopg: prepare_threshold=None",
-        ))
-    }
-}
 pub(crate) fn formats(formats: &[i16], count: usize) -> Result<(), WireError> {
-    if formats.iter().any(|f| *f != 0) {
+    if formats.iter().any(|f| !matches!(*f, 0 | 1)) {
         return Err(WireError::unsupported(
             "binary parameters/results; use text format",
         ));

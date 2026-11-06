@@ -235,3 +235,73 @@ date certification, sanitizer/leak certification or pgcli/ADBC claim. Step 4
 owns expanded hostile-sequence fuzz, contention and lifecycle checks. Revisit
 named/suspended support when item 35 requires it, or text client settings prove
 insufficient; revisit fixed shares after step-5 measurements.
+
+
+## Amendment, 2026-11-07 (step 4, local reliability and default clients)
+
+This amendment supersedes step 3's unnamed/text-only limitation, not the dialect
+or transaction contract. **Decision:** retain per-session named and unnamed
+statements and portals. Duplicate named Parse is `42P05`; duplicate named Bind
+portal is `42P03`; unnamed objects are replaced silently. Bind/Describe/Execute
+unknown lookups use `26000` (statement) / `34000` (portal). Protocol Close is
+idempotent for absent names, exactly as the
+[PostgreSQL 16 Close handler](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/tcop/postgres.c)
+does; the unknown-name errors apply to lookup operations. Closing a statement
+does not invalidate already bound portal copies. Statements survive Sync and
+simple Query until Close, DEALLOCATE or session end. Portals are destroyed at
+Sync outside BEGIN, or at COMMIT/ROLLBACK/session end. Simple Query removes the
+unnamed objects. Add `DEALLOCATE [PREPARE] name` and `DEALLOCATE ALL`: psycopg's
+normal rollback recovery clears its prepared cache using that SQL command.
+
+**Bounds:** 256 statements (including unnamed); 4 MiB aggregate stored SQL plus
+names. Budget exhaustion uses SQLSTATE **54000**, class 54 program limit exceeded.
+At most 256 portals and a separate 16 MiB charge over portal names, copied SQL,
+descriptions, and a conservative 4 MiB per portal for parameter ASTs. The byte
+budget is stricter than the portal count (at most three live small portals).
+The SQL/parameter/frame caps remain unchanged. Invalid named Parse retains its
+old statement; invalid unnamed replacement removes its old statement. Closing,
+replacement, Sync/transaction end and disconnect release storage. These default
+budgets are **reasoned**, not measured optimal capacities.
+
+**Default driver formats:** accept binary scalar parameters for bool, int2/int4/
+int8, float4/float8, UTF8 text/varchar and date; reject malformed widths/values
+with `22P03`. Support binary results for all slice-4 mapped OIDs, including exact
+base-10000 numeric and date days relative to 2000. Evaluation still uses typed
+literal ASTs; no SQL interpolation. Text remains the default result format and
+supports exact numeric parameters; binary numeric input is explicitly `0A000`.
+Float-special parameter literals remain outside the dialect. No extra SQL types
+or transactional semantics are added. Alternative: require users to disable
+preparation/binary transfer; rejected because ordinary default applications fail
+at their preparation threshold. Alternative: implement every PostgreSQL binary
+type; unnecessary for the bounded slice-4 type surface.
+
+**Execute max-rows:** retain `0A000` for nonzero values on row-producing queries.
+Rowless commands accept a limit: pgjdbc uses max-rows=1 for ROLLBACK, and those
+commands cannot require suspension. A regression test verifies rollback recovery. A paused running query
+would retain an admission, worker share and scan window between arbitrary client
+fetches. Defining idle-portal expiration and fair admission for those resources
+is beyond this step; collecting rows or silently ignoring max-rows is forbidden.
+Thus pgjdbc fetchSize > 0 with autocommit off and SQL DECLARE/FETCH/server-side
+cursors remain unsupported. Unlimited Execute on named portals works. This is a
+recorded compatibility deviation, not a claim of general PostgreSQL cursors.
+Revisit when a bounded parked-query policy is specified, or item 35 requires it.
+
+**Evidence, measured local x86-64:**
+[step 4](../../bench/results/20261107-pgwire-reliability.md) records default pgjdbc
+42.7.7 / psycopg 3.3.8 repeats, binary/text type values and NULLs, errors/positions,
+cancel and fetch refusal; seeded live-server hostile sequences, contention with
+slow file opens/reads, real child SIGKILL, healthy sessions, exact gauges and
+/proc fd/thread/RSS bounds; private-copy mutation checks and workspace gates.
+The corpus is seeded empirical evidence, not exhaustive concurrency coverage.
+**Confidence:** high for tested default-client values and named lifecycle;
+medium for sampled resource/fuzz behavior. **Not covered:** ARM64, sanitizers,
+full-domain type certification, arbitrary-width RSS bounds, R16 SF10 closure,
+TLS/auth, suspended/SQL cursors, two-CPU throughput or item 35's full client matrix.
+Step 5 must measure the streaming overhead, first-row latency and fixed worker
+shares on both architectures; no performance claim follows from functional load.
+
+**Upstream evidence and revisit-when:** the decoder panic was reported as
+[pgwire issue 481](https://github.com/sunng87/pgwire/issues/481), reproduced by the
+parent on 0.42.1 and master `12b7569` for short Parse/Bind/Describe/Execute/Close
+bodies. Revisit reuse when that fix is **released**, then rerun all R1 checks;
+a merged fix alone is insufficient. Production still has no pgwire dependency.

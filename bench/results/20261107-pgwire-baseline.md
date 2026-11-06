@@ -102,6 +102,12 @@ accepting more, so `feed` is not whole-response buffering. The measured collect-
 
 ## (iii) Seeded decoder corpus and mutants
 
+Follow-up 2026-11-07: reported upstream as
+[pgwire issue 481](https://github.com/sunng87/pgwire/issues/481). The parent
+reproduced short-body Parse/Bind/Describe/Execute/Close panics on both 0.42.1 and
+master `12b7569`. Revisit unchanged reuse after a fixed release and repeat R1.
+
+
 Seed printed: **322661912839** (`0x4b20261107`), xorshift64 `(13,7,17)`, reset for each candidate. For each of 10,000 regular cases select
 one of `Q P B D E C S H X`, 0–127 pseudorandom payload bytes, and one of lengths 4, 2, signed-max, payload+4, payload+5. Length-four cases
 truncate to the header. Startup's separate 10,000 cases remove the tag and alternate startup/cancel magic when a protocol word exists.

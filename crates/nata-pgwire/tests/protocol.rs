@@ -1,287 +1,4 @@
-use arrow_array::{
-    ArrayRef, BooleanArray, Date32Array, Decimal128Array, Float32Array, Float64Array, Int8Array,
-    Int16Array, Int32Array, Int64Array, RecordBatch, StringArray,
-};
-use nata_pgwire::{
-    codec,
-    server::{Config, Metrics, serve_listener},
-};
-use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream};
-use std::sync::{Arc, atomic::Ordering};
-use std::time::{Duration, Instant};
-
-struct Server {
-    address: SocketAddr,
-    stop: Option<tokio::sync::oneshot::Sender<()>>,
-    thread: Option<std::thread::JoinHandle<()>>,
-    metrics: Arc<Metrics>,
-}
-impl Server {
-    fn start(max: usize) -> Self {
-        let (address_tx, address_rx) = std::sync::mpsc::channel();
-        let (stop, stopped) = tokio::sync::oneshot::channel();
-        let metrics = Arc::new(Metrics::default());
-        let m = Arc::clone(&metrics);
-        let thread = std::thread::spawn(move || {
-            tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("runtime").block_on(async move {
-                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("listen");
-                let address = listener.local_addr().expect("address"); address_tx.send(address).expect("send");
-                let config = Config {listen:address, unsafe_listen:false, max_connections:max, threads:2, max_queries:2, metrics:Some(m)};
-                tokio::select! { r = serve_listener(listener,config) => panic!("server ended {r:?}"), _ = stopped => {} }
-            });
-        });
-        Self {
-            address: address_rx.recv().expect("address"),
-            stop: Some(stop),
-            thread: Some(thread),
-            metrics,
-        }
-    }
-    fn socket(&self) -> TcpStream {
-        let s = TcpStream::connect(self.address).expect("connect");
-        s.set_read_timeout(Some(Duration::from_secs(10)))
-            .expect("timeout");
-        s.set_write_timeout(Some(Duration::from_secs(10)))
-            .expect("timeout");
-        s
-    }
-    fn client(&self) -> Client {
-        Client::start(self.socket())
-    }
-}
-impl Drop for Server {
-    fn drop(&mut self) {
-        let _ = self.stop.take().expect("stop").send(());
-        self.thread.take().expect("thread").join().expect("server");
-    }
-}
-struct Client {
-    socket: TcpStream,
-    key: (i32, i32),
-    startup: Vec<u8>,
-}
-fn read(s: &mut TcpStream) -> (u8, Vec<u8>) {
-    let mut h = [0; 5];
-    s.read_exact(&mut h).expect("header");
-    let n = i32::from_be_bytes(h[1..].try_into().expect("length"));
-    assert!((4..100_000_000).contains(&n));
-    let mut b = vec![0; n as usize - 4];
-    s.read_exact(&mut b).expect("body");
-    (h[0], b)
-}
-fn startup(s: &mut TcpStream) {
-    let body = b"\0\x03\0\0user\0test\0database\0nata\0\0";
-    s.write_all(&((body.len() + 4) as i32).to_be_bytes())
-        .expect("length");
-    s.write_all(body).expect("startup");
-}
-impl Client {
-    fn start(mut socket: TcpStream) -> Self {
-        startup(&mut socket);
-        let mut tags = Vec::new();
-        let mut key = (0, 0);
-        loop {
-            let (t, b) = read(&mut socket);
-            tags.push(t);
-            match t {
-                b'K' => {
-                    key = (
-                        i32::from_be_bytes(b[..4].try_into().expect("pid")),
-                        i32::from_be_bytes(b[4..].try_into().expect("secret")),
-                    );
-                }
-                b'Z' => break,
-                b'E' => panic!("startup error: {b:?}"),
-                _ => {}
-            }
-        }
-        assert_eq!(tags, b"RSSSSSSSSKZ");
-        Self {
-            socket,
-            key,
-            startup: tags,
-        }
-    }
-    fn send_query(&mut self, q: &str) {
-        self.socket
-            .write_all(&codec::packet(b'Q', format!("{q}\0").as_bytes()).expect("packet"))
-            .expect("query");
-    }
-    fn query(&mut self, q: &str) -> Vec<(u8, Vec<u8>)> {
-        self.send_query(q);
-        self.result()
-    }
-    fn result(&mut self) -> Vec<(u8, Vec<u8>)> {
-        let mut result = Vec::new();
-        loop {
-            let m = read(&mut self.socket);
-            let end = m.0 == b'Z';
-            result.push(m);
-            if end {
-                return result;
-            }
-        }
-    }
-}
-fn tags(m: &[(u8, Vec<u8>)]) -> Vec<u8> {
-    m.iter().map(|m| m.0).collect()
-}
-fn values(m: &[(u8, Vec<u8>)]) -> Vec<Vec<Option<String>>> {
-    m.iter()
-        .filter(|m| m.0 == b'D')
-        .map(|(_, b)| {
-            let n = i16::from_be_bytes(b[..2].try_into().expect("columns"));
-            let mut at = 2;
-            (0..n)
-                .map(|_| {
-                    let len = i32::from_be_bytes(b[at..at + 4].try_into().expect("len"));
-                    at += 4;
-                    if len == -1 {
-                        None
-                    } else {
-                        let v = String::from_utf8(b[at..at + len as usize].to_vec()).expect("text");
-                        at += len as usize;
-                        Some(v)
-                    }
-                })
-                .collect()
-        })
-        .collect()
-}
-fn error_field(b: &[u8], tag: u8) -> Option<&str> {
-    b.split(|b| *b == 0)
-        .find(|v| v.first() == Some(&tag))
-        .map(|v| std::str::from_utf8(&v[1..]).expect("field"))
-}
-fn wait_until(f: impl Fn() -> bool) {
-    let until = Instant::now() + Duration::from_secs(10);
-    while !f() {
-        assert!(Instant::now() < until, "deadline");
-        std::thread::sleep(Duration::from_millis(10));
-    }
-}
-fn cancel(s: &Server, key: (i32, i32)) {
-    let mut c = s.socket();
-    let b = [
-        16i32.to_be_bytes(),
-        80877102i32.to_be_bytes(),
-        key.0.to_be_bytes(),
-        key.1.to_be_bytes(),
-    ]
-    .concat();
-    c.write_all(&b).expect("cancel");
-    let mut end = [0];
-    assert_eq!(c.read(&mut end).expect("closed cancel"), 0);
-}
-fn fixture() -> String {
-    static FILE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    FILE.get_or_init(|| {
-        let path = std::env::temp_dir().join(format!("nata-pgwire-{}.parquet", std::process::id()));
-        let columns: Vec<(&str, ArrayRef)> = vec![
-            (
-                "b",
-                Arc::new(BooleanArray::from(vec![Some(true), Some(false), None])),
-            ),
-            (
-                "ti",
-                Arc::new(Int8Array::from(vec![Some(-128), Some(127), None])),
-            ),
-            (
-                "si",
-                Arc::new(Int16Array::from(vec![Some(-32768), Some(32767), None])),
-            ),
-            (
-                "i",
-                Arc::new(Int32Array::from(vec![Some(i32::MIN), Some(i32::MAX), None])),
-            ),
-            (
-                "bi",
-                Arc::new(Int64Array::from(vec![Some(i64::MIN), Some(i64::MAX), None])),
-            ),
-            (
-                "r",
-                Arc::new(Float32Array::from(vec![
-                    Some(-0.0),
-                    Some(f32::INFINITY),
-                    None,
-                ])),
-            ),
-            (
-                "d",
-                Arc::new(Float64Array::from(vec![
-                    Some(f64::NAN),
-                    Some(f64::NEG_INFINITY),
-                    None,
-                ])),
-            ),
-            (
-                "n",
-                Arc::new(
-                    Decimal128Array::from(vec![Some(123450), Some(-1), None])
-                        .with_precision_and_scale(38, 3)
-                        .expect("decimal"),
-                ),
-            ),
-            (
-                "s",
-                Arc::new(StringArray::from(vec![
-                    Some(""),
-                    Some("secret-cell-a,b\né"),
-                    None,
-                ])),
-            ),
-            (
-                "dt",
-                Arc::new(Date32Array::from(vec![Some(0), Some(19782), None])),
-            ),
-        ];
-        let batch = RecordBatch::try_from_iter(columns).expect("batch");
-        let mut writer = parquet::arrow::ArrowWriter::try_new(
-            std::fs::File::create(&path).expect("create"),
-            batch.schema(),
-            None,
-        )
-        .expect("writer");
-        writer.write(&batch).expect("write");
-        writer.close().expect("close");
-        path.to_str().expect("path").into()
-    })
-    .clone()
-}
-fn large() -> String {
-    static FILE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    FILE.get_or_init(|| {
-        let path =
-            std::env::temp_dir().join(format!("nata-pgwire-large-{}.parquet", std::process::id()));
-        let batch = RecordBatch::try_from_iter([
-            (
-                "id",
-                Arc::new(Int64Array::from_iter_values(0..8192)) as ArrayRef,
-            ),
-            (
-                "s",
-                Arc::new(StringArray::from(vec!["x".repeat(1024); 8192])) as ArrayRef,
-            ),
-        ])
-        .expect("batch");
-        let props = parquet::file::properties::WriterProperties::builder()
-            .set_max_row_group_row_count(Some(8192))
-            .build();
-        let mut w = parquet::arrow::ArrowWriter::try_new(
-            std::fs::File::create(&path).expect("create"),
-            batch.schema(),
-            Some(props),
-        )
-        .expect("writer");
-        for _ in 0..128 {
-            w.write(&batch).expect("write");
-        }
-        w.close().expect("close");
-        path.to_str().expect("path").into()
-    })
-    .clone()
-}
+include!("support/mod.rs");
 #[test]
 fn recorded_simple_error_empty_types_nulls_and_terminate() {
     let s = Server::start(4);
@@ -563,45 +280,6 @@ fn exceptional_date_domains_and_zero_bytes_are_explicit_conversion_errors() {
     }
 }
 
-impl Client {
-    fn frame(&mut self, tag: u8, body: &[u8]) {
-        self.socket
-            .write_all(&codec::packet(tag, body).expect("packet"))
-            .expect("send");
-    }
-    fn parse(&mut self, q: &str, oids: &[i32]) {
-        let mut b = format!("\0{q}\0").into_bytes();
-        b.extend((oids.len() as i16).to_be_bytes());
-        for o in oids {
-            b.extend(o.to_be_bytes());
-        }
-        self.frame(b'P', &b);
-    }
-    fn bind(&mut self, params: &[Option<&str>], format: i16, result: i16) {
-        let mut b = b"\0\0\0\x01".to_vec();
-        b.extend(format.to_be_bytes());
-        b.extend((params.len() as i16).to_be_bytes());
-        for p in params {
-            match p {
-                None => b.extend((-1i32).to_be_bytes()),
-                Some(v) => {
-                    b.extend((v.len() as i32).to_be_bytes());
-                    b.extend(v.as_bytes());
-                }
-            }
-        }
-        b.extend(1i16.to_be_bytes());
-        b.extend(result.to_be_bytes());
-        self.frame(b'B', &b);
-    }
-    fn execute(&mut self, limit: i32) {
-        self.frame(b'E', &[vec![0], limit.to_be_bytes().to_vec()].concat());
-    }
-    fn sync(&mut self) -> Vec<(u8, Vec<u8>)> {
-        self.frame(b'S', b"");
-        self.result()
-    }
-}
 #[test]
 fn extended_recorded_sequences_and_sync_recovery() {
     let s = Server::start(4);
@@ -642,7 +320,7 @@ fn extended_recorded_sequences_and_sync_recovery() {
             c.parse("SELECT @", &[]);
         } else {
             c.parse(&q, &[23]);
-            c.bind(&[Some("7")], if stage == 1 { 1 } else { 0 }, 0);
+            c.bind(&[Some("7")], if stage == 1 { 2 } else { 0 }, 0);
             if stage == 2 {
                 c.execute(1);
             }
@@ -672,9 +350,9 @@ fn extended_recorded_sequences_and_sync_recovery() {
     assert_eq!(values(&c.sync())[0][1], Some("10".into()));
     c.frame(b'P', format!("named\0{q}\0\0\x01\0\0\0\x17").as_bytes());
     let r = c.sync();
-    assert_eq!(error_field(&r[0].1, b'C'), Some("0A000"));
+    assert_eq!(tags(&r), b"1Z");
     c.parse(&q, &[23]);
-    c.bind(&[Some("1")], 0, 1);
+    c.bind(&[Some("1")], 0, 2);
     let r = c.sync();
     assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
 }
@@ -909,7 +587,7 @@ fn startup_chatter_and_binary_payload_refusals() {
     let b = b"\0\0\0\x01\0\x01\0\x01\0\0\0\x01\xff\0\0";
     c.frame(b'B', b);
     let r = c.sync();
-    assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
+    assert_eq!(error_field(&r[1].1, b'C'), Some("22P03"));
     for (v, code) in [("1.5", "22P02"), ("2147483648", "22003")] {
         c.parse(&q, &[23]);
         c.bind(&[Some(v)], 0, 0);
@@ -922,4 +600,161 @@ fn startup_chatter_and_binary_payload_refusals() {
     c.bind(&[Some(&long)], 0, 0);
     let r = c.sync();
     assert_eq!(error_field(&r[1].1, b'C'), Some("0A000"));
+}
+
+#[test]
+fn named_lifecycle_duplicates_lookup_sync_and_budgets() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let q = format!("SELECT si FROM '{}' LIMIT 1", fixture());
+    c.parse_named("stmt", &q, &[]);
+    assert_eq!(tags(&c.sync()), b"1Z");
+    for _ in 0..10 {
+        c.bind_named("portal", "stmt");
+        c.frame(b'D', b"Pportal\0");
+        c.frame(b'E', b"portal\0\0\0\0\0");
+        assert_eq!(values(&c.sync()), vec![vec![Some("-32768".into())]]);
+    }
+    c.frame(b'D', b"Pportal\0");
+    assert_code(&c.sync(), "34000");
+    c.parse_named("stmt", &q, &[]);
+    assert_code(&c.sync(), "42P05");
+    // Duplicate failed Parse retains the old named statement.
+    c.bind_named("", "stmt");
+    c.execute(0);
+    assert_eq!(values(&c.sync()), vec![vec![Some("-32768".into())]]);
+    c.bind_named("", "absent");
+    assert_code(&c.sync(), "26000");
+    c.frame(b'D', b"Sabsent\0");
+    assert_code(&c.sync(), "26000");
+    c.frame(b'E', b"absent\0\0\0\0\0");
+    assert_code(&c.sync(), "34000");
+    c.query("BEGIN");
+    c.bind_named("p", "stmt");
+    assert_eq!(tags(&c.sync()), b"2Z");
+    c.bind_named("p", "stmt");
+    assert_code(&c.sync(), "42P03");
+    c.query("ROLLBACK");
+    c.frame(b'D', b"Pp\0");
+    assert_code(&c.sync(), "34000");
+    // Close missing objects is idempotent in PostgreSQL.
+    c.frame(b'C', b"Sabsent\0");
+    c.frame(b'C', b"Pabsent\0");
+    c.frame(b'C', b"Sstmt\0");
+    assert_eq!(tags(&c.sync()), b"333Z");
+    c.frame(b'D', b"Sstmt\0");
+    assert_code(&c.sync(), "26000");
+    c.parse(&q, &[]);
+    c.parse("SELECT 1", &[]);
+    c.bind_named("", "");
+    c.execute(0);
+    assert_eq!(values(&c.sync()), vec![vec![Some("1".into())]]);
+    c.frame(b'C', b"S\0");
+    c.sync();
+    for n in 0..256 {
+        c.parse_named(&format!("s{n}"), "SELECT 1", &[]);
+        assert_eq!(tags(&c.sync()), b"1Z");
+    }
+    c.parse_named("over", "SELECT 1", &[]);
+    assert_code(&c.sync(), "54000");
+    c.frame(b'C', b"Ss0\0");
+    c.sync();
+    c.parse_named("over", "SELECT 1", &[]);
+    assert_eq!(tags(&c.sync()), b"1Z");
+    drop(c);
+    wait_until(|| s.metrics.sessions.load(Ordering::SeqCst) == 0 && s.metrics.objects.now() == 0);
+    let mut c = s.client();
+    let long = format!("{q} /*{}*/", "x".repeat(900_000));
+    for n in 0..4 {
+        c.parse_named(&format!("s{n}"), &long, &[]);
+        assert_eq!(tags(&c.sync()), b"1Z");
+    }
+    c.parse_named("over", &long, &[]);
+    assert_code(&c.sync(), "54000");
+    // Portal budget applies even to tiny statements (conservative parameter allowance).
+    c.query("BEGIN");
+    for n in 0..3 {
+        c.bind_named(&format!("p{n}"), "s0");
+        assert_eq!(tags(&c.sync()), b"2Z");
+    }
+    c.bind_named("over", "s0");
+    assert_code(&c.sync(), "54000");
+}
+
+#[test]
+fn binary_default_driver_scalars_and_descriptions() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let q = format!("SELECT * FROM '{}'", fixture());
+    c.parse_named("types", &q, &[]);
+    c.frame(b'B', b"p\0types\0\0\0\0\0\0\x01\0\x01");
+    c.frame(b'D', b"Pp\0");
+    c.frame(b'E', b"p\0\0\0\0\0");
+    let r = c.sync();
+    assert_eq!(tags(&r), b"12TDDDCZ");
+    let desc = &r[2].1;
+    let mut at = 2;
+    for _ in 0..10 {
+        at += desc[at..].iter().position(|b| *b == 0).expect("name") + 1;
+        assert_eq!(&desc[at + 16..at + 18], b"\0\x01");
+        at += 18;
+    }
+    // Independent PostgreSQL binary representations of the first fixture row.
+    let expected = [
+        vec![1],
+        b"-128".to_vec(),
+        i16::MIN.to_be_bytes().to_vec(),
+        i32::MIN.to_be_bytes().to_vec(),
+        i64::MIN.to_be_bytes().to_vec(),
+        (-0.0f32).to_be_bytes().to_vec(),
+        f64::NAN.to_be_bytes().to_vec(),
+        vec![0, 2, 0, 0, 0, 0, 0, 3, 0, 123, 17, 148],
+        vec![],
+        (-10957i32).to_be_bytes().to_vec(),
+    ];
+    let data = &r[3].1;
+    let mut at = 2;
+    for value in expected {
+        let n = i32::from_be_bytes(data[at..at + 4].try_into().expect("length")) as usize;
+        at += 4;
+        assert_eq!(&data[at..at + n], value);
+        at += n;
+    }
+    assert_eq!(&r[5].1[2..], &[255u8; 40]);
+    let q = format!("SELECT $1 AS p FROM '{}' LIMIT 1", fixture());
+    c.parse_named("parameter", &q, &[23]);
+    c.sync();
+    for _ in 0..10 {
+        let mut b = b"\0parameter\0\0\x01\0\x01\0\x01\0\0\0\x04".to_vec();
+        b.extend(42i32.to_be_bytes());
+        b.extend(b"\0\0");
+        c.frame(b'B', &b);
+        c.execute(0);
+        assert_eq!(values(&c.sync()), vec![vec![Some("42".into())]]);
+    }
+    c.query("DEALLOCATE ALL");
+    c.frame(b'D', b"Sparameter\0");
+    assert_code(&c.sync(), "26000");
+}
+
+#[test]
+fn limited_rowless_commands_allow_jdbc_rollback_recovery() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    c.query("BEGIN");
+    let q = format!("SELECT si FROM '{}'", fixture());
+    c.parse(&q, &[]);
+    c.bind(&[], 0, 0);
+    c.execute(100);
+    assert_code(&c.sync(), "0A000");
+    c.parse("ROLLBACK", &[]);
+    c.bind(&[], 0, 0);
+    c.execute(1);
+    let r = c.sync();
+    assert_eq!(tags(&r), b"12CZ");
+    assert_eq!(r[2].1, b"ROLLBACK\0");
+    assert_eq!(r[3].1, b"I");
+    assert_eq!(values(&c.query("SELECT 1")), vec![vec![Some("1".into())]]);
+    c.frame(b'E', b"absent\0\0\0\0\x64");
+    assert_code(&c.sync(), "34000");
 }

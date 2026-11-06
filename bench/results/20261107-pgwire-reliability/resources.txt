@@ -1,0 +1,16 @@
+SLOW_READER PASS result_rows=1048576 width=1024 bytes_read=1700 produced=2678 rss_baseline_peak_kib=17840,22636 bound_delta_kib=131072
+RELIABILITY seed=322661912839 scenarios=2000
+RELIABILITY completed=250 peak_rss_kib=23976
+RELIABILITY completed=500 peak_rss_kib=24188
+RELIABILITY completed=750 peak_rss_kib=24412
+RELIABILITY completed=1000 peak_rss_kib=24428
+RELIABILITY completed=1250 peak_rss_kib=24440
+RELIABILITY completed=1500 peak_rss_kib=24448
+RELIABILITY completed=1750 peak_rss_kib=24460
+RELIABILITY completed=2000 peak_rss_kib=24464
+RELIABILITY kinds=[302, 272, 293, 305, 273, 260, 295] healthy_queries=6692
+RELIABILITY PASS baseline_fd_threads_rss=(16, 7, 22736) final_fd_threads_rss=(8, 7, 24464) peak_rss_kib=24464 elapsed=77.924360328s
+LIVE_FUZZ seed=322661912839 cases=10000
+LIVE_FUZZ PASS kinds=[831, 747, 907, 773, 855, 840, 851, 821, 823, 887, 828, 837] elapsed=69.841396544s rss_baseline_final_kib=(24552, 24560)
+BOUND PASS 64 concurrent correct queries; 64+8 socket cap; 65th startup=53300
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 150.58s

@@ -10,18 +10,27 @@ accepts SSL/GSS probes with `N`, UTF8 only, and supplies BackendKeyData for canc
 This is a local lakehouse query interface, not a PostgreSQL database or catalog.
 SQL continues to follow [dialect.md](dialect.md).
 
-Simple Query and unnamed extended Parse/Bind/Describe/Execute/Sync/Close/Flush
+Simple Query and named/unnamed extended Parse/Bind/Describe/Execute/Sync/Close/Flush
 work, including empty queries and EXPLAIN/ANALYZE. Describe statement sends
 ParameterDescription then RowDescription/NoData; Describe portal sends only
 RowDescription/NoData. Execute sends rows and CommandComplete, with no duplicate
 RowDescription. After an extended error, all messages except Terminate are ignored
-until Sync; Sync restores ReadyForQuery. Close releases the unnamed object; Sync
-releases the portal. A simple Query replaces the unnamed statement and portal.
+until Sync; Sync restores ReadyForQuery. Named statements survive Sync and simple
+Query until Close, DEALLOCATE, or disconnect. Unnamed Parse/Bind silently replace
+the corresponding object; a duplicate named statement returns `42P05`, a duplicate
+named portal `42P03`. Unknown statement lookup returns `26000`, unknown portal
+lookup `34000`. Close is idempotent even for unknown names, matching PostgreSQL.
+A simple Query destroys the unnamed statement and portal. Portals are destroyed
+at Sync in auto-commit, or at COMMIT/ROLLBACK in a compatibility transaction.
 
-Named objects, binary parameters/results and **nonzero Execute max-rows** return
-`0A000`; set fetch size to zero. Suspended portals are not implemented. Keeping
-an admission and scan window parked indefinitely would undermine the reliability
-bound; implementing suspension needs a separate bounded portal lifecycle.
+**Nonzero Execute max-rows on a row-producing query** returns `0A000`; set fetch
+size to zero. Rowless commands (SET, COMMIT/ROLLBACK) accept a limit, since they
+cannot suspend; this permits pgjdbc rollback after a fetch refusal. Suspended
+portals are not implemented. Keeping an admission, worker share and scan window
+parked between fetches needs an explicit idle-portal admission/expiry policy.
+Named wire portals work with unlimited Execute; SQL DECLARE/FETCH cursors remain
+unsupported, including psycopg server-side cursors. pgjdbc `fetchSize=100` with
+autocommit off is tested to return `0A000`, with Sync/rollback recovery.
 
 Parameters are substituted as literal AST nodes, never pasted into the query.
 Text/string OIDs 25/1043 hold raw UTF8; numeric OIDs 20/21/23/700/701/1700 accept
@@ -37,18 +46,19 @@ sending rows with false metadata. LIMIT/OFFSET accept nonnegative integer
 parameters. Up to 1,024 parameters, 1 MiB SQL, and a conservative 1 MiB aggregate
 parameter-expansion budget apply. Parameters cannot supply identifiers or paths.
 
-Driver settings for this text-only, unnamed surface:
+Default pgjdbc 42.7.7 and psycopg 3.3.8 preparation thresholds (both five) work;
+no `prepareThreshold=0`, `%t`, or `binaryTransfer=false` workaround is required.
+Binary input supports bool, int2/int4/int8, float4/float8, text/varchar and date;
+text numeric parameters support exact Decimal values (cast the result explicitly
+as above). Binary numeric **input** and float-special parameter literals remain
+`0A000`/`22P02`; psycopg's default Decimal adapter uses text. Binary output supports
+every OID in ADR 0008's slice-4 map, including numeric; NULLs stay length -1.
+Malformed binary scalar lengths/values return `22P03`; format codes other than
+0/1 return `0A000`. Smallint/float inputs retain the dialect widening above.
 
-- pgjdbc: `prepareThreshold=0&binaryTransfer=false`, default fetch size zero.
-- psycopg 3: `prepare_threshold=None`; use `%t` placeholders for text parameters
-  (default `%s` chooses binary for integers and other types); keep `binary=False`.
-- psql: `psql -X -h 127.0.0.1 -d nata -c "SELECT ... FROM 'file.parquet'"`.
-
-Defaults connect and read text results, but are **not** sufficient for repeated
-prepared/typed parameter use: pgjdbc names statements on execution five; psycopg
-automatically prepares on execution six. Named and binary requests fail clearly.
-See [ADR 0008](decisions/0008-client-protocol.md) and the
-[local client results](../bench/results/20261107-pgwire-extended.md).
+The [step 4 client results](../bench/results/20261107-pgwire-reliability.md) record
+ten executions, types/values/NULLs, positioned errors, cancel and fetch refusal.
+psql: `psql -X -h 127.0.0.1 -d nata -c "SELECT ... FROM 'file.parquet'"`.
 
 ## Session compatibility statements
 
@@ -70,6 +80,7 @@ multi-statement messages return `0A000`.
 | `SET default_transaction_isolation = 'read committed'` | read committed only |
 | `SET default_transaction_deferrable = off` | off only |
 | `SHOW <setting>` | all settings above, server_version, server_version_num, server_encoding, integer_datetimes; `SHOW TIME ZONE` also works |
+| `DEALLOCATE [PREPARE] name`, `DEALLOCATE ALL` | release prepared statements; quoted names preserve case |
 | `SELECT 1` | integer 1 (pgcli connection probe) |
 | `SELECT version()` | PostgreSQL 16.0 (Nata compatibility) |
 | `SELECT current_setting('setting')` | same setting table; literal argument only |
@@ -94,6 +105,15 @@ Default: 64 authenticated sessions, eight reserved startup/cancel slots, at most
 72 sockets, five-second total startup deadline. Startup cap 10,000 bytes; other
 frontend cap 1,114,112 including length, excluding tag. Headers are checked before
 body allocation. `--max-connections` accepts 1..=64.
+
+Per session: **256 prepared statements including unnamed**, with **4 MiB total
+stored SQL plus names**. Up to 256 portals, additionally limited by a **16 MiB
+conservative byte charge**: each portal charges its name, cloned SQL/description
+and 4 MiB for bounded parameter AST storage. This deliberately limits even small
+portals to at most three; these are protective initial limits, not capacity
+measurements. Statement/portal budget exhaustion is `54000` (program limit).
+Closing or replacing an object releases its charge immediately. A failed named
+Parse preserves the old statement; failed unnamed Parse discards its predecessor.
 
 `--threads` is the **total** CPU worker budget (default available parallelism).
 `--max-queries` defaults to that budget, must be positive and no larger than it.
@@ -129,6 +149,10 @@ is generic, never a Detail field that could carry cell data. SQLSTATEs:
 | 22012 | division by zero |
 | 22003 | numeric overflow/range |
 | 22P02 | bad cast text / malformed text parameter |
+| 22P03 | malformed binary parameter |
+| 42P05 / 42P03 | duplicate named statement / portal |
+| 26000 / 34000 | unknown statement / portal lookup |
+| 54000 | per-session statement/portal budget |
 | 0A000 | unsupported feature |
 | 57014 | cancel / send timeout (socket closed on incomplete frame) |
 | 08P01 | protocol violation |
@@ -140,4 +164,4 @@ Position is a 1-based character offset in the original query, including newlines
 RowDescription follows ADR 0008; NULL length -1 differs from empty string length
 zero. Date32 outside years 1–9999 and text with embedded zero fail explicitly.
 Query-worker logs contain session id, duration, rows and SQLSTATE, never SQL,
-cell values or cancel secrets. No TLS/auth, COPY, binary or catalog compatibility.
+cell values or cancel secrets. No TLS/auth, COPY, SQL cursors or catalog compatibility.

@@ -16,6 +16,7 @@ pub(crate) struct Response {
     pub rows: Vec<Vec<Option<String>>>,
     pub command: String,
     pub status: Vec<(String, String)>,
+    pub deallocate: Option<Option<String>>,
 }
 impl Default for State {
     fn default() -> Self {
@@ -104,7 +105,7 @@ impl State {
             .to_ascii_lowercase();
         let session = matches!(
             first.as_str(),
-            "set" | "show" | "begin" | "commit" | "rollback"
+            "deallocate" | "set" | "show" | "begin" | "commit" | "rollback"
         ) || (first == "select"
             && [
                 "version(",
@@ -180,8 +181,26 @@ impl State {
             rows: vec![],
             command: String::new(),
             status: vec![],
+            deallocate: None,
         };
         match w.as_slice() {
+            ["deallocate", _] | ["deallocate", "prepare", _] => {
+                let Token::Word(word) = group.last().expect("target") else {
+                    return Err(WireError::new("42601", "invalid prepared statement name"));
+                };
+                out.deallocate = Some(
+                    if word.quote_style.is_none() && word.value.eq_ignore_ascii_case("all") {
+                        None
+                    } else {
+                        Some(if word.quote_style.is_some() {
+                            word.value.clone()
+                        } else {
+                            word.value.to_ascii_lowercase()
+                        })
+                    },
+                );
+                out.command = "DEALLOCATE".into();
+            }
             ["begin"] | ["begin", "work"] | ["begin", "transaction"] => {
                 self.transaction = b'T';
                 out.command = "BEGIN".into();

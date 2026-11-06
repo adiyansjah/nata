@@ -20,7 +20,7 @@ pub enum Message {
         portal: String,
         statement: String,
         formats: Vec<i16>,
-        params: Vec<Option<String>>,
+        params: Vec<Option<Vec<u8>>>,
         results: Vec<i16>,
     },
     Describe(u8, String),
@@ -141,17 +141,8 @@ pub fn decode(bytes: &[u8], startup: bool) -> Result<Message> {
                         -1 => Ok(None),
                         n if n >= 0 => {
                             let bytes = c.take(n as usize)?;
-                            let format = if formats.len() == 1 {
-                                formats[0]
-                            } else {
-                                formats.get(i).copied().unwrap_or(0)
-                            };
-                            // Binary payload is opaque; the session rejects its format with 0A000.
-                            Ok(Some(if format != 0 {
-                                String::new()
-                            } else {
-                                std::str::from_utf8(bytes).map_err(|_| Invalid)?.to_owned()
-                            }))
+                            let _ = i;
+                            Ok(Some(bytes.to_vec()))
                         }
                         _ => Err(Invalid),
                     })
