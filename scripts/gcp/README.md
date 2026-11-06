@@ -81,6 +81,7 @@ runs only those 15 TLC runs, without repeating the 2 h of work that already has 
   | `IC_TLC_TIMEOUT_BIG` (4500) | seconds for one three-writer run (`three-*` and `live-3`) |
   | `IC_TLC_TIMEOUT` (2700) | seconds for every other run (as in the full job) |
   | `IC_MODEL_BUDGET` (9000) | seconds for all runs together; each run is also cut to the time left, so the budget is not overrun by a run's limit; a run that cannot start (under 30 s left) is `NOT-RUN` |
+  | `IC_MODEL_MUTANTS` (0) | 1: run the gating `model-mutants` phase after `model-full` (the full re-run after a model change, 2026-11-06) |
   | `IC_MODEL_HEAP_MB` (62% of RAM, at least 10000) | TLC heap |
 
 - **Order:** the near-complete `three-store-ser` first, then `three-rest-snap-i4` (expected to end early in a violation of I4), `live-2`,
