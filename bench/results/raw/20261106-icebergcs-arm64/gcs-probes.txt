@@ -1,0 +1,6 @@
+P1 create-only write to our bucket: HTTP 200 (expected 200)
+P2 the same create-only write again: HTTP 412 (expected 412, the precondition the commit relies on)
+P3 write to a bucket that is not ours (Google's public landsat bucket): HTTP 403 (expected 403)
+P4 create a bucket in the project: HTTP 403 (expected 403)
+P5 list the project's buckets: HTTP 403 (expected 403)
+P6 delete our probe object: HTTP 204 (expected 204)

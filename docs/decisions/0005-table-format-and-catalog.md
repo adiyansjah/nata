@@ -84,6 +84,13 @@ The commit spike runs against a product catalog with a database metastore or an 
 
 ## Revision notes
 
+- 2026-11-06, **rule 8, catalog-less commit by conditional put: allowed as an explicit opt-in on Google Cloud Storage only.** Decided by
+  the assistant under the owner's delegation of 2026-11-06, from section 14 of `bench/results/20261104-iceberg-commit.md`: on a real GCS
+  bucket the create-only write is refused the second time (HTTP 412) and the full commit suite passes (18 forced interleavings with 5 of 5
+  known-bad writers caught, 12 crash points, 6 of 6 stress seeds), and the VM identity was shown unable to write anywhere else. The default
+  stays the REST catalog. S3 and Azure are not allowed in this mode until the same suite has passed on each. Which REST catalog to certify
+  stays open (the write slice's card decides).
+
 - 2026-11-05, **accepted in part by the owner**: rules 1 to 7 (format version 2 first; conformance tested against independent readers; sound pruning; the writer refuses the truncate overflow zone; sound statistics; clustered manifests with maintenance; our own manifest decoder). **Rule 8 stays open** (catalog and commit protocol). Checks still open (verification-plan items in brackets):
   - Rule 8: retried commits: **decided by the owner on 2026-11-05: the operation token alone for now** (`Idempotency-Key` later and only where a catalog advertises its lifetime, one fresh key per commit); the probe of 2026-11-05 (by hand, development machine, section 13 of `bench/results/20261104-iceberg-commit.md`) found that Polaris 1.8.0 dedupes within a lifetime when switched on but is off by default, does not advertise the lifetime, does not compare a reused key's request, and forgets after the lifetime, so the token stays necessary [24]; a database metastore and an object-store warehouse behind the catalog (Polaris was run only as a loopback test fixture with an in-memory metastore and local-disk storage); the commit against a real object store; whether catalog-less commit by conditional put is allowed at all; equality deletes and deletion vectors are not modelled; the model is not tied to the code by a refinement check.
   - Rule 7: the decoder is a spike (`spikes/manifest-decode`). Before it is product code: all partition types (it keeps int, long, date and timestamp), resolution by field id, v1 and v3 manifests, a run on manifests written by the Java library, a timing on a settled machine, and the cross-check of each manifest's entry count against the manifest list (plain Avro has no checksum).

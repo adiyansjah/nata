@@ -465,3 +465,36 @@ shipped defaults and once with `polaris.idempotency.enabled=true` and `polaris.i
 **What it does not show.** One product, one version, one machine (not a clean VM, so nothing here is evidence in the sense of ADR 0006 rule 7), one run, one commit shape (the first snapshot of an empty table); the replay of a stored 4xx response (F12 says a deterministic 409 is stored) and two writers racing with the same key were not tried; the Java client's use of
 the header was not tried.
 
+
+## 14. GCP run `icebergcs-arm64-r2`, 2026-11-06: the catalog-less commit on a REAL Google Cloud Storage bucket: verdict PASS
+
+What ran (job `icebergcs`, `IC_MODE=gcs`, code `b29e690`, one `n4a-highcpu-8` ARM64 Spot VM, $0.006 VM time): the store commit suite of
+section 8 with its commit point, the `PutMode::Create` of `metadata/vN.metadata.json` (GCS `ifGenerationMatch=0`), in a real bucket instead
+of the local file system. The bucket is a dedicated write-test bucket (us-central1, public access prevented, uniform access, no soft delete,
+objects deleted after one day); the VM ran as a dedicated service account with no project roles and object access on that one bucket only,
+with the read-write storage scope. Manifests and data files stayed on the VM's disk (they are not the atomic operation); the checker read the
+metadata versions back from the bucket (mirrored to the local root) before every check. Each suite table has its own key prefix.
+
+Probes of the VM identity (HTTP status only, gating):
+
+| probe | expected | got |
+|---|---|---|
+| P1 create-only write to our bucket | 200 | 200 |
+| P2 the same create-only write again (the precondition the commit relies on) | 412 | 412 |
+| P3 write to a bucket that is not ours (Google's public landsat bucket) | 403 | 403 |
+| P4 create a bucket in the project | 403 | 403 |
+| P5 list the project's buckets | 403 | 403 |
+| P6 delete our probe object | 204 | 204 |
+
+Suite: 18 forced interleavings with 5 of 5 known-bad writers caught, 12 crash points, 6 of 6 stress seeds (4 to 16 writer processes, lost
+responses and requests, duplicates, SIGKILL) with no violation; `SUITE PASS`. In the informational stress with known-bad writers the checker
+flagged `bad-no-cas` 3 of 3, `bad-blind-retry` 2 of 3 and `bad-skip-validation` 3 of 3 runs; on the local file system `bad-blind-retry` had
+been flagged 0 of 3 (section 8): the real network's latency makes the race that exposes it happen. A scan found the project id nowhere in the
+results. Raw: `bench/results/raw/20261106-icebergcs-arm64/` (bucket name, project id and account address removed).
+
+The first attempt (`icebergcs-arm64`, same day, $0.006) passed the probes and then panicked at the first GCS call: object_store's GCS client
+needs a Tokio runtime and the store used a plain executor. Fixed in `b29e690` (a runtime for the remote store only; the local store is
+unchanged); raw in `first-attempt/`.
+
+What this does not show: S3 (`If-None-Match: *`) and Azure; another region; a bucket shared with other writers; the catalog-less layout read
+by another engine; manifests and data files in the bucket (only the commit point was there); one run, ARM64 only.

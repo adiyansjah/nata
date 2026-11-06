@@ -1,0 +1,33 @@
+2026-11-06T01:34:41Z
+Linux 6.1.0-54-cloud-arm64 aarch64
+Architecture:                            aarch64
+CPU(s):                                  8
+Model name:                              Neoverse-N3
+               total        used        free      shared  buff/cache   available
+Mem:              15           0          13           0           1          15
+/dev/nvme0n2     30G  622M   28G   3% /mnt/work
+git: unknown
+IC_WORK=/mnt/work/ic-gcs-work IC_TOOLS=/mnt/work/ic-gcs-work/tools
+365cab7683888b8ca5a0de23faece25d3a754a449e07baf50edc07fe54d88763  /mnt/work/src/spikes/iceberg-commit/model/IcebergCommit.tla
+a15593ad0c06d7fb0a41db53e8b14900d7e349a3bda4e1c82cf690efbae827f9  /mnt/work/src/spikes/iceberg-commit/model/MC.tla
+49ffa830c3965805bc933b0ac7ed50e325fbfd785dbd75932963524543de0f76  /mnt/work/src/spikes/iceberg-commit/Cargo.lock
+MODE gcs: the commit suite of the catalog-less store mode with the metadata versions in a real GCS bucket (objects under ic-suite/20261106-013441-e2373a, deleted by the bucket's one-day lifecycle), and the probes of what the VM's identity may do; nothing else
+PHASE gcs-config PASS (exit 0, 0s, gating=yes)
+PHASE gcs-rust-build PASS (exit 0, 41s, gating=yes)
+PHASE gcs-probes PASS (exit 0, 1s, gating=yes)
+PHASE spike-object-store-gcs FAIL (exit 101, 0s, gating=yes)
+
+---- probes of the VM identity
+P1 create-only write to our bucket: HTTP 200 (expected 200)
+P2 the same create-only write again: HTTP 412 (expected 412, the precondition the commit relies on)
+P3 write to a bucket that is not ours (Google's public landsat bucket): HTTP 403 (expected 403)
+P4 create a bucket in the project: HTTP 403 (expected 403)
+P5 list the project's buckets: HTTP 403 (expected 403)
+P6 delete our probe object: HTTP 204 (expected 204)
+---- spike: catalog-less commit on real GCS
+
+thread 'main' (6724) panicked at /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/core/src/ops/function.rs:250:5:
+there is no reactor running, must be called from the context of a Tokio 1.x runtime
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+scan: the project id appears nowhere under the results directory
+VERDICT FAIL (1 gating phase(s) failed; see the PHASE lines above and the per-phase files in /mnt/work/results/iceberg-gcs)

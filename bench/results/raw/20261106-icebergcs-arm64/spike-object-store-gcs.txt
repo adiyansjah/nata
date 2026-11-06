@@ -1,0 +1,75 @@
+
+== forced interleavings: correct writer must pass, each known-bad writer must be caught
+store    lost-update                  correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    lost-update                  bad-no-cas           expect DETECT I2      got checker: I2                  OK
+    checker says I2: snapshot 8523647896587270711 (append by w2o0): rows that must be live are not: [1000000,1000001] (2 rows) (lost update)
+    checker says I2: snapshot 9121045150738318143 (append by w3o0): rows that must be live are not: [2000000,2000001] (2 rows) (lost update)
+store    unknown-outcome              correct              expect PASS           got checker: no violation        OK
+store    unknown-outcome              bad-blind-retry      expect DETECT I5      got checker: I5                  OK
+    checker says I5: snapshot 4862925264394049999 has duplicate live rows [1000000,1000001,1000002] (3 rows): an append was committed twice
+    checker says I5: operation w1o0 committed 2 times (snapshots [7177347393307875737, 4862925264394049999])
+store    lost-request                 correct              expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    lost-request                 bad-blind-retry      expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    duplicate-request            correct              expect PASS           got checker: no violation        OK
+store    delete-then-compact          correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    delete-then-compact          bad-skip-validation  expect DETECT I2      got checker: I2                  OK
+    checker says I2: snapshot 2063812580979817293 (compact by w2o0): rows are live that should not be: [0,2,4] (3 rows) (deleted rows came back, or rows that nothing committed)
+store    compact-then-delete          correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    compact-then-delete          bad-skip-validation  expect DETECT I2      got checker: I2+I4               OK
+    checker says I2: snapshot 2063812580979817293 (delete by w2o0): rows are live that should not be: [0,2,4] (3 rows) (deleted rows came back, or rows that nothing committed)
+    checker says I4: snapshot 2063812580979817293 (delete where k=a by w2o0, serializable) still has matching live rows [0,2,4] (3 rows)
+store    phantom-serializable         correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    phantom-serializable         bad-skip-validation  expect DETECT I4      got checker: I4                  OK
+    checker says I4: snapshot 2063812580979817293 (delete where k=a by w2o0, serializable) still has matching live rows [1000000,1000001] (2 rows)
+store    phantom-snapshot-isolation   correct              expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    phantom-snapshot-isolation   bad-skip-validation  expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    append-then-compact          correct              expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    append-then-compact          bad-skip-validation  expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    unknown-then-conflict        correct              expect PASS           got checker: no violation        OK
+    (1 orphan file(s) left behind, expected after a crash or an aborted operation)
+
+== crash matrix: a writer dies at each step, the others carry on
+store    crash-append-after-plan      correct              expect PASS           got checker: no violation        OK
+store    crash-append-after-files     correct              expect PASS           got checker: no violation        OK
+    (2 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-append-after-list      correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-append-after-commit    correct              expect PASS           got checker: no violation        OK
+store    crash-delete-after-plan      correct              expect PASS           got checker: no violation        OK
+store    crash-delete-after-files     correct              expect PASS           got checker: no violation        OK
+    (2 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-delete-after-list      correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-delete-after-commit    correct              expect PASS           got checker: no violation        OK
+store    crash-compact-after-plan     correct              expect PASS           got checker: no violation        OK
+store    crash-compact-after-files    correct              expect PASS           got checker: no violation        OK
+    (2 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-compact-after-list     correct              expect PASS           got checker: no violation        OK
+    (3 orphan file(s) left behind, expected after a crash or an aborted operation)
+store    crash-compact-after-commit   correct              expect PASS           got checker: no violation        OK
+
+== stress: writer processes with lost responses/requests, duplicates, crash points and SIGKILL (correct writers: every seed must pass)
+store    stress seed 1   writers 4   ops 3 kills 1: OK  [checked 8 snapshots, 9 metadata versions, 11 journalled operations; orphan files: 19]
+store    stress seed 2   writers 8   ops 3 kills 1: OK  [checked 14 snapshots, 15 metadata versions, 21 journalled operations; orphan files: 56]
+store    stress seed 3   writers 16  ops 3 kills 1: OK  [checked 21 snapshots, 22 metadata versions, 46 journalled operations; orphan files: 221]
+store    stress seed 4   writers 4   ops 3 kills 1: OK  [checked 9 snapshots, 10 metadata versions, 11 journalled operations; orphan files: 16]
+store    stress seed 5   writers 8   ops 3 kills 1: OK  [checked 15 snapshots, 16 metadata versions, 22 journalled operations; orphan files: 64]
+store    stress seed 6   writers 16  ops 3 kills 1: OK  [checked 18 snapshots, 19 metadata versions, 43 journalled operations; orphan files: 215]
+
+== stress with the known-bad writers (informational: detection needs a race to happen; the forced scenarios above are the gate)
+store    stress bad-no-cas           the checker flagged 3 of 3 runs
+store    stress bad-blind-retry      the checker flagged 2 of 3 runs
+store    stress bad-skip-validation  the checker flagged 3 of 3 runs
+
+SUMMARY backend=store forced=18 (known-bad writers caught 5/5) crash-matrix=12 stress-correct=6/6 failures=0
+SUITE PASS
