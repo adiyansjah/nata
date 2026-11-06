@@ -87,7 +87,7 @@ The open register items on this slice's path (the scan under `nata sql`, its sch
 ## 6. Closeout (fill in when done)
 
 - Results file:
-- ADR updated (amendment or revision note), confidence and what changed: ADR 0007 written (dialect and strictness)
+- ADR updated (amendment or revision note), confidence and what changed: ADR 0007 written and accepted 2026-11-06 (step 0, before the parser work); `docs/dialect.md`
 - Benchmark added to the regression set, baseline numbers:
 - Deviations from this card, and why:
 - Spike code deleted:
