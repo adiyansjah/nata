@@ -1,0 +1,43 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded addr2line v0.27.1
+  Downloaded miniz_oxide v0.9.1
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded rustc-demangle v0.1.28
+  Downloaded getopts v0.2.24
+  Downloaded gimli v0.34.0
+  Downloaded libc v0.2.189
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test run_is_not_supported_yet ... ok
+test sql_outside_the_subset_is_not_supported_yet ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not ... FAILED
+
+failures:
+
+---- peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not stdout ----
+
+thread 'peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not' (22098) panicked at crates/nata/tests/resource_bounds.rs:317:9:
+["--threads", "4"]: peak RSS 488196 KiB is above the bound 130501 KiB (base 41680, M = 2391600 bytes, window 8): scan: files=1 row_groups=100 skipped=0 read=100 not_read=0 rows_read=2000000 rows_returned=2000000 bytes_read=229532800 columns_read=2 morsel=row-group pruning=none(no filter) files_opened=1 abandoned=0 threads=4 order=ordered window=8 peak_inflight_bytes=21670424 largest_task_bytes=3088904 peak_open_files=4 peak_footers=1 late=0 peak_rss_kib=488196
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.83s
+
+error: test failed, to rerun pass `-p nata --test resource_bounds`
+exit status: 101

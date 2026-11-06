@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/mnt/work/src/crates/nata-bench/sql-bench.py", line 137, in <module>
+    sample('files10000','scan',8,0,[nata,'scan',str(small/'*.parquet'),'--columns','l_orderkey','--csv','--threads','8','--window','16'])
+  File "/mnt/work/src/crates/nata-bench/sql-bench.py", line 44, in sample
+    p = run(cmd)
+        ^^^^^^^^
+  File "/mnt/work/src/crates/nata-bench/sql-bench.py", line 39, in run
+    raise RuntimeError(f'command failed {p.returncode}: {p.stderr.decode()[:2000]}')
+RuntimeError: command failed 1: error: /mnt/work/sql-work/small/*.parquet: cannot read the file: No such file or directory (os error 2)

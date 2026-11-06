@@ -37,8 +37,6 @@ pub fn plan_sql_with(
 }
 
 #[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod parse_tests;
 #[cfg(test)]
 mod testutil;

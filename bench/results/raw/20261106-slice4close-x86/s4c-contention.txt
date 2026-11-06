@@ -1,0 +1,25 @@
+   Compiling libc v0.2.191
+   Compiling getrandom v0.3.4
+   Compiling ahash v0.8.12
+   Compiling arrow-array v60.1.0
+   Compiling arrow-cmp v60.1.0
+   Compiling arrow-arith v60.1.0
+   Compiling arrow-select v60.1.0
+   Compiling arrow-ipc v60.1.0
+   Compiling arrow-ord v60.1.0
+   Compiling parquet v60.1.0
+   Compiling arrow-cast v60.1.0
+   Compiling nata-kernels v0.0.0 (/mnt/work/src/crates/nata-kernels)
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/mnt/work/src/crates/nata-exec)
+    Finished `release` profile [optimized] target(s) in 52.53s
+     Running tests/scenarios.rs (/mnt/work/target-ws/release/deps/scenarios-7ddb468ffa9496f0)
+
+running 1 test
+scenarios: seed 20261106, count 3000, only None (replay one with NATA_SCENARIO_SEED=20261106 NATA_SCENARIO_ONLY=<n>)
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind has been running for over 60 seconds
+scenarios run: 3000; outcome classes: [("cancel-too-late", 86), ("cancelled", 531), ("complete", 636), ("data-error", 180), ("fault-error", 326), ("fault-panic", 68), ("not-reached", 487), ("sink-failed", 451), ("sink-not-reached", 100), ("unordered-limit-with-fault", 135)]
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 332.13s

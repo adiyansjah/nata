@@ -50,7 +50,16 @@ with `psql` and pgjdbc against both; local; result file `bench/results/<date>-pg
 
 ## 5. Carried-in improvements (from `docs/improvements.md`)
 
-To be chosen when the card is accepted (the register then reflects slice 4's closeout).
+Chosen at slice 4 closeout (2026-11-07), limited to the existing query cancellation, parser stack and
+executor resource boundaries; budget at most about a quarter of this slice. No change to parts 1–4 or 6.
+
+| Register item | Taken in or deferred | Reason and bounded work | Check |
+|---|---|---|---|
+| R13 signal handling dependency | taken in: audit reuse at the session cancellation boundary | The CLI uses process-wide Ctrl-C handling; the server must cancel only the named session. Reuse the explicit query cancel token, inventory the protocol dependency tree, and document which signal hooks remain CLI-only. Keep the standard signal crate unless the inventory supplies evidence for a change. | Cancel/disconnect under contention leaves the other sessions running; unsafe inventory and the card's reliability mutants. |
+| R15 sanitizer depth safety | taken in: bounded stack-budget diagnosis and fix | Untrusted protocol SQL traverses the same parser/executor. Resolve the instrumented depth failure before exposing that path to sessions; keep the documented depth limit and defer any broad evaluator rewrite to a separate decision. If it exceeds the improvement budget, record that limit explicitly rather than expanding this slice silently. | Maximum-depth tests under ASan/TSan, ordinary tests on both CPUs, and the existing depth mutant. |
+| R16 SQL RSS bound | taken in: diagnose and repair the narrow-projection RSS gap within the existing bound | Per-session memory and slow-client backpressure use this exact executor/output path; multiplying an unexplained per-query RSS gap across 64 sessions increases risk. Profile the gap and keep an allocation/accounting fix only when it restores the existing bound; no larger K/allowance. R15 and R16 together own the carried-in budget; a broader rewrite needs a new decision. | Reproduce the SF10 RSS failure, show the fixed code passes both CPUs with default limits, and retain the unbounded-window mutant. |
+| R6b next arrow-rs release | deferred, except a dependency upgrade needed by the selected fixes | R15/R16 take priority within the improvement budget. Keep the current panic catch; upgrade only if needed by those fixes and after checking the upstream release contains the fix. `cargo search parquet --limit 1` returned 60.1.0 at closeout (2026-11-06 19:28 UTC); re-check during this slice. | Workspace, damaged-file fuzz and differential suites on both architectures; record release and upstream fix. |
+| R12 shared strict kernels; R17 nearest-double conversion; P11 vectorization | deferred to slice 5 | R17 is a Miri-exposed portability failure in the existing conversion fast path; native differential tests pass on both CPUs. Reworking arithmetic/conversions and proving kernels stays with slice 5, while this slice takes the session/stack/RSS risks within its quarter budget. Preserve the R17 failure and nearest-double contract. | Existing differential suite remains gating. |
 
 ## 6. Closeout (fill in when done)
 

@@ -1,0 +1,10 @@
+    Finished `release` profile [optimized] target(s) in 0.06s
+     Running tests/sql_reliability.rs (/mnt/work/target-ws/release/deps/sql_reliability-42f33916aaa4a912)
+
+running 1 test
+process scenarios: seed 20261106, count 2000, only None (replay: NATA_PROC_SEED=20261106 NATA_PROC_ONLY=<n>)
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process has been running for over 60 seconds
+process scenarios outcome classes: {"complete": 162, "data-error": 346, "limit": 152, "sigint-stopped": 446, "sigint-too-late": 197, "stdout-closed": 697}
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 321.56s

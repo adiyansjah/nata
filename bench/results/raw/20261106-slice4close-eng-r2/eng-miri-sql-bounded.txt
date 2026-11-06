@@ -1,0 +1,13 @@
+Fri Nov  6 19:42:12 UTC 2026
+Corrected bounded SQL phase: MIRIFLAGS=-Zmiri-env-set=NATA_PUSHDOWN_N=64
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.22s
+     Running tests/pushdown.rs (/mnt/work/target-miri/miri/x86_64-unknown-linux-gnu/debug/build/nata-sql/df21de3d86a4fe1c/out/pushdown-df21de3d86a4fe1c)
+
+running 1 test
+test pushed_conjuncts_plus_the_remaining_filter_keep_exactly_the_rows_of_the_whole_where_clause ... pushdown property: seed 20261106, 64 queries, 64 bound; 42 with a pushed conjunct, 60 with a remaining filter, 38 with both; 2560 rows, 268 kept by the WHERE clause, 23 rows skipped (an arithmetic error in the reference)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 305.05s
+
+Fri Nov  6 19:45:45 UTC 2026

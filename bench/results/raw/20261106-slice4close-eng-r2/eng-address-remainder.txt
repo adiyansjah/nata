@@ -1,0 +1,1175 @@
+   Compiling libc v0.2.191
+   Compiling getrandom v0.3.4
+   Compiling ahash v0.8.12
+   Compiling arrow-array v60.1.0
+   Compiling arrow-cmp v60.1.0
+   Compiling arrow-arith v60.1.0
+   Compiling arrow-select v60.1.0
+   Compiling arrow-ipc v60.1.0
+   Compiling arrow-ord v60.1.0
+   Compiling parquet v60.1.0
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+   Compiling arrow-cast v60.1.0
+   Compiling nata-kernels v0.0.0 (/mnt/work/src/crates/nata-kernels)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 25s
+     Running unittests src/lib.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-kernels/cca7ec5ce755791b/out/nata_kernels-cca7ec5ce755791b)
+
+running 20 tests
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/arrow_behaviour.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-kernels/71c9f741267f765b/out/arrow_behaviour-71c9f741267f765b)
+
+running 4 tests
+test arrow_decimal_mul_does_check_i128_overflow ... ok
+test arrow_rem_of_min_by_minus_one_is_zero_not_an_error ... ok
+test checked_integer_ops_report_overflow ... ok
+test arrow_decimal_add_does_not_check_the_declared_precision ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/guarded.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-kernels/0b489262a6d3673b/out/guarded-0b489262a6d3673b)
+
+running 13 tests
+test arrow_skips_null_slots_by_itself ... ok
+test failures_in_null_slots_are_not_errors ... ok
+test a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it ... ok
+test arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row ... ok
+test arrow_without_compaction_errors_on_a_row_the_guard_removed ... ok
+test the_arrow_error_kinds_map_to_the_same_categories_as_ours ... ok
+test case_as_selection_splitting_gives_the_else_value_to_guarded_rows ... ok
+test the_guard_does_not_protect_a_surviving_min_over_minus_one ... ok
+test without_the_guard_a_surviving_zero_divisor_is_an_error ... ok
+test case_guarding_minus_one_protects_the_overflow_row_only ... ok
+test every_executor_matches_the_row_by_row_reference_on_every_table_and_query ... ok
+test the_guard_removes_the_zero_divisor_rows_so_there_is_no_error ... ok
+test the_second_guard_protects_the_nested_division ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/overflow_checks.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-kernels/c6e0623ee65c145c/out/overflow_checks-c6e0623ee65c145c)
+
+running 1 test
+test an_unchecked_addition_panics_instead_of_wrapping ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/9700d7ee7bcd361b/out/nata_parquet-9700d7ee7bcd361b)
+
+running 21 tests
+test csv::tests::fields_are_quoted_like_duckdb ... ok
+test adapter::tests::only_the_expected_type_defined_order_is_usable ... ok
+test csv::tests::decimals_dates_and_blobs ... ok
+test error::tests::display_names_file_and_row_group ... ok
+test civil::tests::dates_round_trip_over_the_whole_supported_range ... ok
+test filter::tests::decimals_compare_exactly_across_scales ... ok
+test civil::tests::dates_and_timestamps_have_duckdbs_text ... ok
+test csv::tests::floats_have_duckdbs_text ... ok
+test error::tests::redact_drops_quoted_text_and_control_characters ... ok
+test filter::tests::float_order_is_duckdbs ... ok
+test adapter::tests::twos_complement_decoding ... ok
+test filter::tests::literals_are_typed_from_the_column_and_nothing_is_guessed ... ok
+test filter::tests::syntax_accepts_the_documented_forms ... ok
+test reader::tests::expanded_strings_are_not_the_requested_dictionary_type ... ok
+test filter::tests::small_integer_columns_compare_without_casting_the_literal ... ok
+test filter::tests::syntax_errors_say_what_is_wrong ... ok
+test filter::tests::plain_text_binary_and_unsigned_columns_use_unsigned_bytes_and_unsigned_numbers ... ok
+test schema::tests::arrow_types_follow_adr_0003 ... ok
+test schema::tests::unsigned_integers_are_never_pruned ... ok
+test reader::tests::parquet_errors_name_the_file_and_the_row_group_and_keep_no_quoted_text ... ok
+test stats::tests::a_reservation_counts_while_alive_and_remembers_its_high ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/adapter.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/7786f99e4f42b295/out/adapter-7786f99e4f42b295)
+
+running 15 tests
+test a_missing_statistics_block_is_no_statistic ... ok
+test a_missing_null_count_is_not_zero ... ok
+test a_missing_exactness_flag_means_not_exact ... ok
+test binary_bounds_are_bytes_in_unsigned_order ... ok
+test an_exactness_flag_per_side ... ok
+test deprecated_min_max_are_never_used ... ok
+test dates_and_timestamps ... ok
+test decimals_from_every_storage_form ... ok
+test nan_count_is_never_invented ... ok
+test exact_text_bounds_with_the_right_column_order_are_used ... ok
+test text_bounds_that_are_not_utf8_are_dropped ... ok
+test row_group_stats_of_a_real_schema_and_a_negative_row_count ... ok
+test only_the_expected_type_defined_order_gives_bounds ... ok
+test the_column_order_of_a_short_or_missing_list_is_undefined_and_never_panics ... ok
+test types_that_cannot_be_mapped_soundly_have_no_bounds ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/checksums.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/ecb4b8d98bca20cb/out/checksums-ecb4b8d98bca20cb)
+
+running 5 tests
+test page_checksums_are_opt_in ... ok
+test the_same_damage_in_a_file_without_checksums_is_a_silent_wrong_answer_in_every_build ... ok
+test a_damaged_value_in_a_page_with_a_checksum_is_an_error_naming_the_file_and_the_row_group ... ok
+test files_with_checksums_scan_to_the_expected_rows_and_match_duckdb ... ok
+test every_flipped_byte_of_the_pages_of_a_checksummed_file_is_an_error_or_harmless_with_the_check_on ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 39.19s
+
+     Running tests/differential_edge.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/40834c8dacea115d/out/differential_edge-40834c8dacea115d)
+
+running 7 tests
+test a_nan_group_is_never_proven_away_by_a_maximum ... ok
+test nulls_in_some_row_groups_only ... ok
+test bytes_are_compared_as_unsigned ... ok
+test floats_nan_zeros_infinities_and_an_all_null_group ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales has been running for over 60 seconds
+test integers_dates_timestamps_booleans has been running for over 60 seconds
+test unicode_text_with_truncated_statistics has been running for over 60 seconds
+test unicode_text_with_truncated_statistics ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales ... ok
+test integers_dates_timestamps_booleans ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 308.21s
+
+     Running tests/differential_lineitem.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/65a50ad98c57e71d/out/differential_lineitem-65a50ad98c57e71d)
+
+running 4 tests
+test filter_columns_that_are_not_projected ... ok
+test lineitem_written_by_pyarrow ... ok
+test lineitem_written_by_duckdb has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style ... ok
+test lineitem_written_by_duckdb ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 125.75s
+
+     Running tests/errors.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/d97aed25614d0c48/out/errors-d97aed25614d0c48)
+
+running 8 tests
+test types_outside_the_card_are_not_supported_yet_and_only_when_touched ... ok
+test a_damaged_row_group_is_an_error_and_later_row_groups_are_not_read ... ok
+test unreadable_files_name_the_file ... ok
+test garbage_footers_and_garbage_files ... ok
+test a_later_file_that_is_corrupt_fails_the_scan_before_any_row_is_returned ... ok
+test a_column_chunk_that_is_cut_names_the_file_and_the_row_group ... ok
+test every_truncation_of_a_valid_file_is_an_error_that_names_the_file ... ok
+test flipped_bytes_zeroed_ranges_and_cuts_never_panic_hang_or_leak_a_value ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+
+     Running tests/fuzz_files.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/9182bea49f787316/out/fuzz_files-9182bea49f787316)
+
+running 1 test
+test damaged_files_never_panic_hang_leak_or_leak_a_value has been running for over 60 seconds
+test damaged_files_never_panic_hang_leak_or_leak_a_value ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 464.55s
+
+     Running tests/late.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/ed85b83e2a14cc33/out/late-ed85b83e2a14cc33)
+
+running 13 tests
+test an_empty_file_and_a_one_row_file_scan_the_same ... ok
+test a_row_group_that_holds_fewer_rows_than_its_footer_says_is_an_error_in_both_reads ... ok
+test an_output_column_shorter_than_the_filter_column_is_an_error_in_the_late_read_never_fewer_rows ... ok
+test a_filter_that_keeps_nothing_decodes_only_the_filter_column ... ok
+test dictionary_strings_stay_dictionaries_in_both_steps ... ok
+test a_failing_read_in_either_step_is_an_error_naming_the_file_and_the_row_group ... ok
+test late_materialization_without_a_filter_is_the_default_read ... ok
+test the_filter_columns_being_decoded_in_step_1_are_counted_even_when_nothing_is_kept ... ok
+test cancel_at_every_point_leaves_nothing_behind ... ok
+test a_cancel_is_looked_at_between_the_batches_of_both_steps ... ok
+test the_decimal_and_date_columns_survive_the_selection ... ok
+test a_selective_filter_holds_no_more_in_memory_per_task ... ok
+test late_and_default_give_the_same_rows_for_every_shape ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.64s
+
+     Running tests/overflow_config.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/47bce021db6d930b/out/overflow_config-47bce021db6d930b)
+
+running 3 tests
+test our_own_arithmetic_still_panics_on_overflow ... ok
+test control_a_key_that_does_not_overflow_the_offset_is_fine_with_checks_on_or_off ... ok
+test concat_of_dictionaries_with_an_extreme_key_under_a_null_slot_does_not_panic ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/parallel.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/a6a58dd599e5f1b5/out/parallel-a6a58dd599e5f1b5)
+
+running 15 tests
+test a_task_error_never_carries_a_cell_value ... ok
+test footers_are_read_when_the_scan_reaches_the_file ... ok
+test a_closed_consumer_cancels_the_scan_and_the_error_is_the_sinks ... ok
+test a_corrupt_later_file_is_the_same_error_with_footers_ahead_and_the_earlier_rows_come_first ... ok
+test a_later_file_with_another_schema_is_found_when_the_scan_reaches_it_with_strict_schema ... ok
+test the_batch_being_filtered_is_counted_even_when_nothing_is_kept ... ok
+test footers_ahead_really_read_footers_at_the_same_time ... ok
+test unordered_parallel_output_is_the_same_multiset ... ok
+test many_small_files_hold_few_handles_and_footers ... ok
+test the_error_of_the_lowest_file_and_row_group_is_reported_for_every_thread_count ... ok
+test limit_returns_exactly_the_first_n_rows_in_ordered_mode_and_leaves_nothing_behind ... ok
+test many_small_files_with_footers_ahead_hold_the_slice_3_bounds_plus_the_footers_ahead ... ok
+test footers_ahead_give_the_serial_scan_for_every_thread_count_window_and_ahead ... ok
+test ordered_parallel_output_is_the_serial_output_for_every_thread_count_and_window ... ok
+test a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.59s
+
+     Running tests/read_leaves.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/5594031d6d85589c/out/read_leaves-5594031d6d85589c)
+
+running 2 tests
+test a_missing_or_damaged_file_is_an_error_that_names_the_file ... ok
+test the_footer_gives_names_in_file_order_with_kinds_and_reasons ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/report.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/d3620daac2ef4398/out/report-d3620daac2ef4398)
+
+running 6 tests
+test usage_errors ... ok
+test schema_differences_between_files_name_the_file ... ok
+test the_file_list_is_scanned_in_the_order_given ... ok
+test tasks_are_independent_row_group_morsels ... ok
+test the_report_counts_files_row_groups_rows_and_bytes ... ok
+test limit_stops_early_and_reports_what_was_not_read ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/scenarios.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/d7b1501882f065c2/out/scenarios-d7b1501882f065c2)
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind has been running for over 60 seconds
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 82.10s
+
+     Running tests/soundness_files.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/49d2408ff6004ca4/out/soundness_files-49d2408ff6004ca4)
+
+running 1 test
+test pruned_equals_unpruned_equals_duckdb_on_random_files_and_predicates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.77s
+
+     Running tests/special_files.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-parquet/6fc09f9005287611/out/special_files-6fc09f9005287611)
+
+running 7 tests
+test known_difference_exact_decimal_comparison_where_duckdb_errors ... ok
+test csv_text_of_every_ascii_character_and_every_byte ... ok
+test empty_and_one_row_files ... ok
+test float_text_reads_back_to_the_same_values_and_mostly_the_same_text ... ok
+test every_type_in_one_file ... ok
+test timestamps_in_milliseconds ... ok
+test all_null_columns_of_every_type ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.79s
+
+     Running unittests src/lib.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-scan/67f9532d53d01bb4/out/nata_scan-67f9532d53d01bb4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/duckdb_oracle.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-scan/17c09d8453f3ce80/out/duckdb_oracle-17c09d8453f3ce80)
+
+running 2 tests
+test the_facts_behind_the_rules_hold_in_duckdb ... ok
+test the_row_oracle_agrees_with_duckdb ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.28s
+
+     Running tests/effectiveness.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-scan/68d4ba3c310eb325/out/effectiveness-68d4ba3c310eb325)
+
+running 6 tests
+test r2_range_predicate_on_sorted_integers_skips_at_least_60_percent ... ok
+test tightness_text ... ok
+test tightness_floats ... ok
+test tightness_integers_dates_booleans_and_decimals ... ok
+test r2_year_predicate_on_sorted_dates_skips_at_least_60_percent_and_exactly_the_empty_groups ... ok
+test clustered_random_data_skips_the_disjoint_groups ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 32.23s
+
+     Running tests/rules.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-scan/8579089440611cfc/out/rules-8579089440611cfc)
+
+running 35 tests
+test all_null_with_bounds_is_a_contradiction_and_kept ... ok
+test contradictory_statistics_are_kept ... ok
+test binary_increment_skips_trailing_ff ... ok
+test all_null_row_group_with_each_operator ... ok
+test decimal_extremes_and_validation ... ok
+test empty_row_group_is_skipped_for_every_predicate ... ok
+test decimal_rescaling_does_not_overflow ... ok
+test decimal_literal_with_more_fraction_digits_than_the_column ... ok
+test float32_columns_compare_as_the_double_they_widen_to ... ok
+test float_nan_count_above_the_row_count_is_contradictory ... ok
+test float_group_without_nan_rows ... ok
+test float_infinities_are_ordinary_numbers ... ok
+test float_group_with_unknown_nan_rows ... ok
+test int32_column_with_wide_literals_is_compared_exactly ... ok
+test integer_extremes_do_not_overflow ... ok
+test missing_statistics_never_skip ... ok
+test is_null_and_is_not_null_use_the_null_count ... ok
+test integer_boundaries_of_each_operator ... ok
+test one_provably_empty_term_skips_the_conjunction ... ok
+test nan_literal ... ok
+test one_sided_statistics_are_used_on_their_side_only ... ok
+test statistics_without_a_null_count_still_prune_comparisons ... ok
+test skip_reason_is_out_of_range ... ok
+test one_row_group ... ok
+test nan_in_the_bounds_is_not_trusted ... ok
+test text_order_is_by_bytes_for_non_ascii ... ok
+test text_truncated_at_a_character_boundary_is_usable ... ok
+test text_with_exact_bounds_is_compared_bytewise ... ok
+test truncated_maximum_that_cannot_be_used ... ok
+test timestamps_and_booleans ... ok
+test utf8_bound_from_bytes_refuses_a_cut_character ... ok
+test unknown_column_unsupported_type_and_mismatched_literal_are_kept ... ok
+test year_range_on_dates ... ok
+test truncated_bounds_are_bounds_only ... ok
+test zeros_are_equal_whatever_their_sign ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/soundness.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-scan/95e2c0b657d8cb61/out/soundness-95e2c0b657d8cb61)
+
+running 7 tests
+test control_missing_bound_as_zero_is_rejected ... ok
+test control_nan_trusting_reference_is_rejected ... ok
+test control_nan_blind_reader_is_rejected ... ok
+test control_truncated_as_exact_reader_is_rejected ... ok
+test control_missing_null_count_as_zero_is_rejected ... ok
+test generator_reaches_the_hard_situations ... ok
+test can_skip_is_sound_against_a_row_by_row_oracle ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.59s
+
+     Running unittests src/lib.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sched/17981b8fa4e0e73c/out/nata_sched-17981b8fa4e0e73c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/facade.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sched/782787d8e8c0237c/out/facade-782787d8e8c0237c)
+
+running 1 test
+test only_the_facade_names_std_synchronisation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/loom_sched.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sched/961b5f36b7bda258/out/loom_sched-961b5f36b7bda258)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sched.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sched/98290abbc71d9561/out/sched-98290abbc71d9561)
+
+running 24 tests
+test a_panic_in_the_sink_still_joins_every_worker ... ok
+test a_file_that_cannot_be_opened_has_its_place_in_the_order ... ok
+test a_later_file_that_is_opened_first_waits_for_the_earlier_one ... ok
+test a_panic_in_a_task_is_an_error_not_a_hang ... ok
+test a_sink_error_cancels_everything_and_wins_over_a_task_error ... ok
+test a_run_with_no_files_and_one_with_empty_files_finish ... ok
+test an_error_after_a_satisfied_limit_is_never_reported ... ok
+test an_error_cancels_the_tasks_above_it_even_while_a_lower_task_is_still_running ... ok
+test a_file_that_cannot_be_opened_has_its_place_in_the_order_with_footers_ahead ... ok
+test a_limit_with_footers_ahead_opens_few_files_and_leaves_nothing_behind ... ok
+test an_external_cancel_with_footers_pending_joins_everyone ... ok
+test a_worker_waiting_for_tasks_is_woken_when_the_opening_of_a_file_ends ... ok
+test the_error_of_a_lower_task_wins_over_a_file_that_cannot_be_opened ... ok
+test cancel_from_outside_reaches_blocked_tasks_a_blocked_consumer_and_idle_workers ... ok
+test a_slow_early_task_does_not_make_the_reorder_buffer_grow ... ok
+test unordered_output_is_the_same_multiset ... ok
+test footers_are_opened_at_the_same_time_only_when_ahead_allows ... ok
+test unordered_output_with_footers_ahead_is_the_same_multiset ... ok
+test a_limit_stops_after_exactly_the_first_k_results_and_leaves_nothing_behind ... ok
+test a_slow_consumer_never_has_more_than_a_window_of_results_alive ... ok
+test footers_ahead_do_not_open_the_files_all_at_once ... ok
+test ordered_output_is_the_sequential_order_for_every_thread_count_and_window ... ok
+test the_error_of_the_lowest_task_wins_whoever_is_first ... ok
+test with_footers_ahead_the_ordered_output_is_still_the_sequential_order ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.59s
+
+     Running unittests src/lib.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6)
+
+running 16 tests
+test glob::tests::a_pattern_without_glob_characters_is_one_path ... ok
+test glob::tests::segments_match_like_a_shell ... ok
+test parse_tests::a_tree_node_is_a_number_with_its_text ... ok
+test parse_tests::integer_division_is_read_as_its_own_operator_and_a_slash_pair_with_a_space_is_not ... ok
+test parse_tests::constructs_the_crate_hides_are_refused ... ok
+test parse_tests::not_supported_errors_name_the_construct_at_its_position ... ok
+test parse_tests::a_prefix_operator_after_a_value_is_binary_and_does_not_count_as_nesting ... ok
+test parse_tests::numbers_with_separators_or_suffixes_are_refused_at_the_literal ... ok
+test parse_tests::the_expression_positions_are_the_first_character_of_the_construct ... ok
+test parse_tests::positions_are_one_based_lines_and_characters ... ok
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==301996==ERROR: AddressSanitizer: stack-overflow on address 0x7ba988629220 (pc 0x55d0a5dba92f bp 0x7ba98862bfb0 sp 0x7ba988629220 T116)
+    #0 0x55d0a5dba92f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1892f) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #1 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #2 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #3 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #4 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #5 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #6 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #7 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #8 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #9 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #10 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #11 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #12 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #13 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #14 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #15 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #16 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #17 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #18 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #19 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #20 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #21 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #22 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #23 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #24 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #25 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #26 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #27 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #28 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #29 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #30 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #31 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #32 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #33 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #34 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #35 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #36 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #37 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #38 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #39 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #40 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #41 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #42 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #43 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #44 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #45 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #46 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #47 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #48 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #49 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #50 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #51 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #52 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #53 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #54 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #55 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #56 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #57 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #58 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #59 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #60 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #61 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #62 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #63 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #64 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #65 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #66 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #67 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #68 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #69 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #70 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #71 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #72 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #73 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #74 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #75 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #76 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #77 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #78 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #79 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #80 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #81 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #82 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #83 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #84 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #85 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #86 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #87 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #88 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #89 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #90 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #91 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #92 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #93 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #94 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #95 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #96 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #97 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #98 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #99 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #100 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #101 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #102 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #103 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #104 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #105 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #106 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #107 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #108 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #109 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #110 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #111 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #112 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #113 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #114 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #115 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #116 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #117 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #118 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #119 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #120 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #121 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #122 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #123 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #124 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #125 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #126 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #127 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #128 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #129 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #130 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #131 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #132 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #133 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #134 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #135 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #136 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #137 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #138 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #139 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #140 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #141 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #142 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #143 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #144 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #145 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #146 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #147 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #148 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #149 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #150 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #151 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #152 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #153 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #154 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #155 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #156 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #157 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #158 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #159 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #160 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #161 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #162 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #163 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #164 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #165 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #166 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #167 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #168 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #169 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #170 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #171 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #172 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #173 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #174 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #175 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #176 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #177 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #178 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #179 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #180 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #181 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #182 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #183 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #184 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #185 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #186 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #187 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #188 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #189 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #190 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #191 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #192 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #193 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #194 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #195 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #196 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #197 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #198 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #199 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #200 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #201 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #202 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #203 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #204 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #205 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #206 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #207 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #208 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #209 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #210 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #211 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #212 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #213 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #214 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #215 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #216 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #217 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #218 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #219 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #220 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #221 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #222 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #223 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #224 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #225 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #226 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #227 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #228 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #229 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #230 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #231 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #232 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #233 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #234 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #235 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #236 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #237 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #238 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #239 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #240 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #241 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #242 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #243 0x55d0a5d47364  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xaa5364) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #244 0x55d0a5dbd52b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1b52b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #245 0x55d0a5de0a29  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb3ea29) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #246 0x55d0a5dedd97  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb4bd97) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+
+SUMMARY: AddressSanitizer: stack-overflow (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xb1892f) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+Thread T116 created by T114 here:
+    #0 0x55d0a59c4971  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x722971) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #1 0x55d0a672aa22  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x1488a22) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #2 0x55d0a5a99863  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7f7863) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #3 0x55d0a5a4fd4b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7add4b) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #4 0x55d0a5b75590  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x8d3590) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #5 0x55d0a5a8e338  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7ec338) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #6 0x55d0a5c135bd  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9715bd) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #7 0x55d0a5c17cca  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x975cca) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #8 0x55d0a5a8d697  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7eb697) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #9 0x55d0a5b72ae0  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x8d0ae0) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #10 0x55d0a5a532f9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7b12f9) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #11 0x55d0a5ada6d5  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x8386d5) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #12 0x55d0a5aee057  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x84c057) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #13 0x55d0a5c14ebd  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x972ebd) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #14 0x55d0a5c17cca  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x975cca) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #15 0x55d0a5a9daef  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7fbaef) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #16 0x55d0a5bb30bd  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9110bd) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #17 0x55d0a59def26  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x73cf26) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+
+Thread T114 created by T25 here:
+    #0 0x55d0a59c4971  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x722971) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #1 0x55d0a672aa22  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x1488a22) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #2 0x55d0a5a95c7a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7f3c7a) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #3 0x55d0a5a4e53a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7ac53a) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #4 0x55d0a5a4f46c  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7ad46c) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #5 0x55d0a5a5cfe2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x7bafe2) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #6 0x55d0a5bf08e6  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x94e8e6) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #7 0x55d0a5d01fd5  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa5ffd5) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #8 0x55d0a5d07fb1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa65fb1) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #9 0x55d0a5c5d518  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9bb518) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #10 0x55d0a5d007a4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa5e7a4) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #11 0x55d0a5d01d86  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa5fd86) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #12 0x55d0a5d07fb1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa65fb1) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #13 0x55d0a66e81d0  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x14461d0) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #14 0x55d0a59def26  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x73cf26) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+
+Thread T25 created by T0 here:
+    #0 0x55d0a59c4971  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x722971) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #1 0x55d0a672aa22  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x1488a22) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #2 0x55d0a5d01004  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa5f004) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #3 0x55d0a5ce6eae  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0xa44eae) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #4 0x55d0a5c5f811  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9bd811) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #5 0x55d0a5c56ea7  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9b4ea7) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #6 0x55d0a5c7ed7d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9dcd7d) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #7 0x55d0a5c5cda5  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x9bada5) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #8 0x55d0a5b1a2c2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x8782c2) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #9 0x55d0a6711811  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x146f811) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #10 0x55d0a672db2f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x148bb2f) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #11 0x55d0a5b4188f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x89f88f) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+    #12 0x55d0a5b1a35d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6+0x87835d) (BuildId: 7257306e40059d33732e6fd74d247e1f861cde01)
+
+==301996==ABORTING
+error: test failed, to rerun pass `-p nata-sql --lib`
+
+Caused by:
+  process didn't exit successfully: `/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/c3805ba6ca4692e6/out/nata_sql-c3805ba6ca4692e6` (exit status: 1)
+note: test exited abnormally; to see the full output pass --no-capture to the harness.
+     Running tests/dialect.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/7ebe4308737dece5/out/dialect-7ebe4308737dece5)
+
+running 39 tests
+test s1_a_glob_whose_later_file_has_another_schema_binds_and_the_scan_finds_the_file ... ok
+test s2_a_reserved_word_needs_quotes_to_be_a_name ... ok
+test s1_the_binder_reads_the_footer_of_the_first_file_only_and_the_other_files_are_not_looked_at ... ok
+test s2_an_unquoted_identifier_is_folded_to_lower_case ... ok
+test s1_all_the_files_of_a_glob_must_have_the_same_schema_and_the_first_differing_file_is_named ... ok
+test s2_two_output_columns_may_have_the_same_name ... ok
+test s2_an_alias_needs_as_names_an_output_column_and_cannot_be_used_in_the_same_select_or_where ... ok
+test s2_a_quoted_identifier_is_exact_and_case_sensitive ... ok
+test s1_statement_forms_and_the_explain_modes ... ok
+test s2_star_expands_to_every_column_in_file_order_and_an_unsupported_column_is_an_error_only_when_touched ... ok
+test s1_what_is_not_yet_supported_names_the_construct_at_its_position ... ok
+test s3_a_null_whose_type_nothing_gives_is_not_supported_yet ... ok
+test s3_there_is_no_float_literal_syntax ... ok
+test s4_an_integer_meets_a_decimal_as_an_exact_decimal ... ok
+test s3_strings_dates_booleans ... ok
+test s3_integer_literals_take_the_smallest_of_integer_and_bigint_then_a_decimal_up_to_38_digits ... ok
+test s4_unary_minus_binds_tighter_than_the_cast_operators_of_multiplication ... ok
+test s4_only_division_of_integers_is_a_decimal ... ok
+test s3_null_takes_the_type_its_context_needs ... ok
+test s3_decimal_literals_are_exact_from_their_digits ... ok
+test s4_integer_arithmetic_stays_integer_in_the_wider_type ... ok
+test s5_between_is_two_comparisons_with_the_type_rules_of_both ... ok
+test s5_floats_are_not_compared_with_decimals_and_the_integer_case_is_not_specified ... ok
+test s4_decimals_with_floats_and_dates_in_arithmetic ... ok
+test s5_the_logic_operators_need_booleans ... ok
+test s5_in_takes_literals_of_a_comparable_type ... ok
+test s6_case_results_that_cannot_be_one_type_are_bind_errors ... ok
+test s5_both_sides_of_a_comparison_have_one_type_or_mix_integers_and_decimals ... ok
+test s5_no_implicit_conversion_between_strings_numbers_and_dates ... ok
+test s6_case_results_have_one_type_or_widen_integers_and_decimals ... ok
+test s4_precedence_from_tightest_to_loosest ... ok
+test s6_casts_the_page_does_not_allow ... ok
+test s8_every_error_has_a_class_a_message_and_a_one_based_position ... ok
+test s7_limit_and_offset_take_non_negative_integer_literals ... ok
+test s9_the_differences_from_duckdb_each_have_a_test ... ok
+test s8_an_unknown_column_suggests_the_closest_name_within_an_edit_distance_of_2 ... ok
+test s6_cast_targets_and_the_x_colon_colon_type_form ... ok
+test s4_decimal_result_types_follow_the_tables_of_decimal_rules ... ok
+test s8_the_limits_are_positioned_errors_before_parsing ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+     Running tests/golden.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/a51352c332d16f87/out/golden-a51352c332d16f87)
+
+running 1 test
+test the_plans_match_the_golden_file ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/limits.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c)
+
+running 4 tests
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==302920==ERROR: AddressSanitizer: stack-overflow on address 0x7bb6600bac40 (pc 0x555ba1f725ab bp 0x7bb6600bb1b0 sp 0x7bb6600bac20 T15)
+    #0 0x555ba1f725ab  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaee5ab) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #1 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #2 0x555ba1fa5a77  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21a77) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #3 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #4 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #5 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #6 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #7 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #8 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #9 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #10 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #11 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #12 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #13 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #14 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #15 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #16 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #17 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #18 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #19 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #20 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #21 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #22 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #23 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #24 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #25 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #26 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #27 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #28 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #29 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #30 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #31 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #32 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #33 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #34 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #35 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #36 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #37 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #38 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #39 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #40 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #41 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #42 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #43 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #44 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #45 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #46 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #47 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #48 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #49 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #50 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #51 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #52 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #53 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #54 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #55 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #56 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #57 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #58 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #59 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #60 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #61 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #62 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #63 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #64 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #65 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #66 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #67 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #68 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #69 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #70 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #71 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #72 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #73 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #74 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #75 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #76 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #77 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #78 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #79 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #80 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #81 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #82 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #83 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #84 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #85 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #86 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #87 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #88 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #89 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #90 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #91 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #92 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #93 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #94 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #95 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #96 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #97 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #98 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #99 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #100 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #101 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #102 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #103 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #104 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #105 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #106 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #107 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #108 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #109 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #110 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #111 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #112 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #113 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #114 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #115 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #116 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #117 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #118 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #119 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #120 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #121 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #122 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #123 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #124 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #125 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #126 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #127 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #128 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #129 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #130 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #131 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #132 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #133 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #134 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #135 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #136 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #137 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #138 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #139 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #140 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #141 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #142 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #143 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #144 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #145 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #146 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #147 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #148 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #149 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #150 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #151 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #152 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #153 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #154 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #155 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #156 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #157 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #158 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #159 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #160 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #161 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #162 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #163 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #164 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #165 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #166 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #167 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #168 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #169 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #170 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #171 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #172 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #173 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #174 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #175 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #176 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #177 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #178 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #179 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #180 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #181 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #182 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #183 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #184 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #185 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #186 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #187 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #188 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #189 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #190 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #191 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #192 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #193 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #194 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #195 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #196 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #197 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #198 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #199 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #200 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #201 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #202 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #203 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #204 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #205 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #206 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #207 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #208 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #209 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #210 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #211 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #212 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #213 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #214 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #215 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #216 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #217 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #218 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #219 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #220 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #221 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #222 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #223 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #224 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #225 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #226 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #227 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #228 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #229 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #230 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #231 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #232 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #233 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #234 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #235 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #236 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #237 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #238 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #239 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #240 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #241 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #242 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #243 0x555ba1eff044  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa7b044) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #244 0x555ba1f7520b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaf120b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #245 0x555ba1f98709  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb14709) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #246 0x555ba1fa5bc9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xb21bc9) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+
+SUMMARY: AddressSanitizer: stack-overflow (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xaee5ab) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+Thread T15 created by T14 here:
+    #0 0x555ba1baa451  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x726451) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #1 0x555ba28de7b2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x145a7b2) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #2 0x555ba1ccca4f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x848a4f) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #3 0x555ba1e7e47b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x9fa47b) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #4 0x555ba1d25262  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x8a1262) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #5 0x555ba1eaaad1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa26ad1) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #6 0x555ba1ecaead  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa46ead) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #7 0x555ba1ec9abc  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa45abc) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #8 0x555ba1ecad8a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa46d8a) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #9 0x555ba1ea9e6a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0xa25e6a) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #10 0x555ba1d22812  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x89e812) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #11 0x555ba1cc788d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x84388d) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #12 0x555ba1cc7ad4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x843ad4) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #13 0x555ba1bfdaac  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x779aac) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #14 0x555ba1bfb090  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x777090) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #15 0x555ba1c03ab3  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77fab3) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #16 0x555ba1bfadd7  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x776dd7) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #17 0x555ba1bfb03a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77703a) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #18 0x555ba1bfc4bd  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x7784bd) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #19 0x555ba1c0347d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77f47d) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #20 0x555ba1bc4a06  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x740a06) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+
+Thread T14 created by T4 here:
+    #0 0x555ba1baa451  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x726451) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #1 0x555ba28de7b2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x145a7b2) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #2 0x555ba1bfbc42  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x777c42) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #3 0x555ba1bf620a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77220a) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #4 0x555ba1bf641c  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77241c) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #5 0x555ba1bfe042  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77a042) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #6 0x555ba1c002f4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77c2f4) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #7 0x555ba1bfd7c6  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x7797c6) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #8 0x555ba1cb2175  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x82e175) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #9 0x555ba1cb8151  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x834151) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #10 0x555ba1c0d6b8  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x7896b8) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #11 0x555ba1cb0944  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x82c944) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #12 0x555ba1cb1f26  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x82df26) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #13 0x555ba1cb8151  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x834151) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #14 0x555ba289dd50  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x1419d50) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #15 0x555ba1bc4a06  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x740a06) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+
+Thread T4 created by T0 here:
+    #0 0x555ba1baa451  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x726451) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #1 0x555ba28de7b2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x145a7b2) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #2 0x555ba1cb11a4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x82d1a4) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #3 0x555ba1c9704e  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x81304e) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #4 0x555ba1c0f9b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x78b9b1) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #5 0x555ba1c07047  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x783047) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #6 0x555ba1c2ef1d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x7aaf1d) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #7 0x555ba1c0cf45  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x788f45) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #8 0x555ba1bfdf42  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x779f42) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #9 0x555ba28c63d1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x14423d1) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #10 0x555ba28e0d2f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x145cd2f) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #11 0x555ba1bf96af  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x7756af) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+    #12 0x555ba1c030ad  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c+0x77f0ad) (BuildId: 978a6494304c1d2a18ce59489a69b38db1e1aa72)
+
+==302920==ABORTING
+error: test failed, to rerun pass `-p nata-sql --test limits`
+
+Caused by:
+  process didn't exit successfully: `/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/ccf18052e3116b6c/out/limits-ccf18052e3116b6c` (exit status: 1)
+note: test exited abnormally; to see the full output pass --no-capture to the harness.
+     Running tests/pushdown.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/d5c4e855c3ace647/out/pushdown-d5c4e855c3ace647)
+
+running 1 test
+test pushed_conjuncts_plus_the_remaining_filter_keep_exactly_the_rows_of_the_whole_where_clause ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.29s
+
+     Running tests/real_files.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-sql/2c1e88a9ffdac822/out/real_files-2c1e88a9ffdac822)
+
+running 5 tests
+test missing_corrupt_and_empty_sources_are_errors_with_a_position ... ok
+test a_later_file_with_an_extra_column_that_the_query_does_not_read_is_still_a_different_schema ... ok
+test a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error ... ok
+test a_glob_is_expanded_in_file_order_and_the_pushed_filter_drives_the_real_scan ... ok
+test the_front_end_plans_in_well_under_a_millisecond ... FAILED
+
+failures:
+
+---- the_front_end_plans_in_well_under_a_millisecond stdout ----
+plan_sql median over 200 runs (this build): 1.84126ms
+
+thread 'the_front_end_plans_in_well_under_a_millisecond' (313954) panicked at crates/nata-sql/tests/real_files.rs:281:5:
+median 1.84126ms
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    the_front_end_plans_in_well_under_a_millisecond
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+error: test failed, to rerun pass `-p nata-sql --test real_files`
+error: 3 targets failed:
+    `-p nata-sql --lib`
+    `-p nata-sql --test limits`
+    `-p nata-sql --test real_files`
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/mnt/work/src/crates/nata-exec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.17s
+     Running tests/exec.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/04339bfbd58b0841/out/exec-04339bfbd58b0841)
+
+running 19 tests
+test an_empty_result_has_a_header_and_no_rows ... ok
+test a_query_without_a_column_to_read_still_counts_rows ... ok
+test a_limit_shields_the_rows_beyond_it_from_projection_errors_but_not_the_filter ... ok
+test a_limit_stops_the_scan_and_the_report_says_how_far_it_got ... ok
+test between_and_in_use_three_valued_logic ... ok
+test a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter ... ok
+test case_evaluates_only_the_branch_a_row_takes ... ok
+test errors_quote_the_query_and_never_a_cell_value ... ok
+test casts_between_text_and_numbers ... ok
+test errors_are_raised_only_for_selected_valid_rows ... ok
+test floats_compare_with_nan_above_everything_and_negative_zero_equal_to_zero ... ok
+test the_files_of_a_glob_are_read_in_name_order ... ok
+test min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division ... ok
+test integer_arithmetic_is_checked_against_the_type ... ok
+test decimals_are_exact_and_follow_the_result_types_of_the_rules_page ... ok
+test rows_come_in_file_order_for_any_thread_count_and_window ... ok
+test three_valued_logic_keeps_a_row_only_when_the_condition_is_true ... ok
+test strings_dates_and_booleans ... ok
+test a_chain_of_10000_terms_is_evaluated_on_a_big_stack ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.19s
+
+     Running tests/scenarios.rs (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/029b52eedc0de4fd/out/scenarios-029b52eedc0de4fd)
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.43s

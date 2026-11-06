@@ -1,0 +1,31 @@
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::three_valued_and_or ... ok
+test num::tests::decimals_become_the_nearest_double ... FAILED
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+
+failures:
+
+---- num::tests::decimals_become_the_nearest_double stdout ----
+
+thread 'num::tests::decimals_become_the_nearest_double' (1007) panicked at crates/nata-exec/src/num.rs:309:9:
+assertion `left == right` failed
+  left: 1.500000000000001
+ right: 1.5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+note: in Miri, you may have to set `MIRIFLAGS=-Zmiri-env-forward=RUST_BACKTRACE` for the environment variable to have an effect
+
+
+failures:
+    num::tests::decimals_become_the_nearest_double
+
+test result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.88s
+
+error: test failed, to rerun pass `-p nata-exec --lib`
+exit status: 101

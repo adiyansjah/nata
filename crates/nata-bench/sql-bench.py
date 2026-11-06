@@ -23,6 +23,8 @@ out.mkdir(parents=True, exist_ok=True)
 # A preempted step can restart against its old scratch/results directory.
 shutil.rmtree(work/'small', ignore_errors=True)
 (work/'sorted.parquet').unlink(missing_ok=True)
+for name in ['medians.csv','summary.md','limits.txt']:
+    (out/name).unlink(missing_ok=True)
 for name in ['settle.txt','reports.txt']:
     (out/name).write_text('')
 root = Path(__file__).resolve().parents[2]

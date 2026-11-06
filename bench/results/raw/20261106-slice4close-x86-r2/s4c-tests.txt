@@ -1,0 +1,243 @@
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running unittests src/main.rs (/mnt/work/target-ws/release/deps/nata-e3fea7f963dc18bd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (/mnt/work/target-ws/release/deps/cli-db3a517d32829190)
+
+running 2 tests
+test run_is_not_supported_yet ... ok
+test sql_outside_the_subset_is_not_supported_yet ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/resource_bounds.rs (/mnt/work/target-ws/release/deps/resource_bounds-7c791c298b815abe)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.53s
+
+     Running tests/scan_cli.rs (/mnt/work/target-ws/release/deps/scan_cli-be3df4b98d5be5a2)
+
+running 6 tests
+test page_checksums_of_the_binary_are_opt_in ... ok
+test scan_prints_csv_on_stdout_and_the_report_on_stderr ... ok
+test limit_columns_and_default_columns ... ok
+test errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_zero ... ok
+test a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_row_group ... ok
+test count_equals_the_number_of_csv_rows ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/sql_cli.rs (/mnt/work/target-ws/release/deps/sql_cli-807ea9dbcb85f99d)
+
+running 12 tests
+test a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_scan_reaches_it ... ok
+test csv_and_the_aligned_table ... ok
+test exit_codes_and_the_rendering_of_errors ... ok
+test errors_never_carry_a_cell_value ... ok
+test rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so ... ok
+test the_query_can_come_from_stdin ... ok
+test explain_and_explain_analyze_have_golden_output ... ok
+test every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet ... ok
+test a_closed_stdout_ends_the_query_quietly_with_exit_code_zero ... ok
+test missing_truncated_and_damaged_files_are_errors_naming_the_file ... ok
+test the_deepest_queries_the_parser_allows_run_in_the_process ... ok
+test ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130 ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.28s
+
+     Running tests/sql_reliability.rs (/mnt/work/target-ws/release/deps/sql_reliability-42f33916aaa4a912)
+
+running 1 test
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.65s
+
+     Running tests/sql_resource_bounds.rs (/mnt/work/target-ws/release/deps/sql_resource_bounds-7f23b40017e0d9f5)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operators_above_the_scan ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.25s
+
+     Running unittests src/lib.rs (/mnt/work/target-ws/release/deps/nata_exec-d9fbdf1c40c1c013)
+
+running 14 tests
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::three_valued_and_or ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/deep.rs (/mnt/work/target-ws/release/deps/deep-51d24bb3e28604b3)
+
+running 4 tests
+test a_chain_of_10001_terms_and_1001_levels_are_still_positioned_errors_not_crashes ... ok
+test explain_and_explain_analyze_of_the_deepest_queries_run_on_a_2_mb_thread ... ok
+test nesting_of_1000_levels_is_evaluated_on_a_2_mb_thread_for_each_construct ... ok
+test an_operator_chain_of_10000_terms_is_evaluated_on_a_2_mb_thread_for_each_operator ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.19s
+
+     Running tests/exec.rs (/mnt/work/target-ws/release/deps/exec-82faa0c26a662ae8)
+
+running 19 tests
+test a_query_without_a_column_to_read_still_counts_rows ... ok
+test an_empty_result_has_a_header_and_no_rows ... ok
+test a_limit_shields_the_rows_beyond_it_from_projection_errors_but_not_the_filter ... ok
+test a_limit_stops_the_scan_and_the_report_says_how_far_it_got ... ok
+test between_and_in_use_three_valued_logic ... ok
+test a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter ... ok
+test case_evaluates_only_the_branch_a_row_takes ... ok
+test errors_quote_the_query_and_never_a_cell_value ... ok
+test min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division ... ok
+test errors_are_raised_only_for_selected_valid_rows ... ok
+test floats_compare_with_nan_above_everything_and_negative_zero_equal_to_zero ... ok
+test casts_between_text_and_numbers ... ok
+test integer_arithmetic_is_checked_against_the_type ... ok
+test the_files_of_a_glob_are_read_in_name_order ... ok
+test decimals_are_exact_and_follow_the_result_types_of_the_rules_page ... ok
+test three_valued_logic_keeps_a_row_only_when_the_condition_is_true ... ok
+test rows_come_in_file_order_for_any_thread_count_and_window ... ok
+test strings_dates_and_booleans ... ok
+test a_chain_of_10000_terms_is_evaluated_on_a_big_stack ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/scenarios.rs (/mnt/work/target-ws/release/deps/scenarios-6b8f08396063ba82)
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.14s
+
+     Running unittests src/lib.rs (/mnt/work/target-ws/release/deps/nata_sql-edd1c9bec31fcc0e)
+
+running 16 tests
+test glob::tests::a_pattern_without_glob_characters_is_one_path ... ok
+test glob::tests::segments_match_like_a_shell ... ok
+test parse_tests::a_tree_node_is_a_number_with_its_text ... ok
+test parse_tests::integer_division_is_read_as_its_own_operator_and_a_slash_pair_with_a_space_is_not ... ok
+test parse_tests::constructs_the_crate_hides_are_refused ... ok
+test parse_tests::not_supported_errors_name_the_construct_at_its_position ... ok
+test parse_tests::numbers_with_separators_or_suffixes_are_refused_at_the_literal ... ok
+test parse_tests::positions_are_one_based_lines_and_characters ... ok
+test parse_tests::the_expression_positions_are_the_first_character_of_the_construct ... ok
+test parse_tests::a_prefix_operator_after_a_value_is_binary_and_does_not_count_as_nesting ... ok
+test parse_tests::nesting_of_1000_parses_and_1001_is_a_positioned_limit_error_for_every_construct ... ok
+test parse_tests::a_deep_tree_is_dropped_on_a_default_stack ... ok
+test parse_tests::a_chain_of_10000_terms_parses_and_10001_is_refused_for_each_operator ... ok
+test parse_tests::a_query_of_1_mb_parses_and_one_byte_more_is_a_positioned_error ... ok
+test parse_tests::mangled_queries_never_panic_and_every_error_has_a_position ... ok
+test parse_tests::mangled_queries_through_bind_and_plan_never_panic_and_every_error_has_a_position ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.58s
+
+     Running tests/dialect.rs (/mnt/work/target-ws/release/deps/dialect-210b4496a339f0bd)
+
+running 39 tests
+test s1_a_glob_whose_later_file_has_another_schema_binds_and_the_scan_finds_the_file ... ok
+test s2_an_alias_needs_as_names_an_output_column_and_cannot_be_used_in_the_same_select_or_where ... ok
+test s2_a_reserved_word_needs_quotes_to_be_a_name ... ok
+test s2_an_unquoted_identifier_is_folded_to_lower_case ... ok
+test s1_all_the_files_of_a_glob_must_have_the_same_schema_and_the_first_differing_file_is_named ... ok
+test s2_two_output_columns_may_have_the_same_name ... ok
+test s1_the_binder_reads_the_footer_of_the_first_file_only_and_the_other_files_are_not_looked_at ... ok
+test s2_a_quoted_identifier_is_exact_and_case_sensitive ... ok
+test s1_statement_forms_and_the_explain_modes ... ok
+test s2_star_expands_to_every_column_in_file_order_and_an_unsupported_column_is_an_error_only_when_touched ... ok
+test s1_what_is_not_yet_supported_names_the_construct_at_its_position ... ok
+test s3_there_is_no_float_literal_syntax ... ok
+test s4_an_integer_meets_a_decimal_as_an_exact_decimal ... ok
+test s3_a_null_whose_type_nothing_gives_is_not_supported_yet ... ok
+test s3_strings_dates_booleans ... ok
+test s4_only_division_of_integers_is_a_decimal ... ok
+test s3_integer_literals_take_the_smallest_of_integer_and_bigint_then_a_decimal_up_to_38_digits ... ok
+test s3_null_takes_the_type_its_context_needs ... ok
+test s4_unary_minus_binds_tighter_than_the_cast_operators_of_multiplication ... ok
+test s3_decimal_literals_are_exact_from_their_digits ... ok
+test s5_between_is_two_comparisons_with_the_type_rules_of_both ... ok
+test s5_floats_are_not_compared_with_decimals_and_the_integer_case_is_not_specified ... ok
+test s4_decimals_with_floats_and_dates_in_arithmetic ... ok
+test s4_integer_arithmetic_stays_integer_in_the_wider_type ... ok
+test s5_the_logic_operators_need_booleans ... ok
+test s6_case_results_that_cannot_be_one_type_are_bind_errors ... ok
+test s5_in_takes_literals_of_a_comparable_type ... ok
+test s5_both_sides_of_a_comparison_have_one_type_or_mix_integers_and_decimals ... ok
+test s4_precedence_from_tightest_to_loosest ... ok
+test s5_no_implicit_conversion_between_strings_numbers_and_dates ... ok
+test s6_case_results_have_one_type_or_widen_integers_and_decimals ... ok
+test s8_every_error_has_a_class_a_message_and_a_one_based_position ... ok
+test s8_an_unknown_column_suggests_the_closest_name_within_an_edit_distance_of_2 ... ok
+test s6_casts_the_page_does_not_allow ... ok
+test s9_the_differences_from_duckdb_each_have_a_test ... ok
+test s7_limit_and_offset_take_non_negative_integer_literals ... ok
+test s6_cast_targets_and_the_x_colon_colon_type_form ... ok
+test s4_decimal_result_types_follow_the_tables_of_decimal_rules ... ok
+test s8_the_limits_are_positioned_errors_before_parsing ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/golden.rs (/mnt/work/target-ws/release/deps/golden-7d1ff52d224e88da)
+
+running 1 test
+test the_plans_match_the_golden_file ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/limits.rs (/mnt/work/target-ws/release/deps/limits-d4dab5f60c5df0fb)
+
+running 4 tests
+test a_query_of_1_mb_with_a_long_comment_or_string_is_planned ... ok
+test nesting_of_1000_levels_is_planned_printed_and_dropped ... ok
+test chains_of_10000_terms_are_planned_printed_and_dropped_for_each_kind_of_operator ... ok
+test a_long_in_list_and_a_long_select_list_are_planned ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+     Running tests/pushdown.rs (/mnt/work/target-ws/release/deps/pushdown-2107148d057e9e53)
+
+running 1 test
+test pushed_conjuncts_plus_the_remaining_filter_keep_exactly_the_rows_of_the_whole_where_clause ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.08s
+
+     Running tests/real_files.rs (/mnt/work/target-ws/release/deps/real_files-0205130baecd68d2)
+
+running 5 tests
+test missing_corrupt_and_empty_sources_are_errors_with_a_position ... ok
+test a_later_file_with_an_extra_column_that_the_query_does_not_read_is_still_a_different_schema ... ok
+test a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error ... ok
+test a_glob_is_expanded_in_file_order_and_the_pushed_filter_drives_the_real_scan ... ok
+test the_front_end_plans_in_well_under_a_millisecond ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests nata_exec
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nata_sql
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

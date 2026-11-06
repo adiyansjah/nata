@@ -1,0 +1,404 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded rustc-demangle v0.1.28
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded getopts v0.2.24
+  Downloaded addr2line v0.27.1
+  Downloaded miniz_oxide v0.9.1
+  Downloaded gimli v0.34.0
+  Downloaded libc v0.2.189
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test run_is_not_supported_yet ... ok
+test sql_outside_the_subset_is_not_supported_yet ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 1 test
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 12.97s
+
+
+running 6 tests
+test page_checksums_of_the_binary_are_opt_in ... ok
+test scan_prints_csv_on_stdout_and_the_report_on_stderr ... ok
+test limit_columns_and_default_columns ... ok
+test a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_row_group ... ok
+test errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_zero ... ok
+test count_equals_the_number_of_csv_rows ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+
+
+running 12 tests
+test a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_scan_reaches_it ... ok
+test csv_and_the_aligned_table ... ok
+test errors_never_carry_a_cell_value ... ok
+test exit_codes_and_the_rendering_of_errors ... ok
+test a_closed_stdout_ends_the_query_quietly_with_exit_code_zero ... ok
+test the_query_can_come_from_stdin ... ok
+test rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so ... ok
+test explain_and_explain_analyze_have_golden_output ... ok
+test every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet ... ok
+test the_deepest_queries_the_parser_allows_run_in_the_process ... ok
+test ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130 ... ok
+test missing_truncated_and_damaged_files_are_errors_naming_the_file ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.44s
+
+
+running 1 test
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.97s
+
+
+running 1 test
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 15.78s
+
+
+running 14 tests
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test eval::tests::three_valued_and_or ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 4 tests
+test a_chain_of_10001_terms_and_1001_levels_are_still_positioned_errors_not_crashes ... ok
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==24328==ERROR: AddressSanitizer: stack-overflow on address 0x7b2af3ed5c40 (pc 0x55b722ee758b bp 0x7b2af3ed61b0 sp 0x7b2af3ed5c20 T97)
+    #0 0x55b722ee758b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfa58b) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #1 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #2 0x55b722f1aa57  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2da57) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #3 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #4 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #5 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #6 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #7 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #8 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #9 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #10 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #11 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #12 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #13 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #14 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #15 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #16 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #17 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #18 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #19 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #20 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #21 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #22 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #23 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #24 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #25 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #26 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #27 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #28 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #29 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #30 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #31 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #32 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #33 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #34 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #35 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #36 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #37 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #38 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #39 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #40 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #41 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #42 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #43 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #44 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #45 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #46 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #47 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #48 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #49 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #50 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #51 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #52 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #53 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #54 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #55 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #56 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #57 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #58 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #59 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #60 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #61 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #62 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #63 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #64 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #65 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #66 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #67 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #68 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #69 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #70 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #71 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #72 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #73 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #74 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #75 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #76 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #77 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #78 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #79 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #80 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #81 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #82 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #83 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #84 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #85 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #86 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #87 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #88 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #89 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #90 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #91 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #92 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #93 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #94 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #95 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #96 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #97 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #98 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #99 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #100 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #101 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #102 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #103 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #104 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #105 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #106 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #107 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #108 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #109 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #110 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #111 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #112 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #113 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #114 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #115 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #116 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #117 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #118 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #119 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #120 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #121 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #122 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #123 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #124 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #125 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #126 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #127 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #128 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #129 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #130 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #131 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #132 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #133 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #134 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #135 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #136 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #137 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #138 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #139 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #140 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #141 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #142 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #143 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #144 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #145 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #146 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #147 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #148 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #149 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #150 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #151 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #152 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #153 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #154 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #155 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #156 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #157 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #158 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #159 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #160 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #161 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #162 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #163 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #164 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #165 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #166 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #167 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #168 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #169 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #170 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #171 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #172 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #173 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #174 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #175 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #176 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #177 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #178 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #179 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #180 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #181 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #182 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #183 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #184 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #185 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #186 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #187 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #188 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #189 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #190 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #191 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #192 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #193 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #194 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #195 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #196 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #197 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #198 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #199 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #200 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #201 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #202 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #203 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #204 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #205 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #206 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #207 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #208 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #209 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #210 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #211 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #212 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #213 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #214 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #215 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #216 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #217 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #218 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #219 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #220 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #221 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #222 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #223 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #224 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #225 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #226 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #227 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #228 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #229 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #230 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #231 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #232 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #233 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #234 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #235 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #236 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #237 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #238 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #239 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #240 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #241 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #242 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #243 0x55b722e74024  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d87024) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #244 0x55b722eea1eb  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfd1eb) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #245 0x55b722f0d6e9  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e206e9) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #246 0x55b722f1b42a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1e2e42a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+
+SUMMARY: AddressSanitizer: stack-overflow (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1dfa58b) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+Thread T97 created by T96 here:
+    #0 0x55b721fe08b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xef38b1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #1 0x55b724ac9552  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x39dc552) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #2 0x55b722c3eaef  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1b51aef) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #3 0x55b722c5437b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1b6737b) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #4 0x55b722c4e442  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1b61442) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #5 0x55b722d9ced1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1cafed1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #6 0x55b722e3387d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d4687d) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #7 0x55b722e0eabc  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d21abc) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #8 0x55b722e0fd8a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1d22d8a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #9 0x55b722d9c26a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1caf26a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #10 0x55b722c4b9f2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1b5e9f2) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #11 0x55b722d5354d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1c6654d) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #12 0x55b722d53794  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1c66794) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #13 0x55b7220ed98a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x100098a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #14 0x55b7220b3930  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfc6930) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #15 0x55b7220f28a4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x10058a4) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #16 0x55b7220e07c1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xff37c1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #17 0x55b7220e181a  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xff481a) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #18 0x55b7220be907  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfd1907) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #19 0x55b72211a8dd  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x102d8dd) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #20 0x55b721ffae66  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xf0de66) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+
+Thread T96 created by T4 here:
+    #0 0x55b721fe08b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xef38b1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #1 0x55b724ac9552  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x39dc552) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #2 0x55b7220bb29b  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfce29b) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #3 0x55b72207a0fa  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xf8d0fa) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #4 0x55b72207ab8c  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xf8db8c) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #5 0x55b7220a84b2  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfbb4b2) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #6 0x55b7220ab7cc  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfbe7cc) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #7 0x55b7220edfd6  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1000fd6) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #8 0x55b7222207d5  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x11337d5) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #9 0x55b7222267b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x11397b1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #10 0x55b72217bd18  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x108ed18) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #11 0x55b72221efa4  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1131fa4) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #12 0x55b722220586  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1133586) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #13 0x55b7222267b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x11397b1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #14 0x55b724a84240  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x3997240) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #15 0x55b721ffae66  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xf0de66) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+
+Thread T4 created by T0 here:
+    #0 0x55b721fe08b1  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xef38b1) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #1 0x55b724ac9552  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x39dc552) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #2 0x55b72221f804  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1132804) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #3 0x55b7222056ae  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x11186ae) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #4 0x55b72217e011  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x1091011) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #5 0x55b7221756a7  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x10886a7) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #6 0x55b72219d57d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x10b057d) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #7 0x55b72217b5a5  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x108e5a5) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #8 0x55b7220a8532  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfbb532) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #9 0x55b724aaf471  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x39c2471) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #10 0x55b724acc92f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0x39df92f) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #11 0x55b7220c286f  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfd586f) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+    #12 0x55b7220b0f6d  (/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d+0xfc3f6d) (BuildId: f8fcdbf5154c637ad2dcc40d584a0fd38cf0effc)
+
+==24328==ABORTING
+error: test failed, to rerun pass `-p nata-exec --test deep`
+
+Caused by:
+  process didn't exit successfully: `/mnt/work/target-address/x86_64-unknown-linux-gnu/debug/build/nata-exec/93956e801095ed6d/out/deep-93956e801095ed6d --skip peak_memory_is_bounded_by_the_window_times_the_largest_row_group` (exit status: 1)
+note: test exited abnormally; to see the full output pass --no-capture to the harness.
+exit status: 1

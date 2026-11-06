@@ -1,5 +1,5 @@
-//! The syntax tree of the subset of `docs/dialect.md` sections 1 to 7. Both the `sqlparser` conversion (`parse.rs`) and the test-only hand-written
-//! oracle parser (`oracle/`) produce it, and the tests compare them: equality ignores positions and compares STRUCTURE and literal TEXT.
+//! The syntax tree of the subset of `docs/dialect.md` sections 1 to 7, produced by `parse.rs`.
+//! Equality ignores positions and compares structure and literal text.
 //! Numbers keep their source text (`Number("0.10")` is not `Number("0.1")`), so a decimal never passes through a float.
 
 use std::fmt;

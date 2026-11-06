@@ -18,4 +18,4 @@ let scan_options = planned.plan.scan.scan_options(); // columns and pushed conju
 
 Rules: every error has a class (`syntax`, `bind`, `not supported yet`, `execution`) and a 1-based line and column in characters; messages quote the query and never data. A deep tree (a chain of 10,000 terms) is dropped, visited and printed with loops; the evaluator of step 3 must also run on a large stack or iterate.
 
-Checks (`bench/results/20261106-sql-frontend.md`): `cargo test -p nata-sql` (rules of the dialect page, golden plans, pushdown property test against the scan's own row filter, parse fuzz, limits, comparison with the hand-written oracle parser in `src/oracle`), and `python3 crates/nata-sql/mutate.py` (mutants of the binder, the typing and the pushdown; each must be CAUGHT).
+Checks (`bench/results/20261106-sql-frontend.md`): `cargo test -p nata-sql` (rules of the dialect page, golden plans, pushdown property test against the scan's own row filter, parse fuzz, limits), and `python3 crates/nata-sql/mutate.py` (mutants of the binder, the typing and the pushdown; each must be CAUGHT).

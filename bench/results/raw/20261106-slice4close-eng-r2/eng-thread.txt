@@ -1,0 +1,584 @@
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test run_is_not_supported_yet ... ok
+test sql_outside_the_subset_is_not_supported_yet ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 1 test
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 34.57s
+
+
+running 6 tests
+test page_checksums_of_the_binary_are_opt_in ... ok
+test limit_columns_and_default_columns ... ok
+test scan_prints_csv_on_stdout_and_the_report_on_stderr ... ok
+test errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_zero ... ok
+test a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_row_group ... ok
+test count_equals_the_number_of_csv_rows ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+
+
+running 12 tests
+test a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_scan_reaches_it ... ok
+test csv_and_the_aligned_table ... ok
+test exit_codes_and_the_rendering_of_errors ... ok
+test errors_never_carry_a_cell_value ... ok
+test the_query_can_come_from_stdin ... ok
+test rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so ... ok
+test explain_and_explain_analyze_have_golden_output ... ok
+test every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet ... ok
+test a_closed_stdout_ends_the_query_quietly_with_exit_code_zero ... ok
+test missing_truncated_and_damaged_files_are_errors_naming_the_file ... ok
+test the_deepest_queries_the_parser_allows_run_in_the_process ... ok
+test ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130 ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.72s
+
+
+running 1 test
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process has been running for over 60 seconds
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 65.34s
+
+
+running 1 test
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 31.84s
+
+
+running 14 tests
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test eval::tests::three_valued_and_or ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 4 tests
+test a_chain_of_10001_terms_and_1001_levels_are_still_positioned_errors_not_crashes ... ok
+test explain_and_explain_analyze_of_the_deepest_queries_run_on_a_2_mb_thread ... ok
+test nesting_of_1000_levels_is_evaluated_on_a_2_mb_thread_for_each_construct ... ok
+test an_operator_chain_of_10000_terms_is_evaluated_on_a_2_mb_thread_for_each_operator ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 59.19s
+
+
+running 19 tests
+test an_empty_result_has_a_header_and_no_rows ... ok
+test a_query_without_a_column_to_read_still_counts_rows ... ok
+test a_limit_stops_the_scan_and_the_report_says_how_far_it_got ... ok
+test a_limit_shields_the_rows_beyond_it_from_projection_errors_but_not_the_filter ... ok
+test between_and_in_use_three_valued_logic ... ok
+test case_evaluates_only_the_branch_a_row_takes ... ok
+test a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter ... ok
+test casts_between_text_and_numbers ... ok
+test errors_quote_the_query_and_never_a_cell_value ... ok
+test floats_compare_with_nan_above_everything_and_negative_zero_equal_to_zero ... ok
+test errors_are_raised_only_for_selected_valid_rows ... ok
+test min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division ... ok
+test the_files_of_a_glob_are_read_in_name_order ... ok
+test integer_arithmetic_is_checked_against_the_type ... ok
+test decimals_are_exact_and_follow_the_result_types_of_the_rules_page ... ok
+test rows_come_in_file_order_for_any_thread_count_and_window ... ok
+test three_valued_logic_keeps_a_row_only_when_the_condition_is_true ... ok
+test strings_dates_and_booleans ... ok
+test a_chain_of_10000_terms_is_evaluated_on_a_big_stack ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.33s
+
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.63s
+
+
+running 20 tests
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+
+running 4 tests
+test arrow_decimal_mul_does_check_i128_overflow ... ok
+test arrow_rem_of_min_by_minus_one_is_zero_not_an_error ... ok
+test checked_integer_ops_report_overflow ... ok
+test arrow_decimal_add_does_not_check_the_declared_precision ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test arrow_skips_null_slots_by_itself ... ok
+test the_arrow_error_kinds_map_to_the_same_categories_as_ours ... ok
+test arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row ... ok
+test arrow_without_compaction_errors_on_a_row_the_guard_removed ... ok
+test case_as_selection_splitting_gives_the_else_value_to_guarded_rows ... ok
+test case_guarding_minus_one_protects_the_overflow_row_only ... ok
+test the_guard_does_not_protect_a_surviving_min_over_minus_one ... ok
+test failures_in_null_slots_are_not_errors ... ok
+test the_guard_removes_the_zero_divisor_rows_so_there_is_no_error ... ok
+test a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it ... ok
+test without_the_guard_a_surviving_zero_divisor_is_an_error ... ok
+test the_second_guard_protects_the_nested_division ... ok
+test every_executor_matches_the_row_by_row_reference_on_every_table_and_query ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 1 test
+test an_unchecked_addition_panics_instead_of_wrapping ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 21 tests
+test adapter::tests::only_the_expected_type_defined_order_is_usable ... ok
+test adapter::tests::twos_complement_decoding ... ok
+test civil::tests::dates_and_timestamps_have_duckdbs_text ... ok
+test csv::tests::decimals_dates_and_blobs ... ok
+test csv::tests::fields_are_quoted_like_duckdb ... ok
+test error::tests::display_names_file_and_row_group ... ok
+test csv::tests::floats_have_duckdbs_text ... ok
+test filter::tests::decimals_compare_exactly_across_scales ... ok
+test error::tests::redact_drops_quoted_text_and_control_characters ... ok
+test filter::tests::float_order_is_duckdbs ... ok
+test filter::tests::literals_are_typed_from_the_column_and_nothing_is_guessed ... ok
+test filter::tests::small_integer_columns_compare_without_casting_the_literal ... ok
+test filter::tests::plain_text_binary_and_unsigned_columns_use_unsigned_bytes_and_unsigned_numbers ... ok
+test filter::tests::syntax_accepts_the_documented_forms ... ok
+test civil::tests::dates_round_trip_over_the_whole_supported_range ... ok
+test filter::tests::syntax_errors_say_what_is_wrong ... ok
+test reader::tests::parquet_errors_name_the_file_and_the_row_group_and_keep_no_quoted_text ... ok
+test schema::tests::arrow_types_follow_adr_0003 ... ok
+test reader::tests::expanded_strings_are_not_the_requested_dictionary_type ... ok
+test schema::tests::unsigned_integers_are_never_pruned ... ok
+test stats::tests::a_reservation_counts_while_alive_and_remembers_its_high ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 15 tests
+test a_missing_exactness_flag_means_not_exact ... ok
+test a_missing_null_count_is_not_zero ... ok
+test a_missing_statistics_block_is_no_statistic ... ok
+test an_exactness_flag_per_side ... ok
+test binary_bounds_are_bytes_in_unsigned_order ... ok
+test dates_and_timestamps ... ok
+test deprecated_min_max_are_never_used ... ok
+test decimals_from_every_storage_form ... ok
+test exact_text_bounds_with_the_right_column_order_are_used ... ok
+test nan_count_is_never_invented ... ok
+test only_the_expected_type_defined_order_gives_bounds ... ok
+test row_group_stats_of_a_real_schema_and_a_negative_row_count ... ok
+test text_bounds_that_are_not_utf8_are_dropped ... ok
+test the_column_order_of_a_short_or_missing_list_is_undefined_and_never_panics ... ok
+test types_that_cannot_be_mapped_soundly_have_no_bounds ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 5 tests
+test page_checksums_are_opt_in ... ok
+test the_same_damage_in_a_file_without_checksums_is_a_silent_wrong_answer_in_every_build ... ok
+test a_damaged_value_in_a_page_with_a_checksum_is_an_error_naming_the_file_and_the_row_group ... ok
+test files_with_checksums_scan_to_the_expected_rows_and_match_duckdb ... ok
+test every_flipped_byte_of_the_pages_of_a_checksummed_file_is_an_error_or_harmless_with_the_check_on ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.76s
+
+
+running 7 tests
+test a_nan_group_is_never_proven_away_by_a_maximum ... ok
+test nulls_in_some_row_groups_only ... ok
+test bytes_are_compared_as_unsigned ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales has been running for over 60 seconds
+test floats_nan_zeros_infinities_and_an_all_null_group has been running for over 60 seconds
+test integers_dates_timestamps_booleans has been running for over 60 seconds
+test unicode_text_with_truncated_statistics has been running for over 60 seconds
+test floats_nan_zeros_infinities_and_an_all_null_group ... ok
+test unicode_text_with_truncated_statistics ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales ... ok
+test integers_dates_timestamps_booleans ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 400.22s
+
+
+running 4 tests
+test lineitem_written_by_pyarrow ... ok
+test filter_columns_that_are_not_projected ... ok
+test lineitem_written_by_duckdb has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style ... ok
+test lineitem_written_by_duckdb ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 157.53s
+
+
+running 8 tests
+test types_outside_the_card_are_not_supported_yet_and_only_when_touched ... ok
+test unreadable_files_name_the_file ... ok
+test a_damaged_row_group_is_an_error_and_later_row_groups_are_not_read ... ok
+test a_later_file_that_is_corrupt_fails_the_scan_before_any_row_is_returned ... ok
+test garbage_footers_and_garbage_files ... ok
+test every_truncation_of_a_valid_file_is_an_error_that_names_the_file ... ok
+test a_column_chunk_that_is_cut_names_the_file_and_the_row_group ... ok
+test flipped_bytes_zeroed_ranges_and_cuts_never_panic_hang_or_leak_a_value ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+
+
+running 1 test
+test damaged_files_never_panic_hang_leak_or_leak_a_value has been running for over 60 seconds
+test damaged_files_never_panic_hang_leak_or_leak_a_value ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 486.25s
+
+
+running 13 tests
+test an_empty_file_and_a_one_row_file_scan_the_same ... ok
+test an_output_column_shorter_than_the_filter_column_is_an_error_in_the_late_read_never_fewer_rows ... ok
+test a_row_group_that_holds_fewer_rows_than_its_footer_says_is_an_error_in_both_reads ... ok
+test a_filter_that_keeps_nothing_decodes_only_the_filter_column ... ok
+test dictionary_strings_stay_dictionaries_in_both_steps ... ok
+test a_failing_read_in_either_step_is_an_error_naming_the_file_and_the_row_group ... ok
+test late_materialization_without_a_filter_is_the_default_read ... ok
+test cancel_at_every_point_leaves_nothing_behind ... ok
+test the_decimal_and_date_columns_survive_the_selection ... ok
+test the_filter_columns_being_decoded_in_step_1_are_counted_even_when_nothing_is_kept ... ok
+test a_cancel_is_looked_at_between_the_batches_of_both_steps ... ok
+test a_selective_filter_holds_no_more_in_memory_per_task ... ok
+test late_and_default_give_the_same_rows_for_every_shape ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.22s
+
+
+running 3 tests
+test concat_of_dictionaries_with_an_extreme_key_under_a_null_slot_does_not_panic ... ok
+test control_a_key_that_does_not_overflow_the_offset_is_fine_with_checks_on_or_off ... ok
+test our_own_arithmetic_still_panics_on_overflow ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 15 tests
+test a_task_error_never_carries_a_cell_value ... ok
+test a_corrupt_later_file_is_the_same_error_with_footers_ahead_and_the_earlier_rows_come_first ... ok
+test footers_are_read_when_the_scan_reaches_the_file ... ok
+test a_closed_consumer_cancels_the_scan_and_the_error_is_the_sinks ... ok
+test a_later_file_with_another_schema_is_found_when_the_scan_reaches_it_with_strict_schema ... ok
+test the_batch_being_filtered_is_counted_even_when_nothing_is_kept ... ok
+test footers_ahead_really_read_footers_at_the_same_time ... ok
+test limit_returns_exactly_the_first_n_rows_in_ordered_mode_and_leaves_nothing_behind ... ok
+test the_error_of_the_lowest_file_and_row_group_is_reported_for_every_thread_count ... ok
+test unordered_parallel_output_is_the_same_multiset ... ok
+test many_small_files_hold_few_handles_and_footers ... ok
+test many_small_files_with_footers_ahead_hold_the_slice_3_bounds_plus_the_footers_ahead ... ok
+test footers_ahead_give_the_serial_scan_for_every_thread_count_window_and_ahead ... ok
+test ordered_parallel_output_is_the_serial_output_for_every_thread_count_and_window ... ok
+test a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.31s
+
+
+running 2 tests
+test a_missing_or_damaged_file_is_an_error_that_names_the_file ... ok
+test the_footer_gives_names_in_file_order_with_kinds_and_reasons ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 6 tests
+test usage_errors ... ok
+test schema_differences_between_files_name_the_file ... ok
+test the_file_list_is_scanned_in_the_order_given ... ok
+test tasks_are_independent_row_group_morsels ... ok
+test the_report_counts_files_row_groups_rows_and_bytes ... ok
+test limit_stops_early_and_reports_what_was_not_read ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind has been running for over 60 seconds
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 73.71s
+
+
+running 1 test
+test pruned_equals_unpruned_equals_duckdb_on_random_files_and_predicates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.56s
+
+
+running 7 tests
+test known_difference_exact_decimal_comparison_where_duckdb_errors ... ok
+test csv_text_of_every_ascii_character_and_every_byte ... ok
+test empty_and_one_row_files ... ok
+test float_text_reads_back_to_the_same_values_and_mostly_the_same_text ... ok
+test every_type_in_one_file ... ok
+test timestamps_in_milliseconds ... ok
+test all_null_columns_of_every_type ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.70s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test the_facts_behind_the_rules_hold_in_duckdb ... ok
+test the_row_oracle_agrees_with_duckdb ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.29s
+
+
+running 6 tests
+test r2_range_predicate_on_sorted_integers_skips_at_least_60_percent ... ok
+test tightness_floats ... ok
+test tightness_text ... ok
+test tightness_integers_dates_booleans_and_decimals ... ok
+test r2_year_predicate_on_sorted_dates_skips_at_least_60_percent_and_exactly_the_empty_groups ... ok
+test clustered_random_data_skips_the_disjoint_groups ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 42.35s
+
+
+running 35 tests
+test all_null_with_bounds_is_a_contradiction_and_kept ... ok
+test all_null_row_group_with_each_operator ... ok
+test binary_increment_skips_trailing_ff ... ok
+test contradictory_statistics_are_kept ... ok
+test decimal_extremes_and_validation ... ok
+test decimal_literal_with_more_fraction_digits_than_the_column ... ok
+test decimal_rescaling_does_not_overflow ... ok
+test empty_row_group_is_skipped_for_every_predicate ... ok
+test float32_columns_compare_as_the_double_they_widen_to ... ok
+test float_group_with_unknown_nan_rows ... ok
+test float_group_without_nan_rows ... ok
+test float_infinities_are_ordinary_numbers ... ok
+test float_nan_count_above_the_row_count_is_contradictory ... ok
+test int32_column_with_wide_literals_is_compared_exactly ... ok
+test integer_boundaries_of_each_operator ... ok
+test is_null_and_is_not_null_use_the_null_count ... ok
+test integer_extremes_do_not_overflow ... ok
+test missing_statistics_never_skip ... ok
+test nan_literal ... ok
+test nan_in_the_bounds_is_not_trusted ... ok
+test one_provably_empty_term_skips_the_conjunction ... ok
+test one_row_group ... ok
+test one_sided_statistics_are_used_on_their_side_only ... ok
+test skip_reason_is_out_of_range ... ok
+test statistics_without_a_null_count_still_prune_comparisons ... ok
+test text_order_is_by_bytes_for_non_ascii ... ok
+test text_truncated_at_a_character_boundary_is_usable ... ok
+test text_with_exact_bounds_is_compared_bytewise ... ok
+test timestamps_and_booleans ... ok
+test truncated_maximum_that_cannot_be_used ... ok
+test truncated_bounds_are_bounds_only ... ok
+test unknown_column_unsupported_type_and_mismatched_literal_are_kept ... ok
+test utf8_bound_from_bytes_refuses_a_cut_character ... ok
+test year_range_on_dates ... ok
+test zeros_are_equal_whatever_their_sign ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 7 tests
+test control_missing_bound_as_zero_is_rejected ... ok
+test control_nan_blind_reader_is_rejected ... ok
+test control_nan_trusting_reference_is_rejected ... ok
+test control_truncated_as_exact_reader_is_rejected ... ok
+test control_missing_null_count_as_zero_is_rejected ... ok
+test generator_reaches_the_hard_situations ... ok
+test can_skip_is_sound_against_a_row_by_row_oracle ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.15s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test only_the_facade_names_std_synchronisation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 24 tests
+test a_file_that_cannot_be_opened_has_its_place_in_the_order ... ok
+test a_panic_in_the_sink_still_joins_every_worker ... ok
+test a_later_file_that_is_opened_first_waits_for_the_earlier_one ... ok
+test a_sink_error_cancels_everything_and_wins_over_a_task_error ... ok
+test a_panic_in_a_task_is_an_error_not_a_hang ... ok
+test an_error_after_a_satisfied_limit_is_never_reported ... ok
+test a_run_with_no_files_and_one_with_empty_files_finish ... ok
+test a_file_that_cannot_be_opened_has_its_place_in_the_order_with_footers_ahead ... ok
+test an_error_cancels_the_tasks_above_it_even_while_a_lower_task_is_still_running ... ok
+test a_limit_with_footers_ahead_opens_few_files_and_leaves_nothing_behind ... ok
+test an_external_cancel_with_footers_pending_joins_everyone ... ok
+test a_worker_waiting_for_tasks_is_woken_when_the_opening_of_a_file_ends ... ok
+test the_error_of_a_lower_task_wins_over_a_file_that_cannot_be_opened ... ok
+test a_limit_stops_after_exactly_the_first_k_results_and_leaves_nothing_behind ... ok
+test unordered_output_is_the_same_multiset ... ok
+test cancel_from_outside_reaches_blocked_tasks_a_blocked_consumer_and_idle_workers ... ok
+test unordered_output_with_footers_ahead_is_the_same_multiset ... ok
+test a_slow_early_task_does_not_make_the_reorder_buffer_grow ... ok
+test footers_are_opened_at_the_same_time_only_when_ahead_allows ... ok
+test ordered_output_is_the_sequential_order_for_every_thread_count_and_window ... ok
+test a_slow_consumer_never_has_more_than_a_window_of_results_alive ... ok
+test the_error_of_the_lowest_task_wins_whoever_is_first ... ok
+test footers_ahead_do_not_open_the_files_all_at_once ... ok
+test with_footers_ahead_the_ordered_output_is_still_the_sequential_order ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+
+running 16 tests
+test glob::tests::a_pattern_without_glob_characters_is_one_path ... ok
+test glob::tests::segments_match_like_a_shell ... ok
+test parse_tests::a_tree_node_is_a_number_with_its_text ... ok
+test parse_tests::integer_division_is_read_as_its_own_operator_and_a_slash_pair_with_a_space_is_not ... ok
+test parse_tests::constructs_the_crate_hides_are_refused ... ok
+test parse_tests::not_supported_errors_name_the_construct_at_its_position ... ok
+test parse_tests::numbers_with_separators_or_suffixes_are_refused_at_the_literal ... ok
+test parse_tests::positions_are_one_based_lines_and_characters ... ok
+test parse_tests::the_expression_positions_are_the_first_character_of_the_construct ... ok
+test parse_tests::a_prefix_operator_after_a_value_is_binary_and_does_not_count_as_nesting ... ok
+test parse_tests::a_deep_tree_is_dropped_on_a_default_stack ... ok
+test parse_tests::nesting_of_1000_parses_and_1001_is_a_positioned_limit_error_for_every_construct ... ok
+test parse_tests::a_chain_of_10000_terms_parses_and_10001_is_refused_for_each_operator ... ok
+test parse_tests::mangled_queries_never_panic_and_every_error_has_a_position ... ok
+test parse_tests::mangled_queries_through_bind_and_plan_never_panic_and_every_error_has_a_position ... ok
+test parse_tests::a_query_of_1_mb_parses_and_one_byte_more_is_a_positioned_error ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.54s
+
+
+running 39 tests
+test s1_a_glob_whose_later_file_has_another_schema_binds_and_the_scan_finds_the_file ... ok
+test s2_a_reserved_word_needs_quotes_to_be_a_name ... ok
+test s2_an_unquoted_identifier_is_folded_to_lower_case ... ok
+test s1_the_binder_reads_the_footer_of_the_first_file_only_and_the_other_files_are_not_looked_at ... ok
+test s1_all_the_files_of_a_glob_must_have_the_same_schema_and_the_first_differing_file_is_named ... ok
+test s2_an_alias_needs_as_names_an_output_column_and_cannot_be_used_in_the_same_select_or_where ... ok
+test s2_two_output_columns_may_have_the_same_name ... ok
+test s2_a_quoted_identifier_is_exact_and_case_sensitive ... ok
+test s1_statement_forms_and_the_explain_modes ... ok
+test s2_star_expands_to_every_column_in_file_order_and_an_unsupported_column_is_an_error_only_when_touched ... ok
+test s1_what_is_not_yet_supported_names_the_construct_at_its_position ... ok
+test s3_there_is_no_float_literal_syntax ... ok
+test s3_a_null_whose_type_nothing_gives_is_not_supported_yet ... ok
+test s4_an_integer_meets_a_decimal_as_an_exact_decimal ... ok
+test s3_null_takes_the_type_its_context_needs ... ok
+test s3_integer_literals_take_the_smallest_of_integer_and_bigint_then_a_decimal_up_to_38_digits ... ok
+test s3_strings_dates_booleans ... ok
+test s4_only_division_of_integers_is_a_decimal ... ok
+test s4_unary_minus_binds_tighter_than_the_cast_operators_of_multiplication ... ok
+test s3_decimal_literals_are_exact_from_their_digits ... ok
+test s4_integer_arithmetic_stays_integer_in_the_wider_type ... ok
+test s5_between_is_two_comparisons_with_the_type_rules_of_both ... ok
+test s5_floats_are_not_compared_with_decimals_and_the_integer_case_is_not_specified ... ok
+test s4_decimals_with_floats_and_dates_in_arithmetic ... ok
+test s5_the_logic_operators_need_booleans ... ok
+test s5_in_takes_literals_of_a_comparable_type ... ok
+test s6_case_results_that_cannot_be_one_type_are_bind_errors ... ok
+test s5_both_sides_of_a_comparison_have_one_type_or_mix_integers_and_decimals ... ok
+test s6_case_results_have_one_type_or_widen_integers_and_decimals ... ok
+test s5_no_implicit_conversion_between_strings_numbers_and_dates ... ok
+test s4_precedence_from_tightest_to_loosest ... ok
+test s6_casts_the_page_does_not_allow ... ok
+test s8_every_error_has_a_class_a_message_and_a_one_based_position ... ok
+test s7_limit_and_offset_take_non_negative_integer_literals ... ok
+test s8_an_unknown_column_suggests_the_closest_name_within_an_edit_distance_of_2 ... ok
+test s9_the_differences_from_duckdb_each_have_a_test ... ok
+test s6_cast_targets_and_the_x_colon_colon_type_form ... ok
+test s4_decimal_result_types_follow_the_tables_of_decimal_rules ... ok
+test s8_the_limits_are_positioned_errors_before_parsing ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 1 test
+test the_plans_match_the_golden_file ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 4 tests
+test a_query_of_1_mb_with_a_long_comment_or_string_is_planned ... ok
+test nesting_of_1000_levels_is_planned_printed_and_dropped ... ok
+test chains_of_10000_terms_are_planned_printed_and_dropped_for_each_kind_of_operator ... ok
+test a_long_in_list_and_a_long_select_list_are_planned ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.65s
+
+
+running 1 test
+test pushed_conjuncts_plus_the_remaining_filter_keep_exactly_the_rows_of_the_whole_where_clause ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.35s
+
+
+running 5 tests
+test missing_corrupt_and_empty_sources_are_errors_with_a_position ... ok
+test a_later_file_with_an_extra_column_that_the_query_does_not_read_is_still_a_different_schema ... ok
+test a_file_with_another_schema_is_named_and_no_cell_value_appears_in_an_error ... ok
+test a_glob_is_expanded_in_file_order_and_the_pushed_filter_drives_the_real_scan ... ok
+test the_front_end_plans_in_well_under_a_millisecond ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+exit status: 0

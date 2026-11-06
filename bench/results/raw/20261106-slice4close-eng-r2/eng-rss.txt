@@ -1,0 +1,110 @@
+   Compiling libc v0.2.191
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling quote v1.0.47
+   Compiling autocfg v1.5.1
+   Compiling libm v0.2.16
+   Compiling zerocopy v0.8.63
+   Compiling cfg-if v1.0.5
+   Compiling getrandom v0.3.4
+   Compiling version_check v0.9.5
+   Compiling num-traits v0.2.19
+   Compiling ahash v0.8.12
+   Compiling bytes v1.12.1
+   Compiling iana-time-zone v0.1.65
+   Compiling arrow-schema v60.1.0
+   Compiling once_cell v1.21.4
+   Compiling hashbrown v0.17.1
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling syn v2.0.119
+   Compiling pkg-config v0.3.34
+   Compiling semver v1.0.28
+   Compiling lexical-util v1.0.7
+   Compiling jobserver v0.1.35
+   Compiling rustc_version v0.4.1
+   Compiling zstd-safe v8.2.0
+   Compiling cc v1.11.0
+   Compiling alloc-no-stdlib v3.0.0
+   Compiling bitflags v2.13.2
+   Compiling flatbuffers v25.12.19
+   Compiling alloc-stdlib v0.3.0
+   Compiling snap v1.1.2
+   Compiling base64 v0.23.1
+   Compiling num-integer v0.1.47
+   Compiling chrono v0.4.45
+   Compiling num-complex v0.4.6
+   Compiling num-bigint v0.5.1
+   Compiling brotli-decompressor v6.2.0
+   Compiling lexical-parse-integer v1.0.6
+   Compiling lexical-write-integer v1.0.6
+   Compiling zlib-rs v0.6.8
+   Compiling twox-hash v2.1.5
+   Compiling lz4_flex v0.14.0
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling brotli v9.1.1
+   Compiling zerocopy-derive v0.8.63
+   Compiling lexical-write-float v1.0.6
+   Compiling lexical-parse-float v1.0.6
+   Compiling simdutf8 v0.1.5
+   Compiling seq-macro v0.3.6
+   Compiling flate2 v1.1.10
+   Compiling utf8parse v0.2.2
+   Compiling anstyle-parse v1.0.0
+   Compiling lexical-core v1.0.6
+   Compiling atoi v3.1.1
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling log v0.4.35
+   Compiling colorchoice v1.0.5
+   Compiling anstyle-query v1.1.5
+   Compiling ryu v1.0.23
+   Compiling nata-sched v0.0.0 (/mnt/work/src/crates/nata-sched)
+   Compiling nata-scan v0.0.0 (/mnt/work/src/crates/nata-scan)
+   Compiling anstyle v1.0.14
+   Compiling sqlparser v0.63.0
+   Compiling anstream v1.0.0
+   Compiling errno v0.3.14
+   Compiling syn v3.0.9
+   Compiling signal-hook v0.4.6
+   Compiling strsim v0.11.1
+   Compiling clap_lex v1.1.1
+   Compiling heck v0.5.0
+   Compiling clap_builder v4.6.7
+   Compiling signal-hook-registry v1.4.8
+   Compiling half v2.7.1
+   Compiling arrow-buffer v60.1.0
+   Compiling clap_derive v4.6.7
+   Compiling arrow-data v60.1.0
+   Compiling arrow-array v60.1.0
+   Compiling clap v4.6.7
+   Compiling arrow-cmp v60.1.0
+   Compiling arrow-arith v60.1.0
+   Compiling arrow-select v60.1.0
+   Compiling zstd v0.14.3
+   Compiling arrow-ipc v60.1.0
+   Compiling arrow-ord v60.1.0
+   Compiling parquet v60.1.0
+   Compiling arrow-cast v60.1.0
+   Compiling nata-kernels v0.0.0 (/mnt/work/src/crates/nata-kernels)
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/mnt/work/src/crates/nata-exec)
+   Compiling nata v0.0.0 (/mnt/work/src/crates/nata)
+    Finished `release` profile [optimized] target(s) in 1m 16s
+     Running tests/resource_bounds.rs (/mnt/work/target-rss/release/deps/resource_bounds-7c791c298b815abe)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.48s
+
+     Running tests/sql_resource_bounds.rs (/mnt/work/target-rss/release/deps/sql_resource_bounds-7f23b40017e0d9f5)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operators_above_the_scan ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.16s
+
+exit status: 0

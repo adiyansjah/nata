@@ -61,3 +61,15 @@ A real workload or client tool (slice 10) needs a rule this page refuses; the da
 ## Revision notes
 
 ## Amendments
+
+- 2026-11-07, slice 4 closeout: `bench/results/20261106-slice4-close.md`
+  records the SQL path on clean ARM64 and x86-64 VMs, including the full planning
+  corpus, differential results, contention campaigns, bounds, and the engineering
+  checks. The parser bake-off and its temporary hand-parser copy are deleted;
+  the malformed-query corpus and permanent DuckDB differential remain. Confidence
+  in the implemented subset increases with this evidence; the dialect decision
+  and unsupported list do not change. Scalar arithmetic remains differentially
+  checked rather than covered by the kernel proofs (register R12); performance
+  misses and remaining limits are stated in the closeout record.
+
+- 2026-11-07, further closeout finding: Miri fails the decimal-to-double nearest-value test (15 at scale 1 produces 1.500000000000001). The fast path uses `powi`, whose precision is unspecified; R17 carries the correction into the shared-kernel work. The nearest-double dialect contract is not relaxed. Native differential suites pass on both CPUs; this is a limit of the implementation's portability evidence.
