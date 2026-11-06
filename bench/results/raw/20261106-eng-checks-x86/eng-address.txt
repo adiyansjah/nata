@@ -1,0 +1,429 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded rustc-demangle v0.1.28
+  Downloaded getopts v0.2.24
+  Downloaded addr2line v0.27.1
+  Downloaded miniz_oxide v0.9.1
+  Downloaded gimli v0.34.0
+  Downloaded libc v0.2.189
+
+running 20 tests
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 4 tests
+test arrow_decimal_add_does_not_check_the_declared_precision ... ok
+test arrow_rem_of_min_by_minus_one_is_zero_not_an_error ... ok
+test arrow_decimal_mul_does_check_i128_overflow ... ok
+test checked_integer_ops_report_overflow ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row ... ok
+test arrow_skips_null_slots_by_itself ... ok
+test arrow_without_compaction_errors_on_a_row_the_guard_removed ... ok
+test the_arrow_error_kinds_map_to_the_same_categories_as_ours ... ok
+test case_as_selection_splitting_gives_the_else_value_to_guarded_rows ... ok
+test failures_in_null_slots_are_not_errors ... ok
+test the_guard_does_not_protect_a_surviving_min_over_minus_one ... ok
+test case_guarding_minus_one_protects_the_overflow_row_only ... ok
+test a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it ... ok
+test the_guard_removes_the_zero_divisor_rows_so_there_is_no_error ... ok
+test without_the_guard_a_surviving_zero_divisor_is_an_error ... ok
+test the_second_guard_protects_the_nested_division ... ok
+test every_executor_matches_the_row_by_row_reference_on_every_table_and_query ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 1 test
+test an_unchecked_addition_panics_instead_of_wrapping ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 21 tests
+test adapter::tests::only_the_expected_type_defined_order_is_usable ... ok
+test adapter::tests::twos_complement_decoding ... ok
+test csv::tests::fields_are_quoted_like_duckdb ... ok
+test civil::tests::dates_and_timestamps_have_duckdbs_text ... ok
+test civil::tests::dates_round_trip_over_the_whole_supported_range ... ok
+test csv::tests::decimals_dates_and_blobs ... ok
+test filter::tests::decimals_compare_exactly_across_scales ... ok
+test csv::tests::floats_have_duckdbs_text ... ok
+test error::tests::display_names_file_and_row_group ... ok
+test filter::tests::float_order_is_duckdbs ... ok
+test error::tests::redact_drops_quoted_text_and_control_characters ... ok
+test filter::tests::syntax_errors_say_what_is_wrong ... ok
+test filter::tests::small_integer_columns_compare_without_casting_the_literal ... ok
+test filter::tests::syntax_accepts_the_documented_forms ... ok
+test filter::tests::literals_are_typed_from_the_column_and_nothing_is_guessed ... ok
+test filter::tests::plain_text_binary_and_unsigned_columns_use_unsigned_bytes_and_unsigned_numbers ... ok
+test schema::tests::unsigned_integers_are_never_pruned ... ok
+test reader::tests::parquet_errors_name_the_file_and_the_row_group_and_keep_no_quoted_text ... ok
+test schema::tests::arrow_types_follow_adr_0003 ... ok
+test stats::tests::a_reservation_counts_while_alive_and_remembers_its_high ... ok
+test reader::tests::expanded_strings_are_not_the_requested_dictionary_type ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 15 tests
+test an_exactness_flag_per_side ... ok
+test a_missing_null_count_is_not_zero ... ok
+test a_missing_statistics_block_is_no_statistic ... ok
+test a_missing_exactness_flag_means_not_exact ... ok
+test dates_and_timestamps ... ok
+test binary_bounds_are_bytes_in_unsigned_order ... ok
+test decimals_from_every_storage_form ... ok
+test deprecated_min_max_are_never_used ... ok
+test exact_text_bounds_with_the_right_column_order_are_used ... ok
+test nan_count_is_never_invented ... ok
+test text_bounds_that_are_not_utf8_are_dropped ... ok
+test only_the_expected_type_defined_order_gives_bounds ... ok
+test the_column_order_of_a_short_or_missing_list_is_undefined_and_never_panics ... ok
+test row_group_stats_of_a_real_schema_and_a_negative_row_count ... ok
+test types_that_cannot_be_mapped_soundly_have_no_bounds ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 7 tests
+test a_nan_group_is_never_proven_away_by_a_maximum ... ok
+test nulls_in_some_row_groups_only ... ok
+test bytes_are_compared_as_unsigned ... ok
+test floats_nan_zeros_infinities_and_an_all_null_group ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales has been running for over 60 seconds
+test integers_dates_timestamps_booleans has been running for over 60 seconds
+test unicode_text_with_truncated_statistics has been running for over 60 seconds
+test unicode_text_with_truncated_statistics ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales ... ok
+test integers_dates_timestamps_booleans ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 232.71s
+
+
+running 4 tests
+test lineitem_written_by_duckdb ... ok
+test lineitem_written_by_pyarrow ... ok
+test filter_columns_that_are_not_projected ... ok
+test lineitem_written_by_parquet_rs_in_every_style has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 62.50s
+
+
+running 8 tests
+test unreadable_files_name_the_file ... ok
+test types_outside_the_card_are_not_supported_yet_and_only_when_touched ... ok
+test a_damaged_row_group_is_an_error_and_later_row_groups_are_not_read ... ok
+test garbage_footers_and_garbage_files ... ok
+test a_later_file_that_is_corrupt_fails_the_scan_before_any_row_is_returned ... ok
+test a_column_chunk_that_is_cut_names_the_file_and_the_row_group ... ok
+test every_truncation_of_a_valid_file_is_an_error_that_names_the_file ... ok
+test flipped_bytes_zeroed_ranges_and_cuts_never_panic_hang_or_leak_a_value ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.35s
+
+
+running 1 test
+test damaged_files_never_panic_hang_leak_or_leak_a_value has been running for over 60 seconds
+test damaged_files_never_panic_hang_leak_or_leak_a_value ... FAILED
+
+failures:
+
+---- damaged_files_never_panic_hang_leak_or_leak_a_value stdout ----
+fuzz: seed 20261106, 3000 cases per shape, 5 shapes, 1 and 4 threads (replay: NATA_FUZZ_SEED=20261106 NATA_FUZZ_ONLY=<shape>:<case>)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/file/metadata/mod.rs:1043:9:
+column start and length should not be negative
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/file/metadata/mod.rs:1043:9:
+column start and length should not be negative
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/arrow-buffer-60.1.0/src/util/bit_chunk_iterator.rs:235:9:
+offset + len out of bounds
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1414 but ends at 1405
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1412 but ends at 1405
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1412 but ends at 1405
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2443 but ends at 2440
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2443 but ends at 2440
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2521 but ends at 2518
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2521 but ends at 2518
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2256 but ends at 2255
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2256 but ends at 2255
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1836 but ends at 1835
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3551 but ends at 3550
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3551 but ends at 3550
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1456 but ends at 1447
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1456 but ends at 1447
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2303 but ends at 2302
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2303 but ends at 2302
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1519 but ends at 1516
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1519 but ends at 1516
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3286 but ends at 3285
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3286 but ends at 3285
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1446 but ends at 1432
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1446 but ends at 1432
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2860 but ends at 2859
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2860 but ends at 2859
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1442 but ends at 1435
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1442 but ends at 1435
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2725 but ends at 2724
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2725 but ends at 2724
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1568 but ends at 1566
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1568 but ends at 1566
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2766 but ends at 2765
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2766 but ends at 2765
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2446 but ends at 2445
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2446 but ends at 2445
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3324 but ends at 3323
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1429 but ends at 1414
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1429 but ends at 1414
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3324 but ends at 3323
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3324 but ends at 3323
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3107 but ends at 3105
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1575 but ends at 1574
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1575 but ends at 1574
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3626 but ends at 3625
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2755 but ends at 2754
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2755 but ends at 2754
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1943 but ends at 1941
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3324 but ends at 3323
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3324 but ends at 3323
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1572 but ends at 1570
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1572 but ends at 1570
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2082 but ends at 2081
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2082 but ends at 2081
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3567 but ends at 3566
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3567 but ends at 3566
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1412 but ends at 1397
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1412 but ends at 1397
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3321 but ends at 3320
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2975 but ends at 2974
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1552 but ends at 1551
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1552 but ends at 1551
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2725 but ends at 2724
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2725 but ends at 2724
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3560 but ends at 3559
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3560 but ends at 3559
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1557 but ends at 1555
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2850 but ends at 2849
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2850 but ends at 2849
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1436 but ends at 1419
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1436 but ends at 1419
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1452 but ends at 1445
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2082 but ends at 2081
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2082 but ends at 2081
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1559 but ends at 1558
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1462 but ends at 1457
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1462 but ends at 1457
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1419 but ends at 1407
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1419 but ends at 1407
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3560 but ends at 3559
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3560 but ends at 3559
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/util/bit_util.rs:1189:13:
+Num of bytes exceed MAX_VLQ_BYTE_LEN (10)
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2579 but ends at 2578
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2579 but ends at 2578
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2765 but ends at 2764
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2765 but ends at 2764
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2169 but ends at 2168
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2169 but ends at 2168
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1570 but ends at 1569
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1570 but ends at 1569
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3386 but ends at 3385
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3386 but ends at 3385
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2404 but ends at 2403
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1557 but ends at 1556
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1446 but ends at 1430
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1449 but ends at 1440
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1449 but ends at 1440
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2446 but ends at 2445
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 2446 but ends at 2445
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1424 but ends at 1409
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1424 but ends at 1409
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3626 but ends at 3625
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 3626 but ends at 3625
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/decoder/delta_byte_array.rs:101:41:
+slice index starts at 1444 but ends at 1433
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/array_reader/byte_array.rs:391:22:
+attempt to divide by zero
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/arrow/array_reader/byte_array.rs:391:22:
+attempt to divide by zero
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/column/reader/decoder.rs:374:18:
+Decoder for dict should have been set
+panicked at /mnt/work/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/parquet-60.1.0/src/column/reader/decoder.rs:374:18:
+Decoder for dict should have been set
+panicked at crates/nata-parquet/tests/fuzz_files.rs:606:5:
+assertion `left == right` failed: a thread of a scan is still alive
+  left: 3
+ right: 2
+
+
+failures:
+    damaged_files_never_panic_hang_leak_or_leak_a_value
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 280.33s
+
+error: test failed, to rerun pass `-p nata-parquet --test fuzz_files`
+exit status: 101

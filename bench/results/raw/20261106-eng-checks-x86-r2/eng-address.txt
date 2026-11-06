@@ -1,0 +1,328 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded rustc-demangle v0.1.28
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded getopts v0.2.24
+  Downloaded addr2line v0.27.1
+  Downloaded miniz_oxide v0.9.1
+  Downloaded gimli v0.34.0
+  Downloaded libc v0.2.189
+
+running 20 tests
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 4 tests
+test arrow_rem_of_min_by_minus_one_is_zero_not_an_error ... ok
+test arrow_decimal_add_does_not_check_the_declared_precision ... ok
+test arrow_decimal_mul_does_check_i128_overflow ... ok
+test checked_integer_ops_report_overflow ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 13 tests
+test arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row ... ok
+test arrow_skips_null_slots_by_itself ... ok
+test arrow_without_compaction_errors_on_a_row_the_guard_removed ... ok
+test case_as_selection_splitting_gives_the_else_value_to_guarded_rows ... ok
+test the_arrow_error_kinds_map_to_the_same_categories_as_ours ... ok
+test failures_in_null_slots_are_not_errors ... ok
+test case_guarding_minus_one_protects_the_overflow_row_only ... ok
+test a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it ... ok
+test the_guard_does_not_protect_a_surviving_min_over_minus_one ... ok
+test without_the_guard_a_surviving_zero_divisor_is_an_error ... ok
+test the_guard_removes_the_zero_divisor_rows_so_there_is_no_error ... ok
+test the_second_guard_protects_the_nested_division ... ok
+test every_executor_matches_the_row_by_row_reference_on_every_table_and_query ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 1 test
+test an_unchecked_addition_panics_instead_of_wrapping ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 21 tests
+test adapter::tests::only_the_expected_type_defined_order_is_usable ... ok
+test adapter::tests::twos_complement_decoding ... ok
+test civil::tests::dates_round_trip_over_the_whole_supported_range ... ok
+test civil::tests::dates_and_timestamps_have_duckdbs_text ... ok
+test csv::tests::decimals_dates_and_blobs ... ok
+test csv::tests::fields_are_quoted_like_duckdb ... ok
+test error::tests::display_names_file_and_row_group ... ok
+test filter::tests::decimals_compare_exactly_across_scales ... ok
+test csv::tests::floats_have_duckdbs_text ... ok
+test error::tests::redact_drops_quoted_text_and_control_characters ... ok
+test filter::tests::float_order_is_duckdbs ... ok
+test filter::tests::small_integer_columns_compare_without_casting_the_literal ... ok
+test filter::tests::syntax_accepts_the_documented_forms ... ok
+test schema::tests::arrow_types_follow_adr_0003 ... ok
+test filter::tests::syntax_errors_say_what_is_wrong ... ok
+test filter::tests::plain_text_binary_and_unsigned_columns_use_unsigned_bytes_and_unsigned_numbers ... ok
+test schema::tests::unsigned_integers_are_never_pruned ... ok
+test reader::tests::parquet_errors_name_the_file_and_the_row_group_and_keep_no_quoted_text ... ok
+test stats::tests::a_reservation_counts_while_alive_and_remembers_its_high ... ok
+test filter::tests::literals_are_typed_from_the_column_and_nothing_is_guessed ... ok
+test reader::tests::expanded_strings_are_not_the_requested_dictionary_type ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 15 tests
+test an_exactness_flag_per_side ... ok
+test a_missing_statistics_block_is_no_statistic ... ok
+test binary_bounds_are_bytes_in_unsigned_order ... ok
+test a_missing_null_count_is_not_zero ... ok
+test dates_and_timestamps ... ok
+test a_missing_exactness_flag_means_not_exact ... ok
+test deprecated_min_max_are_never_used ... ok
+test decimals_from_every_storage_form ... ok
+test exact_text_bounds_with_the_right_column_order_are_used ... ok
+test nan_count_is_never_invented ... ok
+test only_the_expected_type_defined_order_gives_bounds ... ok
+test text_bounds_that_are_not_utf8_are_dropped ... ok
+test the_column_order_of_a_short_or_missing_list_is_undefined_and_never_panics ... ok
+test row_group_stats_of_a_real_schema_and_a_negative_row_count ... ok
+test types_that_cannot_be_mapped_soundly_have_no_bounds ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 7 tests
+test a_nan_group_is_never_proven_away_by_a_maximum ... ok
+test nulls_in_some_row_groups_only ... ok
+test bytes_are_compared_as_unsigned ... ok
+test floats_nan_zeros_infinities_and_an_all_null_group ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales has been running for over 60 seconds
+test integers_dates_timestamps_booleans has been running for over 60 seconds
+test unicode_text_with_truncated_statistics has been running for over 60 seconds
+test unicode_text_with_truncated_statistics ... ok
+test decimals_of_every_storage_width_with_literals_at_other_scales ... ok
+test integers_dates_timestamps_booleans ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 233.85s
+
+
+running 4 tests
+test lineitem_written_by_pyarrow ... ok
+test lineitem_written_by_duckdb ... ok
+test filter_columns_that_are_not_projected ... ok
+test lineitem_written_by_parquet_rs_in_every_style has been running for over 60 seconds
+test lineitem_written_by_parquet_rs_in_every_style ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 63.70s
+
+
+running 8 tests
+test unreadable_files_name_the_file ... ok
+test types_outside_the_card_are_not_supported_yet_and_only_when_touched ... ok
+test a_damaged_row_group_is_an_error_and_later_row_groups_are_not_read ... ok
+test garbage_footers_and_garbage_files ... ok
+test a_later_file_that_is_corrupt_fails_the_scan_before_any_row_is_returned ... ok
+test a_column_chunk_that_is_cut_names_the_file_and_the_row_group ... ok
+test every_truncation_of_a_valid_file_is_an_error_that_names_the_file ... ok
+test flipped_bytes_zeroed_ranges_and_cuts_never_panic_hang_or_leak_a_value ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s
+
+
+running 1 test
+test damaged_files_never_panic_hang_leak_or_leak_a_value has been running for over 60 seconds
+test damaged_files_never_panic_hang_leak_or_leak_a_value ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 285.08s
+
+
+running 3 tests
+test concat_of_dictionaries_with_an_extreme_key_under_a_null_slot_does_not_panic ... ok
+test our_own_arithmetic_still_panics_on_overflow ... ok
+test control_a_key_that_does_not_overflow_the_offset_is_fine_with_checks_on_or_off ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+test a_task_error_never_carries_a_cell_value ... ok
+test the_batch_being_filtered_is_counted_even_when_nothing_is_kept ... ok
+test a_closed_consumer_cancels_the_scan_and_the_error_is_the_sinks ... ok
+test footers_are_read_when_the_scan_reaches_the_file ... ok
+test the_error_of_the_lowest_file_and_row_group_is_reported_for_every_thread_count ... ok
+test unordered_parallel_output_is_the_same_multiset ... ok
+test limit_returns_exactly_the_first_n_rows_in_ordered_mode_and_leaves_nothing_behind ... ok
+test many_small_files_hold_few_handles_and_footers ... ok
+test ordered_parallel_output_is_the_serial_output_for_every_thread_count_and_window ... ok
+test a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.24s
+
+
+running 6 tests
+test usage_errors ... ok
+test schema_differences_between_files_name_the_file ... ok
+test the_file_list_is_scanned_in_the_order_given ... ok
+test tasks_are_independent_row_group_morsels ... ok
+test the_report_counts_files_row_groups_rows_and_bytes ... ok
+test limit_stops_early_and_reports_what_was_not_read ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind has been running for over 60 seconds
+test random_cancel_error_and_delay_scenarios_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 71.89s
+
+
+running 1 test
+test pruned_equals_unpruned_equals_duckdb_on_random_files_and_predicates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.64s
+
+
+running 7 tests
+test known_difference_exact_decimal_comparison_where_duckdb_errors ... ok
+test csv_text_of_every_ascii_character_and_every_byte ... ok
+test empty_and_one_row_files ... ok
+test float_text_reads_back_to_the_same_values_and_mostly_the_same_text ... ok
+test every_type_in_one_file ... ok
+test timestamps_in_milliseconds ... ok
+test all_null_columns_of_every_type ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.21s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test the_facts_behind_the_rules_hold_in_duckdb ... ok
+test the_row_oracle_agrees_with_duckdb ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.09s
+
+
+running 6 tests
+test r2_range_predicate_on_sorted_integers_skips_at_least_60_percent ... ok
+test tightness_text ... ok
+test tightness_floats ... ok
+test tightness_integers_dates_booleans_and_decimals ... ok
+test r2_year_predicate_on_sorted_dates_skips_at_least_60_percent_and_exactly_the_empty_groups ... ok
+test clustered_random_data_skips_the_disjoint_groups ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 31.67s
+
+
+running 35 tests
+test all_null_with_bounds_is_a_contradiction_and_kept ... ok
+test all_null_row_group_with_each_operator ... ok
+test binary_increment_skips_trailing_ff ... ok
+test contradictory_statistics_are_kept ... ok
+test empty_row_group_is_skipped_for_every_predicate ... ok
+test decimal_extremes_and_validation ... ok
+test decimal_rescaling_does_not_overflow ... ok
+test decimal_literal_with_more_fraction_digits_than_the_column ... ok
+test float32_columns_compare_as_the_double_they_widen_to ... ok
+test float_nan_count_above_the_row_count_is_contradictory ... ok
+test float_group_without_nan_rows ... ok
+test float_group_with_unknown_nan_rows ... ok
+test float_infinities_are_ordinary_numbers ... ok
+test int32_column_with_wide_literals_is_compared_exactly ... ok
+test integer_boundaries_of_each_operator ... ok
+test is_null_and_is_not_null_use_the_null_count ... ok
+test missing_statistics_never_skip ... ok
+test integer_extremes_do_not_overflow ... ok
+test one_row_group ... ok
+test nan_in_the_bounds_is_not_trusted ... ok
+test one_provably_empty_term_skips_the_conjunction ... ok
+test nan_literal ... ok
+test statistics_without_a_null_count_still_prune_comparisons ... ok
+test skip_reason_is_out_of_range ... ok
+test one_sided_statistics_are_used_on_their_side_only ... ok
+test text_truncated_at_a_character_boundary_is_usable ... ok
+test text_order_is_by_bytes_for_non_ascii ... ok
+test text_with_exact_bounds_is_compared_bytewise ... ok
+test utf8_bound_from_bytes_refuses_a_cut_character ... ok
+test timestamps_and_booleans ... ok
+test unknown_column_unsupported_type_and_mismatched_literal_are_kept ... ok
+test truncated_maximum_that_cannot_be_used ... ok
+test truncated_bounds_are_bounds_only ... ok
+test year_range_on_dates ... ok
+test zeros_are_equal_whatever_their_sign ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 7 tests
+test control_missing_bound_as_zero_is_rejected ... ok
+test control_nan_blind_reader_is_rejected ... ok
+test control_nan_trusting_reference_is_rejected ... ok
+test control_truncated_as_exact_reader_is_rejected ... ok
+test control_missing_null_count_as_zero_is_rejected ... ok
+test generator_reaches_the_hard_situations ... ok
+test can_skip_is_sound_against_a_row_by_row_oracle ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.36s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test only_the_facade_names_std_synchronisation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test a_sink_error_cancels_everything_and_wins_over_a_task_error ... ok
+test a_panic_in_the_sink_still_joins_every_worker ... ok
+test a_file_that_cannot_be_opened_has_its_place_in_the_order ... ok
+test a_panic_in_a_task_is_an_error_not_a_hang ... ok
+test an_error_cancels_the_tasks_above_it_even_while_a_lower_task_is_still_running ... ok
+test a_run_with_no_files_and_one_with_empty_files_finish ... ok
+test an_error_after_a_satisfied_limit_is_never_reported ... ok
+test unordered_output_is_the_same_multiset ... ok
+test cancel_from_outside_reaches_blocked_tasks_a_blocked_consumer_and_idle_workers ... ok
+test a_slow_early_task_does_not_make_the_reorder_buffer_grow ... ok
+test a_limit_stops_after_exactly_the_first_k_results_and_leaves_nothing_behind ... ok
+test ordered_output_is_the_sequential_order_for_every_thread_count_and_window ... ok
+test a_slow_consumer_never_has_more_than_a_window_of_results_alive ... ok
+test the_error_of_the_lowest_task_wins_whoever_is_first ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.81s
+
+exit status: 0
