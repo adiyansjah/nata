@@ -202,6 +202,7 @@ check "--peers 2: the run finishes and creates the main VM and 2 peers" "[ $rc -
 check "a peer has no data disk, no service account, nata-peer=1, and the run's label" "grep 'instances create peers-peer' $F/calls.log | grep -v -- '--disk ' | grep -- '--no-service-account' | grep -- 'nata-peer=1' | grep -q 'nata-run=peers'"
 check "the driver got PEERS (its own address first, then the 2 peers) and the run key, before the source" "[ \$(wc -l < $F/PEERS.received) -eq 3 ] && cmp -s $F/peer_key.received $O/key && [ \$(grep -n 'PEERS' $F/calls.log | head -1 | cut -d: -f1) -lt \$(grep -n 'tar -xzf' $F/calls.log | head -1 | cut -d: -f1) ]"
 check "everything is gone afterwards, peers included" "[ \$(left) -eq 0 ]"
+check "the report counts the peers' VM seconds in the cost" "grep -q '^peer VM seconds counted: [0-9]* (2 peers' $O/report.txt && grep -q 'peers included' $O/report.txt"
 new_world peerfail
 FAKE_PEER_FAILS=1 orch run --job ci --approved-usd 5 --run-id peerfail --peers 1 > "$T/o" 2>&1; rc=$?
 check "a peer that cannot be created fails the run, the source is never delivered, and nothing is left" "[ $rc -ne 0 ] && ! grep -q 'tar -xzf' $F/calls.log && [ \$(left) -eq 0 ]"

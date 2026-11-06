@@ -226,7 +226,7 @@ create_peers() { # once per run, next to the first main VM; writes PEERS and pee
   myip=$(G compute instances describe "$VM" --zone "$ZONE" --format='value(networkInterfaces[0].networkIP)' 2>/dev/null)
   printf '%s\n' $myip $ips | vm_ssh 'cat > /mnt/work/PEERS' || return 1
   vm_ssh 'umask 077; cat > /mnt/work/peer_key' < "$OUT/key" || return 1
-  PEERS_DONE=1
+  PEERS_DONE=1; PEERS_STARTED=$(date +%s)
 }
 
 pull_state() { # copy state, results and logs from the data disk; only replace local files if the copy is whole
@@ -296,7 +296,9 @@ write_report() {
     echo "machines used, in order: ${USED_LIST:-none}"
     echo "steps completed: $(ls "$OUT/state" 2>/dev/null | grep -c '\.done$')"
     echo "resources left after cleanup: ${LEFT:-unknown}"
-    awk -v s="$used_seconds" -v r="${LAST_RATE:-0}" 'BEGIN { printf "VM cost estimate (last machine rate x counted seconds): $%.3f\n", s/3600*r }'
+    local ps=0; [ -n "${PEERS_STARTED:-}" ] && ps=$(( ($(date +%s) - PEERS_STARTED) * PEERS ))
+    [ "$PEERS" -gt 0 ] && echo "peer VM seconds counted: $ps ($PEERS peers from their creation to the cleanup)"
+    awk -v s="$used_seconds" -v p="$ps" -v r="${LAST_RATE:-0}" 'BEGIN { printf "VM cost estimate (last machine rate x counted seconds, peers included): $%.3f\n", (s+p)/3600*r }'
   } > "$OUT/report.txt"
 }
 
