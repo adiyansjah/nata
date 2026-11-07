@@ -69,6 +69,8 @@ try:
             for num,v in reversed(list(enumerate(parameters.get(i,[]),1))):nq=nq.replace('$'+str(num),quote(v));pquery=pquery.replace('$'+str(num),quote(v))
             # PG17 renamed PG15/16's ICU locale column. It is NULL for this C fixture.
             pquery=pquery.replace('d.daticulocale','NULL::text')
+            # PG16 added daticurules; the Debian 12 VM oracle is PG15 (found 2026-11-08, wbrowse-n4a). NULL for this C fixture.
+            if pg.info.server_version<160000:pquery=pquery.replace('d.daticurules','NULL::text')
             record={'statement':i,'client':item['client'],'sql':nq}
             try:
                 po,pr=raw(pg,pquery);no,nr=raw(nata,nq)
