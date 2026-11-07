@@ -176,6 +176,9 @@ Cloud resources cost real money, so an agent never creates, starts or resizes on
    suites and benchmarks do not run on the development VM (8 vCPU; two children's local fuzz and mutants drove it to load 30). They run as
    `orchestrate.sh` jobs, the generic one being `heavy` (`scripts/gcp/README.md`), on a machine chosen for the job: 16 or 32 vCPU for
    parallel work, 8 vCPU where numbers must compare with earlier baselines. Children build and run short tests locally.
+   Mutant sweeps count as heavy (each mutant rebuilds and re-runs a crate's tests: one sweep held the VM for half an hour). What a child
+   does run locally, it runs one job at a time, never several heavy jobs in parallel (one child running a mutant sweep, the fuzzer and the
+   workspace tests at once kept the load at 15-17 on 8 vCPU).
 4. **Keep it small and stop it.** Use the smallest machine that answers the question. Delete or stop the VM when the run ends, and report what was created and what was removed. Never leave a VM or disk running unnoticed.
 5. **Record it.** Note the machine type, region and date next to the result in `bench/results/`, so the cost and the hardware are known (see section 6, measurements).
 
