@@ -36,6 +36,58 @@ class Generator(unittest.TestCase):
             self.assertIn(k, text)
 
 
+class DifferenceClasses(unittest.TestCase):
+    def test_minimum_negation_class_requires_the_exact_operation_type_and_position(self):
+        for value, typ in [("2147483648", "INTEGER"), ("9223372036854775808", "BIGINT")]:
+            sql = f"SELECT (- -{value}) AS c0 FROM t1"
+            why = f"target raised an error but the oracle answered: execution error: integer overflow in a unary minus: the result does not fit {typ}. Cast an operand (line 1, column 8)"
+            self.assertTrue(subset_cli.classify(why, sql=sql).startswith("listed: negating"))
+            for w, q in [(why.replace("column 8", "column 9"), sql),
+                         (why.replace(typ, "SMALLINT"), sql),
+                         (why.replace("a unary minus", "a multiplication"), sql),
+                         (why, sql.replace(value, "5")), (why, sql.replace(value, value + ".0")),
+                         (why, sql.replace(value, value + " + 1")),
+                         (why.replace("(line 1, column 8)", ""), sql)]:
+                self.assertFalse(subset_cli.classify(w, sql=q).startswith("listed:"), (w, q))
+        # The new post-fix C difference: the literal is in WHERE, not necessarily a projection.
+        _, queries = subset_cli.build(20261107, 2, 40, 25)
+        sql = queries[13].sql(NO)
+        path = "/tmp/fuzz/t2.parquet"
+        submitted = sql.replace("FROM t2", f"FROM '{path}'")
+        col = submitted.index("(- -9223372036854775808)") + 1
+        why = f"target raised an error: error: {path}: row group 0: execution error: integer overflow in a unary minus: the result does not fit BIGINT. Cast an operand (line 1, column {col})"
+        self.assertTrue(subset_cli.classify(why, sql=sql).startswith("listed: negating"))
+
+    def test_between_null_upper_cast_requires_a_reaching_null_row_and_the_exact_error(self):
+        from dataclasses import replace
+        tables, queries = subset_cli.build(20261107, 2202, 40, 25)
+        original = queries[31]
+        case = original.items[0].e
+        between = case.whens[0][0]
+        # The replay's shrunk shape, retaining its actual failing row (id 12).
+        case = replace(case, whens=((replace(between, x=Col("INTEGER", "a")), Col("REAL", "r")),
+                                   (Lit("BOOLEAN", "true"), Col("REAL", "r"))), els=Col("REAL", "r"))
+        query = replace(original, items=(Item(case, "c0"),), where=None)
+        row = tables["t1"][-1]
+        tables = {"t1": [row], "t2": []}
+        why = "target raised an error but the oracle answered: execution error: a BIGINT value does not fit INTEGER in this conversion"
+        classify = lambda q, t=tables, w=why: subset_cli.shrunk_class(w, q.sql(NO), q, t)
+        self.assertTrue(classify(query).startswith("listed: BETWEEN"))
+        # No data, a FALSE or TRUE lower comparison, a fitting/NULL upper cast, another
+        # operation's error, an earlier CASE branch, WHERE or LIMIT must never be excused.
+        self.assertTrue(subset_cli.shrunk_class(why, query.sql(NO)).startswith("BUG?"))
+        for a, b in [("0", "-4294967296"), ("2147483647", "-4294967296"), ("NULL", "1"), ("NULL", "NULL")]:
+            r = row[:]; r[1], r[2] = a, b
+            self.assertTrue(classify(query, {"t1": [r]}).startswith("BUG?"), (a, b))
+        true_lower = row[:]; true_lower[1] = "2147483647"
+        self.assertTrue(classify(query, {"t1": [row, true_lower]}).startswith("BUG?"))
+        self.assertTrue(classify(query, {"t1": []}).startswith("BUG?"))
+        self.assertTrue(classify(query, w="target raised an error: integer overflow").startswith("BUG?"))
+        for q in [replace(query, where=Lit("BOOLEAN", "true")), replace(query, limit=1),
+                  replace(query, items=(Item(replace(case, whens=((Lit("BOOLEAN", "true"), Col("REAL", "r")),) + case.whens), "c0"),))]:
+            self.assertTrue(classify(q).startswith("BUG?"))
+
+
 class Runs(unittest.TestCase):
     def test_the_control_finds_nothing(self):
         # DuckDB as the target of itself, the faithful rendering: no difference

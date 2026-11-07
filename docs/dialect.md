@@ -114,6 +114,7 @@ owner's delegation, `bench/results/20261106-sql-frontend.md`):
 | `CAST(s AS BOOLEAN)` with `'t'`, `'yes'`, `'1'`, `'on'` | converts | error: only `true` and `false`, in any case |
 | `CAST(s AS DATE)` with `'2024/02/29'`, `'2024-2-9'`, `'2024-02-29 10:00:00'` | converts | error: `YYYY-MM-DD` of a date that exists (spaces around are trimmed) |
 | `d IN (CAST(1.5 AS DOUBLE))` | allowed | `not supported yet`: the list holds literals (a `CAST` of a literal is not one) |
+| negating a negative minimum literal: `- -2147483648`, `- -9223372036854775808` (also parenthesized) | folds to the positive value in a wider literal type | INTEGER / BIGINT overflow, respectively: the inner negative literal is typed by its value (8b.10), and outer negation keeps that type |
 | what is evaluated for which rows | see section 9b | see section 9b |
 
 ## 9b. What is evaluated for which rows (decided while building step 3, 2026-11-06)
@@ -123,6 +124,7 @@ executor evaluates:
 - **`AND`, `OR`:** the next operand only for the rows the earlier ones left undecided (`AND`: TRUE or NULL so far; `OR`: FALSE or NULL). In a `WHERE`
   only TRUE rows matter, so a top-level `AND` also drops the rows whose earlier operand is NULL. DuckDB evaluates every operand of an `AND`/`OR` in a projection.
 - **`CASE`:** a branch only for the rows that take it. **`BETWEEN`:** the upper bound only for the rows the lower bound did not decide as FALSE (in a `WHERE`: only for the rows whose lower bound is TRUE).
+  This includes a NULL lower comparison inside a `CASE` condition: an invalid upper-bound cast still errors there; DuckDB may skip it when the tested value is NULL.
 - **`LIMIT`:** the select list is evaluated for the first `offset + n` rows the `WHERE` keeps and for no later row (the rows `OFFSET` drops are still
   evaluated), as DuckDB does with its limit pushed below the projection. The `WHERE` is never skipped: it decides which rows count.
 - **an operand next to a NULL:** both operands of `+ - * % // =` and the rest are evaluated for the selected rows; DuckDB does not evaluate the other

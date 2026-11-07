@@ -766,3 +766,85 @@ fn bare_columns_preserve_values_order_duplicates_and_nulls() {
         );
     }
 }
+
+#[test]
+fn nested_negations_overflow_at_the_original_integer_width_only_for_reached_rows() {
+    let p = fixture("nested-negations");
+    for min in ["9223372036854775808", "2147483648"] {
+        for expr in [
+            format!("- -{min}"),
+            format!("-(-{min})"),
+            format!("-(-(-{min}))"),
+        ] {
+            let q = format!("SELECT {expr} AS x FROM '{p}' LIMIT 1");
+            assert!(err(&q).contains("integer overflow"), "{expr}");
+            assert!(rows(&format!("SELECT {expr} AS x FROM '{p}' WHERE id < 0")).is_empty());
+            assert_eq!(
+                rows(&format!(
+                    "SELECT CASE WHEN id < 0 THEN {expr} ELSE 1 END AS x FROM '{p}' LIMIT 1"
+                )),
+                ["1"]
+            );
+        }
+    }
+    for (expr, value) in [
+        ("- -5", "5"),
+        ("-(-5)", "5"),
+        ("-(-(-5))", "-5"),
+        ("-(-1.25)", "1.25"),
+        ("-0", "0"),
+        ("-2147483648", "-2147483648"),
+        ("-9223372036854775808", "-9223372036854775808"),
+    ] {
+        assert_eq!(
+            rows(&format!("SELECT {expr} AS x FROM '{p}' LIMIT 1")),
+            [value],
+            "{expr}"
+        );
+    }
+}
+
+#[test]
+fn between_in_a_case_condition_evaluates_upper_bounds_for_null_but_not_false_lower_bounds() {
+    use arrow_array::{Int32Array, Int64Array, RecordBatch};
+    use std::sync::Arc;
+    let d = dir("between-case-null");
+    let path = d.join("t.parquet");
+    let batch = RecordBatch::try_from_iter(vec![
+        (
+            "id",
+            Arc::new(Int32Array::from(vec![1, 2, 3])) as arrow_array::ArrayRef,
+        ),
+        (
+            "a",
+            Arc::new(Int32Array::from(vec![Some(0), None, Some(0)])),
+        ),
+        ("b", Arc::new(Int64Array::from(vec![i64::MAX, i64::MAX, 0]))),
+    ])
+    .expect("batch");
+    write_batch(&path, &batch, 3);
+    let p = path.display();
+    let between = "(a + id) BETWEEN 2147483647 AND CAST(b AS INTEGER)";
+    // A FALSE lower comparison skips the overflowing upper bound even inside WHEN.
+    assert_eq!(
+        rows(&format!(
+            "SELECT CASE WHEN {between} THEN 1 ELSE 0 END AS x FROM '{p}' WHERE id = 1"
+        )),
+        ["0"]
+    );
+    // NULL is undecided in a CASE condition (unlike a top-level WHERE).
+    assert!(
+        err(&format!(
+            "SELECT CASE WHEN {between} THEN 1 ELSE 0 END AS x FROM '{p}' WHERE id = 2"
+        ))
+        .contains("a BIGINT value does not fit INTEGER")
+    );
+    assert!(rows(&format!("SELECT id FROM '{p}' WHERE {between}")).is_empty());
+    // Earlier CASE branches remove their rows before evaluating the next WHEN.
+    assert_eq!(
+        rows(&format!(
+            "SELECT CASE WHEN id = 2 THEN 2 WHEN {between} THEN 1 ELSE 0 END AS x FROM '{p}'"
+        )),
+        ["0", "2", "0"]
+    );
+}

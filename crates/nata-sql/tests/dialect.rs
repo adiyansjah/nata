@@ -1247,3 +1247,20 @@ fn s1_a_glob_whose_later_file_has_another_schema_binds_and_the_scan_finds_the_fi
         .is_err()
     );
 }
+
+#[test]
+fn s8b_nested_negations_preserve_the_negative_literals_type() {
+    for (min, ty) in [("9223372036854775808", "BIGINT"), ("2147483648", "INTEGER")] {
+        for expr in [
+            format!("- -{min}"),
+            format!("-(-{min})"),
+            format!("-(-(-{min}))"),
+        ] {
+            let p = ok(&format!("EXPLAIN SELECT {expr} AS x FROM 't.parquet'"));
+            let e = &p.plan.project.exprs[0].expr;
+            assert_eq!(e.ty.to_string(), ty, "{expr}");
+            assert!(matches!(e.kind, ExprKind::Neg(_)), "{expr}: {e:?}");
+            assert!(p.plan.explain_text().contains(&format!("AS x: {ty}")));
+        }
+    }
+}

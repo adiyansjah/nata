@@ -56,6 +56,7 @@ M = {
  "where-or-evaluates-every-operand-on-all-rows": ("exec", [(EV, "open.retain(|r| !taken[*r as usize]);", "")]),
  "where-and-evaluates-every-operand-on-all-rows": ("exec", [(EV, "rows = self.filter_rows(p, &rows)?;", "rows = { let t = self.filter_rows(p, sel)?; rows.into_iter().filter(|r| t.contains(r)).collect() };")]),
  "and-or-in-a-projection-evaluate-every-operand": ("exec", [(EV, ".filter(|r| { let i = *r as usize; !(acc.valid[i] && v[i] != is_and) }) .collect() };", ".collect() };")]),
+ "between-null-lower-bound-skips-upper-bound": ("exec", [(EV, "!(ge.valid[i] && !g[i])", "ge.valid[i] && g[i]")]),
  "between-upper-bound-evaluated-for-every-row": ("exec", [(EV, "let hi = self.eval(high, &rest)?;", "let hi = self.eval(high, sel)?;")]),
  "where-between-evaluates-the-upper-bound-for-every-row": ("exec", [(EV, "let open: Vec<u32> = sel.iter().copied().filter(|r| first_true(r) != negated).collect();", "let open: Vec<u32> = sel.to_vec();")]),
  "in-list-null-element-ignored": ("exec", [(EV, "if !it.valid[i] { null_seen = true; }", "if !it.valid[i] { }")]),

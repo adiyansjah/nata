@@ -34,6 +34,7 @@ M = {
    (P, 'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names)),); depth += 1; }',
        'if let Some(f) = &self.filter { line(depth, format!("Filter {}", render_expr(&f.predicate, &names)),); depth += 1; } if let Some(l) = &self.limit { line(depth, format!("Limit {} offset {}", l.n, l.offset)); depth += 1; }')],
  # ---- binder and typing
+ "nested-negation-retyped-as-a-literal": (B, 'Ok(Expr::new(ExprKind::Neg(Box::new(x)), ty, pos))', 'if let ExprKind::Literal(v) = &x.kind {\n            match v {\n                Value::Int(i) => return Ok(int_literal(-i128::from(*i), pos)),\n                Value::Decimal(u) if x.ty.is_decimal() => {\n                    return Ok(Expr::literal(Value::Decimal(-*u), x.ty, pos));\n                }\n                _ => {}\n            }\n        }\nOk(Expr::new(ExprKind::Neg(Box::new(x)), ty, pos))'),
  "quoted-name-folded-to-lower-case": (B, "if id.quoted { id.name.clone() } else {", "if false { id.name.clone() } else {"),
  "string-compared-with-number-accepted": (T, "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) {", "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) || (l == SqlType::Varchar && r.is_exact_numeric()) || (r == SqlType::Varchar && l.is_exact_numeric()) {"),
  "string-compared-with-date-accepted": (T, "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) {", "if l == r || (l.is_exact_numeric() && r.is_exact_numeric()) || (l == SqlType::Varchar && r == SqlType::Date) || (r == SqlType::Varchar && l == SqlType::Date) {"),

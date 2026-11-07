@@ -32,8 +32,37 @@ LISTED = [("CASE results (", "listed: CASE of decimals beyond 38 digits is a bin
           ("scale would be", "listed: decimal result scale beyond 38 is a bind error (decimal-rules 3)")]
 
 
-def classify(why, target_error="", rows=None):
+def minimum_negation_class(why, sql):
+    """Only excuse a reached unary minus of a minimum signed literal, at its reported position.
+
+    The generated spelling is `(- -MIN)`. Its inner literal is INTEGER/BIGINT by value
+    (8b.10), so the outer minus must overflow even though DuckDB folds it wider. Merely
+    containing that spelling is insufficient: another operation may have failed instead.
+    """
+    if not why.startswith("target raised an error") or "integer overflow in a unary minus:" not in why:
+        return None
+    pos = re.search(r"\(line (\d+), column (\d+)\)\s*$", why)
+    if not pos: return None
+    # The adapter replaces FROM tN with a quoted temporary Parquet path. Errors in
+    # WHERE therefore have shifted columns; reconstruct the exact submitted SQL.
+    source = re.search(r"error: (/[^\n]+?/(t[12])\.parquet): row group \d+: execution error:", why)
+    if source:
+        sql = re.sub(r"\bFROM " + source[2] + r"\b", lambda _: "FROM '" + source[1] + "'", sql)
+    line, col = map(int, pos.groups())
+    lines = sql.splitlines(keepends=True)
+    if not 1 <= line <= len(lines) or not 1 <= col <= len(lines[line - 1]): return None
+    at = sum(map(len, lines[:line - 1])) + col - 1
+    literal = re.match(r"\(\s*-\s+-\s*(2147483648|9223372036854775808)\s*\)", sql[at:])
+    if not literal: return None
+    typ = "INTEGER" if literal[1] == "2147483648" else "BIGINT"
+    if f"the result does not fit {typ}." not in why: return None
+    return "listed: negating a minimum signed literal overflows its value-based INTEGER/BIGINT type; DuckDB folds a wider literal (dialect 8b.10, 9)"
+
+
+def classify(why, target_error="", rows=None, sql=""):
     """The class of a difference, for the report."""
+    minimum = minimum_negation_class(why, sql)
+    if minimum: return minimum
     for k, name in LISTED:
         if k in why: return name
     if why.startswith("target raised an error"):
@@ -78,7 +107,7 @@ def run_batch(args, seed, batch, faults=()):
             st["skipped"] += 1; st["skip_reasons"][" ".join(rt[i].error.split()[:8])[:80]] += 1
         elif why:
             if why.startswith("oracle raised an error") and rt[i].ok and not rt[i].rows: why += " [Nata answered with 0 rows]"
-            cls = classify(why, rows=len(rt[i].rows) if rt[i].ok else None)
+            cls = classify(why, rows=len(rt[i].rows) if rt[i].ok else None, sql=q.sql(F))
             st["classes"][cls] += 1
             if cls.startswith("listed"): st["listed"] += 1; continue
             st["diffs"] += 1
@@ -118,10 +147,67 @@ def constant_select_list(sql):
     return bool(m) and not COLUMNS.search(re.sub(r"'(?:[^']|'')*'", "''", m.group(1)))
 
 
-def shrunk_class(why, sql):
+def null_between_cast_difference(why, query, tables):
+    """Prove the narrow §9b difference from the shrunk AST AND its rows, not the word BETWEEN.
+
+    Only an unfiltered, unlimited, single CASE projection is recognized: its first condition is
+    integer BETWEEN with a BIGINT-column -> INTEGER upper cast; later conditions are boolean
+    constants and all results are columns. Thus every row reaches the first condition and no
+    other cast can explain the reported error. Unknown shapes stay BUG?.
+    """
+    from .render import Between, Bin, Case, Cast, Col, Lit
+    if not why.startswith("target raised an error") or "a BIGINT value does not fit INTEGER in this conversion" not in why:
+        return False
+    if query is None or tables is None or query.where is not None or query.limit is not None or len(query.items) != 1:
+        return False
+    case = query.items[0].e
+    if not isinstance(case, Case) or not case.whens:
+        return False
+    between = case.whens[0][0]
+    if not isinstance(between, Between) or not isinstance(between.hi, Cast) or between.hi.t != "INTEGER":
+        return False
+    high = between.hi.x
+    if not isinstance(high, Col) or high.t != "BIGINT":
+        return False
+    if not all(isinstance(v, Col) for _, v in case.whens) or not isinstance(case.els, Col):
+        return False
+    if not all(isinstance(c, Lit) and c.t == "BOOLEAN" and c.text.lower() in ("true", "false", "null") for c, _ in case.whens[1:]):
+        return False
+
+    def integer(e, row):
+        if isinstance(e, Col) and e.t in ("INTEGER", "BIGINT"):
+            text = row[[n for n, _ in subset.COLS].index(e.name)]
+            return None if text == "NULL" else int(text)
+        if isinstance(e, Lit) and e.t in ("INTEGER", "BIGINT"):
+            return None if e.text == "NULL" else int(e.text)
+        if isinstance(e, Bin) and e.op == "+" and e.t == "INTEGER":
+            l, r = integer(e.l, row), integer(e.r, row)
+            if l is None or r is None: return None
+            value = l + r
+            if -(2**31) <= value < 2**31: return value
+        raise ValueError("unproved integer expression or overflow")
+
+    witness = False
+    try:
+        for row in tables[query.frm.name]:
+            x, lo, hi = integer(between.x, row), integer(between.lo, row), integer(high, row)
+            if hi is None or -(2**31) <= hi < 2**31: continue
+            if x is None or lo is None:
+                witness = True       # NULL lower comparison: §9b still evaluates the upper cast
+            elif x >= lo:
+                return False         # TRUE lower comparison: DuckDB should also reach the cast
+            # FALSE: a correct executor skips the upper cast; this row cannot justify the class.
+    except (ValueError, KeyError, IndexError):
+        return False
+    return witness
+
+
+def shrunk_class(why, sql, query=None, tables=None):
     """The class of a difference from the SHRUNK query (what is left once everything that does not matter is gone). `listed:` classes are differences that
     docs/dialect.md section 9 or docs/decimal-rules.md section 9 lists and that are consequences of one rule of Nata: errors are raised only for the rows an
     operand or a branch is evaluated for. Anything else is a candidate bug (class `BUG?`) and fails the run."""
+    if null_between_cast_difference(why, query, tables):
+        return "listed: BETWEEN with a NULL lower comparison still evaluates its upper-bound cast in a CASE condition; DuckDB skips it (dialect 9b)"
     up = sql.upper()
     m = re.match(r"row \d+ differs: oracle (.*) vs target (.*)$", why)
     if m and m.group(1) != m.group(2) and re.sub(r"'(-?)0\.", r"'\1.", m.group(1)) == re.sub(r"'(-?)0\.", r"'\1.", m.group(2)):
@@ -170,7 +256,7 @@ def cmd_run(args):
         results = list(ex.map(work, found[:args.shrink]))
     for (d, _), sh in results:
         seed, batch, qid, why, sql = d
-        cls = shrunk_class(why, sh[0].sql(NO))
+        cls = shrunk_class(why, sh[0].sql(NO), sh[0], sh[1])
         final[cls] += 1
         path = os.path.join(args.out, f"subset-seed{seed}-b{batch}-q{qid}.sql")
         with open(path, "w") as f:

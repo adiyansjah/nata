@@ -516,15 +516,9 @@ impl<'a> Binder<'a> {
             ));
         }
         let ty = neg_type(x.ty).map_err(|e| te(e, pos))?;
-        if let ExprKind::Literal(v) = &x.kind {
-            match v {
-                Value::Int(i) => return Ok(int_literal(-i128::from(*i), pos)),
-                Value::Decimal(u) if x.ty.is_decimal() => {
-                    return Ok(Expr::literal(Value::Decimal(-*u), x.ty, pos));
-                }
-                _ => {}
-            }
-        }
+        // Only the direct AST number above is a signed literal. An already typed
+        // operand (including a negative literal) keeps its type, so the executor
+        // checks this negation for overflow on precisely the rows that reach it.
         Ok(Expr::new(ExprKind::Neg(Box::new(x)), ty, pos))
     }
 
