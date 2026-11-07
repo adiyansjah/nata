@@ -1,0 +1,2303 @@
+   Compiling nata-pgwire v0.0.0 (/mnt/work/src/crates/nata-pgwire)
+    Finished `release` profile [optimized] target(s) in 3.53s
+     Running unittests src/lib.rs (/mnt/work/target-ws/release/deps/nata_pgwire-79a9455e6f439202)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/codec.rs (/mnt/work/target-ws/release/deps/codec-5abb8b7d0bdc6d8a)
+
+running 3 tests
+test backend_metadata_null_empty_and_character_position ... ok
+test every_frontend_message_and_every_truncation ... ok
+test seeded_decoder_fuzz ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/protocol.rs (/mnt/work/target-ws/release/deps/protocol-6668fba89b50b93e)
+
+running 20 tests
+nata serve listening=127.0.0.1:34039 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:36601 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:35207 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:46821 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:38809 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:43165 max_connections=4 query_admission=2 workers=2
+scan_end_us=1335
+scan_end_us=1443
+session=1 duration_us=1638 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1722
+session=1 duration_us=1823 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1866 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2313
+session=1 duration_us=2567 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2991
+session=1 duration_us=107 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3169 rows=0 state=22000 queue_wait_us=1 worker_share=1
+session=1 duration_us=36 rows=10 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1243
+scan_end_us=3121
+session=1 duration_us=227 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=22 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=35 rows=10 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1409
+session=1 duration_us=1630 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1442 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1759
+session=1 duration_us=364 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3690 rows=3 state=00000 queue_wait_us=1 worker_share=1
+session=1 duration_us=39 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=1899 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=56 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+scan_end_us=1131
+session=1 duration_us=1257 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1825
+scan_end_us=1822
+scan_end_us=2190
+session=1 duration_us=2139 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=2207 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=2538 rows=0 state=22000 queue_wait_us=0 worker_share=1
+scan_end_us=1860
+session=1 duration_us=1992 rows=3 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2297
+scan_end_us=1413
+scan_end_us=813
+session=1 duration_us=2593 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1019 rows=0 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=1118
+session=1 duration_us=15 rows=0 state=22P02
+session=1 duration_us=1860 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1116
+session=1 duration_us=1365 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1394 rows=0 state=00000 queue_wait_us=0 worker_share=1
+test exact_adbc_bootstrap_and_unknown_catalog_refusal ... ok
+scan_end_us=1668
+session=1 duration_us=1825 rows=0 state=22000 queue_wait_us=0 worker_share=1
+nata serve listening=127.0.0.1:36691 max_connections=2 query_admission=2 workers=2
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+test exceptional_date_domains_and_zero_bytes_are_explicit_conversion_errors ... ok
+scan_end_us=1613
+scan_end_us=1568
+session=1 duration_us=1902 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1923 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2056
+session=1 duration_us=2148 rows=3 state=00000 queue_wait_us=0 worker_share=1
+nata serve listening=127.0.0.1:38431 max_connections=1 query_admission=2 workers=2
+scan_end_us=1344
+scan_end_us=2362
+session=1 duration_us=1445 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=0A000
+session=1 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=2562 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=12 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=34000
+scan_end_us=1067
+scan_end_us=1260
+test limited_rowless_commands_allow_jdbc_rollback_recovery ... ok
+session=1 duration_us=1166 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1563 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1794
+session=1 duration_us=12 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=1886 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=10 rows=0 state=00000 queue_wait_us=0 worker_share=0
+nata serve listening=127.0.0.1:42437 max_connections=2 query_admission=2 workers=2
+scan_end_us=1483
+scan_end_us=3998
+session=1 duration_us=4738 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=4092
+session=1 duration_us=4196 rows=0 state=00000 queue_wait_us=1 worker_share=1
+session=1 duration_us=4276 rows=0 state=42601 queue_wait_us=0 worker_share=1
+scan_end_us=4987
+session=1 duration_us=5040 rows=0 state=0A000 queue_wait_us=0 worker_share=1
+scan_end_us=3956
+session=1 duration_us=4190 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=777
+session=1 duration_us=870 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1747
+scan_end_us=1603
+session=1 duration_us=1926 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1816
+session=1 duration_us=1722 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1930 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1075
+session=1 duration_us=1360 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=783
+scan_end_us=984
+session=1 duration_us=977 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1292 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2206
+session=1 duration_us=2376 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1376
+scan_end_us=2123
+session=1 duration_us=1641 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=test extended_all_types_match_simple_and_parameter_metadata_is_stable ... 2334ok rows=
+1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=943
+session=1 duration_us=1083 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1583
+session=1 duration_us=1681 rows=0 state=22P02 queue_wait_us=0 worker_share=1
+nata serve listening=127.0.0.1:42591 max_connections=2 query_admission=2 workers=2
+test extended_parameters_are_nodes_and_never_error_values ... ok
+scan_end_us=1080
+scan_end_us=845
+session=1 duration_us=1181 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1012 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=9 rows=0 state=0A000
+scan_end_us=1255
+session=1 duration_us=3489 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2618
+session=1 duration_us=2682 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=3167
+session=1 duration_us=3267 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1052
+scan_end_us=774
+session=1 duration_us=1215 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=931 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=692
+session=1 duration_us=773 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=949
+session=1 duration_us=1096 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=796
+scan_end_us=1011
+session=1 duration_us=905 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1157 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1024
+scan_end_us=1079
+session=1 duration_us=1233 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=9 rows=0 state=0A000
+session=1 duration_us=1349 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1705
+session=1 duration_us=1839 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=567
+session=1 duration_us=619 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=789
+session=1 duration_us=912 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=935
+scan_end_us=637
+session=1 duration_us=728 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1071 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=492
+session=1 duration_us=633 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1248
+scan_end_us=1363
+scan_end_us=1464
+session=1 duration_us=1466 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1898 rows=1 state=00000 queue_wait_us=1 worker_share=1
+session=1 duration_us=1839 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=9 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=7 rows=0 state=26000
+test binary_default_driver_scalars_and_descriptions ... ok
+scan_end_us=500
+scan_end_us=844
+nata serve listening=127.0.0.1:34713 max_connections=4 query_admission=2 workers=2
+session=1 duration_us=925 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=717 rows=0 state=00000 queue_wait_us=0 worker_share=1
+test malformed_lengths_startup_ssl_and_max_connections ... ok
+nata serve listening=127.0.0.1:45063 max_connections=1 query_admission=2 workers=2
+scan_end_us=908
+scan_end_us=1017
+session=1 duration_us=1266 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1036
+session=1 duration_us=1296 rows=0 state=22P02 queue_wait_us=0 worker_share=1
+session=1 duration_us=1152 rows=3 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=850
+scan_end_us=794
+session=1 duration_us=1009 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1007
+session=1 duration_us=838 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1353 rows=0 state=42703 queue_wait_us=0 worker_share=1
+scan_end_us=624
+session=1 duration_us=693 rows=0 state=42601 queue_wait_us=0 worker_share=1
+session=1 duration_us=2 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1894
+scan_end_us=1976
+session=1 duration_us=2028 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=2032 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=1208
+session=1 duration_us=1296 rows=0 state=22P02 queue_wait_us=0 worker_share=1
+scan_end_us=510
+scan_end_us=549
+session=1 duration_us=591 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=642 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=376
+scan_end_us=741
+session=1 duration_us=501 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=877 rows=4 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=7 rows=0 state=0A000
+scan_end_us=716
+session=1 duration_us=962 rows=1 state=00000 queue_wait_us=0 worker_share=1
+test recorded_simple_error_empty_types_nulls_and_terminate ... ok
+test extended_recorded_sequences_and_sync_recovery ... ok
+nata serve listening=127.0.0.1:34375 max_connections=2 query_admission=2 workers=2
+nata serve listening=127.0.0.1:38151 max_connections=2 query_admission=2 workers=2
+scan_end_us=576
+session=1 duration_us=662 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=14 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=7 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=306
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=11 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=417 rows=0 state=42601 queue_wait_us=0 worker_share=1
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=15 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=11 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=861
+session=1 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=946 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=6 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+scan_end_us=433
+session=1 duration_us=4 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+session=1 duration_us=589 rows=0 state=42703 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=525
+session=1 duration_us=640 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=456
+session=1 duration_us=611 rows=0 state=42601 queue_wait_us=0 worker_share=1
+scan_end_us=637
+session=1 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=703 rows=0 state=42883 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+test session_chatter_status_and_transaction_markers ... ok
+scan_end_us=710
+scan_end_us=430
+session=1 duration_us=513 rows=0 state=42804 queue_wait_us=0 worker_share=1
+session=1 duration_us=876 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=6 rows=0 state=34000
+session=1 duration_us=10 rows=0 state=42P05
+nata serve listening=127.0.0.1:35593 max_connections=16 query_admission=2 workers=2
+nata serve listening=127.0.0.1:40245 max_connections=2 query_admission=2 workers=2
+scan_end_us=905
+scan_end_us=784
+session=1 duration_us=1002 rows=0 state=22012 queue_wait_us=0 worker_share=1
+session=1 duration_us=898 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=8 rows=0 state=26000
+session=1 duration_us=7 rows=0 state=26000
+session=1 duration_us=7 rows=0 state=34000
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=7 rows=0 state=42P03
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=6 rows=0 state=34000
+session=1 duration_us=6 rows=0 state=26000
+scan_end_us=572
+session=1 duration_us=650 rows=0 state=22003 queue_wait_us=0 worker_share=1
+scan_end_us=359
+session=1 duration_us=438 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=11 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=495
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=695 rows=0 state=22P02 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=298
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=382 rows=0 state=0A000 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=338
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=402 rows=0 state=42P01 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=10 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=409
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=471 rows=0 state=42703 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=7 rows=0 state=00000 queue_wait_us=0 worker_share=0
+test sqlstate_table_preserves_nata_diagnostics_and_hints ... ok
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+nata serve listening=127.0.0.1:38961 max_connections=2 query_admission=2 workers=2
+session=1 duration_us=10 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=345
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=433 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=9 rows=0 state=22P03
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=353
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=430 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=13 rows=0 state=22P02
+session=1 duration_us=7 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=397
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=458 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=16 rows=0 state=22003
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=504
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=587 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=53 rows=0 state=0A000
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=test startup_chatter_and_binary_payload_refusals ... 1ok duration_us=
+7 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=test unsafe_listen_requires_explicit_flag ... 5ok rows=
+0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=5 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=4 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=7 rows=0 state=54000
+session=1 duration_us=3 rows=0 state=00000 queue_wait_us=0 worker_share=0
+nata serve listening=127.0.0.1:39239 max_connections=2 query_admission=2 workers=2
+scan_end_us=501
+session=1 duration_us=559 rows=1 state=00000 queue_wait_us=0 worker_share=1
+test psql_when_installed ... ok
+scan_end_us=7470
+session=2 duration_us=7546 rows=0 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=7038
+session=2 duration_us=7115 rows=0 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=7007
+session=2 duration_us=7075 rows=0 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=6996
+session=2 duration_us=7070 rows=0 state=00000 queue_wait_us=1 worker_share=1
+session=2 duration_us=11 rows=0 state=54000
+session=2 duration_us=14 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=255 rows=0 state=54000
+test named_lifecycle_duplicates_lookup_sync_and_budgets ... ok
+scan_end_us=106380
+session=1 duration_us=106563 rows=0 state=57014 queue_wait_us=0 worker_share=1
+test cancel_inside_a_wide_row_closes_instead_of_appending_an_error ... ok
+nata serve listening=127.0.0.1:39437 max_connections=4 query_admission=2 workers=2
+scan_end_us=2370
+session=1 duration_us=2481 rows=8192 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=943
+session=1 duration_us=1041 rows=256 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=676
+session=1 duration_us=754 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=316
+session=1 duration_us=384 rows=0 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=629
+session=1 duration_us=712 rows=1 state=00000 queue_wait_us=0 worker_share=1
+test output_buffers_are_batched_byte_bounded_and_nodelay_is_set ... ok
+scan_end_us=670
+session=3 duration_us=784 rows=1 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=1306
+session=2 duration_us=1432 rows=1 state=00000 queue_wait_us=689 worker_share=1
+scan_end_us=1755
+session=4 duration_us=1849 rows=1 state=00000 queue_wait_us=1223 worker_share=1
+scan_end_us=2222
+session=5 duration_us=2342 rows=1 state=00000 queue_wait_us=1660 worker_share=1
+scan_end_us=2721
+session=7 duration_us=2804 rows=1 state=00000 queue_wait_us=2230 worker_share=1
+scan_end_us=3138
+session=6 duration_us=3265 rows=1 state=00000 queue_wait_us=2657 worker_share=1
+scan_end_us=3593
+session=8 duration_us=3681 rows=1 state=00000 queue_wait_us=3109 worker_share=1
+scan_end_us=4056
+session=9 duration_us=4099 rows=1 state=00000 queue_wait_us=3552 worker_share=1
+scan_end_us=611223
+session=1 duration_us=611465 rows=0 state=57014 queue_wait_us=0 worker_share=1
+scan_end_us=719
+session=2 duration_us=798 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=561
+session=1 duration_us=642 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=531
+scan_end_us=530
+session=2 duration_us=617 rows=3 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=659 rows=3 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=706
+session=1 duration_us=796 rows=0 state=57014 queue_wait_us=0 worker_share=1
+scan_end_us=369
+session=2 duration_us=440 rows=0 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=376
+session=2 duration_us=443 rows=0 state=00000 queue_wait_us=0 worker_share=1
+test cancel_wrong_key_disconnect_backpressure_and_session_isolation ... ok
+scan_end_us=2003687
+session=1 duration_us=2003851 rows=0 state=57014 queue_wait_us=0 worker_share=1
+test stalled_reader_does_not_starve_eight_other_sessions ... ok
+test reserved_socket_cap_and_startup_deadline ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.04s
+
+     Running tests/reliability.rs (/mnt/work/target-ws/release/deps/reliability-d40d9d0b57b076bb)
+
+running 4 tests
+nata serve listening=127.0.0.1:33407 max_connections=64 query_admission=2 workers=2
+scan_end_us=2177
+session=1 duration_us=2297 rows=0 state=57014 queue_wait_us=1 worker_share=1
+scan_end_us=7904
+session=2 duration_us=7983 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=7755
+session=3 duration_us=7851 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=7774
+session=4 duration_us=7860 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=7743
+session=5 duration_us=7830 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=2 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=11 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=561
+session=7 duration_us=629 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1822
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=8 duration_us=1893 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=320
+session=10 duration_us=363 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=341
+session=11 duration_us=391 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=15 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=15 duration_us=3740 rows=0 state=57014 queue_wait_us=3738 worker_share=1
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=8672
+scan_end_us=8702
+session=13 duration_us=8799 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=14 duration_us=8805 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=14 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1743
+session=17 duration_us=1792 rows=0 state=57014 queue_wait_us=1 worker_share=1
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7812
+scan_end_us=7776
+session=5 duration_us=7944 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=3 duration_us=7937 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=15545
+session=2 duration_us=15627 rows=1 state=00000 queue_wait_us=7790 worker_share=1
+scan_end_us=15576
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=15675 rows=1 state=00000 queue_wait_us=7788 worker_share=1
+scan_end_us=5113
+session=19 duration_us=5140 rows=0 state=00000 queue_wait_us=4636 worker_share=1
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=16 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=456
+session=20 duration_us=500 rows=0 state=00000 queue_wait_us=0 worker_share=1
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=13 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=361
+session=21 duration_us=391 rows=0 state=00000 queue_wait_us=1 worker_share=1
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=13 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1794
+session=22 duration_us=1847 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=8509
+session=25 duration_us=8568 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=29 duration_us=2697 rows=0 state=57014 queue_wait_us=2695 worker_share=1
+session=2 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=8638
+scan_end_us=8669
+session=28 duration_us=8703 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=27 duration_us=8772 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=2 duration_us=13 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1778
+session=31 duration_us=1835 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=2 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7699
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7786 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=8275
+session=5 duration_us=8404 rows=1 state=00000 queue_wait_us=633 worker_share=1
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7735
+session=3 duration_us=13 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7790 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=8200
+session=4 duration_us=8279 rows=1 state=00000 queue_wait_us=526 worker_share=1
+session=5 duration_us=16 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=11 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=12 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=13 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=36 duration_us=4043 rows=0 state=57014 queue_wait_us=4038 worker_share=1
+session=2 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=8580
+session=35 duration_us=8682 rows=0 state=57014 queue_wait_us=0 worker_share=1
+scan_end_us=8734
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=34 duration_us=8815 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1738
+session=38 duration_us=1792 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1659
+session=39 duration_us=1712 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=12 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=463
+session=41 duration_us=501 rows=0 state=00000 queue_wait_us=1 worker_share=1
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7783
+session=3 duration_us=7856 rows=1 state=00000 queue_wait_us=1 worker_share=1
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7688
+session=5 duration_us=7777 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7825
+session=2 duration_us=7877 rows=1 state=00000 queue_wait_us=115 worker_share=1
+session=3 duration_us=11 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=7716
+session=4 duration_us=7775 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1715
+session=44 duration_us=1773 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=47 duration_us=283 rows=0 state=57014 queue_wait_us=279 worker_share=1
+session=2 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=7 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=48 duration_us=3878 rows=0 state=57014 queue_wait_us=3874 worker_share=1
+scan_end_us=16390
+session=45 duration_us=16488 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=5 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=5 rows=1 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=16569
+session=46 duration_us=16635 rows=0 state=57014 queue_wait_us=0 worker_share=1
+session=2 duration_us=9 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=8 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=6 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=12 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=4 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=3 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=2 rows=1 state=00000 queue_wait_us=0 worker_share=0
+test seeded_disconnect_cancel_kill_under_contention ... ok
+nata serve listening=127.0.0.1:43349 max_connections=64 query_admission=2 workers=2
+scan_end_us=596
+session=2 duration_us=681 rows=1 state=00000 queue_wait_us=0 worker_share=1
+scan_end_us=2003580
+session=1 duration_us=2003709 rows=0 state=57014 queue_wait_us=1 worker_share=1
+test one_byte_per_millisecond_reader_is_bounded ... ok
+nata serve listening=127.0.0.1:45659 max_connections=64 query_admission=2 workers=2
+session=1 duration_us=10 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=17 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=4 duration_us=8 rows=0 state=42P05
+session=7 duration_us=7 rows=0 state=34000
+session=8 duration_us=6 rows=0 state=34000
+session=10 duration_us=5 rows=0 state=34000
+session=12 duration_us=11 rows=0 state=26000
+session=14 duration_us=6 rows=0 state=34000
+session=18 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=18 duration_us=7 rows=0 state=42P05
+session=24 duration_us=14 rows=0 state=26000
+session=27 duration_us=7 rows=0 state=34000
+session=29 duration_us=8 rows=0 state=34000
+session=30 duration_us=6 rows=0 state=34000
+session=31 duration_us=8 rows=0 state=34000
+session=32 duration_us=9 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=32 duration_us=6 rows=0 state=42P05
+session=35 duration_us=7 rows=0 state=34000
+session=37 duration_us=8 rows=0 state=26000
+session=38 duration_us=6 rows=0 state=26000
+session=46 duration_us=9 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=46 duration_us=6 rows=0 state=42P05
+session=47 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=47 duration_us=7 rows=0 state=42P05
+session=50 duration_us=7 rows=0 state=26000
+session=51 duration_us=7 rows=0 state=34000
+session=53 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=53 duration_us=6 rows=0 state=42P05
+session=54 duration_us=8 rows=0 state=26000
+session=57 duration_us=8 rows=0 state=26000
+session=62 duration_us=9 rows=0 state=34000
+session=66 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=66 duration_us=6 rows=0 state=42P05
+session=67 duration_us=7 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=67 duration_us=6 rows=0 state=42P05
+session=69 duration_us=6 rows=0 state=26000
+session=71 duration_us=5 rows=0 state=34000
+session=73 duration_us=6 rows=0 state=34000
+session=74 duration_us=8 rows=0 state=26000
+session=76 duration_us=7 rows=0 state=34000
+session=79 duration_us=6 rows=0 state=34000
+session=83 duration_us=6 rows=0 state=34000
+session=84 duration_us=6 rows=0 state=34000
+session=85 duration_us=8 rows=0 state=26000
+session=87 duration_us=7 rows=0 state=34000
+session=89 duration_us=9 rows=0 state=34000
+session=90 duration_us=8 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=90 duration_us=6 rows=0 state=42P05
+session=92 duration_us=6 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=92 duration_us=7 rows=0 state=42P05
+session=93 duration_us=7 rows=0 state=26000
+session=95 duration_us=5 rows=0 state=34000
+session=98 duration_us=8 rows=0 state=26000
+session=100 duration_us=6 rows=0 state=34000
+test seeded_live_protocol_fuzz ... ok
+nata serve listening=127.0.0.1:44901 max_connections=64 query_admission=2 workers=2
+scan_end_us=1158
+scan_end_us=1450
+session=3 duration_us=1272 rows=1 state=00000 queue_wait_us=0 worker_share=1
+session=1 duration_us=1567 rows=1 state=00000 queue_wait_us=1 worker_share=1
+scan_end_us=2338
+session=5 duration_us=2445 rows=1 state=00000 queue_wait_us=1304 worker_share=1
+scan_end_us=2719
+session=4 duration_us=2968 rows=1 state=00000 queue_wait_us=1164 worker_share=1
+scan_end_us=3507
+session=7 duration_us=3605 rows=1 state=00000 queue_wait_us=2224 worker_share=1
+scan_end_us=3809
+session=6 duration_us=3956 rows=1 state=00000 queue_wait_us=2597 worker_share=1
+scan_end_us=4510
+session=8 duration_us=4655 rows=1 state=00000 queue_wait_us=3509 worker_share=1
+scan_end_us=4822
+session=2 duration_us=4889 rows=1 state=00000 queue_wait_us=3816 worker_share=1
+scan_end_us=5156
+session=9 duration_us=5281 rows=1 state=00000 queue_wait_us=4438 worker_share=1
+scan_end_us=5396
+session=10 duration_us=5563 rows=1 state=00000 queue_wait_us=4553 worker_share=1
+scan_end_us=5777
+session=11 duration_us=5902 rows=1 state=00000 queue_wait_us=5018 worker_share=1
+scan_end_us=5964
+session=12 duration_us=6050 rows=1 state=00000 queue_wait_us=5314 worker_share=1
+scan_end_us=6237
+session=13 duration_us=6353 rows=1 state=00000 queue_wait_us=5715 worker_share=1
+scan_end_us=6445
+session=15 duration_us=6591 rows=1 state=00000 queue_wait_us=5880 worker_share=1
+scan_end_us=6889
+session=14 duration_us=6964 rows=1 state=00000 queue_wait_us=6180 worker_share=1
+scan_end_us=7149
+session=16 duration_us=7250 rows=1 state=00000 queue_wait_us=6420 worker_share=1
+scan_end_us=7263
+session=18 duration_us=7450 rows=1 state=00000 queue_wait_us=6574 worker_share=1
+scan_end_us=7551
+session=17 duration_us=7760 rows=1 state=00000 queue_wait_us=6739 worker_share=1
+scan_end_us=7981
+session=20 duration_us=8114 rows=1 state=00000 queue_wait_us=7095 worker_share=1
+scan_end_us=8380
+session=19 duration_us=8528 rows=1 state=00000 queue_wait_us=7553 worker_share=1
+scan_end_us=8558
+session=21 duration_us=8663 rows=1 state=00000 queue_wait_us=7918 worker_share=1
+scan_end_us=8953
+session=22 duration_us=9147 rows=1 state=00000 queue_wait_us=8151 worker_share=1
+scan_end_us=9083
+session=23 duration_us=9163 rows=1 state=00000 queue_wait_us=8251 worker_share=1
+scan_end_us=9399
+session=24 duration_us=9503 rows=1 state=00000 queue_wait_us=8648 worker_share=1
+scan_end_us=9519
+session=25 duration_us=9697 rows=1 state=00000 queue_wait_us=8857 worker_share=1
+scan_end_us=9914
+session=26 duration_us=10044 rows=1 state=00000 queue_wait_us=9163 worker_share=1
+scan_end_us=10095
+session=28 duration_us=10188 rows=1 state=00000 queue_wait_us=9394 worker_share=1
+scan_end_us=10377
+session=27 duration_us=10567 rows=1 state=00000 queue_wait_us=9801 worker_share=1
+scan_end_us=10797
+session=29 duration_us=10873 rows=1 state=00000 queue_wait_us=10091 worker_share=1
+scan_end_us=10948
+session=30 duration_us=11052 rows=1 state=00000 queue_wait_us=10237 worker_share=1
+scan_end_us=11248
+session=31 duration_us=11348 rows=1 state=00000 queue_wait_us=10661 worker_share=1
+scan_end_us=11551
+session=32 duration_us=11727 rows=1 state=00000 queue_wait_us=10963 worker_share=1
+scan_end_us=11879
+session=33 duration_us=11982 rows=1 state=00000 queue_wait_us=11185 worker_share=1
+scan_end_us=12172
+session=34 duration_us=12387 rows=1 state=00000 queue_wait_us=11436 worker_share=1
+scan_end_us=12537
+session=35 duration_us=12618 rows=1 state=00000 queue_wait_us=11826 worker_share=1
+scan_end_us=12737
+session=36 duration_us=12840 rows=1 state=00000 queue_wait_us=12118 worker_share=1
+scan_end_us=13030
+session=37 duration_us=13182 rows=1 state=00000 queue_wait_us=12461 worker_share=1
+scan_end_us=13293
+session=38 duration_us=13435 rows=1 state=00000 queue_wait_us=12627 worker_share=1
+scan_end_us=13584
+session=39 duration_us=13679 rows=1 state=00000 queue_wait_us=12854 worker_share=1
+scan_end_us=13820
+session=40 duration_us=13921 rows=1 state=00000 queue_wait_us=13162 worker_share=1
+scan_end_us=14122
+session=42 duration_us=14291 rows=1 state=00000 queue_wait_us=13506 worker_share=1
+scan_end_us=14492
+session=41 duration_us=14588 rows=1 state=00000 queue_wait_us=13732 worker_share=1
+scan_end_us=14714
+session=43 duration_us=14799 rows=1 state=00000 queue_wait_us=13987 worker_share=1
+scan_end_us=14900
+session=44 duration_us=14969 rows=1 state=00000 queue_wait_us=14164 worker_share=1
+scan_end_us=15104
+session=46 duration_us=15171 rows=1 state=00000 queue_wait_us=14475 worker_share=1
+scan_end_us=15367
+session=45 duration_us=15483 rows=1 state=00000 queue_wait_us=14840 worker_share=1
+scan_end_us=15667
+session=48 duration_us=15815 rows=1 state=00000 queue_wait_us=15047 worker_share=1
+scan_end_us=15742
+session=47 duration_us=15876 rows=1 state=00000 queue_wait_us=15137 worker_share=1
+scan_end_us=16097
+session=50 duration_us=16191 rows=1 state=00000 queue_wait_us=15461 worker_share=1
+scan_end_us=16207
+session=49 duration_us=16360 rows=1 state=00000 queue_wait_us=15711 worker_share=1
+scan_end_us=16807
+session=51 duration_us=16939 rows=1 state=00000 queue_wait_us=16124 worker_share=1
+scan_end_us=16860
+session=53 duration_us=17014 rows=1 state=00000 queue_wait_us=16121 worker_share=1
+scan_end_us=17359
+session=52 duration_us=17466 rows=1 state=00000 queue_wait_us=16726 worker_share=1
+scan_end_us=17358
+session=55 duration_us=17599 rows=1 state=00000 queue_wait_us=16757 worker_share=1
+scan_end_us=17897
+session=54 duration_us=17982 rows=1 state=00000 queue_wait_us=17203 worker_share=1
+scan_end_us=17953
+session=56 duration_us=18068 rows=1 state=00000 queue_wait_us=17284 worker_share=1
+scan_end_us=18502
+session=57 duration_us=18637 rows=1 state=00000 queue_wait_us=17803 worker_share=1
+scan_end_us=18507
+session=59 duration_us=18663 rows=1 state=00000 queue_wait_us=17760 worker_share=1
+scan_end_us=19047
+session=58 duration_us=19155 rows=1 state=00000 queue_wait_us=18363 worker_share=1
+scan_end_us=19066
+session=60 duration_us=19294 rows=1 state=00000 queue_wait_us=18423 worker_share=1
+scan_end_us=19619
+session=62 duration_us=19763 rows=1 state=00000 queue_wait_us=18917 worker_share=1
+scan_end_us=19763
+session=61 duration_us=19870 rows=1 state=00000 queue_wait_us=19057 worker_share=1
+scan_end_us=20263
+scan_end_us=20136
+session=63 duration_us=20356 rows=1 state=00000 queue_wait_us=19585 worker_share=1
+session=64 duration_us=20199 rows=1 state=00000 queue_wait_us=19578 worker_share=1
+test sixty_four_sessions_and_reserved_sockets ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.67s
+
+   Doc-tests nata_pgwire
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

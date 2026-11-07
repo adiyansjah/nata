@@ -313,7 +313,7 @@ case "$JOB" in
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
   pgwirebench|item35)
-    run pw-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata -p nata-check'
+    run pw-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata -p nata-check -p nata-bench --bins'
     if [ "$JOB" = item35 ]; then
       run pw-data bash -c 'cd "$SRC" && scripts/gen-tpch.sh 0.01 data/client-check && scripts/gen-sql-check-data.sh data/client-check'
       run pw-oracle bash -c 'cd "$SRC" && "$WORK/target-ws/release/nata-check" --candidate "$WORK/target-ws/release/nata" --data data/client-check --queries check/queries/sql > "$RESULTS/item35-oracle.txt" 2>&1'

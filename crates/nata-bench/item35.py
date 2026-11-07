@@ -25,7 +25,7 @@ import importlib.metadata
 versions='\n'.join(f'{n}=={importlib.metadata.version(n)}' for n in ['psycopg','pgcli','adbc-driver-postgresql','pyarrow'])+'\n'
 (out/'versions.txt').write_text(versions)
 clients={}
-for name, connect in [('psycopg',lambda:psycopg.connect(uri)),('adbc',lambda:adbc.connect(uri)),('pgcli',lambda:PGExecute(database='nata',user='test',host='127.0.0.1',port=port))]:
+for name, connect in [('psycopg',lambda:psycopg.connect(uri)),('adbc',lambda:adbc.connect(uri)),('adbc-no-copy',lambda:adbc.connect(uri)),('pgcli',lambda:PGExecute(database='nata',user='test',host='127.0.0.1',port=port))]:
     try:clients[name]=connect()
     except Exception as e: clients[name]=None;print(name,'CONNECT FAIL',str(e),flush=True)
 
@@ -58,7 +58,7 @@ for path in queries:
     oids=raw.query(q)['oids']
     # Full oracle, including its documented tolerances, runs as nata-check job step.
     entry={'query':path.name,'clients':{}}
-    for name in ['psql','pgjdbc','psycopg','pgcli','adbc']:
+    for name in ['psql','pgjdbc','psycopg','pgcli','adbc','adbc-no-copy']:
         try:
             if name=='psql':
                 r=sp.run(['psql','-h','127.0.0.1','-p',port,'-U','test','-d','nata','--csv','-P','null=NULL','-c',q],capture_output=True,text=True)
@@ -75,8 +75,10 @@ for path in queries:
                 r=list(clients[name].run(q))
                 actual=[list(r[0][2])]+[["NULL" if v is None else str(v) for v in row] for row in r[0][1]]
             else:
-                cur=clients[name].cursor();cur.execute(q);table=cur.fetch_arrow_table()
-                actual=[table.column_names]+[["NULL" if v is None else str(v) for v in row.values()] for row in table.to_pylist()]
+                with clients[name].cursor() as cur:
+                    if name=='adbc-no-copy':cur.adbc_statement.set_options(**{'adbc.postgresql.use_copy':'false'})
+                    cur.execute(q);table=cur.fetch_arrow_table()
+                    actual=[table.column_names]+[["NULL" if v is None else str(v) for v in row] for row in zip(*(col.to_pylist() for col in table.columns))]
             ok=actual[0]==expected[0] and normalize(actual[1:])==normalize(expected[1:])
             values_ok=actual[0]==expected[0] and canonical(actual[1:],oids)==canonical(expected[1:],oids)
             entry['clients'][name]={'status':'PASS' if ok else 'TEXT DIFFERENCE','values':'PASS' if values_ok else 'FAIL','rows':len(actual)-1}
@@ -85,7 +87,7 @@ for path in queries:
             if not ok:entry['clients'][name]['example']={'expected':expected[:2],'actual':actual[:2]}
         except Exception as e:
             entry['clients'][name]={'status':'FAIL','error':str(e)}
-            if name=='psycopg':clients[name].rollback()
+            if name in ('psycopg','adbc','adbc-no-copy') and clients[name] is not None:clients[name].rollback()
     results.append(entry)
     print(json.dumps(entry),flush=True)
 (out/'corpus.json').write_text(json.dumps(results,indent=2)+'\n')

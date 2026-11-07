@@ -39,7 +39,7 @@ MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > 
                           'canceling statement due to user request',
                           'spike query failed',
                           'protocol'),
- 'unbounded-bridge': ('crates/nata-pgwire/src/server.rs', 'mpsc::channel(32)', 'mpsc::channel(1_100_000)', 'protocol'),
+ 'unbounded-bridge': ('crates/nata-pgwire/src/server.rs', 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(1_100_000)', 'protocol'),
  'max-connections-ignored': ('crates/nata-pgwire/src/server.rs',
                              'Semaphore::new(config.max_connections)',
                              'Semaphore::new(1024)',
@@ -120,7 +120,7 @@ MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > 
 MUTANTS.update({
  'rowless-limit-refused': (SERVER, 'if column_count(&p.statement.description) != 0 {', 'if true {', 'protocol'),
  'session-cancellation-disabled': (SERVER, '            a.cancel();', '            let _ = a;', 'reliability'),
- 'unbounded-bridge-slow-reader': (SERVER, 'mpsc::channel(32)', 'mpsc::channel(1_100_000)', 'reliability'),
+ 'unbounded-bridge-slow-reader': (SERVER, 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(1_100_000)', 'reliability'),
  'live-decoder-guard-removed': (CODEC, 'if n > self.0.len() {', 'if false {', 'reliability'),
  'session-registry-leaked-after-kill': (SERVER, 'registry.remove(&self.id);', 'registry.get(&self.id);', 'reliability'),
  'named-statement-not-stored': (SERVER, 'self.map.insert(name, value).is_none()', 'name.is_empty() && self.map.insert(name, value).is_none()', 'protocol'),
@@ -135,6 +135,15 @@ MUTANTS.update({
  'admission-not-released-after-kill': (SERVER, 'let _permit = permit;', 'let _permit = permit; std::mem::forget(_permit);', 'reliability'),
 })
 
+MUTANTS.update({
+ 'per-row-write-restored': (SERVER, '                rows += 1;', '                if !output.is_empty() { send_buffer(std::mem::replace(&mut output, Vec::with_capacity(OUTPUT_BYTES)))?; }\n                rows += 1;', 'protocol'),
+ 'bridge-byte-bound-removed': (SERVER, 'const OUTPUT_BYTES: usize = 64 * 1024;', 'const OUTPUT_BYTES: usize = 64 * 1024 * 1024;', 'protocol'),
+ 'nodelay-not-set': (SERVER, 'socket.set_nodelay(true)?;', 'socket.set_nodelay(false)?;', 'protocol'),
+ 'catalog-wrong-oid': (SESSION, '(23, "int4", "int4recv")', '(24, "int4", "int4recv")', 'protocol'),
+ 'partial-row-cancel-appends-error': (SERVER, 'self.used == 0 && self.remaining == 0', 'true', 'protocol'),
+ 'decimal-leading-zero-lost': (SERVER, 'format!("0{s}")', 's', 'protocol'),
+})
+
 def fingerprint():
     h = hashlib.sha256()
     for p in sorted((ROOT/'crates').rglob('*.rs')):
@@ -147,6 +156,7 @@ def main():
     ap.add_argument('names', nargs='*')
     ap.add_argument('--work', type=Path, default=ROOT/'target/mutwork-pgwire')
     a = ap.parse_args()
+    a.work = a.work.resolve()
     before = fingerprint()
     ws = a.work/'ws'
     shutil.rmtree(ws, ignore_errors=True)
@@ -165,6 +175,7 @@ def main():
     for suite in sorted({MUTANTS[n][3] for n in names}):
         rc, out = test(suite)
         if rc:
+            (a.work/('unmutated-'+suite+'.log')).write_text(out)
             print('unmutated copy FAILS\n'+out[-4000:]); return 2
         print('unmutated '+suite+': PASS', flush=True)
     bad = 0

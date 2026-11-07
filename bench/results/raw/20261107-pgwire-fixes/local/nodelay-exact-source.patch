@@ -1,0 +1,10 @@
+--- 4373a63/crates/nata-pgwire/src/server.rs
++++ 4373a63+nodelay/crates/nata-pgwire/src/server.rs
+@@ -164,6 +164,7 @@
+     let ids = AtomicI32::new(1);
+     loop {
+         let (mut socket, _) = listener.accept().await?;
++        socket.set_nodelay(true)?;
+         let Ok(socket_slot) = Arc::clone(&sockets).try_acquire_owned() else {
+             continue;
+         };

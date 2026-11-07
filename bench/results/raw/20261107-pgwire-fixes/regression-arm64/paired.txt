@@ -1,0 +1,19 @@
+pgwire/connections64/concurrent: 0.983x (limit 1.200x): PASS
+pgwire/connections64/sequential: 1.008x (limit 1.200x): PASS
+pgwire/preparation100/named-binary: 1.004x (limit 1.200x): PASS
+pgwire/preparation100/named-text: 0.987x (limit 1.200x): PASS
+pgwire/preparation100/parse-text: 0.991x (limit 1.200x): PASS
+pgwire/share1-of8/raw: 1.001x (limit 1.200x): PASS
+pgwire/stream/1/cli: 1.001x (limit 1.200x): PASS
+pgwire/stream/1/postgres-psql: 0.998x (limit 1.200x): PASS
+pgwire/stream/1/postgres-raw: 0.999x (limit 1.200x): PASS
+pgwire/stream/1/psql: 0.993x (limit 1.200x): PASS
+pgwire/stream/1/python-raw: 1.001x (limit 1.200x): PASS
+pgwire/stream/1/raw: 0.999x (limit 1.200x): PASS
+pgwire/stream/8/cli: 1.002x (limit 1.200x): PASS
+pgwire/stream/8/postgres-psql: 1.005x (limit 1.200x): PASS
+pgwire/stream/8/postgres-raw: 0.993x (limit 1.200x): PASS
+pgwire/stream/8/psql: 0.993x (limit 1.200x): PASS
+pgwire/stream/8/python-raw: 0.996x (limit 1.200x): PASS
+pgwire/stream/8/raw: 0.980x (limit 1.200x): PASS
+exit=0

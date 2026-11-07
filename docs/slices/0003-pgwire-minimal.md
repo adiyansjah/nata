@@ -1,6 +1,6 @@
 # 0003: A minimal Postgres-wire server for slice 4's queries ("4b"), and real-client compatibility (plan item 35)
 
-Status: closed with deviations, 2026-11-07 (streaming budget, ADBC compatibility, ARM64 mutants and carried-in certification gaps recorded below)
+Status: re-closed with deviations, 2026-11-07 (Rust raw streaming budget, default ADBC COPY, literal text and carried-in certification gaps recorded below)
 Date: 2026-11-06
 ADRs: 0001, 0002, 0007 (relies on); creates ADR 0008 "client protocol" (which protocol first, and how types map)
 
@@ -117,3 +117,41 @@ executor resource boundaries; budget at most about a quarter of this slice. No c
   disk TMPDIR, cargo-deny, scan/SQL/differences nata-check with AI_AGENT unset,
   job-chain canary, toolchain-control mutant and leak scans; exact final outcomes
   and limitations are in the closeout. No push.
+
+
+### Re-close amendment, 2026-11-07 (reopened fix step)
+
+[Fix evidence](../../bench/results/20261107-pgwire-fixes.md) supersedes the affected
+step-5 verdicts without removing the old measurements. P14's per-row bridge is
+replaced by two at-most-64-KiB buffers (128 KiB queued); preserve backpressure,
+first-row-before-producer-end, cancellation/disconnect, exact text/binary rows,
+and two-second stalled-buffer writes. NODELAY plus bounded response coalescing
+repairs P15's delayed-ACK floor, with paired one-change controls and passing
+20% twin regression gates / failing planted controls. Regression baselines are
+updated on both CPUs. ADR 0008 and serve notes record byte bounds, metadata cap,
+flush points and exact read-only ADBC bootstrap, with COPY explicitly deferred.
+
+Default ADBC now connects; every default corpus fetch reaches COPY and fails
+0A000. Its documented use_copy=false path matches 221/221 typed corpus values
+and fetches the ten-type/NULL Arrow fixture on both CPUs; numeric is an opaque
+exact-string Arrow extension. Ordinary client versions/default probes remain
+recorded. Fractional DECIMAL leading zeros are fixed. Final clean ARM64 measured tree catches 51/51 mutants with zero INVALID/survivors, and passes 2,000 lifecycle/10,000 hostile cases (R20 done).
+
+**Remaining deviations, unchanged thresholds:** final **Rust raw/CLI 3.416–4.697x** still exceeds ≤1.20x (P14); matched
+PostgreSQL Rust/psql reference arms and on-VM perf/Callgrind profiles isolate
+client context from remaining per-row encoding cost. Psql Nata/PostgreSQL
+1.270–1.453x is context only, with no re-threshold. First-row and ≤2x concurrency
+pass. Literal text and universal default-client targets remain NOT MET: known
+client/CLI spellings, finite-float server spelling gap (R21), default ADBC COPY
+(R18), SQL PREPARE/suspended/SQL cursors, exceptional dates (R19), R15 full
+sanitizers and R16's original SF10 RSS remain. No threshold, SQL limit or executor
+memory allowance is relaxed. Full details, failures/retries, source evidence,
+cloud cleanup and local gates are in the fix record. No push.
+
+Final measured code-only Git tree: `ad89453261a3b894039ed4280f7d95a56a100b99`,
+with source-blob manifest committed under crates/nata-bench. Final results use a
+Rust raw reader; earlier Python measurements remain historical evidence. The
+partial-wide-row cancellation guard closes unfinished frames instead of appending
+an error; its known-bad mutant is caught on both tested architectures. Both final
+20% regression twins pass and planted controls fail. PostgreSQL is the local
+reference only, never a replacement for the fixed CLI denominator.

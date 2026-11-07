@@ -1,0 +1,25 @@
+Full redacted log retained as pgwire-live.txt.gz; routine session/scan lines omitted here.
+running 4 tests
+SLOW_READER PASS result_rows=1048576 width=1024 bytes_read=1892 produced=2773 rss_baseline_peak_kib=13720,19276 bound_delta_kib=131072
+LIVE_FUZZ seed=322661912839 cases=10000
+test one_byte_per_millisecond_reader_is_bounded ... ok
+test seeded_disconnect_cancel_kill_under_contention has been running for over 60 seconds
+test seeded_live_protocol_fuzz has been running for over 60 seconds
+test sixty_four_sessions_and_reserved_sockets has been running for over 60 seconds
+LIVE_FUZZ PASS kinds=[831, 747, 907, 773, 855, 840, 851, 821, 823, 887, 828, 837] elapsed=91.174347346s rss_baseline_final_kib=(19068, 19068)
+RELIABILITY seed=322661912839 scenarios=2000
+test seeded_live_protocol_fuzz ... ok
+RELIABILITY completed=250 peak_rss_kib=25808
+RELIABILITY completed=500 peak_rss_kib=25920
+RELIABILITY completed=750 peak_rss_kib=25960
+RELIABILITY completed=1000 peak_rss_kib=25960
+RELIABILITY completed=1250 peak_rss_kib=25980
+RELIABILITY completed=1500 peak_rss_kib=25980
+RELIABILITY completed=1750 peak_rss_kib=28092
+RELIABILITY completed=2000 peak_rss_kib=28092
+RELIABILITY kinds=[302, 272, 293, 305, 273, 260, 295] healthy_queries=339029
+RELIABILITY PASS baseline_fd_threads_rss=(16, 6, 19416) final_fd_threads_rss=(8, 6, 22180) peak_rss_kib=28092 elapsed=140.764638982s
+test seeded_disconnect_cancel_kill_under_contention ... ok
+BOUND PASS 64 concurrent correct queries; 64+8 socket cap; 65th startup=53300
+test sixty_four_sessions_and_reserved_sockets ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 234.32s

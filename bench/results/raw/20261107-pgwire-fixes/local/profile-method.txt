@@ -1,0 +1,7 @@
+Profile reproduce method:
+- Build 4373a63 as the before executable and the fixed source as after, release mode.
+- Generate 1,000,000 BIGINT i values with DuckDB COPY range(1000000) to Parquet, row_group_size 8192; unset AI_AGENT.
+- Launch each executable under strace -f -c -o COUNTS, serve on loopback with --threads 1.
+- Connect using Client from crates/nata-bench/pgwire-bench.py; SELECT i FROM fixture, assert rows == 1000000, terminate server and wait for tracer.
+- Counts include startup and one export. No client conversion/collection. Do not interpret instrumented elapsed time as a throughput benchmark.
+- Shared local x86-64 host; independent alternating untraced controls contain background build load and are diagnostic only.

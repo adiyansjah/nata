@@ -1,0 +1,473 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock'
+# Event count (approx.): 5663315875
+#
+# Overhead  Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           IPC   [IPC Coverage]
+# ........  .............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................  ....................
+#
+    13.66%  [.] <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -      -
+            |
+            ---<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     7.81%  [.] nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -
+            |
+            ---<nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     6.12%  [.] core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Option<alloc::string::String>>>  -      -
+            |
+            ---nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     4.70%  [.] <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -
+            |
+            ---core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     4.70%  [.] nata_pgwire::codec::row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+            |
+            ---nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     4.35%  [.] realloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+            |
+             --4.26%--<alloc::raw_vec::RawVecInner>::finish_grow
+                       <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+                       nata_pgwire::codec::row
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+                       <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+                       nata_pgwire::server::produce
+                       std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+                       <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                       <std::sys::thread::unix::Thread>::new::thread_start
+                       0x7f00555041f4
+                       0x7f00555848eb
+
+     4.08%  [.] nata_pgwire::server::wire_text                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             -      -
+            |
+            ---<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     3.64%  [.] <nata_pgwire::server::FrameBoundary>::consume                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -      -
+            |
+            ---nata_pgwire::server::session_loop::{closure#0}
+               nata_pgwire::server::serve_listener::{closure#0}::{closure#0}
+               <tokio::runtime::task::core::Core<nata_pgwire::server::serve_listener::{closure#0}::{closure#0}, alloc::sync::Arc<tokio::runtime::scheduler::current_thread::Handle>>>::poll (inlined)
+               <tokio::runtime::task::harness::Harness<nata_pgwire::server::serve_listener::{closure#0}::{closure#0}, alloc::sync::Arc<tokio::runtime::scheduler::multi_thread::handle::Handle>>>::poll
+               0xffffffffffffffff
+
+     3.19%  [.] cfree                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -
+            |
+            |--2.13%--nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+            |          <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+            |          nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+            |          nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+            |          nata_pgwire::server::produce
+            |          std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+            |          <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+            |          <std::sys::thread::unix::Thread>::new::thread_start
+            |          0x7f00555041f4
+            |          0x7f00555848eb
+            |
+             --0.89%--nata_pgwire::codec::row
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+                       <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+                       nata_pgwire::server::produce
+                       std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+                       <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                       <std::sys::thread::unix::Thread>::new::thread_start
+                       0x7f00555041f4
+                       0x7f00555848eb
+
+     2.84%  [.] malloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -
+            |
+            |--1.86%--nata_pgwire::codec::row
+            |          nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+            |          <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+            |          nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+            |          nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+            |          nata_pgwire::server::produce
+            |          std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+            |          <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+            |          <std::sys::thread::unix::Thread>::new::thread_start
+            |          0x7f00555041f4
+            |          0x7f00555848eb
+            |
+             --0.71%--<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+                       core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+                       <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+                       nata_pgwire::server::produce
+                       std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+                       <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                       <std::sys::thread::unix::Thread>::new::thread_start
+                       0x7f00555041f4
+                       0x7f00555848eb
+
+     2.75%  [.] <alloc::raw_vec::RawVecInner>::finish_grow                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 -      -
+            |
+            ---<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+               nata_pgwire::codec::row
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     2.75%  [.] <snap::decompress::Decoder>::decompress                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+            |
+            ---<parquet::compression::snappy_codec::SnappyCodec as parquet::compression::Codec>::decompress
+               parquet::file::serialized_reader::decode_page
+               <parquet::file::serialized_reader::SerializedPageReader<nata_parquet::reader::SharedFile> as parquet::column::page::PageReader>::get_next_page
+               <parquet::column::reader::GenericColumnReader<parquet::column::reader::decoder::RepetitionLevelDecoderImpl, parquet::arrow::record_reader::definition_levels::DefinitionLevelBufferDecoder, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type>>>::read_new_page
+               <parquet::column::reader::GenericColumnReader<parquet::column::reader::decoder::RepetitionLevelDecoderImpl, parquet::arrow::record_reader::definition_levels::DefinitionLevelBufferDecoder, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type>>>::read_records_with_reservation::<<parquet::arrow::record_reader::GenericRecordReader<alloc::vec::Vec<i64>, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type>>>::read_one_batch::{closure#1}>
+               <parquet::arrow::record_reader::GenericRecordReader<alloc::vec::Vec<i64>, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type>>>::read_records
+               <parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int64Type> as parquet::arrow::array_reader::ArrayReader>::read_records
+               <parquet::arrow::array_reader::struct_array::StructArrayReader as parquet::arrow::array_reader::ArrayReader>::read_records
+               <parquet::arrow::arrow_reader::ParquetRecordBatchReader as core::iter::traits::iterator::Iterator>::next
+               <nata_parquet::reader::RowGroupTask>::run_cancellable
+               <nata_parquet::parallel::ScanWork as nata_sched::Work>::run
+               nata_sched::worker::<nata_parquet::parallel::ScanWork>
+               std::sys::backtrace::__rust_begin_short_backtrace::<<nata_sched::Scheduler<nata_parquet::parallel::ScanWork>>::run<nata_parquet::parallel::run_parallel_with<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#5}>::{closure#3}>::{closure#1}>::{closure#0}, ()>
+               <std::thread::lifecycle::spawn_unchecked<<nata_sched::Scheduler<nata_parquet::parallel::ScanWork>>::run<nata_parquet::parallel::run_parallel_with<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#5}>::{closure#3}>::{closure#1}>::{closure#0}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     2.57%  [.] nata_pgwire::binary::packet                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -
+            |
+            ---nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     2.40%  [.] <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   -      -
+            |
+            ---nata_pgwire::codec::row
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     1.86%  [.] nata_parquet::csv::cell                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -
+            |
+            ---<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               |
+                --1.42%--0xffffffffffffffff
+
+     1.69%  [.] 0x000000000016d835                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---<i64 as alloc::string::SpecToString>::spec_to_string
+               nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     1.24%  [.] <usize>::_fmt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -      -
+            |
+            ---<i64 as alloc::string::SpecToString>::spec_to_string
+               nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     1.06%  [k] clear_page_erms                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -      -
+            |
+            ---get_page_from_freelist
+               __alloc_pages
+               skb_page_frag_refill
+               sk_page_frag_refill
+               tcp_sendmsg_locked
+               tcp_sendmsg
+               __sock_sendmsg
+               __sys_sendto
+               __x64_sys_sendto
+               do_syscall_64
+               entry_SYSCALL_64_after_hwframe
+               send (inlined)
+               <&std::net::tcp::TcpStream as core::io::write::Write>::write (inlined)
+               <&mio::net::tcp::stream::TcpStream as core::io::write::Write>::write
+               <tokio::net::tcp::stream::TcpStream>::poll_write_priv
+               |
+                --0.98%--<tokio::io::util::buf_writer::BufWriter<tokio::net::tcp::split_owned::OwnedWriteHalf>>::flush_buf
+                          <core::pin::Pin<&mut nata_pgwire::server::session_loop::{closure#0}::{closure#11}::{closure#2}> as core::future::future::Future>::poll
+                          <core::future::poll_fn::PollFn<nata_pgwire::server::session_loop::{closure#0}::{closure#11}::{closure#3}> as core::future::future::Future>::poll
+                          nata_pgwire::server::session_loop::{closure#0}
+                          nata_pgwire::server::serve_listener::{closure#0}::{closure#0}
+                          <tokio::runtime::task::core::Core<nata_pgwire::server::serve_listener::{closure#0}::{closure#0}, alloc::sync::Arc<tokio::runtime::scheduler::current_thread::Handle>>>::poll (inlined)
+                          <tokio::runtime::task::harness::Harness<nata_pgwire::server::serve_listener::{closure#0}::{closure#0}, alloc::sync::Arc<tokio::runtime::scheduler::multi_thread::handle::Handle>>>::poll
+                          0xffffffffffffffff
+
+     0.98%  [.] <i64 as alloc::string::SpecToString>::spec_to_string                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -
+            |
+            ---nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     0.98%  [.] __rustc::__rust_alloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -
+     0.98%  [.] __rustc::__rust_no_alloc_shim_is_unstable_v2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               -      -
+            |
+             --0.80%--nata_pgwire::codec::row
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+                       <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+                       nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+                       nata_pgwire::server::produce
+                       std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+                       <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+                       <std::sys::thread::unix::Thread>::new::thread_start
+                       0x7f00555041f4
+                       0x7f00555848eb
+
+     0.89%  [.] __rustc::__rdl_realloc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     -      -
+            |
+            ---<alloc::raw_vec::RawVecInner>::finish_grow
+               <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+               nata_pgwire::codec::row
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     0.89%  [k] _raw_spin_unlock_irqrestore                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                -      -
+            |
+             --0.71%--try_to_wake_up
+                       wake_up_q
+                       futex_wake
+                       do_futex
+                       __x64_sys_futex
+                       do_syscall_64
+                       entry_SYSCALL_64_after_hwframe
+                       syscall
+
+     0.71%  [.] <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type> as arrow_array::array::Array>::data_type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              -      -
+            |
+            ---nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     0.62%  [.] <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as core::any::Any>::type_id                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -      -
+            |
+            ---nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     0.62%  [.] 0x00000000000961c3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---__libc_free (inlined)
+
+     0.62%  [.] 0x000000000016d800                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+     0.62%  [.] 0x000000000016d87a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     0.53%  [.] <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as arrow_array::array::Array>::as_any                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  -      -
+            |
+            ---nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     0.53%  [.] <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::TimestampMicrosecondType> as arrow_array::array::Array>::is_null                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  -      -
+            |
+            ---nata_parquet::csv::cell
+               <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next
+               <alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter
+               core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Optio
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               0xffffffffffffffff
+
+     0.53%  [.] 0x0000000000098348                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---realloc
+               <alloc::raw_vec::RawVecInner>::finish_grow
+               <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+               nata_pgwire::codec::row
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     0.53%  [.] 0x00000000000983c7                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+            |
+            ---realloc
+               <alloc::raw_vec::RawVecInner>::finish_grow
+               <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+               nata_pgwire::codec::row
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}
+               <nata_parquet::reader::Limiter>::feed::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_parquet::parallel::run_parallel_with::<nata_exec::exec::execute_observed<nata_pgwire::server::produce::{closure#9}>::{closure#3}>
+               nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>
+               nata_pgwire::server::produce
+               std::sys::backtrace::__rust_begin_short_backtrace::<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>
+               <std::thread::lifecycle::spawn_unchecked<nata_pgwire::server::session_loop::{closure#0}::{closure#10}, ()>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+               <std::sys::thread::unix::Thread>::new::thread_start
+               0x7f00555041f4
+               0x7f00555848eb
+
+     0.53%  [.] 0x000000000016d803                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -
+
+
+#
+# (Tip: Sample related events with: perf record -e '{cycles,instructions}:S')
+#

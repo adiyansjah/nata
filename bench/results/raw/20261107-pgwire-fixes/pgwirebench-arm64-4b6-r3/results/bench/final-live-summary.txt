@@ -1,0 +1,25 @@
+Full redacted log retained as final-live.txt.gz; routine session/scan lines omitted here.
+running 4 tests
+RELIABILITY seed=322661912839 scenarios=2000
+RELIABILITY completed=250 peak_rss_kib=26848
+RELIABILITY completed=500 peak_rss_kib=27060
+RELIABILITY completed=750 peak_rss_kib=27172
+test one_byte_per_millisecond_reader_is_bounded has been running for over 60 seconds
+test seeded_disconnect_cancel_kill_under_contention has been running for over 60 seconds
+test seeded_live_protocol_fuzz has been running for over 60 seconds
+test sixty_four_sessions_and_reserved_sockets has been running for over 60 seconds
+RELIABILITY completed=1000 peak_rss_kib=27180
+RELIABILITY completed=1250 peak_rss_kib=27236
+RELIABILITY completed=1500 peak_rss_kib=27244
+RELIABILITY completed=1750 peak_rss_kib=27272
+RELIABILITY completed=2000 peak_rss_kib=27272
+RELIABILITY kinds=[302, 272, 293, 305, 273, 260, 295] healthy_queries=343351
+RELIABILITY PASS baseline_fd_threads_rss=(16, 8, 19796) final_fd_threads_rss=(8, 8, 23332) peak_rss_kib=27272 elapsed=143.954392241s
+test seeded_disconnect_cancel_kill_under_contention ... ok
+SLOW_READER PASS result_rows=1048576 width=1024 bytes_read=1892 produced=2773 rss_baseline_peak_kib=23580,25724 bound_delta_kib=131072
+test one_byte_per_millisecond_reader_is_bounded ... ok
+BOUND PASS 64 concurrent correct queries; 64+8 socket cap; 65th startup=53300
+LIVE_FUZZ seed=test sixty_four_sessions_and_reserved_sockets ... 322661912839ok cases=
+LIVE_FUZZ PASS kinds=[831, 747, 907, 773, 855, 840, 851, 821, 823, 887, 828, 837] elapsed=93.0105107s rss_baseline_final_kib=(26468, 26468)
+test seeded_live_protocol_fuzz ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 239.09s

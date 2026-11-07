@@ -121,16 +121,23 @@ Each admitted query uses at most floor(threads/max-queries) existing scheduler
 workers, plus its bounded coordinator/planning/evaluation helpers; no new pool or
 spawn_blocking executor. Admission waits expire after five seconds with `53300`.
 Two tokio workers service sockets; file access, planning, decode and evaluation
-stay off them. One 32-row bridge per query retains backpressure. These are row
-bounds, not byte bounds for arbitrary-width cells or an SF10 RSS certification.
+stay off them. DataRows cross a two-buffer bridge with at most **64 KiB per
+buffer: 128 KiB queued bytes**, or 256 KiB including a producer buffer and a
+writer buffer, plus a 64 KiB socket response buffer. Flush at executor batch
+boundaries, ReadyForQuery, frontend Flush and before waiting for input. Row
+encoding scratch and the existing executor scan window are separate; this is
+not an arbitrary-width-cell or SF10 RSS certification. Metadata/EXPLAIN packets
+over 64 KiB return 54000. Accepted sockets enable TCP_NODELAY.
 
-A backend frame that cannot finish writing within **two seconds** cancels the
+A streamed buffer that cannot finish writing and flushing within **two seconds** cancels the
 query and closes its socket, releasing the admission after workers join. Closing
 is necessary because an unfinished frame cannot be followed safely by an error.
 The log records `57014`. Ordinary CancelRequest matches the session id **and**
 random secret, cancels only that session, and returns `57014`. Idle/stale/wrong
 keys do nothing. Cancellation preserves the same in-progress frame for up to one
-second before ErrorResponse; if still blocked, close instead. Disconnect closes
+second before ErrorResponse; if still blocked, close instead. A completed byte
+buffer may still end inside a wide DataRow: cancellation then closes the socket
+rather than inserting an error into its unfinished body. Disconnect closes
 the bridge and cancels/joins workers. Sessions install no process signal handler;
 SIGINT remains CLI-only.
 
@@ -175,13 +182,30 @@ pgjdbc/psycopg and noninteractive pgcli use the existing protocol surface; pgcli
 DATE loader deliberately returns strings. psql returns display text and SQL
 `PREPARE` remains `0A000` (wire preparation is a different interface).
 
-ADBC PostgreSQL 1.13.0 fails during its default catalog bootstrap:
-`pg_catalog.pg_attribute` with `ORDER BY` returns `0A000`. This prevents default
-connection creation, so query/COPY/Arrow fetch, type readback, preparation and
-cancel are blocked, rather than certified. No catalog or COPY emulation is
-provided. PostgreSQL boolean and special-float text spellings differ from CLI
-CSV; the closeout retains exact differences and checks typed values separately.
+ADBC PostgreSQL 1.13.0 now connects using two exact, read-only type-bootstrap
+answers (empty pg_attribute; built-in pg_type rows). Other catalog/completion SQL
+still returns 0A000. Default result fetch reaches COPY BINARY and returns 0A000;
+COPY remains unsupported (R18). To fetch mapped scalars through the driver's
+ordinary binary-result reader, use its documented statement option:
 
-The streaming performance budget is **not met**. Use the recorded timings when
+```python
+with connection.cursor() as cursor:
+    cursor.adbc_statement.set_options(**{"adbc.postgresql.use_copy": "false"})
+    cursor.execute(query)
+    table = cursor.fetch_arrow_table()
+```
+
+This option works for the slice-4 fixture and NULLs. Numeric is the driver's
+opaque Arrow extension with exact string storage; TINYINT uses text per ADR 0008.
+The [fix results](../bench/results/20261107-pgwire-fixes.md) distinguish this
+configured path from default-client support. Wire DECIMAL has a leading zero
+(e.g. 0.500) even when CLI CSV prints .500. Boolean/float-special PostgreSQL
+spellings and client display policies still differ from CLI CSV.
+
+The streaming performance budget is **not met**: final Rust raw/CLI is
+3.416–4.697x against ≤1.20x. The [fix record](../bench/results/20261107-pgwire-fixes.md)
+includes matched PostgreSQL client references, on-VM profiles and the exact
+measured source tree. Psql/reference ratios are context, not a changed target.
+Use the recorded timings when
 choosing this interface for large exports; first rows stream and slow clients
 exert bounded backpressure, but that does not imply CLI-equivalent throughput.

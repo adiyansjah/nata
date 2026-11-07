@@ -23,6 +23,9 @@ use crate::{
 #[derive(Default)]
 pub struct Metrics {
     pub rows_produced: AtomicU64,
+    pub buffers_sent: AtomicU64,
+    pub max_buffer_bytes: AtomicUsize,
+    pub nodelay_sessions: AtomicUsize,
     pub running: AtomicUsize,
     pub sessions: AtomicUsize,
     pub registered: AtomicUsize,
@@ -164,6 +167,12 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
     let ids = AtomicI32::new(1);
     loop {
         let (mut socket, _) = listener.accept().await?;
+        socket.set_nodelay(true)?;
+        if socket.nodelay()?
+            && let Some(m) = &config.metrics
+        {
+            m.nodelay_sessions.fetch_add(1, Ordering::SeqCst);
+        }
         let Ok(socket_slot) = Arc::clone(&sockets).try_acquire_owned() else {
             continue;
         };
@@ -319,6 +328,7 @@ async fn send_error<W: tokio::io::AsyncWrite + Unpin>(
         s.write_all(&codec::error(code, message, position)),
     )
     .await;
+    let _ = s.flush().await;
 }
 async fn handshake(
     s: &mut TcpStream,
@@ -366,7 +376,8 @@ async fn session_loop(
     metrics: Option<Arc<Metrics>>,
     mut state: session::State,
 ) -> io::Result<()> {
-    let (mut read, mut write) = socket.into_split();
+    let (mut read, write) = socket.into_split();
+    let mut write = tokio::io::BufWriter::with_capacity(OUTPUT_BYTES, write);
     let (tx, mut input) = mpsc::channel(1);
     let (closed, mut disconnected) = watch::channel(false);
     let session = Arc::clone(&registered.session);
@@ -393,7 +404,16 @@ async fn session_loop(
     }));
     let mut objects = Objects::new(metrics.clone());
     let mut failed = false;
-    while let Some(m) = input.recv().await {
+    loop {
+        // Flush before waiting: Parse/Describe clients may wait without sending Sync.
+        let m = match input.try_recv() {
+            Ok(m) => m,
+            Err(_) => {
+                write.flush().await?;
+                let Some(m) = input.recv().await else { break };
+                m
+            }
+        };
         let m = match m {
             Ok(m) => m,
             Err(()) => {
@@ -412,6 +432,7 @@ async fn session_loop(
             write
                 .write_all(&codec::packet(b'Z', &[state.transaction]).map_err(io::Error::other)?)
                 .await?;
+            write.flush().await?;
             continue;
         }
         if failed {
@@ -736,11 +757,13 @@ async fn session_loop(
                 let expected = portal.as_ref().map(|p| p.statement.description.clone());
                 let mut transport_failed = false;
                 let result = if let Some(permit) = permit {
-                    let (tx, mut rx) = mpsc::channel(32);
+                    let (tx, mut rx) = mpsc::channel(BRIDGE_BUFFERS);
                     let (done, joined) = oneshot::channel();
                     let q = sql.clone();
                     let c = Arc::clone(&cancelled);
                     let progress = metrics.clone();
+                    let result_formats =
+                        portal.as_ref().map_or_else(Vec::new, |p| p.results.clone());
                     let worker = std::thread::Builder::new()
                         .name("nata-query".into())
                         .stack_size(nata_sql::parse::WORKER_STACK_BYTES)
@@ -769,6 +792,7 @@ async fn session_loop(
                                         &c,
                                         &tx,
                                         progress.as_deref(),
+                                        &result_formats,
                                     )
                                 }));
                             let _ = writeln!(
@@ -782,26 +806,32 @@ async fn session_loop(
                             let _ = done.send(());
                         })?;
                     let result = async {
+                        let mut boundary = FrameBoundary::default();
                         loop {
                             tokio::select! {
                                 biased;
-                                _ = stopped.changed() => return Err(WireError::cancel()),
+                                _ = stopped.changed() => { transport_failed = !boundary.complete(); return Err(WireError::cancel()); },
                                 _ = disconnected.changed() => return Err(WireError::cancel()),
                                 event = rx.recv() => match event {
-                                    Some(Event::Packet(mut p)) => {
-                                        if p[0]==b'T' {
+                                    Some(event @ (Event::Packet(_) | Event::Data(_))) => {
+                                        let is_description = matches!(event, Event::Packet(_));
+                                        let mut p = match event { Event::Packet(p) | Event::Data(p) => p, _ => unreachable!() };
+                                        if is_description && p[0]==b'T' {
                                             if mode==1 {description=p;continue;}
                                             if !simple && mode!=2 && expected.as_ref().is_some_and(|e| !extended::same_types(e,&p)) {
                                                 return Err(WireError::unsupported("parameter changes result type; use an explicit SQL CAST"));
                                             }
                                             if mode==0 && !simple {continue;}
                                         }
-                                        if let Some(portal) = &portal {
+                                        if is_description && p[0] == b'T' && let Some(portal) = &portal {
                                             p = crate::binary::packet(p, &portal.statement.description, &portal.results)?;
                                         }
                                         // Keep the SAME write future across cancel: restarting write_all would
                                         // duplicate a prefix, dropping it could leave half a frame on the wire.
-                                        let writing = write.write_all(&p);
+                                        let writing = async {
+                                            write.write_all(&p).await?;
+                                            write.flush().await
+                                        };
                                         tokio::pin!(writing);
                                         tokio::select! {
                                             biased;
@@ -809,14 +839,16 @@ async fn session_loop(
                                                 rx.close();
                                                 registered.session.cancel();
                                                 transport_failed = !matches!(tokio::time::timeout(Duration::from_secs(1), &mut writing).await, Ok(Ok(())));
+                                                if !transport_failed { boundary.consume(&p); transport_failed = !boundary.complete(); }
                                                 return Err(WireError::cancel());
                                             },
                                             _ = disconnected.changed() => return Err(WireError::cancel()),
                                             _ = tokio::time::sleep(Duration::from_secs(2)) => { transport_failed=true; registered.session.cancel(); return Err(WireError::new("57014","query send timeout")); },
                                             r = &mut writing => if r.is_err() { transport_failed = true; return Err(WireError::cancel()); },
                                         }
+                                        boundary.consume(&p);
                                     }
-                                    Some(Event::Finished(result)) => return result,
+                                    Some(Event::Finished(result)) => { transport_failed = !boundary.complete(); return result; },
                                     None => return Err(WireError::internal()),
                                 }
                             }
@@ -892,6 +924,7 @@ async fn session_loop(
             write
                 .write_all(&codec::packet(b'Z', &[state.transaction]).map_err(io::Error::other)?)
                 .await?;
+            write.flush().await?;
         }
     }
     Ok(())
@@ -905,7 +938,11 @@ async fn send_wire_error<W: tokio::io::AsyncWrite + Unpin>(w: &mut W, e: &WireEr
         let n = (packet.len() - 1) as i32;
         packet[1..5].copy_from_slice(&n.to_be_bytes());
     }
-    let _ = tokio::time::timeout(Duration::from_secs(1), w.write_all(&packet)).await;
+    let _ = tokio::time::timeout(Duration::from_secs(1), async {
+        w.write_all(&packet).await?;
+        w.flush().await
+    })
+    .await;
 }
 impl Session {
     fn cancel_if_error(&self, r: &Result<u64, WireError>) {
@@ -989,8 +1026,46 @@ impl WireError {
         }
     }
 }
+// No error frame may be appended inside a DataRow split across byte buffers.
+#[derive(Default)]
+struct FrameBoundary {
+    header: [u8; 5],
+    used: usize,
+    remaining: usize,
+}
+impl FrameBoundary {
+    fn complete(&self) -> bool {
+        self.used == 0 && self.remaining == 0
+    }
+    fn consume(&mut self, mut bytes: &[u8]) {
+        while !bytes.is_empty() {
+            if self.remaining != 0 {
+                let n = self.remaining.min(bytes.len());
+                self.remaining -= n;
+                bytes = &bytes[n..];
+            } else {
+                let n = (5 - self.used).min(bytes.len());
+                self.header[self.used..self.used + n].copy_from_slice(&bytes[..n]);
+                self.used += n;
+                bytes = &bytes[n..];
+                if self.used == 5 {
+                    // All input is generated by the checked backend codec.
+                    self.remaining =
+                        u32::from_be_bytes(self.header[1..].try_into().expect("header")) as usize
+                            - 4;
+                    self.used = 0;
+                }
+            }
+        }
+    }
+}
+
+// Each queued packet is at most 64 KiB: the bridge holds at most 128 KiB.
+const OUTPUT_BYTES: usize = 64 * 1024;
+const BRIDGE_BUFFERS: usize = 2;
 enum Event {
     Packet(Vec<u8>),
+    Data(Vec<u8>),
     Finished(Result<u64, WireError>),
 }
 struct Source<'a>(&'a AtomicBool);
@@ -1018,6 +1093,7 @@ fn produce(
     cancelled: &AtomicBool,
     tx: &mpsc::Sender<Event>,
     metrics: Option<&Metrics>,
+    result_formats: &[i16],
 ) -> Result<u64, WireError> {
     let p = nata_sql::plan_parameters(sql, params, &Source(cancelled));
     if cancelled.load(Ordering::SeqCst) {
@@ -1031,13 +1107,19 @@ fn produce(
         e
     })?;
     if mode != 0 {
-        tx.blocking_send(Event::Packet(
-            codec::description(&extended::fields(&p)).map_err(|_| WireError::internal())?,
-        ))
-        .map_err(|_| WireError::cancel())?;
+        let description =
+            codec::description(&extended::fields(&p)).map_err(|_| WireError::internal())?;
+        if description.len() > OUTPUT_BYTES {
+            return Err(WireError::new("54000", "wire description exceeds 64 KiB"));
+        }
+        tx.blocking_send(Event::Packet(description))
+            .map_err(|_| WireError::cancel())?;
         return Ok(0);
     }
     let send = |bytes: Vec<u8>| {
+        if bytes.len() > OUTPUT_BYTES {
+            return Err(WireError::new("54000", "wire metadata exceeds 64 KiB"));
+        }
         tx.blocking_send(Event::Packet(bytes))
             .map_err(|_| WireError::cancel())
     };
@@ -1077,6 +1159,7 @@ fn produce(
     }
     let fields: Vec<_> = p.output.iter().map(|c| (c.name.clone(), c.ty)).collect();
     send(encode(codec::description(&fields))?)?;
+    let description = codec::description(&fields).map_err(|_| WireError::internal())?;
     let mut rows = 0u64;
     let mut config = nata_exec::ExecConfig::new(threads);
     config.opener = metrics.and_then(|m| m.opener.clone());
@@ -1087,6 +1170,15 @@ fn produce(
         Some(token),
         &mut observed,
         |batch| {
+            let mut output = Vec::with_capacity(OUTPUT_BYTES);
+            let send_buffer = |bytes: Vec<u8>| {
+                if let Some(m) = metrics {
+                    m.buffers_sent.fetch_add(1, Ordering::Relaxed);
+                    m.max_buffer_bytes.fetch_max(bytes.len(), Ordering::Relaxed);
+                }
+                tx.blocking_send(Event::Data(bytes))
+                    .map_err(|_| ScanError::new(ErrorKind::Cancelled("disconnected".into())))
+            };
             for i in 0..batch.num_rows() {
                 if cancelled.load(Ordering::SeqCst) {
                     return Err(ScanError::new(ErrorKind::Cancelled("cancelled".into())));
@@ -1107,12 +1199,31 @@ fn produce(
                         column: 1,
                     })
                 })?;
-                tx.blocking_send(Event::Packet(bytes))
-                    .map_err(|_| ScanError::new(ErrorKind::Cancelled("disconnected".into())))?;
+                let bytes = crate::binary::packet(bytes, &description, result_formats)
+                    .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
+                // A single wide row may span buffers. Never increase the bridge byte bound.
+                for chunk in bytes.chunks(OUTPUT_BYTES) {
+                    if output.len() + chunk.len() > OUTPUT_BYTES {
+                        send_buffer(std::mem::replace(
+                            &mut output,
+                            Vec::with_capacity(OUTPUT_BYTES),
+                        ))?;
+                    }
+                    output.extend_from_slice(chunk);
+                    if output.len() == OUTPUT_BYTES {
+                        send_buffer(std::mem::replace(
+                            &mut output,
+                            Vec::with_capacity(OUTPUT_BYTES),
+                        ))?;
+                    }
+                }
                 rows += 1;
                 if let Some(m) = metrics {
                     m.rows_produced.fetch_add(1, Ordering::SeqCst);
                 }
+            }
+            if !output.is_empty() {
+                send_buffer(output)?;
             }
             Ok(())
         },
@@ -1148,6 +1259,8 @@ fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
             "-inf" => "-Infinity".into(),
             _ => s,
         },
+        SqlType::Decimal { .. } if s.starts_with('.') => format!("0{s}"),
+        SqlType::Decimal { .. } if s.starts_with("-.") => format!("-0{}", &s[1..]),
         SqlType::Date if s.len() != 10 || s.starts_with('-') || s.starts_with("0000") => {
             return Err(ScanError::new(ErrorKind::Eval {
                 message: "date outside supported wire domain".into(),

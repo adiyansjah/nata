@@ -1,0 +1,27 @@
+
+running 1 test
+test exact_adbc_bootstrap_and_unknown_catalog_refusal ... FAILED
+
+failures:
+
+---- exact_adbc_bootstrap_and_unknown_catalog_refusal stdout ----
+
+thread 'exact_adbc_bootstrap_and_unknown_catalog_refusal' (2352404) panicked at crates/nata-pgwire/tests/protocol.rs:811:5:
+assertion `left == right` failed
+  left: []
+ right: [[Some("pg_catalog")]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    exact_adbc_bootstrap_and_unknown_catalog_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-4b6/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s
+     Running tests/protocol.rs (/home/dev/tmp-4b6/mutants/target/debug/deps/protocol-f933b3be4dd7a6ab)
+nata serve listening=127.0.0.1:38999 max_connections=2 query_admission=2 workers=2
+session=1 duration_us=84 rows=0 state=0A000 queue_wait_us=0 worker_share=0
+error: test failed, to rerun pass `-p nata-pgwire --test protocol`
+exit=101

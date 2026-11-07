@@ -97,6 +97,9 @@ impl State {
         }
     }
     pub fn evaluate(&mut self, sql: &str) -> Result<Option<Response>, WireError> {
+        if let Some(response) = bootstrap(sql)? {
+            return Ok(Some(response));
+        }
         let first = sql
             .split_whitespace()
             .next()
@@ -275,4 +278,104 @@ fn status_name(key: &str) -> Option<&str> {
         "client_encoding" | "application_name" | "standard_conforming_strings" => Some(key),
         _ => None,
     }
+}
+
+// Exact ADBC PostgreSQL 1.13.0 RebuildTypeResolver queries, not a SQL catalog.
+// Token equality permits whitespace/case/one terminal semicolon only.
+const ATTRIBUTES: &str =
+    "SELECT attrelid, attname, atttypid FROM pg_catalog.pg_attribute ORDER BY attrelid, attnum";
+const TYPES: &str = "SELECT oid, typname, typreceive, typbasetype, typrelid, typarray FROM pg_catalog.pg_type WHERE (typreceive != 0 OR typsend != 0) AND typtype != 'r' AND typreceive::TEXT != 'array_recv'";
+fn bootstrap(sql: &str) -> Result<Option<Response>, WireError> {
+    // Only tokenize potential catalog chatter, never every ordinary data query.
+    if !sql.to_ascii_lowercase().contains("pg_catalog") {
+        return Ok(None);
+    }
+    fn tokens(s: &str) -> Result<Vec<Token>, WireError> {
+        let mut ts = Tokenizer::new(&PostgreSqlDialect {}, s)
+            .tokenize()
+            .map_err(|_| WireError::unsupported("catalog bootstrap query"))?
+            .into_iter()
+            .filter(|t| !matches!(t, Token::Whitespace(_)))
+            .map(|t| match t {
+                Token::Word(mut w) if w.quote_style.is_none() => {
+                    w.value.make_ascii_lowercase();
+                    Token::Word(w)
+                }
+                t => t,
+            })
+            .collect::<Vec<_>>();
+        if ts.last() == Some(&Token::SemiColon) {
+            ts.pop();
+        }
+        Ok(ts)
+    }
+    let Ok(ts) = tokens(sql) else { return Ok(None) };
+    // A string literal or a file named pg_catalog is still ordinary user SQL.
+    if !ts.windows(2).any(
+        |w| matches!((&w[0], &w[1]), (Token::Word(n), Token::Period) if n.value == "pg_catalog"),
+    ) {
+        return Ok(None);
+    }
+    if sql.len() > 16_384 {
+        return Err(WireError::unsupported("catalog bootstrap query size"));
+    }
+    let mut out = Response {
+        fields: vec![],
+        rows: vec![],
+        command: String::new(),
+        status: vec![],
+        deallocate: None,
+    };
+    if ts == tokens(ATTRIBUTES)? {
+        // No composite/table row types are exposed by Nata.
+        out.fields = vec![
+            ("attrelid".into(), SqlType::Integer),
+            ("attname".into(), SqlType::Varchar),
+            ("atttypid".into(), SqlType::Integer),
+        ];
+    } else if ts == tokens(TYPES)? {
+        out.fields = [
+            ("oid", SqlType::Integer),
+            ("typname", SqlType::Varchar),
+            ("typreceive", SqlType::Varchar),
+            ("typbasetype", SqlType::Integer),
+            ("typrelid", SqlType::Integer),
+            ("typarray", SqlType::Integer),
+        ]
+        .into_iter()
+        .map(|(n, t)| (n.into(), t))
+        .collect();
+        for (oid, name, recv) in [
+            (16, "bool", "boolrecv"),
+            (20, "int8", "int8recv"),
+            (21, "int2", "int2recv"),
+            (23, "int4", "int4recv"),
+            (25, "text", "textrecv"),
+            (700, "float4", "float4recv"),
+            (701, "float8", "float8recv"),
+            (1043, "varchar", "varcharrecv"),
+            (1082, "date", "date_recv"),
+            (1700, "numeric", "numeric_recv"),
+        ] {
+            out.rows.push(
+                [
+                    oid.to_string(),
+                    name.into(),
+                    recv.into(),
+                    "0".into(),
+                    "0".into(),
+                    "0".into(),
+                ]
+                .into_iter()
+                .map(Some)
+                .collect(),
+            );
+        }
+    } else {
+        return Err(WireError::unsupported(
+            "catalog query; only exact ADBC type bootstrap is supported",
+        ));
+    }
+    out.command = format!("SELECT {}", out.rows.len());
+    Ok(Some(out))
 }

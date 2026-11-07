@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/mnt/work/src/crates/nata-bench/pgwire-bench.py", line 256, in <module>
+    if __name__=='__main__': main()
+                             ^^^^^^
+  File "/mnt/work/src/crates/nata-bench/pgwire-bench.py", line 183, in main
+    assert rc==0,'perf recording failed; inspect perf-record.txt'
+           ^^^^^
+AssertionError: perf recording failed; inspect perf-record.txt
+waiting for server to shut down.... done
+server stopped

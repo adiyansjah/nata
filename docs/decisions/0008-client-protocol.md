@@ -344,3 +344,93 @@ the standard CLI signal dependency. R15/R16 remain explicit closeout deviations
 within the carried-in improvement budget; do not enlarge stack/scan allowances
 to disguise a miss. TLS/auth, SQL/suspended cursors, nondefault transaction
 semantics, catalog emulation and COPY remain out of scope.
+
+
+## Amendment, 2026-11-07 (reopened step 6: bounded output and ADBC bootstrap)
+
+Supersede the per-row bridge and the blanket bootstrap-catalog refusal above.
+**Decision:** encode result DataRows on the executor coordinator, including any
+requested scalar binary conversion, into at most **64 KiB** buffers. A batch
+boundary flushes its pending buffer even below that size; no whole-result
+collection. A wide row can span buffers without changing its framing. The
+channel holds two buffers (**128 KiB queued bytes**); the producer and async
+writer can each own one more (**256 KiB total bridge payload**), plus a 64 KiB
+socket response buffer. Current-row encoding scratch and the executor's existing
+scan window are separate from that bridge bound. Metadata/EXPLAIN packets over
+64 KiB return 54000. Backpressure blocks the coordinator and holds its scan sink;
+cancel/disconnect close the receiver and join the producer. Preserve the same
+in-progress write/flush future during cancellation. The two-second stalled-send
+deadline covers the complete buffer write **and flush**, including socket
+readiness. Close on a partial buffer rather than append an error into a frame.
+
+Accepted sockets set TCP_NODELAY. A bounded response writer coalesces small
+frames; flush at ReadyForQuery, frontend Flush, before waiting for input, and
+after each streamed buffer. In particular a client may await Parse/Describe
+without Sync: never wait for another frontend message with its response pending.
+Alternative: only enable NODELAY. It fixes the timer floor but retains per-row
+channel/syscall cost. Alternative: collect all rows or use an unbounded channel.
+Both violate the existing resource/backpressure contract.
+
+**Session compatibility, not SQL dialect/catalog expansion:** recognize exactly
+the two ADBC PostgreSQL 1.13.0 RebuildTypeResolver queries from
+[type_resolver_init.cc](https://github.com/apache/arrow-adbc/blob/apache-arrow-adbc-25/c/driver/postgresql/type_resolver_init.cc).
+Token equality permits whitespace, unquoted identifier case and one terminal
+semicolon; string literals, predicates, ordering and projection must match.
+The pg_attribute projection (attrelid, attname, atttypid, ordered by attrelid,
+attnum) is empty because no composite/table row types are exposed. The pg_type
+projection is oid, typname, typreceive, typbasetype, typrelid, typarray, with ten
+fixed rows: bool/int8/int2/int4/text/float4/float8/varchar/date/numeric and the
+actual built-in receive-function names. Base/class/array OIDs are zero: no
+domains, composite or array capabilities are advertised. Bootstrap OID values
+use integer result columns; names use text. Other catalog SQL returns clear
+0A000. There is no mutable or general-purpose pg_catalog implementation.
+
+**COPY decision:** retain its explicit refusal. In the exact 1.13.0
+[statement source](https://github.com/apache/arrow-adbc/blob/apache-arrow-adbc-25/c/driver/postgresql/statement.cc),
+ExecuteQuery defaults to UseCopy for PostgreSQL and ExecuteCopy wraps the query
+in COPY (...) TO STDOUT (FORMAT binary). However its documented
+`adbc.postgresql.use_copy=false` option selects PqResultArrayReader.
+[result_reader.cc](https://github.com/apache/arrow-adbc/blob/apache-arrow-adbc-25/c/driver/postgresql/result_reader.cc)
+sets **ordinary binary Bind results**, not text; existing scalar binary support
+makes that path work without COPY. Numeric is the driver's opaque Arrow
+extension backed by exact text, rather than a native Arrow decimal. Adding COPY
+requires its own streaming framing, trailer, cancellation and mutation coverage;
+it is unnecessary for the bounded bootstrap fix. Default Arrow fetch remains a
+measured compatibility miss (R18), while the documented option is tested.
+
+Wire DECIMAL now retains a leading zero for fractional values even when precision
+equals scale (0.500/-0.500), matching PostgreSQL; the CLI's DuckDB spelling remains
+unchanged. Bool and float specials already use PostgreSQL spellings.
+
+**Measured evidence, confidence and limits:**
+[fix results](../../bench/results/20261107-pgwire-fixes.md) records syscall profiles,
+paired socket controls, both CPU timings, every threshold verdict, driver probes
+and mutations. High confidence in the measured syscall reduction and timer cause;
+medium in finite lifecycle/resource certification. A fixed byte bound is a
+reasoned invariant exercised with wide rows and a bound-removal mutant. Remaining
+streaming, compatibility, Date32, R15/R16 and text-format limitations are recorded
+there; no performance threshold or executor memory allowance changes.
+
+**Final framing correction in the reopened step:** a byte buffer can end inside
+a wide DataRow. Track the five-byte backend header and remaining body length
+across completed writes, using constant memory. On cancel, finish the same
+in-progress buffer future for up to one second; if the resulting stream still
+ends inside a row, close instead of inserting ErrorResponse into that row.
+Likewise close if a producer failure leaves a partial frame. Normal boundary
+cancellation retains 57014. The wide-row cancellation test and its boundary-check
+removal mutant exercise this distinction. Final clean-CPU performance profiles
+include this cursor; the earlier syscall comparison predates it.
+
+
+**Final measurement amendment:** use the compiled Rust count/discard client for
+card raw/CLI (unchanged ≤1.20x), retaining Python separately. Same-VM distribution
+PostgreSQL, loaded with the same million BIGINTs, supplies matched Rust/psql
+reference arms only. Final ratios and native perf (x86)/Callgrind instruction
+profile (ARM sampling unavailable) are in the fix record. Per-row allocations
+and encoding remain measured costs; P14 stays open, no denominator redefinition.
+Measured code-only tree `ad89453261a3b894039ed4280f7d95a56a100b99` and its blob
+manifest match the final committed source. The strict old-writer NODELAY control
+was repeated from full 4373a63 copies; earlier mixed-session control numbers are
+retained but excluded. Final ARM64 catches all 51 mutants and passes the long
+replay. Confidence is high for the demonstrated timer/transport causes and
+measured misses, medium for the finite seeded resource/lifecycle evidence.

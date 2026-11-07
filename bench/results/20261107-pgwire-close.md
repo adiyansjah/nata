@@ -12,14 +12,14 @@ producer-completion instrumentation. No push. Raw evidence lives under
 
 | Aspect | Original target / evidence | Verdict |
 |---|---|---|
-| Correctness | Every successful slice-4 query: 221/221 typed values through four clients match CLI; DuckDB oracle 251/251 on both client VMs. Literal text differs in 76/77 queries; ADBC cannot connect. x86 45 mutants caught, ARM64 sweep not run after baseline failure | NOT MET for literal text/all-client and two-CPU mutation certification; tested values/errors MET |
-| Performance | “adds at most 20%”; raw/psql ratios 61.57–65.41x ARM64, 57.04–87.75x x86 versus ≤1.20x. First row before producer end in every round | NOT MET overhead; MET first row |
-| Scalability | “throughput within 2x” for 64 concurrent versus sequential on eight vCPUs: elapsed ratios 1.286027 ARM64 / 1.066360 x86 | MET by fixed median rule, weak under ARM64 twin noise |
-| Reliability | Disconnect/cancel/kill stop work and release counters; 2,000 seeded scenarios on each CPU, healthy sessions unaffected, retained RSS within declared bounds | MET in tested bounds; ARM64 mutant certification NOT MET |
+| Correctness | Every successful slice-4 query: 221/221 typed values through four clients match CLI; DuckDB oracle 251/251 on both client VMs. Literal text differs in 76/77 queries; ADBC cannot connect. x86 45 mutants caught, ARM64 sweep not run after baseline failure | NOT MET for literal text/all-client and two-CPU mutation certification; tested values/errors MET  **2026-11-07 reopened amendment:** literal text remains NOT MET; original four clients retain 221/221 typed values. ADBC now connects; default fetch reaches COPY/0A000, configured no-COPY matches 221/221 typed values. final clean ARM64 measured tree catches 51/51 valid mutants (R20 done); [fix evidence](20261107-pgwire-fixes.md). |
+| Performance | “adds at most 20%”; raw/psql ratios 61.57–65.41x ARM64, 57.04–87.75x x86 versus ≤1.20x. First row before producer end in every round | NOT MET overhead; MET first row  **2026-11-07 reopened amendment:** bounded batching removes per-row writes; final Rust raw/CLI ARM64 4.697344x / 3.989974x and x86 4.042516x / 3.416084x (one/eight workers), unchanged ≤1.20x NOT MET; earlier raw was Python. Matched psql Nata/PostgreSQL 1.270–1.453x is context only; VM profiles expose per-row allocation/encoding cost. First row MET; NODELAY/coalescing removes the timer floor; [fix evidence](20261107-pgwire-fixes.md). |
+| Scalability | “throughput within 2x” for 64 concurrent versus sequential on eight vCPUs: elapsed ratios 1.286027 ARM64 / 1.066360 x86 | MET by fixed median rule, weak under ARM64 twin noise  **2026-11-07 reopened amendment:** final concurrent/sequential ratios 0.468515 ARM64 / 0.597430 x86, original ≤2 threshold MET; paired spread retained; [fix evidence](20261107-pgwire-fixes.md). |
+| Reliability | Disconnect/cancel/kill stop work and release counters; 2,000 seeded scenarios on each CPU, healthy sessions unaffected, retained RSS within declared bounds | MET in tested bounds; ARM64 mutant certification NOT MET  **2026-11-07 reopened amendment:** bounded buffer writes keep cancellation/cleanup/stalled-send guarantees; final clean ARM64 release, 2,000 lifecycle, 10,000 hostile cases and 51/51 valid mutants PASS; [fix evidence](20261107-pgwire-fixes.md). |
 | Fault tolerance | 10,000 live hostile cases on each CPU; no observed panic/hang/leak, protocol limit tests; regular-frame cap 1,114,112 bytes, startup cap 10,000 | MET in tested corpus, not exhaustive |
-| Resource bounds | 64 sessions + eight reserved startup/cancel slots checked; slow-reader produced 2,567/1,048,576 rows on each CPU, peaks 19,260/21,264 KiB within unchanged probe bounds. Original R16 SF10 gap remains | MET bounded slow-reader/socket probes; NOT MET full R16 closure |
-| Portability | Real server, benchmark and all five client installations on clean ARM64/x86-64 VMs | MET ordinary tested surface; ARM64 45-mutant sweep NOT MET |
-| Compatibility | Versioned psql/JDBC/psycopg/pgcli ordinary native values and supported probes pass; default ADBC bootstrap fails 0A000, dependent operations blocked | NOT MET universal client compatibility; full matrix and known differences recorded |
+| Resource bounds | 64 sessions + eight reserved startup/cancel slots checked; slow-reader produced 2,567/1,048,576 rows on each CPU, peaks 19,260/21,264 KiB within unchanged probe bounds. Original R16 SF10 gap remains | MET bounded slow-reader/socket probes; NOT MET full R16 closure  **2026-11-07 reopened amendment:** two 64-KiB bridge buffers (128 KiB queued data); slow readers produce 2,773 rows ARM64 and 2,773 on x86, both <20,000 with unchanged RSS bounds. Original R16 gap remains; [fix evidence](20261107-pgwire-fixes.md). |
+| Portability | Real server, benchmark and all five client installations on clean ARM64/x86-64 VMs | MET ordinary tested surface; ARM64 45-mutant sweep NOT MET  **2026-11-07 reopened amendment:** both clean CPU client/benchmark runs complete; final clean ARM64 measured tree catches 51/51 valid mutants (R20 done); [fix evidence](20261107-pgwire-fixes.md). |
+| Compatibility | Versioned psql/JDBC/psycopg/pgcli ordinary native values and supported probes pass; default ADBC bootstrap fails 0A000, dependent operations blocked | NOT MET universal client compatibility; full matrix and known differences recorded  **2026-11-07 reopened amendment:** ADBC 1.13.0 default connect repaired; all 221 default corpus fetches now reach COPY and fail 0A000, documented no-COPY matches 221/221 typed values and ten-type Arrow/NULL fixture on both CPUs. Universal default-client target still NOT MET (R18); [fix evidence](20261107-pgwire-fixes.md). |
 | Security/privacy | Loopback-only/default unsafe-listen refusal tests; no TLS/auth claim; staged/tree leak scans plus stricter new-result email/address audit, redacted raw results | MET tested scope |
 | Operability | Per-session id/duration/state, queue/admission share logs, positioned SQLSTATE errors and existing EXPLAIN protocol tests; fixed seeds/versions reproduce outcomes | MET tested scope |
 
@@ -327,3 +327,20 @@ rows, supported-client notes, regression baselines and improvement register are
 updated together. Raw line endings/trailing whitespace are normalized; CSV
 fields are checked unchanged. No push; final tracked tree/staged leak scans and a stricter
 new-evidence email/address audit precede the closing commit.
+
+
+## Dated reopened-method correction, 2026-11-07
+
+The historical `raw` tables above used Python and include client parsing cost.
+The final card verdict in [fix evidence](20261107-pgwire-fixes.md) uses the Rust
+count/discard reader against the unchanged **raw/CLI ≤1.20x** rule. Both CPUs also
+use matched psql and Rust arms against an installed PostgreSQL table; those are
+context, never a replacement denominator. The literal/card/default-client misses
+remain visible. Final measured source tree
+`ad89453261a3b894039ed4280f7d95a56a100b99` and source-blob manifest are recorded.
+Strict repeated full-old-tree NODELAY off/on control is **44.087 / 0.0584 ms**;
+the earlier mixed-session diagnostic is retained but excluded as a one-change
+control. Final clean ARM64 51/51 valid mutants closes R20. P14's remaining
+encoding cost and R18 default COPY, R19 dates, R21 finite float text and R15/R16
+remain open. Full cloud accounting, every corrected/failed run and explicit
+cleanup proofs are in the fix record. No push.

@@ -758,3 +758,163 @@ fn limited_rowless_commands_allow_jdbc_rollback_recovery() {
     c.frame(b'E', b"absent\0\0\0\0\x64");
     assert_code(&c.sync(), "34000");
 }
+
+#[test]
+fn output_buffers_are_batched_byte_bounded_and_nodelay_is_set() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    assert_eq!(s.metrics.nodelay_sessions.load(Ordering::SeqCst), 1);
+    let result = c.query(&format!("SELECT id FROM '{}' LIMIT 8192", large()));
+    let rows = values(&result);
+    assert_eq!(rows.len(), 8192);
+    for (i, row) in rows.iter().enumerate() {
+        assert_eq!(row, &[Some(i.to_string())]);
+    }
+    let buffers = s.metrics.buffers_sent.load(Ordering::SeqCst);
+    assert!(
+        (2..=16).contains(&buffers),
+        "per-row bridge restored: {buffers}"
+    );
+    let result = c.query(&format!("SELECT s FROM '{}' LIMIT 256", large()));
+    assert_eq!(values(&result), vec![vec![Some("x".repeat(1024))]; 256]);
+    let path = std::env::temp_dir().join(format!("nata-wide-row-{}.parquet", std::process::id()));
+    let text = "T".repeat(200_000);
+    let batch = RecordBatch::try_from_iter([(
+        "wide",
+        Arc::new(StringArray::from(vec![text.clone()])) as ArrayRef,
+    )])
+    .expect("batch");
+    let mut writer = parquet::arrow::ArrowWriter::try_new(
+        std::fs::File::create(&path).expect("create"),
+        batch.schema(),
+        None,
+    )
+    .expect("writer");
+    writer.write(&batch).expect("write");
+    writer.close().expect("close");
+    let q = format!("SELECT wide FROM '{}'", path.display());
+    assert_eq!(values(&c.query(&q)), vec![vec![Some(text.clone())]]);
+    c.parse(&q, &[]);
+    c.bind(&[], 0, 1);
+    c.execute(0);
+    assert_eq!(values(&c.sync()), vec![vec![Some(text)]]);
+    std::fs::remove_file(path).expect("remove");
+    assert!(s.metrics.max_buffer_bytes.load(Ordering::SeqCst) <= 65536);
+    assert!(s.metrics.max_buffer_bytes.load(Ordering::SeqCst) >= 32768);
+}
+
+#[test]
+fn exact_adbc_bootstrap_and_unknown_catalog_refusal() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    let ordinary = c.query(&format!(
+        "SELECT 'pg_catalog' AS s FROM '{}' LIMIT 1",
+        fixture()
+    ));
+    assert_eq!(values(&ordinary), vec![vec![Some("pg_catalog".into())]]);
+    let attrs =
+        "SELECT attrelid, attname, atttypid FROM pg_catalog.pg_attribute ORDER BY attrelid, attnum";
+    let types = "SELECT oid, typname, typreceive, typbasetype, typrelid, typarray FROM pg_catalog.pg_type WHERE (typreceive != 0 OR typsend != 0) AND typtype != 'r' AND typreceive::TEXT != 'array_recv'";
+    let r = c.query(attrs);
+    assert_eq!(tags(&r), b"TCZ");
+    let r = c.query(types);
+    let rows = values(&r);
+    let expected = [
+        (16, "bool", "boolrecv"),
+        (20, "int8", "int8recv"),
+        (21, "int2", "int2recv"),
+        (23, "int4", "int4recv"),
+        (25, "text", "textrecv"),
+        (700, "float4", "float4recv"),
+        (701, "float8", "float8recv"),
+        (1043, "varchar", "varcharrecv"),
+        (1082, "date", "date_recv"),
+        (1700, "numeric", "numeric_recv"),
+    ];
+    assert_eq!(rows.len(), expected.len());
+    for (row, (oid, name, recv)) in rows.iter().zip(expected) {
+        assert_eq!(
+            row,
+            &[
+                Some(oid.to_string()),
+                Some(name.into()),
+                Some(recv.into()),
+                Some("0".into()),
+                Some("0".into()),
+                Some("0".into())
+            ]
+        );
+    }
+    // The same exact response through Parse/Describe/Bind/binary Execute.
+    c.parse(types, &[]);
+    c.frame(b'D', b"S\0");
+    c.bind(&[], 0, 1);
+    c.execute(0);
+    let r = c.sync();
+    assert_eq!(r.iter().filter(|m| m.0 == b'D').count(), 10);
+    for q in [
+        "SELECT * FROM pg_catalog.pg_type",
+        &format!("{types}; SELECT 1"),
+        &types.replace("'r'", "'R'"),
+    ] {
+        assert_code(&c.query(q), "0A000");
+    }
+    let r = c.query(&format!(
+        "SELECT CAST(0.5 AS DECIMAL(3,3)), CAST(-0.5 AS DECIMAL(3,3)) FROM '{}' LIMIT 1",
+        fixture()
+    ));
+    assert_eq!(
+        values(&r),
+        vec![vec![Some("0.500".into()), Some("-0.500".into())]]
+    );
+}
+
+#[test]
+fn cancel_inside_a_wide_row_closes_instead_of_appending_an_error() {
+    let path =
+        std::env::temp_dir().join(format!("nata-wide-cancel-{}.parquet", std::process::id()));
+    let text = "T".repeat(4 * 1024 * 1024);
+    let batch = RecordBatch::try_from_iter([(
+        "wide",
+        Arc::new(StringArray::from(vec![text; 8])) as ArrayRef,
+    )])
+    .expect("batch");
+    let props = parquet::file::properties::WriterProperties::builder()
+        .set_dictionary_enabled(false)
+        .set_statistics_enabled(parquet::file::properties::EnabledStatistics::None)
+        .set_max_row_group_row_count(Some(1))
+        .build();
+    let mut writer = parquet::arrow::ArrowWriter::try_new(
+        std::fs::File::create(&path).expect("file"),
+        batch.schema(),
+        Some(props),
+    )
+    .expect("writer");
+    writer.write(&batch).expect("write");
+    writer.close().expect("close");
+    let s = Server::start(2);
+    let mut c = s.client();
+    c.send_query(&format!("SELECT wide FROM '{}'", path.display()));
+    assert_eq!(read(&mut c.socket).0, b'T');
+    let mut h = [0; 5];
+    c.socket.read_exact(&mut h).expect("row header");
+    assert_eq!(h[0], b'D');
+    let length = u32::from_be_bytes(h[1..].try_into().expect("length")) as usize;
+    assert!(length > 4 * 1024 * 1024);
+    std::thread::sleep(Duration::from_millis(100));
+    cancel(&s, c.key);
+    c.socket
+        .set_read_timeout(Some(Duration::from_secs(3)))
+        .expect("timeout");
+    let mut body = Vec::new();
+    if let Err(e) = c.socket.read_to_end(&mut body) {
+        assert_eq!(e.kind(), std::io::ErrorKind::ConnectionReset);
+    }
+    assert!(body.len() < length - 4, "unexpected full result");
+    assert!(
+        !body.windows(5).any(|b| b == b"57014"),
+        "ErrorResponse appended inside DataRow"
+    );
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    std::fs::remove_file(path).expect("remove");
+}

@@ -1,0 +1,73 @@
+connections64/concurrent: min=0.021304692 median=0.021427611 max=0.029883175 spread=40.0347%
+connections64/concurrent: queue_wait_us median=8375.5 max=19131 configured_worker_shares=[1]
+connections64/concurrent-twin: min=0.020710281 median=0.021059876 max=0.021983763 spread=6.0470%
+connections64/concurrent-twin: queue_wait_us median=8076.0 max=17744 configured_worker_shares=[1]
+connections64/sequential: min=0.045112868 median=0.045735158 max=0.046577306 spread=3.2020%
+connections64/sequential: queue_wait_us median=0.0 max=3 configured_worker_shares=[1]
+connections64/sequential-twin: min=0.045009299 median=0.046097083 max=0.046442018 spread=3.1080%
+connections64/sequential-twin: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/named-binary: min=0.079982800 median=0.080673833 max=0.082078310 spread=2.5975%
+preparation100/named-binary: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/named-binary-twin: min=0.079606225 median=0.081019434 max=0.081393953 spread=2.2065%
+preparation100/named-binary-twin: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/named-text: min=0.080542783 median=0.081834494 max=0.082924909 spread=2.9109%
+preparation100/named-text: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/named-text-twin: min=0.080392264 median=0.080793469 max=0.082487739 spread=2.5936%
+preparation100/named-text-twin: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/parse-text: min=0.114180510 median=0.116910463 max=0.120346912 spread=5.2745%
+preparation100/parse-text: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+preparation100/parse-text-twin: min=0.115772438 median=0.115899827 max=0.117564807 spread=1.5465%
+preparation100/parse-text-twin: queue_wait_us median=0.0 max=1 configured_worker_shares=[1]
+share1-of8/raw: min=0.415750759 median=0.418475095 max=0.418890558 spread=0.7503%
+share1-of8/raw: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+share1-of8/raw-twin: min=0.418334864 median=0.418898994 max=0.419182942 spread=0.2025%
+share1-of8/raw-twin: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+stream/1/cli: min=0.036226035 median=0.036351688 max=0.039065558 spread=7.8113%
+stream/1/cli-twin: min=0.036336268 median=0.036382082 max=0.036550520 spread=0.5889%
+stream/1/postgres-psql: min=0.158668909 median=0.159601636 max=0.160436833 spread=1.1077%
+stream/1/postgres-psql-twin: min=0.158674151 median=0.159234496 max=0.161157941 spread=1.5598%
+stream/1/postgres-raw: min=0.100594593 median=0.101621086 max=0.102805216 spread=2.1754%
+stream/1/postgres-raw-twin: min=0.100406701 median=0.101497368 max=0.102698133 spread=2.2576%
+stream/1/psql: min=0.228388910 median=0.231952948 max=0.232874347 spread=1.9338%
+stream/1/psql: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+stream/1/psql-twin: min=0.226090943 median=0.230222927 max=0.230859572 spread=2.0713%
+stream/1/psql-twin: queue_wait_us median=1 max=2 configured_worker_shares=[1]
+stream/1/python-raw: min=0.422091735 median=0.423099540 max=0.427517974 spread=1.2825%
+stream/1/python-raw: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+stream/1/python-raw-twin: min=0.422007305 median=0.423468863 max=0.427813961 spread=1.3712%
+stream/1/python-raw-twin: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+stream/1/raw: min=0.164015948 median=0.170756400 max=0.172202288 spread=4.7942%
+stream/1/raw: queue_wait_us median=1 max=1 configured_worker_shares=[1]
+stream/1/raw-twin: min=0.166818007 median=0.170657226 max=0.171572591 spread=2.7860%
+stream/1/raw-twin: queue_wait_us median=2 max=2 configured_worker_shares=[1]
+stream/8/cli: min=0.038198281 median=0.038292640 max=0.038473308 spread=0.7182%
+stream/8/cli-twin: min=0.038206307 median=0.038358551 max=0.038672221 spread=1.2146%
+stream/8/postgres-psql: min=0.158175740 median=0.158964985 max=0.160578986 spread=1.5118%
+stream/8/postgres-psql-twin: min=0.159270919 median=0.159837264 max=0.160659565 spread=0.8688%
+stream/8/postgres-raw: min=0.100061334 median=0.100839398 max=0.100938319 spread=0.8697%
+stream/8/postgres-raw-twin: min=0.099395644 median=0.100109138 max=0.100944791 spread=1.5475%
+stream/8/psql: min=0.206164207 median=0.214058255 max=0.225877167 spread=9.2092%
+stream/8/psql: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+stream/8/psql-twin: min=0.212066436 median=0.212505983 max=0.222872586 spread=5.0851%
+stream/8/psql-twin: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+stream/8/python-raw: min=0.417434462 median=0.419958907 max=0.424061153 spread=1.5779%
+stream/8/python-raw: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+stream/8/python-raw-twin: min=0.415419726 median=0.418307282 max=0.423321576 spread=1.8890%
+stream/8/python-raw-twin: queue_wait_us median=1 max=2 configured_worker_shares=[8]
+stream/8/raw: min=0.150704115 median=0.152786635 max=0.156979896 spread=4.1075%
+stream/8/raw: queue_wait_us median=2 max=2 configured_worker_shares=[8]
+stream/8/raw-twin: min=0.145107901 median=0.149731316 max=0.152780399 spread=5.1242%
+stream/8/raw-twin: queue_wait_us median=1 max=1 configured_worker_shares=[8]
+VERDICT streaming/1/raw: 4.697344x <= 1.20x: NOT MET
+VERDICT first-DataRow/1: first/scan-end/total=[(0.001563553, 0.163811, 0.164015948), (0.001754412, 0.170565, 0.1707564), (0.00151497, 0.169144, 0.169316383), (0.001634918, 0.170715, 0.170908463), (0.001494637, 0.172028, 0.172202288)]: MET; scan-end is producer completion including bounded-bridge backpressure
+VERDICT streaming/8/raw: 3.989974x <= 1.20x: NOT MET
+VERDICT first-DataRow/8: first/scan-end/total=[(0.001771285, 0.150391, 0.150704115), (0.001768354, 0.156618, 0.156979896), (0.001672285, 0.151275, 0.151656063), (0.001762553, 0.152461, 0.152786635), (0.001851702, 0.15252, 0.152851873)]: MET; scan-end is producer completion including bounded-bridge backpressure
+CONTEXT Nata/PostgreSQL stream/1/raw: 1.680324x; not a card threshold
+CONTEXT Nata/PostgreSQL stream/1/psql: 1.453324x; not a card threshold
+CONTEXT Nata/PostgreSQL stream/8/raw: 1.515148x; not a card threshold
+CONTEXT Nata/PostgreSQL stream/8/psql: 1.346575x; not a card threshold
+VERDICT concurrency: elapsed concurrent/sequential=0.468515 <= 2.0: MET
+   Compiling nata-pgwire v0.0.0 (/mnt/work/src/crates/nata-pgwire)
+   Compiling nata v0.0.0 (/mnt/work/src/crates/nata)
+    Finished `release` profile [optimized] target(s) in 3.31s
+{"samples": [{"round": 0, "nodelay": true, "ms": 0.03889270999934524}, {"round": 0, "nodelay": false, "ms": 0.034370490000128484}, {"round": 1, "nodelay": false, "ms": 0.03709149999849615}, {"round": 1, "nodelay": true, "ms": 0.03344718999869656}, {"round": 2, "nodelay": true, "ms": 0.03674080000109825}, {"round": 2, "nodelay": false, "ms": 0.033311100000901206}, {"round": 3, "nodelay": false, "ms": 0.03694920000043567}, {"round": 3, "nodelay": true, "ms": 0.033571089998076786}, {"round": 4, "nodelay": true, "ms": 0.03686310000148296}, {"round": 4, "nodelay": false, "ms": 0.0336421900010464}], "median_ms": {"True": 0.03674080000109825, "False": 0.034370490000128484}}
