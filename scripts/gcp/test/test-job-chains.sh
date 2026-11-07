@@ -42,7 +42,7 @@ pf=$(steps icebergplan); echo "$pf" | grep -q '^IPONLY=<all phases>$' && ok "ice
 im=$(steps icebergmodel); ic=$(steps iceberg)
 has ic-model "$im" && echo "$im" | grep -q '^ICMODE\[ic-model\]=model$' && ok "icebergmodel runs the one model-mode step" || bad "icebergmodel: $(echo "$im" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
 has ic-all "$im" && bad "icebergmodel must not run the full iceberg step ic-all" || ok "icebergmodel does not run the full iceberg check"
-extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-model)$' | tr '\n' ' ')
+extra=$(echo "$im" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|code-tree|ic-model)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergmodel runs no step of any other job (only the common setup and ic-model)" || bad "icebergmodel runs extra steps: $extra"
 has ic-all "$ic" && echo "$ic" | grep -q '^ICMODE\[ic-all\]=<full>$' && ! has ic-model "$ic" && ok "iceberg still runs the full check (IC_MODE unset), not the model-only step" || bad "iceberg: $(echo "$ic" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
 # objscan reads the real store's coordinates from a git-ignored file that travels with the uploaded source (no secret: KIND=gcs uses the VM's service account)
@@ -50,17 +50,17 @@ grep -q 'spikes/object-store-scan/objstore.env' "$HERE/job.sh" && grep -q '^/spi
 # icebergpolaris: ONE step (ic-polaris) in IC_MODE=polaris; nothing of another job
 ipo=$(steps icebergpolaris)
 has ic-polaris "$ipo" && ok "icebergpolaris runs the one polaris-mode step" || bad "icebergpolaris: $(echo "$ipo" | grep '^STEP' | tr '\n' ' ')"
-extra=$(echo "$ipo" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-polaris)$' | tr '\n' ' ')
+extra=$(echo "$ipo" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|code-tree|ic-polaris)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergpolaris runs no step of any other job" || bad "icebergpolaris runs extra steps: $extra"
 # pushpin: the build and ONE check step (pp-check); nothing of another job
 ppn=$(steps pushpin)
 has pp-build "$ppn" && has pp-check "$ppn" && ok "pushpin runs the build and the one pin-check step" || bad "pushpin: $(echo "$ppn" | grep '^STEP' | tr '\n' ' ')"
-extra=$(echo "$ppn" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|pp-build|pp-check)$' | tr '\n' ' ')
+extra=$(echo "$ppn" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|code-tree|pp-build|pp-check)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "pushpin runs no step of any other job" || bad "pushpin runs extra steps: $extra"
 # netexchsim: ONE step (nx-all) that runs spikes/net-exchange/gcp-check.sh; no settle steps, nothing of another job.
 nx=$(steps netexchsim)
 has nx-all "$nx" && ok "netexchsim runs the one step nx-all" || bad "netexchsim: $(echo "$nx" | grep '^STEP' | tr '\n' ' ')"
-extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|nx-all)$' | tr '\n' ' ')
+extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|code-tree|nx-all)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "netexchsim runs no step of any other job" || bad "netexchsim runs extra steps: $extra"
 # the VM must be prepared for it as root: the job runs as `nata`
 VS="$HERE/vm-startup.sh"
@@ -70,7 +70,7 @@ isp=$(steps icebergspikes)
 has ic-spikes "$isp" && echo "$isp" | grep -q '^ICMODE\[ic-spikes\]=spikes$' && ok "icebergspikes runs the one spikes-mode step" || bad "icebergspikes: $(echo "$isp" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"
 has ic-all "$isp" && bad "icebergspikes must not run the full iceberg step" || ok "icebergspikes does not run the full check"
 has ic-model "$isp" && bad "icebergspikes must not run the model step" || ok "icebergspikes does not run the model step"
-extra=$(echo "$isp" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|ic-spikes)$' | tr '\n' ' ')
+extra=$(echo "$isp" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|machine-stubboot|code-tree|ic-spikes)$' | tr '\n' ' ')
 [ -z "$extra" ] && ok "icebergspikes runs no step of any other job" || bad "icebergspikes runs extra steps: $extra"
 # the settle step: in the timing jobs every timed step is preceded by a wait for a quiet machine; the other jobs do not have it
 idx() { echo "$2" | grep -n "^STEP $1\$" | head -1 | cut -d: -f1; }
@@ -90,7 +90,7 @@ for j in cpack fairness-bench bridge; do
   done
 done
 # kani-solvers: exactly its own four steps after the common setup, in order, nothing of kani-crate's phases
-ks=$(steps kani-solvers | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+ks=$(steps kani-solvers | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
 [ "$ks" = "STEP k-install STEP kw-proofs STEP kw-mutants STEP kc-solvers " ] && ok "kani-solvers runs k-install, kw-proofs, kw-mutants, kc-solvers only" || bad "kani-solvers steps: $ks"
 # verify: the generic-ops timings with overflow-checks on and off each wait for a settled machine (the first x86-64 run started them at load 2.3-3.5)
 tv=$(steps verify)
@@ -107,19 +107,19 @@ out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/quiet" bash -c "$
 out=$(SRC="$(dirname "$(dirname "$HERE")")" SETTLE_LOADAVG="$T/busy" SETTLE_POLL=1 bash -c "${C/ 600;/ 1;}" lbl 2>&1); rc=$?; echo "$out" | grep -q '^SETTLE lbl: NOT SETTLED, load 9.00' && [ $rc = 0 ] && ok "settle step: a busy machine is given up on cleanly (exit 0, says NOT SETTLED)" || bad "settle busy rc=$rc: $out"
 # The pgwire replay is checks only: no benchmark data or timing step.
 for job in pgwirebench item35; do
-  chain=$(steps "$job" | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+  chain=$(steps "$job" | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
   if [ "$job" = item35 ]; then expected="STEP pw-build STEP pw-data STEP pw-oracle STEP pw-clients "; else expected="STEP pw-build STEP pw-bench "; fi
   [ "$chain" = "$expected" ] && ok "$job chain" || bad "$job chain: $chain"
   grep -q 'pgwirebench|item35)' "$VS" && ok "$job startup dependencies" || bad "$job startup dependencies"
 done
-pw=$(steps pgwirecheck | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+pw=$(steps pgwirecheck | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
 [ "$pw" = "STEP pgwire-protocol STEP pgwire-live STEP pgwire-mutants " ] && ok "pgwirecheck runs protocol, live lifecycle and mutants in order" || bad "pgwirecheck steps: $pw"
 # slice4bench (step 4b of slice 4): the data, BOTH builds of nata (the default and --no-default-features, for the R4 cost arm), the pyarrow venv and the one
 # benchmark step, in that order, and nothing of another job
-sb=$(steps slice4bench | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+sb=$(steps slice4bench | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
 [ "$sb" = "STEP s4-gen-sf1 STEP s4-gen-sf10 STEP s4-build STEP s4-pyarrow STEP s4-bench " ] && ok "slice4bench runs s4-gen-sf1, s4-gen-sf10, s4-build, s4-pyarrow, s4-bench only, in that order" || bad "slice4bench steps: $sb"
 grep -q -- '--no-default-features' "$HERE/job.sh" && grep -q 'BLOCKS="late footers crc"' "$HERE/job.sh" && ok "slice4bench builds the build without the page checksum and runs the late, footers and crc blocks" || bad "slice4bench is missing the no-default-features build or a block"
-sc=$(steps slice4close | grep '^STEP ' | grep -vE '^STEP (machine-|setup-)' | tr '\n' ' ')
+sc=$(steps slice4close | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
 [ "$sc" = "STEP s4c-gen-sf1 STEP s4c-gen-sf10 STEP s4c-build STEP s4c-fixtures STEP s4c-python STEP s4c-correct STEP s4c-contention STEP s4c-process STEP s4c-diff STEP s4c-bench STEP s4c-scan-bench STEP s4c-leaks " ] && ok "slice4close selects all checks before timing" || bad "slice4close: $sc"
 grep -q 'icebergpolaris|slice4bench|slice4close) python3' "$VS" && ok "startup installs slice4close venv support" || bad "slice4close startup missing"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"

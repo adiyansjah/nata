@@ -109,3 +109,17 @@ The open register items on this slice's path (the scan under `nata sql`, its sch
 - Deviations from this card, and why: all fixed thresholds and MET / NOT MET verdicts are quoted in the closeout record. R4 remains opt-in after its measured ARM64 cost miss. ASan depth safety is NOT MET (instrumented parser stack overflow, R15); the RSS-budget tests run uninstrumented because sanitizer quarantine/shadow metadata change RSS, without changing the normal memory budget. Miri is bounded and excludes OS/signal/decoding paths. The failed benchmark harness, its corrected retry and the aborted-run cost-accounting defect (R14) are retained rather than hidden. SF10 latency misses 1.2x on both CPUs (P12), x86-64 SF10 execution misses 5x (P11), and x86-64 SF10 RSS misses the original bound (R16). The historical ARM64 SF1 scan comparison also flags +23% (P13). Miri scalar conversion is also NOT MET (13/14, the `powi` precision assumption; R17). None is hidden or re-thresholded.
 - Spike code deleted: all 19 tracked files of `spikes/sql-parser/` (the hand parser, sqlparser bake-off, CLI/bake binaries, experiment tests and corpus/report generators); the temporary duplicate hand parser/oracle and comparison tests in `crates/nata-sql/src/oracle/{hand,mod,tests}.rs`; the oracle-only expression generator and unused metadata in `src/testutil.rs`. Kept the permanent parser mutation corpus/mangler and `spikes/sqlfuzz`, which is an active shared CI/differential tool, not this retired parser experiment. Historical results stay. External unfinished-draft backups stay untouched.
 - Improvement register updated (items done, new findings added): P1/P2/P10/R4 keep their measured decisions; R12/R17/P11/P12 stay with slice 5, P13 records the historical scan flag; R13 is carried into the protocol cancellation boundary audit, R6b is deferred unless needed by the selected fixes, R14 records abort accounting, and R15/R16 record instrumented depth safety and SQL RSS and are selected in card 0003 part 5. The next card's other parts are untouched.
+
+### Debt A follow-up, 2026-11-07
+
+[Debt A evidence](../../bench/results/20261107-debt-a.md) records R16's original
+SF10 resource repair on both CPUs (unchanged K/window/allowance), R17's exact
+conversion table, million-decimal oracle and Miri pass, and R19's exceptional
+date output/real-client PostgreSQL certification. R15 passes all 55 ASan test
+binaries at the unchanged limits, with measured parser/evaluator costs
+31,264/8,352 B per level. Full TSan runs every binary but reports the independently
+reproduced Tokio registration/readiness race; R15 remains open pending a safe
+dependency resolution and fresh certification. Initial failures, the one corrected
+retry, mutation controls, costs and cleanup are recorded there.
+Earlier deviations remain historical evidence; this follow-up changes only the
+register items it explicitly certifies, with no performance target relaxation.

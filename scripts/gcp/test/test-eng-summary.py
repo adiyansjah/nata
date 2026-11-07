@@ -5,6 +5,11 @@ import subprocess
 import tempfile
 
 job = (Path(__file__).resolve().parents[1] / 'job.sh').read_text()
+sanitizer = next(line for line in job.splitlines() if 'run "ec-$san"' in line)
+assert '--workspace' in sanitizer and '--no-fail-fast' in sanitizer
+assert '--skip' not in sanitizer
+assert 'NATA_RSS_BINARY=' in sanitizer and 'NATA_INSTRUMENTED=1' in sanitizer
+assert 'run ec-fixtures' in job
 line = next(line for line in job.splitlines() if 'run ec-summary bash -c' in line)
 command = line.split("bash -c '", 1)[1].rsplit("'", 1)[0]
 with tempfile.TemporaryDirectory() as tmp:

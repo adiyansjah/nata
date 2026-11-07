@@ -52,11 +52,17 @@ pub fn plain_decimal(v: i128, scale: u8) -> String {
 
 /// The nearest double to `v / 10^scale` (correctly rounded: exact when both parts are exactly representable, else through the decimal text).
 pub fn decimal_to_f64(v: i128, scale: u8) -> f64 {
+    // 10^0..10^22 are integers exactly representable in binary64. Literal
+    // conversion is correctly rounded; unlike powi it has no libm variability.
+    const TEN: [f64; 23] = [
+        1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16,
+        1e17, 1e18, 1e19, 1e20, 1e21, 1e22,
+    ];
     const TWO53: u128 = 1 << 53;
     if v.unsigned_abs() <= TWO53 && scale <= 22 {
         // both numbers are exact doubles, so the one division is the correctly rounded quotient
         if let Ok(x) = i64::try_from(v) {
-            return int_to_f64(x) / 10f64.powi(i32::from(scale));
+            return int_to_f64(x) / TEN[usize::from(scale)];
         }
     }
     plain_decimal(v, scale).parse().unwrap_or(f64::NAN)

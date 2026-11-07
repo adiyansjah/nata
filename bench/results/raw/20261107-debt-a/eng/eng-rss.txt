@@ -1,0 +1,19 @@
+   Compiling nata v0.0.0 (/mnt/work/src/crates/nata)
+    Finished `release` profile [optimized] target(s) in 2.93s
+     Running tests/resource_bounds.rs (/mnt/work/target-rss/release/deps/resource_bounds-fbb1d8c25665bb04)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.18s
+
+     Running tests/sql_resource_bounds.rs (/mnt/work/target-rss/release/deps/sql_resource_bounds-8c9db0256b77fcc9)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operators_above_the_scan ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.67s
+
+exit status: 0

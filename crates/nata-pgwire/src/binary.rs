@@ -94,12 +94,7 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
             .to_be_bytes()
             .to_vec(),
         25 | 1043 => s.as_bytes().to_vec(),
-        1082 => {
-            let date = NaiveDate::parse_from_str(s, "%Y-%m-%d").map_err(|_| invalid())?;
-            (date.signed_duration_since(epoch()).num_days() as i32)
-                .to_be_bytes()
-                .to_vec()
-        }
+        1082 => crate::date::binary(s)?.to_vec(),
         1700 => {
             let negative = s.starts_with('-');
             let s = s.trim_start_matches('-');

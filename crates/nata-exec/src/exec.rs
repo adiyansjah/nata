@@ -194,7 +194,9 @@ impl Run {
 
     fn project(&self, batch: &RecordBatch) -> R<RecordBatch> {
         let ev = Evaluator::new(batch, &self.types);
-        let all = ev.all_rows();
+        // Bare columns need neither scalar conversion nor a row-selection vector.
+        // Allocate once, lazily, only when an expression actually needs it.
+        let mut all = None;
         let mut arrays: Vec<ArrayRef> = Vec::with_capacity(self.plan.project.exprs.len());
         for p in &self.plan.project.exprs {
             match &p.expr.kind {
@@ -204,7 +206,10 @@ impl Run {
                         EvalError::internal("a projected column is missing from the batch")
                     })?))
                 }
-                _ => arrays.push(ev.eval(&p.expr, &all)?.to_arrow()?),
+                _ => arrays.push(
+                    ev.eval(&p.expr, all.get_or_insert_with(|| ev.all_rows()))?
+                        .to_arrow()?,
+                ),
             }
         }
         let fields: Vec<Field> = self
@@ -395,4 +400,45 @@ fn first_readable_column(plan: &LogicalPlan) -> Result<String, ScanError> {
             ScanError::not_supported("a file none of whose columns has a supported type")
                 .in_file(first)
         })
+}
+
+#[cfg(test)]
+mod projection_memory_tests {
+    #[test]
+    fn bare_projection_allocates_no_row_selection() {
+        use arrow_array::{Int64Array, RecordBatch};
+        use nata_parquet::schema::Kind;
+        use nata_sql::source::MemSource;
+        use std::sync::Arc;
+        let source = MemSource::new().file(
+            "t",
+            &[(
+                "id",
+                Ok(Kind::Int {
+                    bits: 64,
+                    signed: true,
+                }),
+            )],
+        );
+        let plan = nata_sql::plan_sql("SELECT id FROM 't'", &source)
+            .expect("plan")
+            .plan;
+        let run = super::Run {
+            plan: Arc::new(plan),
+            types: vec![nata_sql::types::SqlType::BigInt],
+            counters: super::Counters::default(),
+            big_stack: None,
+            project_late: false,
+        };
+        let batch = RecordBatch::try_from_iter(vec![(
+            "id",
+            Arc::new(Int64Array::from(vec![1; 122_880])) as arrow_array::ArrayRef,
+        )])
+        .expect("batch");
+        crate::eval::SELECTION_ROWS.with(|r| r.set(0));
+        let result = run.project(&batch).expect("project");
+        assert!(Arc::ptr_eq(result.column(0), batch.column(0)));
+        crate::eval::SELECTION_ROWS
+            .with(|r| assert_eq!(r.get(), 0, "bare projection must not allocate a selection"));
+    }
 }

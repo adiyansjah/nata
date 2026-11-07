@@ -1,0 +1,151 @@
+00000000011821d0 <<nata_exec::eval::Evaluator>::eval>:
+ 11821d0:	55                   	push   %rbp
+ 11821d1:	48 89 e5             	mov    %rsp,%rbp
+ 11821d4:	53                   	push   %rbx
+ 11821d5:	48 83 e4 e0          	and    $0xffffffffffffffe0,%rsp
+ 11821d9:	48 81 ec e0 0c 00 00 	sub    $0xce0,%rsp
+ 11821e0:	48 89 e3             	mov    %rsp,%rbx
+ 11821e3:	4c 89 83 88 06 00 00 	mov    %r8,0x688(%rbx)
+ 11821ea:	48 89 8b 90 06 00 00 	mov    %rcx,0x690(%rbx)
+ 11821f1:	48 89 93 98 06 00 00 	mov    %rdx,0x698(%rbx)
+ 11821f8:	48 89 b3 a0 06 00 00 	mov    %rsi,0x6a0(%rbx)
+ 11821ff:	48 89 bb a8 06 00 00 	mov    %rdi,0x6a8(%rbx)
+ 1182206:	48 89 bb b0 06 00 00 	mov    %rdi,0x6b0(%rbx)
+ 118220d:	48 89 b3 68 0a 00 00 	mov    %rsi,0xa68(%rbx)
+ 1182214:	48 89 93 70 0a 00 00 	mov    %rdx,0xa70(%rbx)
+ 118221b:	48 89 8b 78 0a 00 00 	mov    %rcx,0xa78(%rbx)
+ 1182222:	31 c0                	xor    %eax,%eax
+ 1182224:	48 8b 0d a5 71 a9 02 	mov    0x2a971a5(%rip),%rcx        # 3c193d0 <_DYNAMIC+0x270>
+ 118222b:	83 39 00             	cmpl   $0x0,(%rcx)
+ 118222e:	48 89 83 b8 06 00 00 	mov    %rax,0x6b8(%rbx)
+ 1182235:	74 11                	je     1182248 <<nata_exec::eval::Evaluator>::eval+0x78>
+ 1182237:	bf a0 13 00 00       	mov    $0x13a0,%edi
+ 118223c:	e8 bf 8b d0 ff       	call   e8ae00 <__asan_stack_malloc_7>
+ 1182241:	48 89 83 b8 06 00 00 	mov    %rax,0x6b8(%rbx)
+ 1182248:	48 8b 83 b8 06 00 00 	mov    0x6b8(%rbx),%rax
+ 118224f:	48 89 83 78 06 00 00 	mov    %rax,0x678(%rbx)
+ 1182256:	48 83 f8 00          	cmp    $0x0,%rax
+ 118225a:	48 89 83 80 06 00 00 	mov    %rax,0x680(%rbx)
+ 1182261:	75 17                	jne    118227a <<nata_exec::eval::Evaluator>::eval+0xaa>
+ 1182263:	48 89 e0             	mov    %rsp,%rax
+ 1182266:	48 05 60 ec ff ff    	add    $0xffffffffffffec60,%rax
+ 118226c:	48 83 e0 e0          	and    $0xffffffffffffffe0,%rax
+ 1182270:	48 89 c4             	mov    %rax,%rsp
+ 1182273:	48 89 83 80 06 00 00 	mov    %rax,0x680(%rbx)
+ 118227a:	48 8b 83 a0 06 00 00 	mov    0x6a0(%rbx),%rax
+ 1182281:	48 8b 8b 88 06 00 00 	mov    0x688(%rbx),%rcx
+ 1182288:	48 8b 93 80 06 00 00 	mov    0x680(%rbx),%rdx
+
+0000000001e05420 <<sqlparser::parser::Parser>::parse_prefix>:
+ 1e05420:	55                   	push   %rbp
+ 1e05421:	48 89 e5             	mov    %rsp,%rbp
+ 1e05424:	41 57                	push   %r15
+ 1e05426:	41 56                	push   %r14
+ 1e05428:	41 55                	push   %r13
+ 1e0542a:	41 54                	push   %r12
+ 1e0542c:	53                   	push   %rbx
+ 1e0542d:	48 83 e4 e0          	and    $0xffffffffffffffe0,%rsp
+ 1e05431:	48 81 ec 60 05 00 00 	sub    $0x560,%rsp
+ 1e05438:	48 89 e3             	mov    %rsp,%rbx
+ 1e0543b:	48 89 73 20          	mov    %rsi,0x20(%rbx)
+ 1e0543f:	48 89 bb a0 00 00 00 	mov    %rdi,0xa0(%rbx)
+ 1e05446:	48 8b 05 83 3f e1 01 	mov    0x1e13f83(%rip),%rax        # 3c193d0 <_DYNAMIC+0x270>
+ 1e0544d:	83 38 00             	cmpl   $0x0,(%rax)
+ 1e05450:	74 22                	je     1e05474 <<sqlparser::parser::Parser>::parse_prefix+0x54>
+ 1e05452:	bf 00 28 00 00       	mov    $0x2800,%edi
+ 1e05457:	e8 74 5d 08 ff       	call   e8b1d0 <__asan_stack_malloc_8>
+ 1e0545c:	48 85 c0             	test   %rax,%rax
+ 1e0545f:	74 13                	je     1e05474 <<sqlparser::parser::Parser>::parse_prefix+0x54>
+ 1e05461:	c7 43 7c 00 00 00 00 	movl   $0x0,0x7c(%rbx)
+ 1e05468:	48 89 83 c0 00 00 00 	mov    %rax,0xc0(%rbx)
+ 1e0546f:	49 89 c5             	mov    %rax,%r13
+ 1e05472:	eb 21                	jmp    1e05495 <<sqlparser::parser::Parser>::parse_prefix+0x75>
+ 1e05474:	49 89 e5             	mov    %rsp,%r13
+ 1e05477:	49 81 c5 00 d8 ff ff 	add    $0xffffffffffffd800,%r13
+ 1e0547e:	49 83 e5 e0          	and    $0xffffffffffffffe0,%r13
+ 1e05482:	4c 89 ec             	mov    %r13,%rsp
+ 1e05485:	b0 01                	mov    $0x1,%al
+ 1e05487:	89 43 7c             	mov    %eax,0x7c(%rbx)
+ 1e0548a:	48 c7 83 c0 00 00 00 	movq   $0x0,0xc0(%rbx)
+ 1e05491:	00 00 00 00
+ 1e05495:	49 bf f8 f8 f8 f8 f8 	movabs $0xf8f8f8f8f8f8f8f8,%r15
+ 1e0549c:	f8 f8 f8
+ 1e0549f:	49 c7 45 00 b3 8a b5 	movq   $0x41b58ab3,0x0(%r13)
+ 1e054a6:	41
+ 1e054a7:	48 8d 05 8e c8 73 fe 	lea    -0x18c3772(%rip),%rax        # 541d3c <___asan_gen_stack.4.llvm.17702852837238102317+0x631c>
+
+0000000001e2b110 <<sqlparser::parser::Parser>::parse_subexpr>:
+ 1e2b110:	55                   	push   %rbp
+ 1e2b111:	48 89 e5             	mov    %rsp,%rbp
+ 1e2b114:	41 57                	push   %r15
+ 1e2b116:	41 56                	push   %r14
+ 1e2b118:	41 55                	push   %r13
+ 1e2b11a:	41 54                	push   %r12
+ 1e2b11c:	53                   	push   %rbx
+ 1e2b11d:	48 83 e4 e0          	and    $0xffffffffffffffe0,%rsp
+ 1e2b121:	48 81 ec 60 01 00 00 	sub    $0x160,%rsp
+ 1e2b128:	48 89 e3             	mov    %rsp,%rbx
+ 1e2b12b:	89 53 6c             	mov    %edx,0x6c(%rbx)
+ 1e2b12e:	49 89 f5             	mov    %rsi,%r13
+ 1e2b131:	48 89 7b 18          	mov    %rdi,0x18(%rbx)
+ 1e2b135:	48 8b 05 94 e2 de 01 	mov    0x1dee294(%rip),%rax        # 3c193d0 <_DYNAMIC+0x270>
+ 1e2b13c:	83 38 00             	cmpl   $0x0,(%rax)
+ 1e2b13f:	74 1f                	je     1e2b160 <<sqlparser::parser::Parser>::parse_subexpr+0x50>
+ 1e2b141:	bf 40 0d 00 00       	mov    $0xd40,%edi
+ 1e2b146:	e8 b5 f8 05 ff       	call   e8aa00 <__asan_stack_malloc_6>
+ 1e2b14b:	48 85 c0             	test   %rax,%rax
+ 1e2b14e:	74 10                	je     1e2b160 <<sqlparser::parser::Parser>::parse_subexpr+0x50>
+ 1e2b150:	c7 43 14 00 00 00 00 	movl   $0x0,0x14(%rbx)
+ 1e2b157:	48 89 43 60          	mov    %rax,0x60(%rbx)
+ 1e2b15b:	49 89 c7             	mov    %rax,%r15
+ 1e2b15e:	eb 1e                	jmp    1e2b17e <<sqlparser::parser::Parser>::parse_subexpr+0x6e>
+ 1e2b160:	49 89 e7             	mov    %rsp,%r15
+ 1e2b163:	49 81 c7 c0 f2 ff ff 	add    $0xfffffffffffff2c0,%r15
+ 1e2b16a:	49 83 e7 e0          	and    $0xffffffffffffffe0,%r15
+ 1e2b16e:	4c 89 fc             	mov    %r15,%rsp
+ 1e2b171:	b0 01                	mov    $0x1,%al
+ 1e2b173:	89 43 14             	mov    %eax,0x14(%rbx)
+ 1e2b176:	48 c7 43 60 00 00 00 	movq   $0x0,0x60(%rbx)
+ 1e2b17d:	00
+ 1e2b17e:	49 bc f8 f8 f8 f8 f8 	movabs $0xf8f8f8f8f8f8f8f8,%r12
+ 1e2b185:	f8 f8 f8
+ 1e2b188:	49 8d bf d0 0c 00 00 	lea    0xcd0(%r15),%rdi
+ 1e2b18f:	49 c7 07 b3 8a b5 41 	movq   $0x41b58ab3,(%r15)
+
+0000000001e37f70 <<sqlparser::parser::Parser>::parse_case_expr>:
+ 1e37f70:	55                   	push   %rbp
+ 1e37f71:	48 89 e5             	mov    %rsp,%rbp
+ 1e37f74:	41 57                	push   %r15
+ 1e37f76:	41 56                	push   %r14
+ 1e37f78:	41 55                	push   %r13
+ 1e37f7a:	41 54                	push   %r12
+ 1e37f7c:	53                   	push   %rbx
+ 1e37f7d:	48 83 e4 e0          	and    $0xffffffffffffffe0,%rsp
+ 1e37f81:	48 81 ec c0 01 00 00 	sub    $0x1c0,%rsp
+ 1e37f88:	48 89 e3             	mov    %rsp,%rbx
+ 1e37f8b:	48 89 73 48          	mov    %rsi,0x48(%rbx)
+ 1e37f8f:	48 8b 05 3a 14 de 01 	mov    0x1de143a(%rip),%rax        # 3c193d0 <_DYNAMIC+0x270>
+ 1e37f96:	83 38 00             	cmpl   $0x0,(%rax)
+ 1e37f99:	48 89 7b 18          	mov    %rdi,0x18(%rbx)
+ 1e37f9d:	74 22                	je     1e37fc1 <<sqlparser::parser::Parser>::parse_case_expr+0x51>
+ 1e37f9f:	bf e0 0f 00 00       	mov    $0xfe0,%edi
+ 1e37fa4:	e8 57 2a 05 ff       	call   e8aa00 <__asan_stack_malloc_6>
+ 1e37fa9:	48 85 c0             	test   %rax,%rax
+ 1e37fac:	74 13                	je     1e37fc1 <<sqlparser::parser::Parser>::parse_case_expr+0x51>
+ 1e37fae:	c7 43 2c 00 00 00 00 	movl   $0x0,0x2c(%rbx)
+ 1e37fb5:	48 89 83 90 00 00 00 	mov    %rax,0x90(%rbx)
+ 1e37fbc:	49 89 c5             	mov    %rax,%r13
+ 1e37fbf:	eb 21                	jmp    1e37fe2 <<sqlparser::parser::Parser>::parse_case_expr+0x72>
+ 1e37fc1:	49 89 e5             	mov    %rsp,%r13
+ 1e37fc4:	49 81 c5 20 f0 ff ff 	add    $0xfffffffffffff020,%r13
+ 1e37fcb:	49 83 e5 e0          	and    $0xffffffffffffffe0,%r13
+ 1e37fcf:	4c 89 ec             	mov    %r13,%rsp
+ 1e37fd2:	b0 01                	mov    $0x1,%al
+ 1e37fd4:	89 43 2c             	mov    %eax,0x2c(%rbx)
+ 1e37fd7:	48 c7 83 90 00 00 00 	movq   $0x0,0x90(%rbx)
+ 1e37fde:	00 00 00 00
+ 1e37fe2:	49 bf f8 f8 f8 f8 f8 	movabs $0xf8f8f8f8f8f8f8f8,%r15
+ 1e37fe9:	f8 f8 f8
+ 1e37fec:	49 c7 45 00 b3 8a b5 	movq   $0x41b58ab3,0x0(%r13)
+ 1e37ff3:	41
+ 1e37ff4:	48 8d 05 73 d8 83 fe 	lea    -0x17c278d(%rip),%rax        # 67586e <___asan_gen_stack.65.llvm.3635472503104237417+0x4086>

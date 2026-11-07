@@ -274,7 +274,10 @@ fn exceptional_date_domains_and_zero_bytes_are_explicit_conversion_errors() {
         writer.close().expect("close");
         let result = client.query(&format!("SELECT v FROM '{}'", file.display()));
         assert_eq!(tags(&result), b"TEZ");
-        assert_eq!(error_field(&result[1].1, b'C'), Some("22000"));
+        assert_eq!(
+            error_field(&result[1].1, b'C'),
+            Some(if name == "zero" { "22000" } else { "22008" })
+        );
         assert!(!result[1].1.windows(7).any(|w| w == b"private"));
         std::fs::remove_file(file).expect("remove");
     }
@@ -1111,4 +1114,75 @@ fn postgres_float_text_boundaries_and_legacy_setting_refusal() {
             b"CZ"
         );
     }
+}
+#[test]
+fn exceptional_dates_text_binary_copy_and_range_errors() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    let dir = std::env::temp_dir().join(format!("nata-date-domain-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("dir");
+    for (days, text) in [
+        (-735_160, "0044-03-15 BC"),
+        (-719_528, "0001-01-01 BC"),
+        (2_932_897, "10000-01-01"),
+        (-2_440_588, "4714-11-24 BC"),
+        (2_145_042_905, "5874897-12-31"),
+    ] {
+        let path = dir.join("date.parquet");
+        let b = RecordBatch::try_from_iter(vec![(
+            "d",
+            Arc::new(Date32Array::from(vec![Some(days), None])) as ArrayRef,
+        )])
+        .expect("batch");
+        let mut w = parquet::arrow::ArrowWriter::try_new(
+            std::fs::File::create(&path).expect("file"),
+            b.schema(),
+            None,
+        )
+        .expect("writer");
+        w.write(&b).expect("write");
+        w.close().expect("close");
+        let q = format!("SELECT d FROM '{}'", path.display());
+        let m = c.query(&q);
+        assert_eq!(values(&m), vec![vec![Some(text.into())], vec![None]]);
+        let m = c.query(&format!("COPY ({q}) TO STDOUT (FORMAT binary)"));
+        assert!(!m.iter().any(|(t, _)| *t == b'E'));
+        let data: Vec<u8> = m
+            .iter()
+            .filter(|(t, _)| *t == b'd')
+            .flat_map(|(_, b)| b.iter().copied())
+            .collect();
+        let mut want = b"PGCOPY\n\xff\r\n\0\0\0\0\0\0\0\0\0".to_vec();
+        want.extend(1i16.to_be_bytes());
+        want.extend(4i32.to_be_bytes());
+        want.extend((days - 10_957).to_be_bytes());
+        want.extend(1i16.to_be_bytes());
+        want.extend((-1i32).to_be_bytes());
+        want.extend((-1i16).to_be_bytes());
+        assert_eq!(data, want);
+    }
+    for days in [i32::MIN, -i32::MAX, -2_440_589, 2_145_042_906, i32::MAX] {
+        let path = dir.join("bad.parquet");
+        let b = RecordBatch::try_from_iter(vec![(
+            "d",
+            Arc::new(Date32Array::from(vec![days])) as ArrayRef,
+        )])
+        .expect("batch");
+        let mut w = parquet::arrow::ArrowWriter::try_new(
+            std::fs::File::create(&path).expect("file"),
+            b.schema(),
+            None,
+        )
+        .expect("writer");
+        w.write(&b).expect("write");
+        w.close().expect("close");
+        let q = format!("SELECT d FROM '{}'", path.display());
+        for q in [q.clone(), format!("COPY ({q}) TO STDOUT (FORMAT binary)")] {
+            let m = c.query(&q);
+            let e = m.iter().find(|(t, _)| *t == b'E').expect("error");
+            assert_eq!(error_field(&e.1, b'C'), Some("22008"));
+            assert!(!m.iter().any(|(t, _)| *t == b'D'));
+        }
+    }
+    std::fs::remove_dir_all(dir).expect("cleanup");
 }

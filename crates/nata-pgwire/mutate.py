@@ -15,7 +15,12 @@ SERVER = 'crates/nata-pgwire/src/server.rs'
 SESSION = 'crates/nata-pgwire/src/session.rs'
 EXTENDED = 'crates/nata-pgwire/src/extended.rs'
 SQLERROR = 'crates/nata-sql/src/error.rs'
-MUTANTS = {'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > self.0.len() {', 'if false {', 'codec'),
+MUTANTS = {
+ 'date-epoch-off': ('crates/nata-pgwire/src/date.rs','const EPOCH: i64 = 10_957;', 'const EPOCH: i64 = 10_958;', 'protocol'),
+ 'date-range-unchecked': ('crates/nata-pgwire/src/date.rs','if !(MIN..END).contains(&days) {','if false {','protocol'),
+ 'date-bc-spelling': ('crates/nata-pgwire/src/date.rs','format!("{:04}-{m:02}-{d:02} BC", 1 - y)','format!("{:04}-{m:02}-{d:02} (BC)", 1 - y)','protocol'),
+ 'date-wrong-sqlstate': ('crates/nata-pgwire/src/server.rs','if message.starts_with("date outside PostgreSQL range")','if false','protocol'),
+'decoder-guard-removed': ('crates/nata-pgwire/src/codec.rs', 'if n > self.0.len() {', 'if false {', 'codec'),
  'wrong-type-oid': ('crates/nata-pgwire/src/codec.rs', 'Integer => (23, 4, -1)', 'Integer => (25, 4, -1)', 'codec'),
  'null-as-empty-string': ('crates/nata-pgwire/src/codec.rs',
                           'None => b.extend((-1i32).to_be_bytes())',
@@ -131,7 +136,7 @@ MUTANTS.update({
  'portal-byte-cap-removed': (SERVER, 'bytes + name.len() + size(portal) > 16 * codec::MAX_SQL', 'false', 'protocol'),
  'deallocate-does-not-clear': (SERVER, 'objects.statements.clear();', 'objects.statements.remove("nonexistent");', 'protocol'),
  'binary-integer-wrong-endian': ('crates/nata-pgwire/src/binary.rs', '23 => i32::from_be_bytes(b.as_slice().try_into().map_err(|_| invalid())?)', '23 => i32::from_le_bytes(b.as_slice().try_into().map_err(|_| invalid())?)', 'protocol'),
- 'binary-date-wrong-epoch': ('crates/nata-pgwire/src/binary.rs', 'from_ymd_opt(2000, 1, 1)', 'from_ymd_opt(1970, 1, 1)', 'protocol'),
+ 'binary-date-wrong-epoch': ('crates/nata-pgwire/src/date.rs', 'const EPOCH: i64 = 10_957;', 'const EPOCH: i64 = 0;', 'protocol'),
  'admission-not-released-after-kill': (SERVER, 'let _permit = permit;', 'let _permit = permit; std::mem::forget(_permit);', 'reliability'),
 })
 
@@ -149,7 +154,7 @@ MUTANTS.update({
  'copy-missing-trailer': (SERVER, 'tail.extend_from_slice(crate::copy::TRAILER);', 'tail.extend_from_slice(b"");', 'protocol'),
  'copy-null-length-zero': (CODEC, 'None => b.extend((-1i32).to_be_bytes())', 'None => b.extend(0i32.to_be_bytes())', 'protocol'),
  'numeric-weight-plus-one': ('crates/nata-pgwire/src/binary.rs', 'let mut weight = (whole.len().div_ceil(4) as i16) - 1;', 'let mut weight = whole.len().div_ceil(4) as i16;', 'protocol'),
- 'copy-date-epoch-1970': ('crates/nata-pgwire/src/binary.rs', 'from_ymd_opt(2000, 1, 1)', 'from_ymd_opt(1970, 1, 1)', 'protocol'),
+ 'copy-date-epoch-1970': ('crates/nata-pgwire/src/date.rs', 'const EPOCH: i64 = 10_957;', 'const EPOCH: i64 = 0;', 'protocol'),
  'copy-without-backpressure': (SERVER, 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(if copying { 1_100_000 } else { BRIDGE_BUFFERS })', 'protocol'),
  'float-threshold-plus-one': ('crates/nata-pgwire/src/float.rs', 'e >= precision', 'e > precision', 'protocol'),
  'float-trailing-dot-zero': ('crates/nata-pgwire/src/float.rs', 'out.push_str(&"0".repeat(n - digits.len()));', 'out.push_str(&"0".repeat(n - digits.len())); out.push_str(".0");', 'protocol'),

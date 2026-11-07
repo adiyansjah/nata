@@ -20,6 +20,7 @@ SQL = "crates/nata/src/sql.rs"
 
 # name: (suite, [(file, old, new), ...])
 M = {
+ "bare-projection-allocates-selection": ("exec", [(EX, "let mut all = None;", "let mut all = Some(ev.all_rows());")]),
  # ---- the mutants the card asks for
  "case-evaluates-every-branch": ("exec", [(EV, "let rv = self.eval(result, &taken)?;", "let _all = self.eval(result, sel)?; let rv = self.eval(result, &taken)?;")]),
  "error-raised-for-an-unselected-row": ("exec", [(EV, "for &row in sel { let i = row as usize; if !(l.valid[i] && r.valid[i]) { continue; } let (x, y) = (a[i], b[i]);",
@@ -46,7 +47,7 @@ M = {
  "decimal-to-integer-truncates": ("exec", [(CA, "let v = rescale(s[i], scale, 0)", "let v = s[i].checked_div(pow10(u32::from(scale)).unwrap_or(1))")]),
  "text-to-decimal-truncates": ("exec", [(NU, "if first_dropped >= b'5' {", "if false {")]),
  "float-to-decimal-tie-rounds-to-even": ("exec", [(NU, "let tie = e + i32::from(scale) + 1 == 0;", "let tie = false;")]),
- "decimal-to-double-scale-off": ("exec", [(NU, "int_to_f64(x) / 10f64.powi(i32::from(scale))", "int_to_f64(x) / 10f64.powi(i32::from(scale) + 1)")]),
+ "decimal-to-double-scale-off": ("exec", [(NU, "int_to_f64(x) / TEN[usize::from(scale)]", "int_to_f64(x) / (TEN[usize::from(scale)] * 10.0)")]),
  "cast-int-to-narrower-int-unchecked": ("exec", [(CA, "if s[i] < lo || s[i] > hi { return Err(no_fit(pos, from, to)); } d[i] = s[i];", "d[i] = s[i];")]),
  "cast-of-a-bad-date-is-null": ("exec", [(CA, "d[i] = civil::parse_date(s.get(i).trim_matches(' ')).map_err(|_| {", "d[i] = civil::parse_date(s.get(i).trim_matches(' ')).or_else(|_| Ok::<i32, ()>(0)).map_err(|_: ()| {")]),
  # ---- logic, NULL, comparison

@@ -17,6 +17,24 @@ fn lit(expr: &str) -> (Value, String) {
     }
 }
 
+#[test]
+fn comparisons_require_explicit_parentheses_when_chained() {
+    // Boolean operands keep the binder from masking a missing parse guard with
+    // an unrelated boolean-versus-number type error.
+    for expr in [
+        "TRUE = FALSE = TRUE",
+        "bo = TRUE = FALSE",
+        "TRUE = bo <> FALSE",
+    ] {
+        let e = ty_err(expr);
+        assert_eq!(e.class, ErrorClass::Syntax, "{expr}: {e}");
+        assert!(e.to_string().contains("chained comparisons"), "{expr}: {e}");
+    }
+    for expr in ["(TRUE = FALSE) = TRUE", "TRUE = (bo <> FALSE)"] {
+        assert_eq!(ty(expr), "BOOLEAN");
+    }
+}
+
 // ------------------------------------------------------------------------------------------------------------------------------------- section 1
 
 #[test]

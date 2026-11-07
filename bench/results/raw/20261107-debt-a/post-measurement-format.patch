@@ -1,0 +1,17 @@
+diff --git a/crates/nata-sql/tests/dialect.rs b/crates/nata-sql/tests/dialect.rs
+index 7c32937..dbc878b 100644
+--- a/crates/nata-sql/tests/dialect.rs
++++ b/crates/nata-sql/tests/dialect.rs
+@@ -21,7 +21,11 @@ fn lit(expr: &str) -> (Value, String) {
+ fn comparisons_require_explicit_parentheses_when_chained() {
+     // Boolean operands keep the binder from masking a missing parse guard with
+     // an unrelated boolean-versus-number type error.
+-    for expr in ["TRUE = FALSE = TRUE", "bo = TRUE = FALSE", "TRUE = bo <> FALSE"] {
++    for expr in [
++        "TRUE = FALSE = TRUE",
++        "bo = TRUE = FALSE",
++        "TRUE = bo <> FALSE",
++    ] {
+         let e = ty_err(expr);
+         assert_eq!(e.class, ErrorClass::Syntax, "{expr}: {e}");
+         assert!(e.to_string().contains("chained comparisons"), "{expr}: {e}");

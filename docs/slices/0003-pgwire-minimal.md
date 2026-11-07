@@ -1,6 +1,6 @@
 # 0003: A minimal Postgres-wire server for slice 4's queries ("4b"), and real-client compatibility (plan item 35)
 
-Status: re-closed with deviations, 2026-11-07 after the second fix step (`bench/results/20261107-pgwire-fixes2.md`: default ADBC now passes 221/221 through binary COPY, wire float text matches PostgreSQL). Remaining deviations, recorded below: the raw/CLI streaming budget (PostgreSQL itself measures 2.3-2.6x), literal text parity with the CLI, and the carried-in certification gaps (R15, R16, R19)
+Status: re-closed with deviations, 2026-11-07 after the second fix step (`bench/results/20261107-pgwire-fixes2.md`: default ADBC now passes 221/221 through binary COPY, wire float text matches PostgreSQL). Remaining deviations, recorded below: the raw/CLI streaming budget (PostgreSQL itself measures 2.3-2.6x), literal text parity with the CLI, and the remaining carried-in sanitizer certification gap (R15; Debt A closes R16/R19 below)
 Date: 2026-11-06
 ADRs: 0001, 0002, 0007 (relies on); creates ADR 0008 "client protocol" (which protocol first, and how types map)
 
@@ -193,3 +193,17 @@ valid PostgreSQL COPY. The earlier **220/221** cloud results and real PostgreSQL
 Original four clients retain 221/221 typed values; PG-correct float layout means
 psql/JDBC/psycopg exact CLI text is now 141/221, still NOT MET. Final raw/CLI
 3.661–4.407x remains NOT MET; COPY/PG COPY 2.386–2.581x is a new P14 encoding gap.
+
+### Debt A follow-up, 2026-11-07
+
+[Debt A evidence](../../bench/results/20261107-debt-a.md) records R16's original
+SF10 resource repair on both CPUs (unchanged K/window/allowance), R17's exact
+conversion table, million-decimal oracle and Miri pass, and R19's exceptional
+date output/real-client PostgreSQL certification. R15 passes all 55 ASan test
+binaries at the unchanged limits, with measured parser/evaluator costs
+31,264/8,352 B per level. Full TSan runs every binary but reports the independently
+reproduced Tokio registration/readiness race; R15 remains open pending a safe
+dependency resolution and fresh certification. Initial failures, the one corrected
+retry, mutation controls, costs and cleanup are recorded there.
+Earlier deviations remain historical evidence; this follow-up changes only the
+register items it explicitly certifies, with no performance target relaxation.

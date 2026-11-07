@@ -27,6 +27,11 @@ use crate::error::{EvalError, R};
 use crate::num::{div_round_away, fits, pow10};
 use crate::value::{Col, Data, StrData};
 
+#[cfg(test)]
+thread_local! {
+    pub(crate) static SELECTION_ROWS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
 pub type ColRef = Rc<Col>;
 
 pub struct Evaluator<'a> {
@@ -53,6 +58,8 @@ impl<'a> Evaluator<'a> {
 
     /// Every row of the batch.
     pub fn all_rows(&self) -> Vec<u32> {
+        #[cfg(test)]
+        SELECTION_ROWS.with(|rows| rows.set(rows.get() + self.n));
         (0..self.n).filter_map(|i| u32::try_from(i).ok()).collect()
     }
 

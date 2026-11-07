@@ -1,0 +1,33 @@
+baseline ok (87s)
+CAUGHT    reader-skips-the-last-row-group: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_file_list_is_scanned_in_the_order_given, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    reader-reads-the-next-row-group: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, schema_differences_between_files_name_the_file, tasks_are_independent_row_group_morsels, the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-files-sorted-by-name: [-p nata-parquet --test report] the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-repeated-file-scanned-once: [-p nata-parquet --test report] the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-limit-one-too-many: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read
+CAUGHT    reader-projects-before-filtering: [-p nata-parquet --test special_files] all_null_columns_of_every_type, csv_text_of_every_ascii_character_and_every_byte, empty_and_one_row_files, every_type_in_one_file
+CAUGHT    report-skipped-counted-twice: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    reader-limit-zero-still-reads: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read
+CAUGHT    report-read-count-not-incremented: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    report-total-counts-only-kept-row-groups: [-p nata-parquet --test report] the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    par-handle-not-closed-on-cancel: [-p nata-parquet --test parallel] a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle, the_error_of_the_lowest_file_and_row_group_is_reported_for_every_thread_count
+CAUGHT    report-bytes-not-added: [-p nata-parquet --test report] tasks_are_independent_row_group_morsels, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    par-ordered-flag-ignored: [-p nata-parquet --test parallel] a_corrupt_later_file_is_the_same_error_with_footers_ahead_and_the_earlier_rows_come_first, a_later_file_with_another_schema_is_found_when_the_scan_reaches_it_with_strict_schema, footers_ahead_give_the_serial_scan_for_every_thread_count_window_and_ahead, footers_ahead_really_read_footers_at_the_same_time
+CAUGHT    par-tasks-never-look-at-the-cancellation: [-p nata-parquet --test parallel] a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle
+CAUGHT    par-task-memory-not-counted: [-p nata-parquet --test parallel] footers_ahead_really_read_footers_at_the_same_time, footers_are_read_when_the_scan_reaches_the_file, many_small_files_hold_few_handles_and_footers, many_small_files_with_footers_ahead_hold_the_slice_3_bounds_plus_the_footers_ahead
+CAUGHT    reader-skips-the-last-row-group: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_file_list_is_scanned_in_the_order_given, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    reader-reads-the-next-row-group: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, schema_differences_between_files_name_the_file, tasks_are_independent_row_group_morsels, the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-files-sorted-by-name: [-p nata-parquet --test report] the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-repeated-file-scanned-once: [-p nata-parquet --test report] the_file_list_is_scanned_in_the_order_given
+CAUGHT    reader-projects-before-filtering: [-p nata-parquet --test special_files] all_null_columns_of_every_type, csv_text_of_every_ascii_character_and_every_byte, empty_and_one_row_files, every_type_in_one_file
+CAUGHT    reader-limit-one-too-many: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read
+CAUGHT    reader-limit-zero-still-reads: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read
+CAUGHT    report-skipped-counted-twice: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    report-total-counts-only-kept-row-groups: [-p nata-parquet --test report] the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    report-read-count-not-incremented: [-p nata-parquet --test report] limit_stops_early_and_reports_what_was_not_read, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    report-bytes-not-added: [-p nata-parquet --test report] tasks_are_independent_row_group_morsels, the_report_counts_files_row_groups_rows_and_bytes
+CAUGHT    par-handle-not-closed-on-cancel: [-p nata-parquet --test parallel] a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle, the_error_of_the_lowest_file_and_row_group_is_reported_for_every_thread_count
+CAUGHT    par-ordered-flag-ignored: [-p nata-parquet --test parallel] a_corrupt_later_file_is_the_same_error_with_footers_ahead_and_the_earlier_rows_come_first, a_later_file_with_another_schema_is_found_when_the_scan_reaches_it_with_strict_schema, footers_ahead_give_the_serial_scan_for_every_thread_count_window_and_ahead, footers_ahead_really_read_footers_at_the_same_time
+CAUGHT    par-tasks-never-look-at-the-cancellation: [-p nata-parquet --test parallel] a_limit_stops_a_slow_task_at_the_next_batch_boundary_and_drops_its_handle
+CAUGHT    par-task-memory-not-counted: [-p nata-parquet --test parallel] footers_ahead_really_read_footers_at_the_same_time, footers_are_read_when_the_scan_reaches_the_file, many_small_files_hold_few_handles_and_footers, many_small_files_with_footers_ahead_hold_the_slice_3_bounds_plus_the_footers_ahead
+
+mutants: 15; CAUGHT 15; 173s

@@ -1,0 +1,61 @@
+test float32_columns_compare_as_the_double_they_widen_to ... ok
+test float_group_with_unknown_nan_rows ... ok
+test float_group_without_nan_rows ... ok
+test float_infinities_are_ordinary_numbers ... ok
+test float_nan_count_above_the_row_count_is_contradictory ... ok
+test int32_column_with_wide_literals_is_compared_exactly ... ok
+test integer_boundaries_of_each_operator ... ok
+test integer_extremes_do_not_overflow ... ok
+test is_null_and_is_not_null_use_the_null_count ... ok
+test missing_statistics_never_skip ... ok
+test nan_in_the_bounds_is_not_trusted ... ok
+test nan_literal ... ok
+test one_provably_empty_term_skips_the_conjunction ... ok
+test one_row_group ... ok
+test one_sided_statistics_are_used_on_their_side_only ... ok
+test skip_reason_is_out_of_range ... ok
+test statistics_without_a_null_count_still_prune_comparisons ... ok
+test text_order_is_by_bytes_for_non_ascii ... ok
+test text_truncated_at_a_character_boundary_is_usable ... ok
+test text_with_exact_bounds_is_compared_bytewise ... ok
+test timestamps_and_booleans ... ok
+test truncated_bounds_are_bounds_only ... ok
+test truncated_maximum_that_cannot_be_used ... ok
+test unknown_column_unsupported_type_and_mismatched_literal_are_kept ... ok
+test utf8_bound_from_bytes_refuses_a_cut_character ... ok
+test year_range_on_dates ... ok
+test zeros_are_equal_whatever_their_sign ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.03s
+
+   Compiling arrow-ord v60.1.0
+   Compiling arrow-cast v60.1.0
+   Compiling nata-kernels v0.0.0 (/mnt/work/src/crates/nata-kernels)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.10s
+     Running unittests src/lib.rs (/mnt/work/target-miri/miri/x86_64-unknown-linux-gnu/debug/build/nata-kernels/04cbffd58429862b/out/nata_kernels-04cbffd58429862b)
+
+running 20 tests
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1650.06s
+
+exit status: 0

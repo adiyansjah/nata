@@ -1014,7 +1014,9 @@ impl WireError {
                 line,
                 column,
             } => {
-                let code = if message.contains("division by zero") {
+                let code = if message.starts_with("date outside PostgreSQL range") {
+                    "22008"
+                } else if message.contains("division by zero") {
                     "22012"
                 } else if message.contains("overflow") || message.contains("does not fit") {
                     "22003"
@@ -1225,6 +1227,21 @@ fn produce(
                     .iter()
                     .zip(&fields)
                     .map(|(a, (_, ty))| {
+                        if *ty == SqlType::Date {
+                            use arrow_array::{Array, cast::AsArray};
+                            let dates = a.as_primitive::<arrow_array::types::Date32Type>();
+                            return if dates.is_null(i) {
+                                Ok(None)
+                            } else {
+                                crate::date::text(dates.value(i)).map(Some).map_err(|e| {
+                                    ScanError::new(ErrorKind::Eval {
+                                        message: e.message,
+                                        line: 1,
+                                        column: 1,
+                                    })
+                                })
+                            };
+                        }
                         let value = nata_parquet::csv::cell_text(a.as_ref(), i)?;
                         value.map(|s| wire_text(*ty, s)).transpose()
                     })
@@ -1320,13 +1337,6 @@ fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
         SqlType::Float | SqlType::Double => crate::float::text(&s, ty == SqlType::Float),
         SqlType::Decimal { .. } if s.starts_with('.') => format!("0{s}"),
         SqlType::Decimal { .. } if s.starts_with("-.") => format!("-0{}", &s[1..]),
-        SqlType::Date if s.len() != 10 || s.starts_with('-') || s.starts_with("0000") => {
-            return Err(ScanError::new(ErrorKind::Eval {
-                message: "date outside supported wire domain".into(),
-                line: 1,
-                column: 1,
-            }));
-        }
         _ => s,
     })
 }

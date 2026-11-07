@@ -134,3 +134,18 @@ executor evaluates:
 These are consequences of one rule (a row that does not reach an operation cannot make it fail), so each is a difference in which errors appear, never in a value.
 
 The differential check (`nata-check`) holds each row as a Nata-only expectation, as `check/queries/decimal-differences/` does for numbers.
+
+## 10. Date column output domains (2026-11-07)
+
+Parquet DATE columns carry signed Date32 days. CLI text uses DuckDB's BC suffix
+`(BC)` and extended years; the existing maximum/negative-maximum Date32 sentinel
+spellings are `infinity`/`-infinity`. DATE literals and string casts still accept
+only 0001–9999. PostgreSQL wire output uses `0044-03-15 BC` and `10000-01-01`,
+with OID 1082 in every result format. Binary DataRows and COPY use checked signed
+days since 2000-01-01. Finite PostgreSQL range is Julian day 0 inclusive through
+2147483494 exclusive (oracle endpoints 4714-11-24 BC and 5874897-12-31).
+Date32 outside it, including the CLI sentinels, is a **22008** wire error.
+Default Python datetime clients cannot load BC or years above 9999 and raise
+an explicit conversion error; ADBC Date32 and JDBC LocalDate preserve these
+finite dates. Full client display caveats and oracle evidence:
+`bench/results/20261107-debt-a.md`, R19.

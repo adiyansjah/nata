@@ -1,0 +1,174 @@
+{
+  "postgres": "17.11 (Debian 17.11-0+deb13u1)",
+  "psycopg": "3.3.8",
+  "cases": [
+    {
+      "days": -2440588,
+      "cli": [
+        "4714-11-24 (BC)",
+        "NULL"
+      ],
+      "text": "4714-11-24 BC",
+      "psycopg": [
+        "error",
+        "DataError"
+      ],
+      "adbc_date32": [
+        -2440588,
+        null
+      ]
+    },
+    {
+      "days": -735160,
+      "cli": [
+        "0044-03-15 (BC)",
+        "NULL"
+      ],
+      "text": "0044-03-15 BC",
+      "psycopg": [
+        "error",
+        "DataError"
+      ],
+      "adbc_date32": [
+        -735160,
+        null
+      ]
+    },
+    {
+      "days": -719528,
+      "cli": [
+        "0001-01-01 (BC)",
+        "NULL"
+      ],
+      "text": "0001-01-01 BC",
+      "psycopg": [
+        "error",
+        "DataError"
+      ],
+      "adbc_date32": [
+        -719528,
+        null
+      ]
+    },
+    {
+      "days": -719162,
+      "cli": [
+        "0001-01-01",
+        "NULL"
+      ],
+      "text": "0001-01-01",
+      "psycopg": [
+        "value",
+        "0001-01-01"
+      ],
+      "adbc_date32": [
+        -719162,
+        null
+      ]
+    },
+    {
+      "days": 0,
+      "cli": [
+        "1970-01-01",
+        "NULL"
+      ],
+      "text": "1970-01-01",
+      "psycopg": [
+        "value",
+        "1970-01-01"
+      ],
+      "adbc_date32": [
+        0,
+        null
+      ]
+    },
+    {
+      "days": 2932896,
+      "cli": [
+        "9999-12-31",
+        "NULL"
+      ],
+      "text": "9999-12-31",
+      "psycopg": [
+        "value",
+        "9999-12-31"
+      ],
+      "adbc_date32": [
+        2932896,
+        null
+      ]
+    },
+    {
+      "days": 2932897,
+      "cli": [
+        "10000-01-01",
+        "NULL"
+      ],
+      "text": "10000-01-01",
+      "psycopg": [
+        "error",
+        "DataError"
+      ],
+      "adbc_date32": [
+        2932897,
+        null
+      ]
+    },
+    {
+      "days": 2145042905,
+      "cli": [
+        "5874897-12-31",
+        "NULL"
+      ],
+      "text": "5874897-12-31",
+      "psycopg": [
+        "error",
+        "DataError"
+      ],
+      "adbc_date32": [
+        2145042905,
+        null
+      ]
+    },
+    {
+      "days": -2147483648,
+      "cli": [
+        "5877642-06-23 (BC)",
+        "NULL"
+      ],
+      "wire": "22008"
+    },
+    {
+      "days": -2147483647,
+      "cli": [
+        "-infinity",
+        "NULL"
+      ],
+      "wire": "22008"
+    },
+    {
+      "days": -2440589,
+      "cli": [
+        "4714-11-23 (BC)",
+        "NULL"
+      ],
+      "wire": "22008"
+    },
+    {
+      "days": 2145042906,
+      "cli": [
+        "5874898-01-01",
+        "NULL"
+      ],
+      "wire": "22008"
+    },
+    {
+      "days": 2147483647,
+      "cli": [
+        "infinity",
+        "NULL"
+      ],
+      "wire": "22008"
+    }
+  ]
+}

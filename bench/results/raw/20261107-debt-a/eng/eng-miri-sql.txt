@@ -1,0 +1,31 @@
+   Compiling brotli-decompressor v6.2.0
+   Compiling twox-hash v2.1.5
+   Compiling rustc_version v0.4.1
+   Compiling zlib-rs v0.6.8
+   Compiling lz4_flex v0.14.0
+   Compiling base64 v0.23.1
+   Compiling simdutf8 v0.1.5
+   Compiling seq-macro v0.3.6
+   Compiling log v0.4.35
+   Compiling nata-sched v0.0.0 (/mnt/work/src/crates/nata-sched)
+   Compiling sqlparser v0.63.0
+   Compiling flatbuffers v25.12.19
+   Compiling brotli v9.1.1
+   Compiling arrow-ipc v60.1.0
+   Compiling jobserver v0.1.35
+   Compiling cc v1.11.0
+   Compiling flate2 v1.1.10
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling zstd v0.14.3
+   Compiling parquet v60.1.0
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.19s
+     Running tests/pushdown.rs (/mnt/work/target-miri/miri/x86_64-unknown-linux-gnu/debug/build/nata-sql/df21de3d86a4fe1c/out/pushdown-df21de3d86a4fe1c)
+
+running 1 test
+test pushed_conjuncts_plus_the_remaining_filter_keep_exactly_the_rows_of_the_whole_where_clause ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 305.92s
+
+exit status: 0

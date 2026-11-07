@@ -58,7 +58,9 @@ fn report_field(stderr: &str, key: &str) -> u64 {
 }
 
 fn nata_cmd() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_nata"))
+    Command::new(
+        std::env::var_os("NATA_RSS_BINARY").unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+    )
 }
 
 #[test]
@@ -108,7 +110,10 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
         let out = Command::new("sh")
             .arg("-c")
             .arg("ulimit -n 256 && exec \"$0\" \"$@\"")
-            .arg(env!("CARGO_BIN_EXE_nata"))
+            .arg(
+                std::env::var_os("NATA_RSS_BINARY")
+                    .unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+            )
             .arg("scan")
             .args(&files)
             .args([
@@ -149,7 +154,10 @@ fn ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker(
     let out = Command::new("sh")
         .arg("-c")
         .arg("ulimit -n 256 && exec \"$0\" \"$@\"")
-        .arg(env!("CARGO_BIN_EXE_nata"))
+        .arg(
+            std::env::var_os("NATA_RSS_BINARY")
+                .unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+        )
         .arg("scan")
         .args(&files)
         .args([

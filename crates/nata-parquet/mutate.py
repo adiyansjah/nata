@@ -99,24 +99,24 @@ M = {
  "reader-pruning-never-applied": (R, "let skipped = if options.prune && pushed > 0 {", "let skipped = if false {"),
  "reader-second-term-not-used-for-pruning": (R, ".filter_map(|(t, k)| t.scan_term(*k))\n            .collect(),", ".filter_map(|(t, k)| t.scan_term(*k))\n            .take(1)\n            .collect(),"),
  "reader-skipped-row-groups-are-read": (R, ".filter(|(_, rg)| rg.skipped.is_none())", ".filter(|_| true)"),
- "reader-skips-the-last-row-group": (R, "f.row_groups\n                .iter()\n                .enumerate()", "f.row_groups\n                .iter()\n                .take(f.row_groups.len().saturating_sub(1))\n                .enumerate()"),
+ "reader-skips-the-last-row-group": (R, "self.row_groups\n                .iter()\n                .enumerate()", "self.row_groups\n                .iter()\n                .take(self.row_groups.len().saturating_sub(1))\n                .enumerate()"),
  "reader-skips-the-first-row-group": (R, "f.row_groups\n                .iter()\n                .enumerate()", "f.row_groups\n                .iter()\n                .skip(1)\n                .enumerate()"),
  "reader-row-groups-in-reverse-order": (R, "f.row_groups\n                .iter()\n                .enumerate()", "f.row_groups\n                .iter()\n                .enumerate()\n                .rev()"),
- "reader-reads-the-next-row-group": (R, ".with_row_groups(vec![rg])", ".with_row_groups(vec![rg + 1])"),
+ "reader-reads-the-next-row-group": (R, ".with_row_groups(vec![self.task.row_group])", ".with_row_groups(vec![self.task.row_group + 1])"),
  "reader-row-group-numbers-off-by-one": (R, "let mut err = ScanError::new(kind).in_file(path);\n    if let Some(rg) = row_group {\n        err = err.in_row_group(rg);", "let mut err = ScanError::new(kind).in_file(path);\n    if let Some(rg) = row_group {\n        err = err.in_row_group(rg + 1);"),
- "reader-files-sorted-by-name": (R, "for path in paths {\n            let (file, p)", "let mut sorted: Vec<PathBuf> = paths.to_vec();\n        sorted.sort();\n        for path in &sorted {\n            let (file, p)"),
- "reader-repeated-file-scanned-once": (R, "for path in paths {\n            let (file, p)", "for path in paths {\n            if files.last().is_some_and(|f: &Arc<FileScan>| f.path == *path) {\n                continue;\n            }\n            let (file, p)"),
+ "reader-files-sorted-by-name": (R, "paths: paths.to_vec(),", "paths: { let mut p = paths.to_vec(); p.sort(); p },"),
+ "reader-repeated-file-scanned-once": (R, "paths: paths.to_vec(),", "paths: { let mut p = paths.to_vec(); p.dedup(); p },"),
  "reader-filter-column-not-read-unless-projected": (R, "let indices: Vec<usize> = spec_ref\n        .read\n        .iter()", "let indices: Vec<usize> = spec_ref\n        .out\n        .iter()"),
- "reader-projects-before-filtering": (R, "let mask = filter::evaluate(&f.terms, &batch)", "let mask = filter::evaluate(&f.terms, &batch.project(&[0]).unwrap_or_else(|_| batch.clone()))"),
+ "reader-projects-before-filtering": (R, "let kept = if f.terms.is_empty() { Some(batch) } else { let mask = filter::evaluate(&f.terms, &batch)", "let kept = if f.terms.is_empty() { Some(batch) } else { let mask = filter::evaluate(&f.terms, &batch.project(&[0]).unwrap_or_else(|_| batch.clone()))"),
  "reader-later-files-not-checked-against-the-first": (R, "if have != *kind {", "if false {"),
  "reader-magic-numbers-not-checked": (R, "if &head != b\"PAR1\" {", "if false {"),
  "reader-no-error-on-wrong-types": (R, ".is_some_and(|c| c.data_type() == ty)", ".is_some_and(|c| c.data_type() == ty || true)"),
- "reader-limit-one-too-many": (R, "let mut remaining = limit;", "let mut remaining = limit.map(|l| l + 1);"),
- "reader-limit-zero-still-reads": (R, "if remaining == Some(0) {\n            break;\n        }\n        let out = task.run()?;", "let out = task.run()?;"),
- "report-skipped-counted-twice": (R, "if rg.skipped.is_some() {\n                    skipped += 1;", "if rg.skipped.is_some() {\n                    skipped += 2;"),
- "report-total-counts-only-kept-row-groups": (R, "for rg in &f.row_groups {\n                total += 1;", "for rg in &f.row_groups {\n                total += u64::from(rg.skipped.is_none());"),
- "report-read-count-not-incremented": (R, "report.row_groups_read += 1;", ""),
- "report-bytes-not-added": (R, "report.bytes_read += out.bytes_read;", ""),
+ "reader-limit-one-too-many": (R, "'files: for index in 0..plan.file_count() {", "lim.remaining = limit.map(|l| l + 1); 'files: for index in 0..plan.file_count() {"),
+ "reader-limit-zero-still-reads": [(R, "if lim.remaining == Some(0) { break; } let file = plan.open_file(index)?;", "let file = plan.open_file(index)?;"), (R, "if lim.remaining == Some(0) { break 'files; } let out = task.run()?;", "let out = task.run()?;")],
+ "report-skipped-counted-twice": (R, "ScanStats::add(&st.row_groups_skipped, skipped);", "ScanStats::add(&st.row_groups_skipped, skipped * 2);"),
+ "report-total-counts-only-kept-row-groups": (R, "ScanStats::add(&st.row_groups_total, file.row_groups.len() as u64);", "ScanStats::add(&st.row_groups_total, file.row_groups.len() as u64 - skipped);"),
+ "report-read-count-not-incremented": (R, "ScanStats::add(&stats.row_groups_read, 1);", ""),
+ "report-bytes-not-added": (R, "ScanStats::add(&self.stats.bytes_read, self.bytes.load(Ordering::Relaxed));", ""),
  "report-bytes-of-chunk-reads-not-counted": (R, "let b = self.file.get_bytes(start, length)?;\n        self.bytes.fetch_add(b.len() as u64, Ordering::Relaxed);", "let b = self.file.get_bytes(start, length)?;"),
  "report-rows-read-counts-returned": (R, "out.rows_read += batch.num_rows() as u64;", "out.rows_read += 0;"),
  "report-pruning-flag-always-applied": (R, "let applied = options.prune && pushed > 0;", "let applied = true;"),
@@ -143,19 +143,19 @@ M = {
  "build-dependencies-overflow-checks-on-in-release": (ROOTTOML, '[profile.release.package."*"]\noverflow-checks = false', '[profile.release.package."*"]\noverflow-checks = true'),
  "build-workspace-overflow-checks-off-in-release": (ROOTTOML, "[profile.release]\noverflow-checks = true", "[profile.release]\noverflow-checks = false"),
  # --- step 2b: the parallel scan (src/parallel.rs, src/stats.rs, the cancellation and the lazy footers in src/reader.rs); the scheduler's own mutants are crates/nata-sched/mutants
- "par-handle-not-closed-on-cancel": (R, "        for batch in reader {\n            if cancel() {\n                return abandoned();\n            }", "        for batch in reader {\n            if cancel() {\n                std::mem::forget(_guard);\n                return abandoned();\n            }"),
+ "par-handle-not-closed-on-cancel": (R, "if step == Step::Cancelled { return abandoned(); }", "if step == Step::Cancelled { std::mem::forget(_guard); return abandoned(); }"),
  "par-footer-handle-leaked": (R, "ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())\n            .map_err(|e| parquet_error(&e, path, None))?\n        // the handle is closed here", "{ let m = ArrowReaderMetadata::load(&file, ArrowReaderOptions::new()).map_err(|e| parquet_error(&e, path, None))?; std::mem::forget(file); m }\n        // the handle is closed here"),
  "par-window-ignored": (PAR, "let (threads, window) = (cfg.threads.max(1), cfg.window.max(1));", "let (threads, window) = (cfg.threads.max(1), usize::MAX / 4);"),
- "par-ordered-flag-ignored": (PAR, "                ordered: cfg.ordered,\n            },\n        );", "                ordered: false,\n            },\n        );"),
+ "par-ordered-flag-ignored": (PAR, "ordered: cfg.ordered,", "ordered: false,"),
  "par-limit-does-not-stop-the-scan": (PAR, "                if lim.feed(batch, &mut sink)? {\n                    return Ok(Flow::Stop);\n                }", "                if lim.feed(batch, &mut sink)? {\n                    return Ok(Flow::Continue);\n                }"),
- "par-tasks-never-look-at-the-cancellation": (R, "        for batch in reader {\n            if cancel() {\n                return abandoned();\n            }", "        for batch in reader {"),
+ "par-tasks-never-look-at-the-cancellation": (R, "if (self.cancel)() { return Ok(Step::Cancelled); } let batch = batch.map_err(|e| self.corrupt(&e))?; self.out.rows_read +=", "let batch = batch.map_err(|e| self.corrupt(&e))?; self.out.rows_read +="),
  "par-memory-reservation-not-released": (STATS, "    fn drop(&mut self) {\n        self.gauge.sub(self.bytes);\n    }", "    fn drop(&mut self) {}"),
  "par-footer-count-not-released": (STATS, "    fn drop(&mut self) {\n        self.0.sub(1);\n    }", "    fn drop(&mut self) {}"),
  "par-first-footer-kept-after-the-scan": (R, "        let _ = self\n            .first\n            .lock()\n            .unwrap_or_else(std::sync::PoisonError::into_inner)\n            .take();", "        let _ = 0;"),
  "par-cancel-reported-as-success": (PAR, "if outcome.result? == Finish::Cancelled {", "if outcome.result? == Finish::Cancelled && false {"),
  "par-footers-all-read-before-the-scan": (PAR, "        let work = Arc::new(ScanWork {\n            plan: Arc::clone(&plan),\n        });", "        for i in 0..plan.file_count() {\n            let _ = plan.open_file(i);\n        }\n        let work = Arc::new(ScanWork {\n            plan: Arc::clone(&plan),\n        });"),
  "par-abandoned-row-groups-not-counted": (R, "ScanStats::add(&stats.row_groups_abandoned, 1);", "let _ = &stats.row_groups_abandoned;"),
- "par-task-memory-not-counted": (R, "            transient.grow(batch.get_array_memory_size() as u64);", "            let _ = &transient;"),
+ "par-task-memory-not-counted": (R, "transient.grow(batch.get_array_memory_size() as u64); self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes()); // the types", "let _ = &transient; self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient.bytes()); // the types"),
  "par-sink-error-not-returned": (PAR, "        let outcome = sched.run(|_seq, out| {\n            for batch in &out.batches {\n                if lim.feed(batch, &mut sink)? {", "        let outcome = sched.run(|_seq, out| {\n            for batch in &out.batches {\n                if lim.feed(batch, &mut sink).unwrap_or(false) {"),
  "par-panic-not-caught-at-the-task": (R, "match catch_unwind(AssertUnwindSafe(f)) {", "match Ok::<Result<T, ScanError>, Box<dyn std::any::Any + Send>>(f()) {"),
  # EQUIVALENT, removed: "par-serial-driver-reads-past-the-limit" (the second `lim.remaining == Some(0)` check of run_serial): feed() returns true when the limit is
@@ -265,24 +265,31 @@ def run_one(args):
     base, dst = stage(work, slot_name)
     for f, old, new in edits:
         p = os.path.join(base, "Cargo.toml") if f.startswith("ROOT:") else os.path.join(dst, f)
-        t = open(p).read()
+        with open(p) as source:
+            t = source.read()
         rx = re.compile(r"\s*".join(re.escape(c) for c in old if not c.isspace()))
         found = list(rx.finditer(t))
         if len(found) != 1:
             return n, "INVALID", "edit applies %d times" % len(found)
         if re.sub(r"\s+", "", old) == re.sub(r"\s+", "", new):
             return n, "INVALID", "edit changes nothing"
-        open(p, "w").write(t[: found[0].start()] + new + t[found[0].end():])
+        with open(p, "w") as source:
+            source.write(t[: found[0].start()] + new + t[found[0].end():])
     if dry:
         rc, out = cargo(base, work, slot_name, ["check", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--tests"])
         if rc != 0:
             return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
         return n, "compiles", ""
-    # compile first, so that a compile error is INVALID and not a (false) catch
-    rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "-p", "nata", "--no-run"])
+    # Type-check/compile the library first, then compile each unchanged test group
+    # only when it is reached. Compiling every CLI/integration binary up front
+    # repeats unrelated LLVM work after a unit test has already caught the fault.
+    # A later group compilation error is INVALID too, never a false catch.
+    rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "--lib", "--no-run"])
     if rc != 0:
         return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
     ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else LATE_GROUPS if n.startswith("late-") else CRC_GROUPS if n.startswith("crc-") else GROUPS)
+    if "could not compile" in out or "error[E" in out:
+        return n, "INVALID", "test group does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
     if ok:
         return n, "SURVIVED", "the tests cannot see this bug"
     failed = sorted(set(l.split()[1] for l in out.splitlines() if l.startswith("test ") and l.endswith("FAILED")))
@@ -349,4 +356,5 @@ def main():
     return 0 if counts["CAUGHT"] == len(names) or a.dry and counts["compiles"] == len(names) else 1
 
 
-sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

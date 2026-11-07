@@ -64,7 +64,10 @@ fn under_ulimit(args: &[&str]) -> std::process::Output {
     Command::new("sh")
         .arg("-c")
         .arg("ulimit -n 256 && exec \"$0\" \"$@\"")
-        .arg(env!("CARGO_BIN_EXE_nata"))
+        .arg(
+            std::env::var_os("NATA_RSS_BINARY")
+                .unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+        )
         .args(args)
         .output()
         .expect("run")
@@ -171,14 +174,16 @@ fn slow_consumer(file: &Path, extra: &[&str]) -> String {
         "SELECT id, s, id * 2 AS twice FROM '{}' WHERE id % 3 <> 1",
         file.display()
     );
-    let mut child = Command::new(env!("CARGO_BIN_EXE_nata"))
-        .args(["sql", "--csv", "--report"])
-        .args(extra)
-        .args(["-c", &q])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("spawn");
+    let mut child = Command::new(
+        std::env::var_os("NATA_RSS_BINARY").unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+    )
+    .args(["sql", "--csv", "--report"])
+    .args(extra)
+    .args(["-c", &q])
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .expect("spawn");
     let mut stdout = child.stdout.take().expect("stdout");
     let mut stderr = child.stderr.take().expect("stderr");
     let err_reader = std::thread::spawn(move || {
@@ -275,10 +280,13 @@ fn peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operato
     };
     let base = {
         let q = format!("SELECT id FROM '{}' LIMIT 0", file.display());
-        let out = Command::new(env!("CARGO_BIN_EXE_nata"))
-            .args(["sql", "--csv", "--report", "--threads", "1", "-c", &q])
-            .output()
-            .expect("run");
+        let out = Command::new(
+            std::env::var_os("NATA_RSS_BINARY")
+                .unwrap_or_else(|| env!("CARGO_BIN_EXE_nata").into()),
+        )
+        .args(["sql", "--csv", "--report", "--threads", "1", "-c", &q])
+        .output()
+        .expect("run");
         String::from_utf8_lossy(&out.stderr).into_owned()
     };
     let base_kib = field(&base, "peak_rss_kib");

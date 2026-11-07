@@ -749,3 +749,20 @@ fn a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_mat
         ids((0..N).filter(|i| a(*i).is_some_and(|x| x < 2 || x > 10 / (*i - 2))))
     );
 }
+
+#[test]
+fn bare_columns_preserve_values_order_duplicates_and_nulls() {
+    let p = fixture("bare-columns");
+    for limit in ["", " LIMIT 5"] {
+        assert_eq!(
+            rows(&format!("SELECT id, a FROM '{p}' WHERE id < 5{limit}")),
+            vec!["0,-2", "1,-1", "2,0", "3,NULL", "4,2"]
+        );
+        assert_eq!(
+            rows(&format!(
+                "SELECT a, id, a AS again FROM '{p}' WHERE id < 5{limit}"
+            )),
+            vec!["-2,0,-2", "-1,1,-1", "0,2,0", "NULL,3,NULL", "2,4,2"]
+        );
+    }
+}

@@ -1,0 +1,19 @@
+heaptrack output will be written to "/mnt/work/rss-work/eager.zst"
+/usr/lib/heaptrack/libheaptrack_preload.so
+starting application, this might take some time...
+Project l_orderkey: BIGINT  (rows=59986052, time=947.38ms)
+  Scan '/mnt/work/src/data/tpch-sf10/lineitem.parquet' (1 file)  (rows=59986052, time=302.44ms wall, includes the operators above)
+    files: 1 (opened 1), row groups: total=488 skipped=0 read=488 abandoned=0
+    rows read=59986052 (before the pushed filter), rows returned by the scan=59986052, bytes read=93511486, columns read=1
+    pruning=none(no pushed filter), threads=8, window=16, order=ordered
+    memory: peak_inflight_bytes=14832832 largest_task_bytes=1115744 peak_open_files=8 peak_footers=1
+    columns: l_orderkey
+    pushed: (none)
+total: rows returned=59986052, time=302.44ms wall
+heaptrack stats:
+	allocations:          	277890
+	leaked allocations:   	10
+	temporary allocations:	13869
+Heaptrack finished! Now run the following to investigate the data:
+
+  heaptrack --analyze "/mnt/work/rss-work/eager.zst"

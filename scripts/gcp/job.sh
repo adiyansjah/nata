@@ -34,6 +34,8 @@ run "machine-$BOOT" bash -c '{ date -u; uname -a; nproc; free -g; lscpu | grep -
   curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s|.*/||"; echo
   cat /proc/sys/kernel/random/boot_id; } > "$RESULTS/machine-'"$BOOT"'.txt"'
 
+run code-tree bash -c 'cd "$SRC" && scripts/code-tree.sh > "$RESULTS/code-tree.txt"'
+
 case "$JOB" in
   ci|all)
     run tests-workspace bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo test --workspace'
@@ -336,6 +338,11 @@ case "$JOB" in
     run s4-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata --features page-crc && CARGO_TARGET_DIR="$WORK/target-nocrc" cargo build --release -p nata --no-default-features'
     run s4-pyarrow bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet pyarrow && "$WORK/venv/bin/python" -c "import pyarrow; print(pyarrow.__version__)"'
     run s4-bench bash -c 'cd "$SRC" && { BLOCKS="late footers crc" NATA_NOCRC="$WORK/target-nocrc/release/nata" PYARROW_PYTHON="$WORK/venv/bin/python" SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/slice4-bench" 5; echo "exit status: $?"; } > "$RESULTS/slice4-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  debt-rss)
+    run dr-gen bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
+    run dr-python bash -c 'python3 -m venv "$WORK/venv" && "$WORK/venv/bin/pip" install --quiet pyarrow'
+    run dr-build bash -c 'cd "$SRC" && CARGO_PROFILE_RELEASE_DEBUG=1 CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
+    run dr-check bash -c 'cd "$SRC" && CARGO_PROFILE_RELEASE_DEBUG=1 "$WORK/venv/bin/python" crates/nata-bench/debt-rss.py "$WORK/target-ws/release/nata" data/tpch-sf10/lineitem.parquet "$WORK/rss-work" "$RESULTS/rss" > "$RESULTS/rss-run.txt" 2>&1' ;;
   slice4close)
     run s4c-gen-sf1 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 1 data/tpch-sf1'
     run s4c-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
@@ -364,8 +371,12 @@ case "$JOB" in
     run ec-audit bash -c 'cd "$SRC" && { cargo audit 2>&1; echo "exit status: $?"; } > "$RESULTS/eng-audit.txt"; tail -1 "$RESULTS/eng-audit.txt" > "$RESULTS/eng-audit-exit.txt"; true'
     run ec-unsafe bash -c 'cd "$SRC" && { for p in nata nata-parquet nata-sched nata-scan nata-kernels nata-sql nata-exec; do echo "== $p"; python3 -I scripts/unsafe-inventory.py "$p" 2>&1 | tail -n 15; done; } > "$RESULTS/eng-unsafe.txt" 2>&1; true'
     T=$(rustc -vV | sed -n "s/^host: //p")
+    # Shared on-demand fixture generation races parallel tests on a fresh tree.
+    # Prepare it once before any instrumented binary is launched.
+    run ec-fixtures bash -c 'cd "$SRC" && scripts/gen-tpch.sh 0.01 data/tpch-sf0.01'
+    run ec-native bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-rss" cargo build --release -p nata'
     for san in address thread; do
-      run "ec-$san" bash -c 'cd "$SRC" && { RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' -p nata-sched -p nata-parquet -p nata-scan -p nata-kernels -p nata-sql -p nata-exec -p nata --lib --tests --no-fail-fast -- --skip peak_memory_is_bounded_by_the_window_times_the_largest_row_group 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
+      run "ec-$san" bash -c 'cd "$SRC" && { NATA_INSTRUMENTED=1 NATA_RSS_BINARY="$WORK/target-rss/release/nata" RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' --workspace --lib --tests --no-fail-fast 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
     done
     # RSS budgets describe the normal allocator, not sanitizer quarantine/shadow metadata.
     # Keep default sanitizer detection settings; execute both RSS tests without instrumentation.

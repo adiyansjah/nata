@@ -1,0 +1,28 @@
+   Compiling parquet v60.1.0
+   Compiling nata-kernels v0.0.0 (/mnt/work/src/crates/nata-kernels)
+   Compiling nata-parquet v0.0.0 (/mnt/work/src/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/mnt/work/src/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/mnt/work/src/crates/nata-exec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.06s
+     Running unittests src/lib.rs (/mnt/work/target-miri/miri/x86_64-unknown-linux-gnu/debug/build/nata-exec/1ae1888f20a91dbc/out/nata_exec-1ae1888f20a91dbc)
+
+running 15 tests
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::three_valued_and_or ... ok
+test exec::projection_memory_tests::bare_projection_allocates_no_row_selection ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.48s
+
+exit status: 0

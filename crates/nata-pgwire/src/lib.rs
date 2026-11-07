@@ -3,6 +3,7 @@
 mod binary;
 pub mod codec;
 mod copy;
+mod date;
 mod extended;
 mod float;
 pub mod server;

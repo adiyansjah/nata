@@ -1,0 +1,57 @@
+{
+  "rows": 59986052,
+  "row_groups": 488,
+  "baseline_kib": 14716,
+  "decoded_group_bytes": 999384,
+  "K": 3,
+  "window": 16,
+  "fixed_allowance_kib": 32768,
+  "bound_kib": 94330.125,
+  "runs": [
+    {
+      "arm": "fixed",
+      "round": 0,
+      "rss_kib": 73432
+    },
+    {
+      "arm": "scan",
+      "round": 0,
+      "rss_kib": 66640
+    },
+    {
+      "arm": "eager",
+      "round": 0,
+      "rss_kib": 99100
+    },
+    {
+      "arm": "fixed",
+      "round": 1,
+      "rss_kib": 66344
+    },
+    {
+      "arm": "scan",
+      "round": 1,
+      "rss_kib": 75456
+    },
+    {
+      "arm": "eager",
+      "round": 1,
+      "rss_kib": 87384
+    },
+    {
+      "arm": "fixed",
+      "round": 2,
+      "rss_kib": 72740
+    },
+    {
+      "arm": "scan",
+      "round": 2,
+      "rss_kib": 72240
+    },
+    {
+      "arm": "eager",
+      "round": 2,
+      "rss_kib": 108768
+    }
+  ]
+}

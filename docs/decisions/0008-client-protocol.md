@@ -493,3 +493,27 @@ empirical evidence. No literal CLI text equality, ≤1.20x throughput, exception
 Date32, R15/R16, Flight SQL, TLS/auth or SQL/suspended-cursor closure follows.
 Revisit when another client's COPY spelling/options are required, or an oracle
 finds a remaining formatter difference.
+
+## Amendment, 2026-11-07 (exceptional Date32 output)
+
+Supersede the four-digit AD-only wire output restriction. Read raw Date32 days,
+range-check against PostgreSQL's finite Julian domain, and retain date OID 1082
+for text, binary and COPY. Text uses PostgreSQL's BC suffix without parentheses
+and extended AD years; binary uses checked days since 2000. Outside the finite
+range return 22008, including raw days the CLI historically spells as infinity.
+No mid-result OID substitution, implicit VARCHAR cast or chrono year truncation.
+DATE input literals/casts/parameters retain their existing 0001–9999 restriction.
+
+Alternatives: retain the four-digit restriction (unnecessary data loss); change
+to text OID for a whole/partial result (breaks stable schema); use chrono for all
+dates (does not cover PostgreSQL's upper range). Civil-day arithmetic covers the
+actual protocol domain without adding a calendar dependency.
+
+Measured: local PostgreSQL 17.11 exact text/DataRow/COPY oracle, native ADBC
+Date32, pgjdbc LocalDate and psycopg explicit Python-domain errors, with known-bad
+mutation controls, in [Debt A](../../bench/results/20261107-debt-a.md). Default
+JDBC legacy Date/string presentation limitations match PostgreSQL and are
+recorded, not claimed as exact full-domain calendar displays. High confidence
+in the finite edge corpus and checked day arithmetic; this is not exhaustive
+client/version certification. Revisit for DATE input-domain expansion or
+explicit infinity metadata.
