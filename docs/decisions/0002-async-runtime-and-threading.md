@@ -113,3 +113,4 @@ Before acceptance: (1) ~~Test the tokio-to-pool bridge~~ done within bounds: `be
 ## Amendments
 
 None yet.
+- 2026-11-07, the open comparison of the split runtime against a separate tokio CPU runtime (card 0006 rule 3, `bench/results/20261107-object-store-baseline.md`): ratios 0.90-1.08 in 10 cells on both CPU types, idle and saturated, none near the 1.2x needed to change, so **the split runtime stays**.

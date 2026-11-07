@@ -47,3 +47,7 @@ Warm queries still pay identity-validation requests; cache hits are not zero-net
 ## Revisit when
 
 The reference run cannot meet the memory envelope, LRU churn dominates real repeat workloads, a backend cannot validate identity, or slice 12 introduces snapshot/manifest identities. Freeze sizes after the reference record and owner/parent acceptance; preserve no-cache control and stale-version mutants.
+
+## Amendments
+
+- 2026-11-07, after the spike (`bench/results/20261107-object-store-baseline.md`): a parsed footer takes **3.8-5.5x its wire size** (a 531 KB footer parses to 2.05 MB, so about 32 such entries fill 64 MiB), so the cache accounts parsed bytes, and for small footers the 1,024-entry cap binds before the byte cap. On real GCS, warm reads of 100 files made 0 footer GETs.

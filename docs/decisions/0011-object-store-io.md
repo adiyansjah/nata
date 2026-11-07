@@ -49,3 +49,7 @@ The adapter needs a real asynchronous blocked/wake seam, not a URL mapped into l
 ## Revisit when
 
 The card's bounded-wrapper probe fails, matched reference targets miss, runtime comparison meets its proposal threshold, or concurrent workloads require different admission. Defaults freeze only after the reference run and owner/parent decision; accepted-policy changes need a dated amendment.
+
+## Amendments
+
+- 2026-11-07, after the card 0006 baseline spike (`bench/results/20261107-object-store-baseline.md`): (1) object_store 0.14.2's default transport buffers an endless error body until the process dies, so **our wrapper bounds the transport** through the supported `HttpConnector` hook (a few KiB of an error body kept, the rest dropped); a chunked range response without Content-Length fails closed. (2) The unit window is sized by the request-attempt cap, not by the worker count: with 2x workers units, 4 workers reached only 2.1x on SF10 (a 90 ms fake endpoint went from 3.65 s at a window of 8 to 1.99 s at 16, flat beyond). (3) Cross-row-group range merging stays off (1.8-2.2x slower on large files, rule 2). (4) The 64 KiB footer prefetch reads up to 29x the footer of small files and needs a second GET for large ones; the skeleton measures a size-adaptive prefetch.
