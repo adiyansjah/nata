@@ -11,6 +11,7 @@
 #   bench-sf10  SF10: mid10 and files10 x full,proj,sel; DuckDB, control, wrapper; twins; 5 rounds
 #   bench-scale SF10 mid10 full,proj at 1 and 4 CPU workers (8 is in bench-sf10)
 #   bench-rt    ADR 0002's open arm: split runtime against a separate tokio CPU runtime, idle and saturated, SF1 mid1/small1
+#   bench-rss   the resource envelope: peak RSS of each arm in a FRESH process (one cell, one arm), full scans at SF1 and SF10
 #   cleanup     (gcs) delete everything under the prefix and prove the prefix is empty
 #   leakscan    no bucket, prefix, service account or project id in the results
 #
@@ -32,7 +33,7 @@ if ! rustc --version >/dev/null 2>&1; then
 fi
 mkdir -p "$OUT" "$DATA"
 OSB=$CARGO_TARGET_DIR/release/osb
-export NATA_SETTLE=$REPO/scripts/gcp/settle.sh
+export NATA_SETTLE=${NATA_SETTLE-$REPO/scripts/gcp/settle.sh}   # NATA_SETTLE= (empty) skips the wait
 if [ "$MODE" = gcs ]; then
   [ -f "$HERE/gcs.env" ] || { echo "gcs.env is missing next to run-reference.sh (NATA_OBJ_BUCKET=, NATA_OBJ_PREFIX=)"; exit 4; }
   set -a; . "$HERE/gcs.env"; set +a
@@ -112,9 +113,21 @@ case "$step" in
       "$OSB" bench --cells 'sf10/mid10:1' --queries full,proj --arms duck,wrap --rounds "${NATA_OSB_SCALE_ROUNDS:-3}" --workers $w --io-threads 2 --expected "$OUT/expected.txt" --out "$OUT/scale-w$w.csv" 2>&1 | tee "$OUT/bench-scale-w$w.txt" | tail -4
     done ;;
   bench-rt)
-    [ "$MODE" = trial ] && export NATA_SF_OVERRIDE=$SF_A
-    "$OSB" bench --cells 'sf1/small1:1,sf1/mid1:1' --queries full,proj --arms wrap,wrapT --rounds "$ROUNDS" --workers 8 --io-threads 2 --expected "$OUT/expected.txt" --out "$OUT/rt-idle.csv" 2>&1 | tee "$OUT/bench-rt-idle.txt" | tail -4
-    "$OSB" bench --cells 'sf1/small1:1,sf1/mid1:1' --queries full,proj --arms wrap,wrapT --rounds "$ROUNDS" --workers 8 --io-threads 2 --saturate --expected "$OUT/expected.txt" --out "$OUT/rt-saturated.csv" 2>&1 | tee "$OUT/bench-rt-sat.txt" | tail -4 ;;
+    # network-bound cells (small1, mid1) and CPU-bound cells (big1: 4 row groups, files100: one row group per file, SF10 files10)
+    for sat in "" "--saturate"; do
+      n=idle; [ -n "$sat" ] && n=saturated
+      for cell in 'sf1/small1:1' 'sf1/mid1:1' 'sf1/big1:1' 'sf1/files100:100' 'sf10/files10:10'; do
+        case "$cell" in sf1/*) [ "$MODE" = trial ] && export NATA_SF_OVERRIDE=$SF_A ;; *) [ "$MODE" = trial ] && export NATA_SF_OVERRIDE=$SF_B ;; esac
+        "$OSB" bench --cells "$cell" --queries full,proj --arms wrap,wrapT --rounds "$ROUNDS" --workers 8 --io-threads 2 $sat --expected "$OUT/expected.txt" --out "$OUT/rt-$n.csv" 2>&1 | tee -a "$OUT/bench-rt-$n.txt" | grep -E "RESULT|NOT OK"
+      done
+    done ;;
+  bench-rss)
+    for arm in duck ctl wrap; do
+      for cell in 'sf1/small1:1' 'sf1/files100:100' 'sf10/mid10:1' 'sf10/files10:10'; do
+        case "$cell" in sf1/*) [ "$MODE" = trial ] && export NATA_SF_OVERRIDE=$SF_A ;; *) [ "$MODE" = trial ] && export NATA_SF_OVERRIDE=$SF_B ;; esac
+        NATA_SETTLE= NATA_NO_HWM_RESET=1 "$OSB" bench --cells "$cell" --queries full --arms $arm --rounds 1 --workers 8 --io-threads 2 --expected "$OUT/expected.txt" --out "$OUT/rss.csv" 2>&1 | grep -E "idle runtime|RESULT|NOT OK" | sed "s|^|$arm $cell: |"
+      done
+    done ;;
   cleanup)
     [ "$MODE" = gcs ] || { echo "trial: nothing to delete"; exit 0; }
     "$OSB" delete | tee "$OUT/cleanup.txt"; RC=${PIPESTATUS[0]}

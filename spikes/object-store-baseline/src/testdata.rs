@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use arrow::array::{ArrayRef, Date32Array, Float64Array, Int64Array, StringArray};
+use arrow::array::{ArrayRef, Date32Array, Decimal128Array, Int64Array, StringArray};
 use arrow::datatypes::{DataType, Field, Schema};
 use arrow::record_batch::RecordBatch;
 use parquet::arrow::ArrowWriter;
@@ -22,7 +22,7 @@ pub fn lineitem_like(rows: usize, rg_rows: usize, seed: u64) -> Vec<u8> {
         ok.push(k);
     }
     let i64s = |f: &mut dyn FnMut() -> i64| -> ArrayRef { Arc::new(Int64Array::from((0..rows).map(|_| f()).collect::<Vec<_>>())) };
-    let f64s = |rng: &mut Rng| -> ArrayRef { Arc::new(Float64Array::from((0..rows).map(|_| rng.unit() * 1000.0).collect::<Vec<_>>())) };
+    let f64s = |rng: &mut Rng| -> ArrayRef { Arc::new(Decimal128Array::from((0..rows).map(|_| rng.below(10_000_000) as i128).collect::<Vec<_>>()).with_precision_and_scale(15, 2).unwrap()) };
     let strs = |rng: &mut Rng, n: u64, pre: &str| -> ArrayRef { Arc::new(StringArray::from((0..rows).map(|_| format!("{pre}{}", rng.below(n))).collect::<Vec<_>>())) };
     let dates = |rng: &mut Rng| -> ArrayRef { Arc::new(Date32Array::from((0..rows).map(|_| 8000 + rng.below(2500) as i32).collect::<Vec<_>>())) };
     let mut r1 = Rng::new(seed ^ 1);
@@ -31,10 +31,10 @@ pub fn lineitem_like(rows: usize, rg_rows: usize, seed: u64) -> Vec<u8> {
         ("l_partkey", DataType::Int64, i64s(&mut || 1 + r1.below(200_000) as i64)),
         ("l_suppkey", DataType::Int64, i64s(&mut || 1 + r1.below(10_000) as i64)),
         ("l_linenumber", DataType::Int64, i64s(&mut || 1 + r1.below(7) as i64)),
-        ("l_quantity", DataType::Float64, f64s(&mut rng)),
-        ("l_extendedprice", DataType::Float64, f64s(&mut rng)),
-        ("l_discount", DataType::Float64, f64s(&mut rng)),
-        ("l_tax", DataType::Float64, f64s(&mut rng)),
+        ("l_quantity", DataType::Decimal128(15, 2), f64s(&mut rng)),
+        ("l_extendedprice", DataType::Decimal128(15, 2), f64s(&mut rng)),
+        ("l_discount", DataType::Decimal128(15, 2), f64s(&mut rng)),
+        ("l_tax", DataType::Decimal128(15, 2), f64s(&mut rng)),
         ("l_returnflag", DataType::Utf8, strs(&mut rng, 3, "R")),
         ("l_linestatus", DataType::Utf8, strs(&mut rng, 2, "S")),
         ("l_shipdate", DataType::Date32, dates(&mut rng)),

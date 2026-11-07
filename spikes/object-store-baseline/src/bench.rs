@@ -131,6 +131,9 @@ fn vm_hwm_mb(pid: Option<u32>) -> f64 {
 }
 
 fn reset_hwm() {
+    if std::env::var("NATA_NO_HWM_RESET").is_ok() {
+        return; // fresh-process-per-run measurement: the process high-water mark IS the run's peak
+    }
     let _ = std::fs::write("/proc/self/clear_refs", "5");
 }
 

@@ -43,10 +43,11 @@ async fn guard<F: std::future::Future<Output = CaseResult>>(name: &'static str, 
 
 /// The expected result of `kind` over `files`, computed by plain Arrow code from the whole Parquet bytes (independent of the fetch path).
 pub fn oracle(files: &[Vec<u8>], kind: &QueryKind) -> String {
-    use arrow::array::{Array, AsArray};
+    use arrow::array::{Array, AsArray, Date32Array, Decimal128Array};
     use arrow::datatypes::Int64Type;
     use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
-    let (mut rows, mut nonnull) = (0u64, 0u64);
+    let mut rows = 0u64;
+    let mut full = vec![0i128; 16];
     let mut sums = [0i128; 4];
     let (mut sc, mut ss) = (0u64, 0i128);
     for f in files {
@@ -54,15 +55,25 @@ pub fn oracle(files: &[Vec<u8>], kind: &QueryKind) -> String {
         for batch in b {
             let batch = batch.unwrap();
             rows += batch.num_rows() as u64;
-            for c in batch.columns() {
-                nonnull += (c.len() - c.null_count()) as u64;
+            let col = |n: &str| batch.column(batch.schema().index_of(n).unwrap()).clone();
+            let i64col = |n: &str| col(n).as_primitive::<Int64Type>().clone();
+            for (i, n) in crate::engine::LINEITEM.iter().enumerate() {
+                let c = col(n);
+                full[i] += if let Some(d) = c.as_any().downcast_ref::<Decimal128Array>() {
+                    d.iter().flatten().sum::<i128>()
+                } else if let Some(d) = c.as_any().downcast_ref::<Date32Array>() {
+                    d.iter().flatten().map(|x| x as i128).sum::<i128>()
+                } else if let Some(d) = c.as_any().downcast_ref::<arrow::array::Int64Array>() {
+                    d.iter().flatten().map(|x| x as i128).sum::<i128>()
+                } else {
+                    c.as_string::<i32>().iter().flatten().map(|s| s.len() as i128).sum::<i128>()
+                };
             }
-            let col = |n: &str| batch.column(batch.schema().index_of(n).unwrap()).as_primitive::<Int64Type>().clone();
             for (i, n) in ["l_orderkey", "l_partkey", "l_suppkey", "l_linenumber"].iter().enumerate() {
-                sums[i] += col(n).iter().flatten().map(|v| v as i128).sum::<i128>();
+                sums[i] += i64col(n).iter().flatten().map(|v| v as i128).sum::<i128>();
             }
             if let QueryKind::Selective { lo, hi } = kind {
-                let (k, p) = (col("l_orderkey"), col("l_partkey"));
+                let (k, p) = (i64col("l_orderkey"), i64col("l_partkey"));
                 for i in 0..k.len() {
                     if (*lo..=*hi).contains(&k.value(i)) {
                         sc += 1;
@@ -73,7 +84,14 @@ pub fn oracle(files: &[Vec<u8>], kind: &QueryKind) -> String {
         }
     }
     match kind {
-        QueryKind::Full => format!("{rows}|{nonnull}"),
+        QueryKind::Full => {
+            let mut t = format!("{rows}");
+            for (i, v) in full.iter().enumerate() {
+                t += "|";
+                t += &crate::engine::fmt_scaled(*v, if (4..8).contains(&i) { 2 } else { 0 });
+            }
+            t
+        }
         QueryKind::Proj => format!("{}|{}|{}|{}", sums[0], sums[1], sums[2], sums[3]),
         QueryKind::Selective { .. } => if sc == 0 { "0|NULL".into() } else { format!("{sc}|{ss}") },
         QueryKind::Meta => format!("{rows}"),

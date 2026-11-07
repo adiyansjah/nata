@@ -34,7 +34,7 @@ pub const LINEITEM: [&str; 16] = [
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum QueryKind {
-    /// Every column read: `count(*)` and the non-null count of all 16 columns.
+    /// Every column decoded: `count(*)` and one sum per column (a sum cannot be answered from statistics).
     Full,
     /// Four BIGINT columns summed.
     Proj,
@@ -65,8 +65,17 @@ impl QueryKind {
     pub fn sql(&self) -> String {
         match self {
             QueryKind::Full => {
-                let nn = LINEITEM.iter().map(|c| format!("count({c})")).collect::<Vec<_>>().join(" + ");
-                format!("SELECT count(*), {nn} FROM {{T}}")
+                // every column is decoded: sum() cannot be answered from Parquet statistics (count(col) can, which DuckDB does)
+                let agg = LINEITEM
+                    .iter()
+                    .map(|c| match *c {
+                        "l_shipdate" | "l_commitdate" | "l_receiptdate" => format!("sum(date_diff('day', DATE '1970-01-01', {c}))"),
+                        "l_returnflag" | "l_linestatus" | "l_shipinstruct" | "l_shipmode" | "l_comment" => format!("sum(strlen({c}))"),
+                        _ => format!("sum({c})"),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("SELECT count(*), {agg} FROM {{T}}")
             }
             QueryKind::Proj => "SELECT sum(l_orderkey), sum(l_partkey), sum(l_suppkey), sum(l_linenumber) FROM {T}".to_string(),
             QueryKind::Selective { lo, hi } => format!("SELECT count(*), sum(l_partkey) FROM {{T}} WHERE l_orderkey BETWEEN {lo} AND {hi}"),
@@ -88,10 +97,36 @@ impl QueryKind {
     }
 }
 
+/// An integer with `scale` decimal digits, as DuckDB prints a DECIMAL.
+pub fn fmt_scaled(v: i128, scale: u8) -> String {
+    if scale == 0 {
+        return v.to_string();
+    }
+    let p = 10i128.pow(scale as u32);
+    let (sign, a) = if v < 0 { ("-", -v) } else { ("", v) };
+    format!("{sign}{}.{:0width$}", a / p, a % p, width = scale as usize)
+}
+
+/// The column sum the `full` query computes for one array, plus its decimal scale.
+pub fn full_sum(a: &dyn Array) -> Result<(i128, u8), String> {
+    use arrow::array::{Date32Array, Decimal128Array};
+    match a.data_type() {
+        DataType::Int64 | DataType::Int32 | DataType::Int16 => Ok((as_i64(a)?.iter().flatten().map(|v| v as i128).sum(), 0)),
+        DataType::Decimal128(_, sc) => Ok((a.as_any().downcast_ref::<Decimal128Array>().ok_or("decimal")?.iter().flatten().sum(), *sc as u8)),
+        DataType::Date32 => Ok((a.as_any().downcast_ref::<Date32Array>().ok_or("date")?.iter().flatten().map(|v| v as i128).sum(), 0)),
+        _ => {
+            let c = arrow::compute::cast(a, &DataType::Utf8).map_err(|e| e.to_string())?;
+            Ok((c.as_string::<i32>().iter().flatten().map(|s| s.len() as i128).sum(), 0))
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Partial {
     pub rows: u64,
-    pub nonnull: u64,
+    /// Full: one sum per column of LINEITEM (integers and decimals as their raw sum, dates as days, strings as byte length) and the decimal scales.
+    pub cols: [i128; 16],
+    pub scales: [u8; 16],
     pub sums: [i128; 4],
     pub sel_count: u64,
     pub sel_sum: i128,
@@ -100,7 +135,10 @@ pub struct Partial {
 impl Partial {
     pub fn merge(&mut self, o: &Partial) {
         self.rows += o.rows;
-        self.nonnull += o.nonnull;
+        for i in 0..16 {
+            self.cols[i] += o.cols[i];
+            self.scales[i] = self.scales[i].max(o.scales[i]);
+        }
         for i in 0..4 {
             self.sums[i] += o.sums[i];
         }
@@ -110,7 +148,14 @@ impl Partial {
     /// The text DuckDB's CLI prints for the same query (`-list -separator '|'`).
     pub fn render(&self, q: &QueryKind) -> String {
         match q {
-            QueryKind::Full => format!("{}|{}", self.rows, self.nonnull),
+            QueryKind::Full => {
+                let mut t = format!("{}", self.rows);
+                for i in 0..16 {
+                    t += "|";
+                    t += &fmt_scaled(self.cols[i], self.scales[i]);
+                }
+                t
+            }
             QueryKind::Proj => format!("{}|{}|{}|{}", self.sums[0], self.sums[1], self.sums[2], self.sums[3]),
             QueryKind::Selective { .. } => {
                 if self.sel_count == 0 { "0|NULL".to_string() } else { format!("{}|{}", self.sel_count, self.sel_sum) }
@@ -201,8 +246,10 @@ pub fn decode_unit(fi: &FileInfo, file: SparseFile, rgs: &[usize], q: &QueryKind
             match q {
                 QueryKind::Full => {
                     out.rows += batch.num_rows() as u64;
-                    for c in batch.columns() {
-                        out.nonnull += (c.len() - c.null_count()) as u64;
+                    for (i, n) in LINEITEM.iter().enumerate() {
+                        let (v, sc) = full_sum(col(n)?.as_ref())?;
+                        out.cols[i] += v;
+                        out.scales[i] = sc;
                     }
                 }
                 QueryKind::Proj => {
