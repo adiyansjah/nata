@@ -119,12 +119,12 @@ sql-fuzz   cd spikes/sqlfuzz && NATA_BIN=$WORK/target/release/nata python3 -I fu
 
 Each line is its own resumable step, run from the shipped tree, with its output in `results/NAME.txt` and its exit status in
 `results/NAME.exit`. A failing command is a result, not a failed job: the other steps still run. Names use a-z, 0-9 and `-`.
-Pick the machine for the work: `--machines c3d-highcpu-16` or `-32` (x86-64) or `n4a-highcpu-16`/`-32` (ARM64) for parallel CPU
+Pick the machine for the work: `--machines c3d-highcpu-16` or `-30` (x86-64; C3D has no 32-vCPU shape) or `n4a-highcpu-16`/`-32` (ARM64) for parallel CPU
 work, 8 vCPU when the numbers must be comparable with earlier 8-vCPU baselines. Run the commands locally on small sizes first, then:
 
 ```
-scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-32 --max-vm-hours 1   # worst case about $0.29
-scripts/gcp/orchestrate.sh run  --job heavy --machines c3d-highcpu-32 --max-vm-hours 1 --approved-usd 0.29
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-30 --max-vm-hours 1   # worst case about $0.27
+scripts/gcp/orchestrate.sh run  --job heavy --machines c3d-highcpu-30 --max-vm-hours 1 --approved-usd 0.27
 ```
 
 ## `settle.sh`: timed blocks start on a quiet machine (2026-11-05)
