@@ -249,3 +249,41 @@ TMPDIR stayed on disk under the home directory. One-at-a-time checks: Python syn
 The final process-wait fix was demonstrated by the local alternating sleeper control, not remeasured on GCP. Deferred evidence is explicitly open, so part 4 does not authorize Nata implementation/timing or imply an accepted freeze. No push or merge.
 
 Final committed-tool content hash (`scripts/code-tree.sh`, before commit): `877e60f511cdf786b9f7ff4dc0978a53dbc5aa8433327eaf6bcdc2c84dc7f045`. This differs from the measured hashes for the disclosed offline reducer/tests/docs and unmeasured wait fix.
+
+
+## Corrected streaming reference (run `wcap-*-1107-r3`, 2026-11-07, added by the parent)
+
+The two permitted attempts above measured psql, the Rust raw-protocol client and pgjdbc through a harness whose child wait polled in steps up to
+50 ms. The harness was fixed (`scripts/wirecapture/capture.py`, `run()`), and **one new run with the fixed harness** was made on both CPU types.
+Same fixtures, settled, 5 alternating rounds with a twin. Compute $0.009 (ARM64) and $0.007 (x86-64); `orchestrate.sh status` showed nothing
+left after each run. Raw: `raw/20261107-wire-catalog-r3/`. PostgreSQL 15.19, 1M BIGINT rows, medians in seconds:
+
+| CPU | workers | client | primary | twin |
+|---|---:|---|---:|---:|
+| arm (n4a-highcpu-8) | 1 | adbc-copy | 0.2011 | 0.2012 |
+| arm (n4a-highcpu-8) | 1 | jdbc-fetch1000 | 0.3225 | 0.3208 |
+| arm (n4a-highcpu-8) | 1 | psql | 0.1672 | 0.1674 |
+| arm (n4a-highcpu-8) | 1 | psycopg | 0.4796 | 0.4793 |
+| arm (n4a-highcpu-8) | 1 | raw-binary | 0.1081 | 0.1083 |
+| arm (n4a-highcpu-8) | 1 | raw-text | 0.1036 | 0.1030 |
+| arm (n4a-highcpu-8) | 8 | adbc-copy | 0.2016 | 0.1989 |
+| arm (n4a-highcpu-8) | 8 | jdbc-fetch1000 | 0.3265 | 0.3235 |
+| arm (n4a-highcpu-8) | 8 | psql | 0.1611 | 0.1608 |
+| arm (n4a-highcpu-8) | 8 | psycopg | 0.4756 | 0.4761 |
+| arm (n4a-highcpu-8) | 8 | raw-binary | 0.0995 | 0.0991 |
+| arm (n4a-highcpu-8) | 8 | raw-text | 0.0950 | 0.0948 |
+| x86 (c3d-highcpu-8) | 1 | adbc-copy | 0.2417 | 0.2407 |
+| x86 (c3d-highcpu-8) | 1 | jdbc-fetch1000 | 0.4057 | 0.4221 |
+| x86 (c3d-highcpu-8) | 1 | psql | 0.1833 | 0.1831 |
+| x86 (c3d-highcpu-8) | 1 | psycopg | 0.4503 | 0.4501 |
+| x86 (c3d-highcpu-8) | 1 | raw-binary | 0.1195 | 0.1200 |
+| x86 (c3d-highcpu-8) | 1 | raw-text | 0.1202 | 0.1206 |
+| x86 (c3d-highcpu-8) | 8 | adbc-copy | 0.2407 | 0.2398 |
+| x86 (c3d-highcpu-8) | 8 | jdbc-fetch1000 | 0.3934 | 0.3888 |
+| x86 (c3d-highcpu-8) | 8 | psql | 0.1762 | 0.1768 |
+| x86 (c3d-highcpu-8) | 8 | psycopg | 0.4509 | 0.4484 |
+| x86 (c3d-highcpu-8) | 8 | raw-binary | 0.1123 | 0.1127 |
+| x86 (c3d-highcpu-8) | 8 | raw-text | 0.1134 | 0.1133 |
+
+Every twin is within about 1-4% of its primary, so these cells are valid references. Card 0007's streaming target (≤1.10x PostgreSQL with the
+same client) is now frozen for all six clients on both CPU types.
