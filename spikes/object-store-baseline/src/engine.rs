@@ -114,10 +114,12 @@ pub fn full_sum(a: &dyn Array) -> Result<(i128, u8), String> {
         DataType::Int64 | DataType::Int32 | DataType::Int16 => Ok((as_i64(a)?.iter().flatten().map(|v| v as i128).sum(), 0)),
         DataType::Decimal128(_, sc) => Ok((a.as_any().downcast_ref::<Decimal128Array>().ok_or("decimal")?.iter().flatten().sum(), *sc as u8)),
         DataType::Date32 => Ok((a.as_any().downcast_ref::<Date32Array>().ok_or("date")?.iter().flatten().map(|v| v as i128).sum(), 0)),
-        _ => {
+        DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View | DataType::Dictionary(_, _) => {
             let c = arrow::compute::cast(a, &DataType::Utf8).map_err(|e| e.to_string())?;
             Ok((c.as_string::<i32>().iter().flatten().map(|s| s.len() as i128).sum(), 0))
         }
+        // a type the `full` query does not define must be an error, never a silently different number
+        other => Err(format!("the full query has no sum for {other}")),
     }
 }
 

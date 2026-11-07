@@ -42,6 +42,10 @@ fi
 if [ "$MODE" = trial ]; then SF_A=0.1; SF_B=0.2; K_A=trial; else SF_A=1; SF_B=10; K_A=sf1; fi
 ROUNDS=${NATA_OSB_ROUNDS:-5}
 step=${1:?usage: run-reference.sh <step>}
+# a 5,000-row object with the TPC-H column types (BIGINT, DECIMAL(15,2), DATE, VARCHAR): the preflight must read what the real layouts hold
+make_tiny() {
+  duckdb -c "COPY (SELECT range::BIGINT AS l_orderkey, (range % 200)::BIGINT AS l_partkey, (range % 100)::BIGINT AS l_suppkey, (1 + range % 7)::BIGINT AS l_linenumber, CAST(1 + range % 50 AS DECIMAL(15,2)) AS l_quantity, CAST(range * 1.25 AS DECIMAL(15,2)) AS l_extendedprice, CAST((range % 10) / 100.0 AS DECIMAL(15,2)) AS l_discount, CAST((range % 8) / 100.0 AS DECIMAL(15,2)) AS l_tax, 'R' AS l_returnflag, 'O' AS l_linestatus, DATE '2020-01-01' + CAST(range % 300 AS INTEGER) AS l_shipdate, DATE '2020-02-01' + CAST(range % 200 AS INTEGER) AS l_commitdate, DATE '2020-03-01' + CAST(range % 100 AS INTEGER) AS l_receiptdate, 'DELIVER IN PERSON' AS l_shipinstruct, 'TRUCK' AS l_shipmode, 'comment ' || range::VARCHAR AS l_comment FROM range(5000)) TO '$1' (FORMAT parquet, ROW_GROUP_SIZE 1000)" > /dev/null
+}
 machine() { { date -u +%FT%TZ; uname -srm; nproc; lscpu | grep -E 'Model name|Architecture'; free -m | head -2; echo "ulimit -n: $(ulimit -n)"; duckdb --version 2>/dev/null; } > "$OUT/machine-$step.txt" 2>&1; }
 
 case "$step" in
@@ -54,17 +58,26 @@ case "$step" in
     for t in faults cache hostile-all mutants; do
       echo "== osb $t"; "$OSB" $t > "$OUT/tests-$t.txt" 2>&1; echo "exit $?" | tee -a "$OUT/tests-$t.txt"; tail -3 "$OUT/tests-$t.txt"
     done ;;
+  make-tiny) make_tiny "${2:?path}" ;;   # used by the local trial of the preflight
   preflight)
-    [ "$MODE" = gcs ] || { echo "trial: no preflight"; exit 0; }
     machine
     T=$DATA/pre; rm -rf "$T"; mkdir -p "$T/sf0/tiny"
-    duckdb -c "COPY (SELECT range::BIGINT AS l_orderkey, range::BIGINT AS l_partkey, range::BIGINT AS l_suppkey, 1::BIGINT AS l_linenumber, 1.5::DOUBLE AS l_quantity, 2.5::DOUBLE AS l_extendedprice, 0.1::DOUBLE AS l_discount, 0.1::DOUBLE AS l_tax, 'R' AS l_returnflag, 'O' AS l_linestatus, DATE '2020-01-01' AS l_shipdate, DATE '2020-01-02' AS l_commitdate, DATE '2020-01-03' AS l_receiptdate, 'x' AS l_shipinstruct, 'y' AS l_shipmode, 'z' AS l_comment FROM range(5000)) TO '$T/sf0/tiny/part-0000.parquet' (FORMAT parquet)" > /dev/null
+    make_tiny "$T/sf0/tiny/part-0000.parquet"
     ORIG_PREFIX=$NATA_OBJ_PREFIX; export NATA_OBJ_PREFIX="$ORIG_PREFIX/preflight"
-    "$OSB" upload --dir "$T" || { echo "PREFLIGHT FAILED: upload"; exit 4; }
+    SERVE_PID=""
+    if [ "$MODE" = gcs ]; then
+      "$OSB" upload --dir "$T" || { echo "PREFLIGHT FAILED: upload"; exit 4; }
+    else   # trial: the same bench lines against a throwaway fake endpoint serving the tiny object
+      rm -rf "$T/root"; mkdir -p "$T/root/$NATA_OBJ_PREFIX"; cp -r "$T/sf0" "$T/root/$NATA_OBJ_PREFIX/"
+      "$OSB" serve --dir "$T/root" --bucket "$NATA_OBJ_BUCKET" --port-file "$T/port" > /dev/null 2>&1 & SERVE_PID=$!
+      for _ in $(seq 1 50); do [ -s "$T/port" ] && break; sleep 0.1; done
+      export NATA_OBJ_ENDPOINT=$(cat "$T/port")
+    fi
     "$OSB" expected --name sf0 --sf 0.001 --glob "$T/sf0/tiny/part-0000.parquet" --out "$T/expected.txt" > /dev/null || exit 4
-    NATA_SF_OVERRIDE=0.001 "$OSB" bench --cells 'sf0/tiny:1' --queries full,proj,sel,meta --arms duck,wrap --rounds 1 --workers 2 --expected "$T/expected.txt" --out "$OUT/preflight.csv" 2>&1 | tee "$OUT/preflight.txt"
+    NATA_SF_OVERRIDE=0.001 "$OSB" bench --cells 'sf0/tiny:1' --queries full,proj,sel,meta --arms duck,ctl,wrap,wrapT --rounds 1 --workers 2 --expected "$T/expected.txt" --out "$OUT/preflight.csv" 2>&1 | tee "$OUT/preflight.txt"
     RC=${PIPESTATUS[0]}
-    "$OSB" delete; export NATA_OBJ_PREFIX=$ORIG_PREFIX
+    if [ "$MODE" = gcs ]; then "$OSB" delete; else kill "$SERVE_PID" 2>/dev/null; fi
+    export NATA_OBJ_PREFIX=$ORIG_PREFIX
     if [ "$RC" -eq 0 ] && ! awk -F, 'NR>1 && $6==0' "$OUT/preflight.csv" | grep -q .; then touch "$DATA/preflight.ok"; echo "PREFLIGHT OK"; else echo "PREFLIGHT FAILED (rc $RC): see preflight.csv"; exit 4; fi ;;
   data)
     machine
