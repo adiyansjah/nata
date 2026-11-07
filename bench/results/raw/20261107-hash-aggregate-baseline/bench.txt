@@ -1,0 +1,86 @@
+local, indicative only; warm page cache; buffered writes, no fsync; seed=5 rows=1024 rounds=7
+spill,0,Ipc,bytes=121320,write_ms=0.1025,read_ms=0.1303,write_MiBs=1128.78,read_MiBs=888.02
+spill,0,RecordControl,bytes=127707,write_ms=0.0822,read_ms=0.0696,write_MiBs=1482.22,read_MiBs=1749.37
+spill,0,Ipc,bytes=121320,write_ms=0.1124,read_ms=0.1781,write_MiBs=1029.12,read_MiBs=649.50
+spill,1,Ipc,bytes=121320,write_ms=0.0825,read_ms=0.1158,write_MiBs=1403.12,read_MiBs=999.43
+spill,1,RecordControl,bytes=127707,write_ms=0.0632,read_ms=0.0497,write_MiBs=1927.80,read_MiBs=2448.35
+spill,1,Ipc,bytes=121320,write_ms=0.0844,read_ms=0.1105,write_MiBs=1370.33,read_MiBs=1046.74
+spill,2,Ipc,bytes=121320,write_ms=0.0798,read_ms=0.1124,write_MiBs=1449.62,read_MiBs=1029.75
+spill,2,RecordControl,bytes=127707,write_ms=0.0494,read_ms=0.0389,write_MiBs=2465.40,read_MiBs=3130.39
+spill,2,Ipc,bytes=121320,write_ms=0.0715,read_ms=0.1687,write_MiBs=1618.93,read_MiBs=685.96
+spill,3,Ipc,bytes=121320,write_ms=0.1155,read_ms=0.1555,write_MiBs=1001.89,read_MiBs=743.83
+spill,3,RecordControl,bytes=127707,write_ms=0.0872,read_ms=0.0588,write_MiBs=1397.17,read_MiBs=2069.83
+spill,3,Ipc,bytes=121320,write_ms=0.0771,read_ms=0.1402,write_MiBs=1500.63,read_MiBs=825.52
+spill,4,Ipc,bytes=121320,write_ms=0.1034,read_ms=0.1540,write_MiBs=1119.32,read_MiBs=751.49
+spill,4,RecordControl,bytes=127707,write_ms=0.0774,read_ms=0.0565,write_MiBs=1574.54,read_MiBs=2155.44
+spill,4,Ipc,bytes=121320,write_ms=0.0769,read_ms=0.1444,write_MiBs=1504.31,read_MiBs=801.37
+spill,5,Ipc,bytes=121320,write_ms=0.1143,read_ms=0.1643,write_MiBs=1012.67,read_MiBs=704.01
+spill,5,RecordControl,bytes=127707,write_ms=0.0820,read_ms=0.0584,write_MiBs=1484.82,read_MiBs=2083.85
+spill,5,Ipc,bytes=121320,write_ms=0.0775,read_ms=0.1431,write_MiBs=1492.42,read_MiBs=808.63
+spill,6,Ipc,bytes=121320,write_ms=0.1093,read_ms=0.1745,write_MiBs=1058.75,read_MiBs=663.22
+spill,6,RecordControl,bytes=127707,write_ms=0.0931,read_ms=0.0636,write_MiBs=1308.54,read_MiBs=1914.38
+spill,6,Ipc,bytes=121320,write_ms=0.0807,read_ms=0.1427,write_MiBs=1433.54,read_MiBs=810.85
+table,0,0,ms=2.8884,capacity=224
+table,0,1,ms=1.7143,capacity=224
+table,0,2,ms=1.8182,capacity=224
+table,0,3,ms=2.7870,capacity=224
+table,1,3,ms=2.7040,capacity=224
+table,1,2,ms=1.9269,capacity=224
+table,1,1,ms=1.7714,capacity=224
+table,1,0,ms=2.9015,capacity=224
+table,2,0,ms=2.8815,capacity=224
+table,2,1,ms=1.8215,capacity=224
+table,2,2,ms=1.8437,capacity=224
+table,2,3,ms=2.9292,capacity=224
+table,3,3,ms=2.8966,capacity=224
+table,3,2,ms=1.9924,capacity=224
+table,3,1,ms=1.8468,capacity=224
+table,3,0,ms=2.9151,capacity=224
+table,4,0,ms=2.8143,capacity=224
+table,4,1,ms=1.8057,capacity=224
+table,4,2,ms=1.8465,capacity=224
+table,4,3,ms=2.8458,capacity=224
+table,5,3,ms=2.8079,capacity=224
+table,5,2,ms=1.9177,capacity=224
+table,5,1,ms=1.7893,capacity=224
+table,5,0,ms=2.8762,capacity=224
+table,6,0,ms=2.8366,capacity=224
+table,6,1,ms=1.8395,capacity=224
+table,6,2,ms=1.8326,capacity=224
+table,6,3,ms=2.7946,capacity=224
+schedule,0,Fifo,affinity=false,twin=false,ms=2.2840,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,0,Deque,affinity=false,twin=false,ms=1.9894,Counters { claims: 64, local: 54, steals: 10, retries: 0, probes: 35, pins: 0 }
+schedule,0,Fifo,affinity=true,twin=false,ms=1.9857,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,0,Deque,affinity=true,twin=false,ms=1.9322,Counters { claims: 64, local: 55, steals: 9, retries: 0, probes: 41, pins: 4 }
+schedule,0,Fifo,affinity=false,twin=true,ms=1.7926,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,1,Fifo,affinity=false,twin=true,ms=1.7668,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,1,Deque,affinity=true,twin=false,ms=1.9626,Counters { claims: 64, local: 53, steals: 11, retries: 0, probes: 47, pins: 4 }
+schedule,1,Fifo,affinity=true,twin=false,ms=2.0205,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,1,Deque,affinity=false,twin=false,ms=1.7561,Counters { claims: 64, local: 54, steals: 10, retries: 0, probes: 43, pins: 0 }
+schedule,1,Fifo,affinity=false,twin=false,ms=1.9261,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,2,Fifo,affinity=false,twin=false,ms=1.7221,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,2,Deque,affinity=false,twin=false,ms=1.6173,Counters { claims: 64, local: 54, steals: 10, retries: 0, probes: 37, pins: 0 }
+schedule,2,Fifo,affinity=true,twin=false,ms=2.0429,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,2,Deque,affinity=true,twin=false,ms=2.0147,Counters { claims: 64, local: 63, steals: 1, retries: 0, probes: 17, pins: 4 }
+schedule,2,Fifo,affinity=false,twin=true,ms=1.5656,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,3,Fifo,affinity=false,twin=true,ms=2.0792,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,3,Deque,affinity=true,twin=false,ms=1.9756,Counters { claims: 64, local: 64, steals: 0, retries: 0, probes: 16, pins: 4 }
+schedule,3,Fifo,affinity=true,twin=false,ms=1.7396,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,3,Deque,affinity=false,twin=false,ms=2.0249,Counters { claims: 64, local: 63, steals: 1, retries: 0, probes: 17, pins: 0 }
+schedule,3,Fifo,affinity=false,twin=false,ms=1.7557,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,4,Fifo,affinity=false,twin=false,ms=1.7952,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,4,Deque,affinity=false,twin=false,ms=2.0146,Counters { claims: 64, local: 64, steals: 0, retries: 0, probes: 16, pins: 0 }
+schedule,4,Fifo,affinity=true,twin=false,ms=1.6786,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,4,Deque,affinity=true,twin=false,ms=1.5602,Counters { claims: 64, local: 55, steals: 9, retries: 0, probes: 37, pins: 4 }
+schedule,4,Fifo,affinity=false,twin=true,ms=1.9454,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,5,Fifo,affinity=false,twin=true,ms=1.4524,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,5,Deque,affinity=true,twin=false,ms=1.5389,Counters { claims: 64, local: 52, steals: 12, retries: 0, probes: 46, pins: 4 }
+schedule,5,Fifo,affinity=true,twin=false,ms=1.5738,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,5,Deque,affinity=false,twin=false,ms=1.7085,Counters { claims: 64, local: 59, steals: 5, retries: 0, probes: 26, pins: 0 }
+schedule,5,Fifo,affinity=false,twin=false,ms=1.7272,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,6,Fifo,affinity=false,twin=false,ms=1.9314,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+schedule,6,Deque,affinity=false,twin=false,ms=1.5257,Counters { claims: 64, local: 51, steals: 13, retries: 0, probes: 46, pins: 0 }
+schedule,6,Fifo,affinity=true,twin=false,ms=4.1590,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 4 }
+schedule,6,Deque,affinity=true,twin=false,ms=1.6412,Counters { claims: 64, local: 54, steals: 10, retries: 0, probes: 35, pins: 4 }
+schedule,6,Fifo,affinity=false,twin=true,ms=1.9041,Counters { claims: 64, local: 0, steals: 0, retries: 0, probes: 0, pins: 0 }
+max_rss_kib=8116

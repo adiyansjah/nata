@@ -1,0 +1,32 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (spikes/agg-baseline/target/debug/deps/agg_baseline-3e449758cb00c8ac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (spikes/agg-baseline/target/debug/deps/agg_baseline-0ec6917bb62dc3b0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/grants.rs (spikes/agg-baseline/target/debug/deps/grants-4c04f8447c0d2113)
+
+running 1 test
+test single_worker_requeues_instead_of_waiting ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/spill.rs (spikes/agg-baseline/target/debug/deps/spill-d6a42fcfdde04d98)
+
+running 4 tests
+test damaged_files ... damaged_cases=352 all rejected; largest_decode_allocation=18448
+ok
+test identical_scheduler_work ... ok
+test seeded_exact_roundtrips ... ok
+test table_fit_and_reuse ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+max_rss_kib=40900

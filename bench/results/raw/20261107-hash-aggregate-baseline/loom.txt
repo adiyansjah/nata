@@ -1,0 +1,7 @@
+release_before_during_after_park PASS rc=0 executions=30 bound=2
+cancel_drop_races PASS rc=0 executions=53 bound=2
+competing_grants PASS rc=0 executions=15 bound=2
+one_worker_requeues PASS rc=0 executions=1 bound=2
+mutant_cap_removed CAUGHT rc=101 matched=grant cap exceeded
+mutant_wake_dropped CAUGHT rc=101 matched=deadlock
+mutant_release_twice CAUGHT rc=101 matched=double release

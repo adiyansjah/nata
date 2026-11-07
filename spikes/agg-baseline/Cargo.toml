@@ -1,0 +1,32 @@
+[package]
+name = "agg-baseline"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Isolated throwaway experiment; no workspace dependency changes.
+[workspace]
+
+[target.'cfg(not(nata_loom))'.dependencies]
+arrow = { version = "=60.1.0", default-features = false, features = ["ipc"] }
+hashbrown = "=0.17.1"
+crossbeam-deque = "0.8"
+core_affinity = "0.8"
+crc32fast = "1"
+
+[target.'cfg(nata_loom)'.dependencies]
+loom = "0.7"
+
+[target.'cfg(not(nata_loom))'.dev-dependencies]
+proptest = "1"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+
+[profile.release]
+overflow-checks = true
+[profile.release.package."*"]
+overflow-checks = false
+[profile.test.package."*"]
+overflow-checks = false
+opt-level = 2
