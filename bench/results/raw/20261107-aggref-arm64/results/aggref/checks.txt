@@ -1,0 +1,200 @@
+SF1 t1 q1 4GiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t1 q1 64MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t1 q1 256MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t1 having 4GiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t1 having 64MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t1 having 256MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t1 agg_orderkey 4GiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t1 agg_orderkey 64MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t1 agg_orderkey 256MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t1 agg_partkey 4GiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t1 agg_partkey 64MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t1 agg_partkey 256MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t4 q1 4GiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t4 q1 64MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t4 q1 256MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t4 having 4GiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t4 having 64MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t4 having 256MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t4 agg_orderkey 4GiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t4 agg_orderkey 64MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t4 agg_orderkey 256MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t4 agg_partkey 4GiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t4 agg_partkey 64MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t4 agg_partkey 256MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t8 q1 4GiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t8 q1 64MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t8 q1 256MiB: count_star(),sum(hash(t))
+4,30981914425282623363
+SF1 t8 having 4GiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t8 having 64MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t8 having 256MiB: count_star(),sum(hash(t))
+1273748,11738517301455191138212129
+SF1 t8 agg_orderkey 4GiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t8 agg_orderkey 64MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t8 agg_orderkey 256MiB: count_star(),sum(hash(t))
+1493405,13762589101364375295547103
+SF1 t8 agg_partkey 4GiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t8 agg_partkey 64MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF1 t8 agg_partkey 256MiB: count_star(),sum(hash(t))
+200000,1847016455402188731964915
+SF10 t1 q1 4GiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t1 q1 64MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t1 q1 256MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t1 having 4GiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t1 having 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (60.2 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t1 having 256MiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t1 agg_orderkey 4GiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t1 agg_orderkey 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (60.1 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t1 agg_orderkey 256MiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t1 agg_partkey 4GiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t1 agg_partkey 64MiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t1 agg_partkey 256MiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t4 q1 4GiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t4 q1 64MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t4 q1 256MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t4 having 4GiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t4 having 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (61.8 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t4 having 256MiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t4 agg_orderkey 4GiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t4 agg_orderkey 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (61.5 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t4 agg_orderkey 256MiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t4 agg_partkey 4GiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t4 agg_partkey 64MiB: count_star(),sum(hash(t)) Out of Memory Error: could not allocate block of size 256.0 KiB (65.1 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t4 agg_partkey 256MiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t8 q1 4GiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t8 q1 64MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t8 q1 256MiB: count_star(),sum(hash(t))
+4,30389490698997778731
+SF10 t8 having 4GiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t8 having 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (63.2 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t8 having 256MiB: count_star(),sum(hash(t))
+12736175,117462293027363359943240755
+SF10 t8 agg_orderkey 4GiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t8 agg_orderkey 64MiB: count_star(),sum(hash(t)) Out of Memory Error: failed to allocate data of size 16.0 MiB (63.1 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t8 agg_orderkey 256MiB: count_star(),sum(hash(t))
+14934546,137747178901730379108059886
+SF10 t8 agg_partkey 4GiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025
+SF10 t8 agg_partkey 64MiB: count_star(),sum(hash(t)) Out of Memory Error: could not allocate block of size 256.0 KiB (64.2 MiB/64.0 MiB used)
+
+Possible solutions:
+* Reducing the number of threads (SET threads=X)
+* Disabling insertion-order preservation (SET preserve_insertion_order=false)
+* Increasing the memory limit (SET memory_limit='...GB')
+
+See also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads
+hint: -agent renders errors as JSON and results compactly for AI coding agents (duckdb -help lists all options)
+SF10 t8 agg_partkey 256MiB: count_star(),sum(hash(t))
+2000000,18445110595547939879062025

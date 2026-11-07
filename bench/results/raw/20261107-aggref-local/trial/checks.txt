@@ -1,0 +1,24 @@
+SF0.01 t1 q1 4GiB: count_star(),sum(hash(t))
+4,48137661976610516321
+SF0.01 t1 q1 64MiB: count_star(),sum(hash(t))
+4,48137661976610516321
+SF0.01 t1 q1 256MiB: count_star(),sum(hash(t))
+4,48137661976610516321
+SF0.01 t1 having 4GiB: count_star(),sum(hash(t))
+12758,116721938510896250052868
+SF0.01 t1 having 64MiB: count_star(),sum(hash(t))
+12758,116721938510896250052868
+SF0.01 t1 having 256MiB: count_star(),sum(hash(t))
+12758,116721938510896250052868
+SF0.01 t1 agg_orderkey 4GiB: count_star(),sum(hash(t))
+14925,136706445527151935485002
+SF0.01 t1 agg_orderkey 64MiB: count_star(),sum(hash(t))
+14925,136706445527151935485002
+SF0.01 t1 agg_orderkey 256MiB: count_star(),sum(hash(t))
+14925,136706445527151935485002
+SF0.01 t1 agg_partkey 4GiB: count_star(),sum(hash(t))
+2000,18623966782131809464753
+SF0.01 t1 agg_partkey 64MiB: count_star(),sum(hash(t))
+2000,18623966782131809464753
+SF0.01 t1 agg_partkey 256MiB: count_star(),sum(hash(t))
+2000,18623966782131809464753

@@ -1,0 +1,6 @@
+{
+  "q1": "SELECT l_returnflag, l_linestatus,\n sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,\n avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price,\n avg(l_discount) AS avg_disc, count(*) AS count_order\n FROM lineitem WHERE l_shipdate <= DATE '1998-09-02'\n GROUP BY l_returnflag, l_linestatus",
+  "having": "SELECT l_orderkey, count(*) AS n, sum(l_extendedprice) AS price,\n sum(l_extendedprice * (1 - l_discount)) AS net\n FROM lineitem WHERE l_shipdate <= DATE '1998-09-02'\n GROUP BY l_orderkey HAVING count(*) > 1",
+  "agg_orderkey": "SELECT l_orderkey, count(*), sum(l_extendedprice), sum(l_extendedprice * (1 - l_discount)) FROM lineitem WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_orderkey",
+  "agg_partkey": "SELECT l_partkey, count(*), sum(l_quantity), sum(l_extendedprice * (1 - l_discount)) FROM lineitem WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_partkey"
+}
