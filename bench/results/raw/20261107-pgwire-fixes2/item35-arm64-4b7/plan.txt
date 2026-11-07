@@ -1,0 +1,27 @@
+Run item35-arm64-4b7  (job: item35)       -- this is a plan; nothing has been called or created --
+
+Machines, tried in this order:  n4a-highcpu-8   (disk class: hyperdisk-balanced, image family: debian-12-arm64)
+Zones:       us-central1-a   (the data disk is zonal; the zone is chosen once, before any work exists)
+Provisioning: Spot, termination action DELETE, no service account, no scopes
+Limits:      at most 1.5 VM-hours in total over all VMs; at most 3 preemptions;
+             each VM also carries its own --max-run-duration, so it deletes itself even if this script dies
+Disks:       20 GB boot (deleted with the VM) + 30 GB data (kept until the end of the run)
+Peers:       0 more VM(s) of the same machine type, boot disk only, same zone, same label (the driver reaches them over the private network)
+
+Worst-case cost (prices.env, dearest machine of the chain for all VM-hours): $0.191
+If this script died with the VM already gone, only the data disk would remain: about $0.080 per day.
+
+Commands, in order (labels: nata-run=item35-arm64-4b7 on everything):
+  1. gcloud compute project-info describe            (read-only: refuse if OS Login is enabled)
+  2. gcloud compute disks create item35-arm64-4b7-work --zone <zone> --size 30GB --type hyperdisk-balanced --labels nata-run=item35-arm64-4b7
+  3. gcloud compute instances create item35-arm64-4b7-vm<N> --zone <zone> --machine-type <each machine in turn>
+        --provisioning-model SPOT --instance-termination-action DELETE --max-run-duration <remaining seconds>
+        --image-family debian-12-arm64 --boot-disk-size 20GB --boot-disk-type hyperdisk-balanced
+        --disk name=item35-arm64-4b7-work,device-name=work,mode=rw,boot=no,auto-delete=no --labels nata-run=item35-arm64-4b7
+        --no-service-account --no-scopes --metadata block-project-ssh-keys=TRUE
+        --metadata-from-file startup-script=vm-startup.sh,ssh-keys=<throwaway key made for this run>
+  VM identity: none (--no-service-account --no-scopes)
+  4. repeat 3 on the same data disk after each preemption; copy state/results/logs back every 120s over ssh
+  5. on every way out: delete all instances and disks labelled nata-run=item35-arm64-4b7, then list them to prove they are gone
+
+To run it:  scripts/gcp/orchestrate.sh run --job item35 --approved-usd <at least 0.191>

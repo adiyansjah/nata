@@ -16,7 +16,7 @@ fn recorded_simple_error_empty_types_nulls_and_terminate() {
             Some("-32768".into()),
             Some(i32::MIN.to_string()),
             Some(i64::MIN.to_string()),
-            Some("-0.0".into()),
+            Some("-0".into()),
             Some("NaN".into()),
             Some("123.450".into()),
             Some("".into()),
@@ -917,4 +917,198 @@ fn cancel_inside_a_wide_row_closes_instead_of_appending_an_error() {
     );
     wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
     std::fs::remove_file(path).expect("remove");
+}
+
+#[test]
+fn copy_binary_framing_types_nulls_extended_and_refusals() {
+    let s = Server::start(3);
+    let mut c = s.client();
+    let query = format!("SELECT * FROM '{}'", fixture());
+    // Obtain independently asserted binary fields via the ordinary binary path.
+    c.parse(&query, &[]);
+    c.bind(&[], 0, 1);
+    c.execute(0);
+    let binary = c.sync();
+    let mut expected = b"PGCOPY\n\xff\r\n\0\0\0\0\0\0\0\0\0".to_vec();
+    for (_, row) in binary.iter().filter(|m| m.0 == b'D') {
+        expected.extend(row);
+    }
+    expected.extend((-1i16).to_be_bytes());
+    for option in ["(FORMAT binary)", "WITH (format 'binary')"] {
+        let q = format!("COPY ({query}) TO STDOUT {option}");
+        let simple = c.query(&q);
+        assert_eq!(tags(&simple), b"HddddcCZ");
+        assert_eq!(simple[0].1, [vec![1, 0, 10], [0, 1].repeat(10)].concat());
+        let stream: Vec<_> = simple
+            .iter()
+            .filter(|m| m.0 == b'd')
+            .flat_map(|m| m.1.clone())
+            .collect();
+        assert_eq!(stream, expected);
+        assert_eq!(simple[simple.len() - 2].1, b"COPY 3\0");
+        c.parse(&q, &[]);
+        c.frame(b'D', b"S\0");
+        c.bind(&[], 0, 0);
+        c.frame(b'D', b"P\0");
+        c.execute(1);
+        let extended = c.sync();
+        assert_eq!(tags(&extended), b"1tn2nHddddcCZ");
+        let stream: Vec<_> = extended
+            .iter()
+            .filter(|m| m.0 == b'd')
+            .flat_map(|m| m.1.clone())
+            .collect();
+        assert_eq!(stream, expected);
+    }
+    // Exact canonical negative fraction and NULL representations, not only decode equivalence.
+    let q = format!(
+        "COPY (SELECT n, dt FROM '{}' ) TO STDOUT (FORMAT binary)",
+        fixture()
+    );
+    let r = c.query(&q);
+    let data: Vec<_> = r
+        .iter()
+        .filter(|m| m.0 == b'd')
+        .flat_map(|m| m.1.clone())
+        .collect();
+    assert!(
+        data.windows(10)
+            .any(|v| v == [0, 1, 255, 255, 64, 0, 0, 3, 0, 10])
+    );
+    assert!(
+        data.windows(10)
+            .any(|v| v == [0, 2, 255, 255, 255, 255, 255, 255, 255, 255])
+    );
+    for bad in [
+        format!("COPY ({query}) TO STDOUT (FORMAT csv)"),
+        format!("COPY ({query}) TO STDOUT"),
+        format!("COPY ({query}) TO '/file' (FORMAT binary)"),
+        "COPY t FROM STDIN (FORMAT binary)".into(),
+        format!("COPY ({query}; SELECT 1) TO STDOUT (FORMAT binary)"),
+        format!("COPY ({query}) TO STDOUT (FORMAT binary, HEADER true)"),
+    ] {
+        assert_code(&c.query(&bad), "0A000");
+        c.parse(&bad, &[]);
+        assert_code(&c.sync(), "0A000");
+    }
+    let err = c.query(&format!(
+        "COPY (SELECT nope FROM '{}') TO STDOUT (FORMAT binary)",
+        fixture()
+    ));
+    assert_code(&err, "42703");
+    assert_eq!(error_field(&err[0].1, b'P'), Some("14"));
+    let empty = c.query(&format!(
+        "COPY (SELECT i FROM '{}' LIMIT 0) TO STDOUT (FORMAT binary)",
+        fixture()
+    ));
+    assert_eq!(tags(&empty), b"HdcCZ");
+}
+
+#[test]
+fn copy_shares_bounded_backpressure_cancel_disconnect_and_timeout() {
+    let s = Server::start(4);
+    let mut slow = s.client();
+    let mut healthy = s.client();
+    slow.send_query(&format!(
+        "COPY (SELECT s FROM '{}') TO STDOUT (FORMAT binary)",
+        large()
+    ));
+    assert_eq!(read(&mut slow.socket).0, b'H');
+    wait_until(|| s.metrics.rows_produced.load(Ordering::SeqCst) > 32);
+    std::thread::sleep(Duration::from_millis(300));
+    let first = s.metrics.rows_produced.load(Ordering::SeqCst);
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(first, s.metrics.rows_produced.load(Ordering::SeqCst));
+    assert!(first < 20000);
+    assert_eq!(
+        values(&healthy.query("SELECT 1")),
+        vec![vec![Some("1".into())]]
+    );
+    cancel(&s, slow.key);
+    assert_code(&slow.result(), "57014");
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    slow.send_query(&format!(
+        "COPY (SELECT s FROM '{}') TO STDOUT (FORMAT binary)",
+        large()
+    ));
+    assert_eq!(read(&mut slow.socket).0, b'H');
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) > 0);
+    drop(slow);
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert!(s.metrics.max_buffer_bytes.load(Ordering::SeqCst) <= 65536);
+    let mut stalled = s.client();
+    stalled.send_query(&format!(
+        "COPY (SELECT s FROM '{}') TO STDOUT (FORMAT binary)",
+        large()
+    ));
+    assert_eq!(read(&mut stalled.socket).0, b'H');
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) > 0);
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert!(s.metrics.rows_produced.load(Ordering::SeqCst) < 60000);
+}
+
+#[test]
+fn postgres_float_text_boundaries_and_legacy_setting_refusal() {
+    let s = Server::start(2);
+    let mut c = s.client();
+    for (ty, x, expected) in [
+        ("DOUBLE", "1.0", "1"),
+        ("DOUBLE", "1e15", "1e+15"),
+        ("DOUBLE", "1e23", "9.999999999999999e+22"),
+        ("DOUBLE", "1e14", "100000000000000"),
+        ("DOUBLE", "1e-4", "0.0001"),
+        ("DOUBLE", "1e-5", "1e-05"),
+    ] {
+        let q = format!("SELECT CAST({x} AS {ty}) FROM '{}' LIMIT 1", fixture());
+        assert_eq!(
+            values(&c.query(&q)),
+            vec![vec![Some(expected.into())]],
+            "{q}"
+        );
+    }
+    let path = std::env::temp_dir().join(format!("nata-float-{}.parquet", std::process::id()));
+    let batch = RecordBatch::try_from_iter([(
+        "v",
+        Arc::new(Float32Array::from(vec![
+            1e6,
+            1e5,
+            1e-4,
+            1e-5,
+            -0.0,
+            f32::from_bits(1),
+            f32::MAX,
+        ])) as ArrayRef,
+    )])
+    .expect("batch");
+    let mut writer = parquet::arrow::ArrowWriter::try_new(
+        std::fs::File::create(&path).expect("file"),
+        batch.schema(),
+        None,
+    )
+    .expect("writer");
+    writer.write(&batch).expect("write");
+    writer.close().expect("close");
+    assert_eq!(
+        values(&c.query(&format!("SELECT v FROM '{}'", path.display()))),
+        [
+            "1e+06",
+            "100000",
+            "0.0001",
+            "1e-05",
+            "-0",
+            "1e-45",
+            "3.4028235e+38"
+        ]
+        .map(|s| vec![Some(s.into())])
+    );
+    std::fs::remove_file(path).expect("remove");
+    for n in [-15, -1, 0] {
+        assert_code(&c.query(&format!("SET extra_float_digits = {n}")), "0A000");
+    }
+    for n in [1, 2, 3] {
+        assert_eq!(
+            tags(&c.query(&format!("SET extra_float_digits = {n}"))),
+            b"CZ"
+        );
+    }
 }

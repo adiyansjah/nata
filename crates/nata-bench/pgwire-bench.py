@@ -123,6 +123,8 @@ def main():
         assert r['rows']==1000000 and r['bytes']>10_000_000
         return r
     pgverified=rust(pgport,pgq,True)
+    copyq=f'COPY ({q}) TO STDOUT (FORMAT binary)'
+    pgcopyq=f'COPY ({pgq}) TO STDOUT (FORMAT binary)'
     samples = []
     def settle(label):
         with (out/'settle.txt').open('a') as log:
@@ -143,14 +145,20 @@ def main():
             psql=['psql','-X','-h','127.0.0.1','-p',str(server.port),'-U','test','-d','nata','--csv','-c',q]
             assert sp.check_output(psql)==cli
             verified=rust(server.port,q,True);assert verified['bytes']==pgverified['bytes']
+            copyverified=rust(server.port,copyq,True)
+            assert copyverified['bytes']==rust(pgport,pgcopyq,True)['bytes']
             c.query(q) # warm all arms
             rust(pgport,pgq)
             settle(f'stream-{threads}')
             for round_ in range(5):
-                arms=['cli','raw','python-raw','psql','postgres-raw','postgres-psql','cli-twin','raw-twin','python-raw-twin','psql-twin','postgres-raw-twin','postgres-psql-twin']
+                arms=['copy','postgres-copy','copy-twin','postgres-copy-twin','cli','raw','python-raw','psql','postgres-raw','postgres-psql','cli-twin','raw-twin','python-raw-twin','psql-twin','postgres-raw-twin','postgres-psql-twin']
                 if round_%2: arms.reverse()
                 for arm in arms:
-                    if arm.startswith('python-raw'):
+                    if arm.startswith('copy'):
+                        fn=lambda:rust(server.port,copyq)
+                    elif arm.startswith('postgres-copy'):
+                        fn=lambda:rust(pgport,pgcopyq)
+                    elif arm.startswith('python-raw'):
                         def fn():
                             r=c.query(q)
                             scans=re.findall(r'scan_end_us=(\d+)',Path(server.log.name).read_text())

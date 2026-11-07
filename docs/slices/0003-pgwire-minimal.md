@@ -155,3 +155,41 @@ partial-wide-row cancellation guard closes unfinished frames instead of appendin
 an error; its known-bad mutant is caught on both tested architectures. Both final
 20% regression twins pass and planted controls fail. PostgreSQL is the local
 reference only, never a replacement for the fixed CLI denominator.
+
+
+### Re-close amendment, 2026-11-07 (second reopened fix)
+
+**Re-closed with the measured deviations below, 2026-11-07.**
+
+[Second fix evidence](../../bench/results/20261107-pgwire-fixes2.md) records the
+narrow read-only COPY binary wrapper, default ADBC Arrow fetch and the independent
+PostgreSQL byte oracle (R18), plus PostgreSQL float text layout, rounding endpoints
+and ties with a seeded float4/float8 oracle (R21). The DataRow byte bridge,
+admission, deadline, cancellation and framing guard carry COPY too. Extra float
+digits below 1 now return an explicit unsupported error. CLI CSV stays unchanged.
+ADR 0008's dated amendment records the scope, alternatives and limits. Both-CPU
+item35, COPY benchmark arms and ARM64 reliability/mutations (60/60 valid mutants
+CAUGHT, 2,000 lifecycle / 10,000 hostile cases PASS) are in that record,
+along with aborted attempts, costs and explicit cleanup.
+
+**Remaining deviations:** literal text equality to CLI remains NOT MET for
+intentional PG type and client display differences; the fixed ≤1.20x streaming
+threshold remains NOT MET. Real PostgreSQL itself measured approximately
+2.3–2.6x CLI CSV with eight workers in the first fix record, so this target was below the observed
+protocol floor. This is context, not a threshold change. P16 requests a fair,
+fixed next-client-protocol-card target against PostgreSQL with the same client,
+and closing the remaining roughly 1.3–1.5x matched-client gap. P14 retains the
+encoding work. SQL PREPARE/SQL and suspended cursors, exceptional Date32 (R19),
+R15 full sanitizers and R16 original SF10 RSS remain open. No Flight SQL,
+general catalogs, TLS/auth or general COPY is claimed. No push.
+
+Final second-fix source tree: `c11a35ef897ea9135f5fc6da668740aa45feb54b`,
+measured on both final item35 VMs; production Rust is identical to the benchmark/
+pgwirecheck tree recorded in the results. Default ADBC now matches **221/221 typed
+Arrow row sets on both CPUs**, with no driver options. The harness explicitly
+trims trailing SQL whitespace so ADBC 1.13.0's own semicolon stripping generates
+valid PostgreSQL COPY. The earlier **220/221** cloud results and real PostgreSQL
+42601 reproduction are retained (R22 upstream behavior), not hidden as a pass.
+Original four clients retain 221/221 typed values; PG-correct float layout means
+psql/JDBC/psycopg exact CLI text is now 141/221, still NOT MET. Final raw/CLI
+3.661–4.407x remains NOT MET; COPY/PG COPY 2.386–2.581x is a new P14 encoding gap.

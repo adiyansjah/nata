@@ -434,3 +434,62 @@ was repeated from full 4373a63 copies; earlier mixed-session control numbers are
 retained but excluded. Final ARM64 catches all 51 mutants and passes the long
 replay. Confidence is high for the demonstrated timer/transport causes and
 measured misses, medium for the finite seeded resource/lifecycle evidence.
+
+## Amendment, 2026-11-07 (reopened second fix: default COPY and float text)
+
+Supersede the COPY refusal and finite-float spelling gap above. **Decision:**
+accept only `COPY (<slice-4 SELECT>) TO STDOUT (FORMAT binary)`, optionally
+`WITH` before the parenthesized options and a single-quoted `binary` value.
+Unquoted keywords are case insensitive. The 1.13.0 driver sends `(FORMAT binary)`
+through `PQexecParams`, as shown in
+[ExecuteCopy](https://github.com/apache/arrow-adbc/blob/apache-arrow-adbc-25/c/driver/postgresql/result_helper.cc).
+No COPY FROM, files, PROGRAM, text/CSV, table shorthand or additional options:
+return clear 0A000. The inner SELECT uses the existing planner/parameter ASTs;
+no SQL grammar or type-map expansion. Errors retain positions in the full command.
+
+Emit CopyOutResponse with overall/per-column binary format 1, then CopyData
+containing PostgreSQL's binary signature, zero flags/extension length, tuples
+with int16 column count and int32 lengths (-1 for NULL), and int16 -1 trailer.
+The header accompanies the first tuple (or the trailer for an empty result), as
+PostgreSQL does and ADBC's reader requires. End with backend CopyDone and
+CommandComplete `COPY n`. Binary scalars reuse the existing encoders: signed
+big-endian integers, IEEE floats, bool byte, UTF8 text, date days since 2000,
+and numeric base-10000 digits with ndigits/weight/sign/dscale. Canonical numeric
+omits leading/trailing zero groups and normalizes zero weight/sign, retaining
+scale. TINYINT still maps to text. No binary numeric input is added.
+
+COPY uses the **same** two-slot 64 KiB byte bridge, executor admission, blocking
+producer, writer, two-second write/flush deadline, framing cursor and cancel/
+disconnect/join path as DataRows. A tuple may span transport buffers, with one
+CopyData frame per tuple; scratch for the current row remains separate. No
+second export queue, whole-result collection or executor allowance increase.
+Parse validates the inner query, Describe returns NoData, Bind formats do not
+change COPY's own binary formats, Execute runs COPY to completion even with a
+nonzero max-rows, and ReadyForQuery waits for Sync in extended mode. An error
+still discards extended messages through Sync. Simple mode ends with ReadyForQuery.
+This follows PostgreSQL's utility-command behavior, not suspended row portals.
+
+**Float text:** only the wire boundary changes; CLI CSV stays DuckDB-oriented.
+Use shortest round-trip digits, PG's open rounding endpoints and ties-to-even,
+then positional notation for decimal exponents -4 through 14 (float8) or -4
+through 5 (float4); otherwise signed exponent with at least two digits.
+No trailing `.0`; preserve `-0`, `NaN`, `Infinity`, `-Infinity`. Rust's shortest
+format is the starting precision, not sufficient by itself: PG disables Ryu's
+`acceptBounds`, and exact endpoint/tie cases need an explicit adjustment.
+SET/startup `extra_float_digits` accepts 1..3 and rejects values below 1 with
+0A000 rather than silently ignoring older rounding semantics.
+
+Alternatives: retain use_copy=false and the old formatter (leaves ordinary
+ADBC and PG text compatibility broken); implement general COPY and legacy float
+rounding (unneeded dialect/options/resource expansion). The narrow wire adapter
+keeps the established type map and bounded execution model.
+
+**Evidence and confidence:** [second fix record](../../bench/results/20261107-pgwire-fixes2.md)
+contains byte-for-byte PostgreSQL COPY comparisons, seeded float4/float8 text
+comparisons, default ADBC corpus checks, known-bad mutants and clean-CPU runs.
+High confidence for exact outputs in that corpus; this is sampled float-domain
+coverage, not exhaustive enumeration. Resource/lifecycle claims remain bounded
+empirical evidence. No literal CLI text equality, ≤1.20x throughput, exceptional
+Date32, R15/R16, Flight SQL, TLS/auth or SQL/suspended-cursor closure follows.
+Revisit when another client's COPY spelling/options are required, or an oracle
+finds a remaining formatter difference.

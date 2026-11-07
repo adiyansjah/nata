@@ -25,6 +25,9 @@ fn main() -> Result<()> {
         "usage: pgwire-raw PORT SQL [--verify]"
     );
     let verify = args.get(2).is_some_and(|a| a == "--verify");
+    let copying = args[1].starts_with("COPY");
+    let mut copy_header = false;
+    let mut copy_trailer = false;
     let socket = TcpStream::connect(format!("127.0.0.1:{}", args[0])).context("connect")?;
     socket.set_nodelay(true)?;
     socket.set_read_timeout(Some(Duration::from_secs(30)))?;
@@ -66,10 +69,41 @@ fn main() -> Result<()> {
             }
             rows += 1;
         }
+        if tag == b'd' && copying {
+            let tuple = if !copy_header {
+                ensure!(
+                    body.starts_with(b"PGCOPY\n\xff\r\n\0\0\0\0\0\0\0\0\0"),
+                    "COPY header"
+                );
+                copy_header = true;
+                &body[19..]
+            } else {
+                body.as_slice()
+            };
+            if tuple == (-1i16).to_be_bytes() {
+                copy_trailer = true;
+            } else {
+                ensure!(
+                    !copy_trailer && tuple.len() == 14 && tuple[..6] == [0, 1, 0, 0, 0, 8],
+                    "one binary int8 COPY tuple"
+                );
+                if rows == 0 {
+                    first = start.elapsed().as_secs_f64();
+                }
+                if verify {
+                    ensure!(
+                        i64::from_be_bytes(tuple[6..].try_into()?) == rows as i64,
+                        "COPY value at {rows}"
+                    );
+                }
+                rows += 1;
+            }
+        }
         if tag == b'Z' {
             break;
         }
     }
+    ensure!(!copying || copy_trailer, "missing COPY trailer");
     let secs = start.elapsed().as_secs_f64();
     println!("{{\"secs\":{secs:.9},\"first\":{first:.9},\"rows\":{rows},\"bytes\":{bytes}}}");
     Ok(())

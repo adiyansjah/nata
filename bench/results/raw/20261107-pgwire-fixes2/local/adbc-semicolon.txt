@@ -1,0 +1,7 @@
+'SELECT 1;\n' ProgrammingError INVALID_ARGUMENT: [libpq] Failed to execute query: could not begin COPY: ERROR:  syntax error at or near ";"
+LINE 1: COPY (SELECT 1;
+                      ^
+
+Query was: COPY (SELECT 1;
+) TO STDOUT (FORMAT binary). SQLSTATE: 42601
+'SELECT 1;' PASS [{'?column?': 1}]

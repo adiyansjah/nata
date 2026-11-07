@@ -65,7 +65,7 @@ impl State {
         let l = value.to_ascii_lowercase();
         let allowed = match key {
             "application_name" | "search_path" | "timezone" => true,
-            "extra_float_digits" => matches!(l.as_str(), "-15" | "0" | "1" | "2" | "3"),
+            "extra_float_digits" => matches!(l.as_str(), "1" | "2" | "3"),
             "datestyle" => matches!(
                 l.as_str(),
                 "iso" | "iso, mdy" | "iso , mdy" | "iso, dmy" | "iso , dmy"

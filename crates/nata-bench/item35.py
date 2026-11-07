@@ -77,7 +77,10 @@ for path in queries:
             else:
                 with clients[name].cursor() as cur:
                     if name=='adbc-no-copy':cur.adbc_statement.set_options(**{'adbc.postgresql.use_copy':'false'})
-                    cur.execute(q);table=cur.fetch_arrow_table()
+                    # Driver 1.13 strips only terminal semicolons, not whitespace.
+                    # Preserve every query; trim trailing whitespace so its default
+                    # COPY wrapper is valid PostgreSQL for semicolon-terminated SQL.
+                    cur.execute(q.rstrip() if name=='adbc' else q);table=cur.fetch_arrow_table()
                     actual=[table.column_names]+[["NULL" if v is None else str(v) for v in row] for row in zip(*(col.to_pylist() for col in table.columns))]
             ok=actual[0]==expected[0] and normalize(actual[1:])==normalize(expected[1:])
             values_ok=actual[0]==expected[0] and canonical(actual[1:],oids)==canonical(expected[1:],oids)
@@ -97,3 +100,6 @@ for name,c in clients.items():
         except Exception:pass
 raw.close()
 assert len(results)==221, f'incomplete successful corpus: {len(results)}'
+
+for name in ['psql','pgjdbc','psycopg','pgcli','adbc','adbc-no-copy']:
+    assert all(r['clients'][name].get('values')=='PASS' for r in results), f'{name}: typed corpus failure (see corpus.json)'

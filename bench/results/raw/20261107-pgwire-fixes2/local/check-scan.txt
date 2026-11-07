@@ -1,0 +1,9 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/nata-check --candidate target/debug/nata --data data/client-check --queries check/queries/scan`
+PASS             decimal_and_dictionary_filters
+PASS             filter_column_not_projected
+PASS             is_null_and_all_columns
+PASS             scan_error_is_a_message_not_a_result
+PASS             year_range
+
+5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong

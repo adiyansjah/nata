@@ -5,21 +5,23 @@ unset AI_AGENT
 cd "$SRC"
 mode=${1:?bench or clients}
 mkdir -p "$WORK/pgwire-work" "$RESULTS/$mode"
-if [ "$mode" = bench ]; then
+if [ "$mode" = bench ] || [ "$mode" = clients ]; then
   sudo systemctl stop postgresql
   pg_bin=$(find /usr/lib/postgresql -path '*/bin/initdb' -printf '%h\n' | sort -V | tail -1)
   # A preempted VM leaves this run-owned reference data directory on its work disk.
   rm -rf -- "$WORK/pg-ref"
-  "$pg_bin/initdb" -D "$WORK/pg-ref" --auth=trust --no-locale > "$RESULTS/bench/postgres-setup.txt"
-  "$pg_bin/pg_ctl" -D "$WORK/pg-ref" -l "$WORK/pg-ref.log" -o "-h 127.0.0.1 -k $WORK/pg-ref -p 5545 -c fsync=off -c autovacuum=off -c max_parallel_workers_per_gather=0 -c jit=off" start >> "$RESULTS/bench/postgres-setup.txt"
+  "$pg_bin/initdb" -D "$WORK/pg-ref" --auth=trust --no-locale > "$RESULTS/$mode/postgres-setup.txt"
+  "$pg_bin/pg_ctl" -D "$WORK/pg-ref" -l "$WORK/pg-ref.log" -o "-h 127.0.0.1 -k $WORK/pg-ref -p 5545 -c fsync=off -c autovacuum=off -c max_parallel_workers_per_gather=0 -c jit=off" start >> "$RESULTS/$mode/postgres-setup.txt"
   trap '"$pg_bin/pg_ctl" -D "$WORK/pg-ref" stop -m immediate' EXIT
-  psql -X -h 127.0.0.1 -p 5545 -U nata -d postgres -c "CREATE ROLE test LOGIN SUPERUSER" -c "CREATE DATABASE nata OWNER test" >> "$RESULTS/bench/postgres-setup.txt"
-  psql -X -h 127.0.0.1 -p 5545 -U nata -d postgres -c "SELECT version()" >> "$RESULTS/bench/postgres-setup.txt"
+  psql -X -h 127.0.0.1 -p 5545 -U nata -d postgres -c "CREATE ROLE test LOGIN SUPERUSER" -c "CREATE DATABASE nata OWNER test" >> "$RESULTS/$mode/postgres-setup.txt"
+  psql -X -h 127.0.0.1 -p 5545 -U nata -d postgres -c "SELECT version()" >> "$RESULTS/$mode/postgres-setup.txt"
+fi
+if [ "$mode" = bench ]; then
   export PGWIRE_RAW="$WORK/target-ws/release/pgwire-raw" PGWIRE_REFERENCE_PORT=5545
   cat crates/nata-bench/pgwire-source-tree.txt > "$RESULTS/bench/source-tree.txt"
   python3 crates/nata-bench/pgwire-bench.py "$WORK/target-ws/release/nata" "$WORK/pgwire-work" "$RESULTS/bench"
   CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-pgwire --test reliability one_byte_per_millisecond_reader_is_bounded -- --nocapture > "$RESULTS/bench/slow-reader.txt" 2>&1
-  "$pg_bin/pg_ctl" -D "$WORK/pg-ref" stop -m fast >> "$RESULTS/bench/postgres-setup.txt"
+  "$pg_bin/pg_ctl" -D "$WORK/pg-ref" stop -m fast >> "$RESULTS/$mode/postgres-setup.txt"
   trap - EXIT
   CARGO_TARGET_DIR="$WORK/target-ws" cargo test --release -p nata-pgwire > "$RESULTS/bench/protocol.txt" 2>&1
   if [ "$(uname -m)" = aarch64 ]; then
@@ -57,7 +59,7 @@ PY
 "$WORK/target-ws/release/nata" serve --listen 127.0.0.1:5544 --threads 8 > "$WORK/server.out" 2> "$RESULTS/clients/server.log" &
 server=$!
 proxy=
-trap 'kill $proxy "$server" 2>/dev/null || true; wait 2>/dev/null || true' EXIT
+trap 'kill $proxy "$server" 2>/dev/null || true; wait 2>/dev/null || true; "$pg_bin/pg_ctl" -D "$WORK/pg-ref" stop -m immediate' EXIT
 python3 crates/nata-bench/wire-trace.py 5546 5544 "$RESULTS/clients/frontend-trace.txt" &
 proxy=$!
 sleep 1
@@ -69,3 +71,6 @@ java -cp "$WORK/pgwire-work:$WORK/pgjdbc.jar" Clients4 5546 "$WORK/pgwire-work/t
 mkdir -p "$WORK/pgwire-work/jdbc"
 java -cp "$WORK/pgwire-work:$WORK/pgjdbc.jar" Corpus35 5546 check/queries/sql "$SRC/data/client-check" "$WORK/pgwire-work/jdbc" > "$RESULTS/clients/jdbc.txt" 2>&1
 "$WORK/client-venv/bin/python" crates/nata-bench/item35.py "$WORK/target-ws/release/nata" 5546 data/client-check "$RESULTS/clients" "$WORK/pgwire-work/jdbc" > "$RESULTS/clients/corpus.txt" 2>&1
+
+"$WORK/client-venv/bin/python" crates/nata-pgwire/tests/postgres_oracle.py 5544 5545 "$WORK/pgwire-oracle" > "$RESULTS/clients/postgres-oracle.txt" 2>&1
+cat crates/nata-bench/pgwire-source-tree.txt > "$RESULTS/clients/source-tree.txt"

@@ -111,24 +111,42 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
                 frac,
                 "0".repeat((4 - frac.len() % 4) % 4)
             );
-            let weight = (whole.len().div_ceil(4) as i16) - 1;
+            let mut weight = (whole.len().div_ceil(4) as i16) - 1;
+            let mut groups = digits
+                .as_bytes()
+                .chunks(4)
+                .map(|d| {
+                    std::str::from_utf8(d)
+                        .map_err(|_| invalid())?
+                        .parse::<i16>()
+                        .map_err(|_| invalid())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            while groups.first() == Some(&0) {
+                groups.remove(0);
+                weight -= 1;
+            }
+            while groups.last() == Some(&0) {
+                groups.pop();
+            }
+            if groups.is_empty() {
+                weight = 0;
+            }
             let mut out = Vec::new();
             for n in [
-                (digits.len() / 4) as i16,
+                groups.len() as i16,
                 weight,
-                if negative { 0x4000 } else { 0 },
+                if negative && !groups.is_empty() {
+                    0x4000
+                } else {
+                    0
+                },
                 frac.len() as i16,
             ] {
                 out.extend(n.to_be_bytes());
             }
-            for d in digits.as_bytes().chunks(4) {
-                out.extend(
-                    std::str::from_utf8(d)
-                        .map_err(|_| invalid())?
-                        .parse::<i16>()
-                        .map_err(|_| invalid())?
-                        .to_be_bytes(),
-                );
+            for d in groups {
+                out.extend(d.to_be_bytes());
             }
             out
         }

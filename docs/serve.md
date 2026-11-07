@@ -68,7 +68,7 @@ multi-statement messages return `0A000`.
 
 | Statement | Supported values / answer |
 |---|---|
-| `SET extra_float_digits = ...` (or `TO`) | 0, 1, 2, 3; formatting remains shortest round-trip |
+| `SET extra_float_digits = ...` (or `TO`) | 1, 2, 3; PostgreSQL shortest round-trip; values below 1 return 0A000 |
 | `SET application_name = '...'` | store for SHOW and report ParameterStatus |
 | `SET DateStyle = 'ISO'` | ISO / ISO, MDY / ISO, DMY accepted; report canonical ISO, MDY |
 | `SET client_encoding = 'UTF8'` | UTF8 / UTF-8 only; report UTF8 |
@@ -171,7 +171,7 @@ Position is a 1-based character offset in the original query, including newlines
 RowDescription follows ADR 0008; NULL length -1 differs from empty string length
 zero. Date32 outside years 1–9999 and text with embedded zero fail explicitly.
 Query-worker logs contain session id, duration, rows and SQLSTATE, never SQL,
-cell values or cancel secrets. No TLS/auth, COPY, SQL cursors or catalog compatibility.
+cell values or cancel secrets. No TLS/auth, general COPY, SQL cursors or general catalog compatibility.
 
 ## Item 35 client notes
 
@@ -182,28 +182,34 @@ pgjdbc/psycopg and noninteractive pgcli use the existing protocol surface; pgcli
 DATE loader deliberately returns strings. psql returns display text and SQL
 `PREPARE` remains `0A000` (wire preparation is a different interface).
 
-ADBC PostgreSQL 1.13.0 now connects using two exact, read-only type-bootstrap
+ADBC PostgreSQL 1.13.0 connects using two exact, read-only type-bootstrap
 answers (empty pg_attribute; built-in pg_type rows). Other catalog/completion SQL
-still returns 0A000. Default result fetch reaches COPY BINARY and returns 0A000;
-COPY remains unsupported (R18). To fetch mapped scalars through the driver's
-ordinary binary-result reader, use its documented statement option:
+returns 0A000. Default Arrow fetch now uses bounded binary COPY:
 
-```python
-with connection.cursor() as cursor:
-    cursor.adbc_statement.set_options(**{"adbc.postgresql.use_copy": "false"})
-    cursor.execute(query)
-    table = cursor.fetch_arrow_table()
+```sql
+COPY (SELECT * FROM 'data/example.parquet') TO STDOUT (FORMAT binary);
 ```
 
-This option works for the slice-4 fixture and NULLs. Numeric is the driver's
-opaque Arrow extension with exact string storage; TINYINT uses text per ADR 0008.
-The [fix results](../bench/results/20261107-pgwire-fixes.md) distinguish this
-configured path from default-client support. Wire DECIMAL has a leading zero
-(e.g. 0.500) even when CLI CSV prints .500. Boolean/float-special PostgreSQL
-spellings and client display policies still differ from CLI CSV.
+Only that read-only query wrapper is supported, with optional `WITH` and quoted
+`'binary'`. COPY FROM, files, text/CSV and other options return a clear 0A000.
+Simple and extended execution share the DataRow admission, byte buffers,
+backpressure, send deadline and cancellation path. Numeric remains the driver's
+opaque Arrow extension with exact string storage; TINYINT maps to text.
+The optional `adbc.postgresql.use_copy=false` path also remains supported.
+ADBC 1.13.0 itself generates PostgreSQL-invalid COPY for SQL ending in a
+semicolon followed by whitespace. Use `cursor.execute(query.rstrip())` with
+that driver; this preserves its default COPY mode and all query semantics.
+The original failure and normalization check remain recorded (R22).
+
+Wire floats now use PostgreSQL's shortest-roundtrip layout, including exponent
+thresholds, rounding endpoints/ties, `-0` and special values. `extra_float_digits`
+accepts 1..3; values below 1 are refused because legacy rounding is unsupported.
+CLI CSV formatting is unchanged. Wire DECIMAL retains its leading zero (0.500).
+Known client display and CLI text differences remain; see the
+[second fix record](../bench/results/20261107-pgwire-fixes2.md) for exact coverage.
 
 The streaming performance budget is **not met**: final Rust raw/CLI is
-3.416–4.697x against ≤1.20x. The [fix record](../bench/results/20261107-pgwire-fixes.md)
+3.661–4.407x against ≤1.20x. The [fix record](../bench/results/20261107-pgwire-fixes2.md)
 includes matched PostgreSQL client references, on-VM profiles and the exact
 measured source tree. Psql/reference ratios are context, not a changed target.
 Use the recorded timings when

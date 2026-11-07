@@ -1,0 +1,57 @@
+--------------------------------------------------------------------------------
+Profile data file '/mnt/work/pgwire-work/callgrind/counts.out' (creator: callgrind-3.19.0)
+--------------------------------------------------------------------------------
+I1 cache:
+D1 cache:
+LL cache:
+Timerange: Basic block 0 - 442602121
+Trigger: Program termination
+Profiled target:  /mnt/work/target-ws/release/nata serve --listen 127.0.0.1:44833 --threads 1 --max-queries 1 (PID 9446, part 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Thresholds:       95
+Include dirs:
+User annotated:
+Auto-annotation:  off
+
+--------------------------------------------------------------------------------
+Ir
+--------------------------------------------------------------------------------
+2,158,314,547 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Ir                    file:function
+--------------------------------------------------------------------------------
+264,825,869 (12.27%)  ./malloc/./malloc/malloc.c:_int_free [/usr/lib/aarch64-linux-gnu/libc.so.6]
+216,447,729 (10.03%)  ./malloc/./malloc/malloc.c:malloc'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+143,551,095 ( 6.65%)  ???:nata_pgwire::codec::row'2 [/mnt/work/target-ws/release/nata]
+112,271,818 ( 5.20%)  ./malloc/./malloc/malloc.c:free'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+112,080,156 ( 5.19%)  ./malloc/./malloc/malloc.c:_int_realloc [/usr/lib/aarch64-linux-gnu/libc.so.6]
+102,040,994 ( 4.73%)  ./malloc/./malloc/malloc.c:realloc'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+ 95,000,000 ( 4.40%)  ???:nata_parquet::csv::cell [/mnt/work/target-ws/release/nata]
+ 80,196,952 ( 3.72%)  ./string/../sysdeps/aarch64/multiarch/../memcpy.S:__GI_memcpy [/usr/lib/aarch64-linux-gnu/libc.so.6]
+ 80,055,191 ( 3.71%)  ./malloc/./malloc/malloc.c:realloc [/usr/lib/aarch64-linux-gnu/libc.so.6]
+ 69,089,570 ( 3.20%)  ???:free'2
+ 59,913,590 ( 2.78%)  ???:<snap::decompress::Decoder>::decompress'2 [/mnt/work/target-ws/release/nata]
+ 58,004,593 ( 2.69%)  ???:nata_exec::exec::execute_observed::<nata_pgwire::server::produce::{closure#9}>::{closure#3}'2 [/mnt/work/target-ws/release/nata]
+ 57,999,984 ( 2.69%)  ???:<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next [/mnt/work/target-ws/release/nata]
+ 56,283,681 ( 2.61%)  ./malloc/./malloc/malloc.c:_int_free'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+ 54,058,476 ( 2.50%)  ???:<alloc::raw_vec::RawVecInner>::finish_grow [/mnt/work/target-ws/release/nata]
+ 53,336,464 ( 2.47%)  ???:<u64>::_fmt [/mnt/work/target-ws/release/nata]
+ 40,085,758 ( 1.86%)  ???:__rustc::__rdl_alloc'2 [/mnt/work/target-ws/release/nata]
+ 37,008,445 ( 1.71%)  ???:<nata_pgwire::server::FrameBoundary>::consume'2 [/mnt/work/target-ws/release/nata]
+ 36,085,243 ( 1.67%)  ./malloc/./malloc/arena.c:free'2
+ 35,000,000 ( 1.62%)  ???:<core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>> as core::iter::traits::iterator::Iterator>::next'2 [/mnt/work/target-ws/release/nata]
+ 32,995,941 ( 1.53%)  ???:core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::option::Option<alloc::string::String>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>, <core::result::Result<alloc::vec::Vec<core::option::Option<alloc::string::String>>, nata_parquet::error::ScanError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<alloc::string::String>, nata_parquet::error::ScanError>>>::from_iter<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>>::{closure#0}, alloc::vec::Vec<core::option::Option<alloc::string::String>>>'2 [/mnt/work/target-ws/release/nata]
+ 28,000,000 ( 1.30%)  ???:<i64 as alloc::string::SpecToString>::spec_to_string'2 [/mnt/work/target-ws/release/nata]
+ 27,031,606 ( 1.25%)  ???:<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>'2 [/mnt/work/target-ws/release/nata]
+ 27,008,458 ( 1.25%)  ???:<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global> [/mnt/work/target-ws/release/nata]
+ 26,000,000 ( 1.20%)  ???:nata_pgwire::server::wire_text [/mnt/work/target-ws/release/nata]
+ 25,000,000 ( 1.16%)  ???:nata_pgwire::binary::packet [/mnt/work/target-ws/release/nata]
+ 24,000,000 ( 1.11%)  ???:<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter<(alloc::string::String, nata_sql::types::SqlType)>>, nata_pgwire::server::produce::{closure#9}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_parquet::error::ScanError>>>>::from_iter [/mnt/work/target-ws/release/nata]
+ 20,999,993 ( 0.97%)  ???:<i64 as alloc::string::SpecToString>::spec_to_string [/mnt/work/target-ws/release/nata]
+ 20,046,560 ( 0.93%)  ???:__rustc::__rdl_dealloc'2 [/mnt/work/target-ws/release/nata]
+ 20,013,660 ( 0.93%)  ./malloc/./malloc/arena.c:realloc
+ 20,000,330 ( 0.93%)  ./malloc/./malloc/arena.c:realloc'2
+ 19,007,974 ( 0.88%)  ???:<alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter_map::FilterMap<core::ops::range::Range<usize>, <nata_exec::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter'2 [/mnt/work/target-ws/release/nata]

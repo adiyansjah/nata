@@ -144,6 +144,18 @@ MUTANTS.update({
  'decimal-leading-zero-lost': (SERVER, 'format!("0{s}")', 's', 'protocol'),
 })
 
+MUTANTS.update({
+ 'copy-wrong-signature': ('crates/nata-pgwire/src/copy.rs', 'PGCOPY', 'PGCOPX', 'protocol'),
+ 'copy-missing-trailer': (SERVER, 'tail.extend_from_slice(crate::copy::TRAILER);', 'tail.extend_from_slice(b"");', 'protocol'),
+ 'copy-null-length-zero': (CODEC, 'None => b.extend((-1i32).to_be_bytes())', 'None => b.extend(0i32.to_be_bytes())', 'protocol'),
+ 'numeric-weight-plus-one': ('crates/nata-pgwire/src/binary.rs', 'let mut weight = (whole.len().div_ceil(4) as i16) - 1;', 'let mut weight = whole.len().div_ceil(4) as i16;', 'protocol'),
+ 'copy-date-epoch-1970': ('crates/nata-pgwire/src/binary.rs', 'from_ymd_opt(2000, 1, 1)', 'from_ymd_opt(1970, 1, 1)', 'protocol'),
+ 'copy-without-backpressure': (SERVER, 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(if copying { 1_100_000 } else { BRIDGE_BUFFERS })', 'protocol'),
+ 'float-threshold-plus-one': ('crates/nata-pgwire/src/float.rs', 'e >= precision', 'e > precision', 'protocol'),
+ 'float-trailing-dot-zero': ('crates/nata-pgwire/src/float.rs', 'out.push_str(&"0".repeat(n - digits.len()));', 'out.push_str(&"0".repeat(n - digits.len())); out.push_str(".0");', 'protocol'),
+ 'float-closed-midpoint': ('crates/nata-pgwire/src/float.rs', '!midpoint(d, q, lower, e2) && !midpoint(d, q, upper, e2)', 'true || (!midpoint(d, q, lower, e2) && !midpoint(d, q, upper, e2))', 'protocol'),
+})
+
 def fingerprint():
     h = hashlib.sha256()
     for p in sorted((ROOT/'crates').rglob('*.rs')):

@@ -2,6 +2,8 @@
 #![forbid(unsafe_code)]
 mod binary;
 pub mod codec;
+mod copy;
 mod extended;
+mod float;
 pub mod server;
 mod session;

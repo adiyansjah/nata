@@ -1,0 +1,26 @@
+==9446== Callgrind, a call-graph generating cache profiler
+==9446== Copyright (C) 2002-2017, and GNU GPL'd, by Josef Weidendorfer et al.
+==9446== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info
+==9446== Command: /mnt/work/target-ws/release/nata serve --listen 127.0.0.1:44833 --threads 1 --max-queries 1
+==9446==
+==9446== For interactive control, run 'callgrind_control -h'.
+nata serve listening=127.0.0.1:44833 max_connections=64 query_admission=1 workers=1
+scan_end_us=13225126
+session=2 duration_us=13229457 rows=1000000 state=00000 queue_wait_us=2398 worker_share=1
+==9446==
+==9446== Process terminating with default action of signal 15 (SIGTERM)
+==9446==    at 0x4A57C28: syscall (syscall.S:39)
+==9446==    by 0x100D417: <std::sys::sync::condvar::futex::Condvar>::wait (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x2B927F: <tokio::runtime::park::Inner>::park (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x24BDAF: tokio::runtime::context::runtime::enter_runtime::<<tokio::runtime::scheduler::multi_thread::MultiThread>::block_on<nata_pgwire::server::serve::{closure#0}>::{closure#0}, core::result::Result<(), core::io::error::Error>> (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x26800F: <tokio::runtime::runtime::Runtime>::block_on::<nata_pgwire::server::serve::{closure#0}> (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x23886F: nata::main (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x2806E7: std::sys::backtrace::__rust_begin_short_backtrace::<fn() -> std::process::ExitCode, std::process::ExitCode> (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x27C407: std::rt::lang_start::<std::process::ExitCode>::{closure#0} (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x101B62B: std::rt::lang_start_internal (in /mnt/work/target-ws/release/nata)
+==9446==    by 0x240A6F: main (in /mnt/work/target-ws/release/nata)
+==9446==
+==9446== Events    : Ir
+==9446== Collected : 2158314547
+==9446==
+==9446== I   refs:      2,158,314,547

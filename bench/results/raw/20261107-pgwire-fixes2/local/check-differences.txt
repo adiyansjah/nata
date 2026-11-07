@@ -1,0 +1,41 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s
+     Running `target/debug/nata-check --candidate target/debug/nata --data data/client-check --queries check/queries/sql-differences`
+PASS             d3_decimal_literal_below_one_is_decimal_p_p
+PASS             d9_case_decimals_beyond_38
+PASS             d9_cast_boolean_to_integer
+PASS             d9_cast_double_to_varchar
+PASS             d9_cast_short_date
+PASS             d9_cast_slash_date
+PASS             d9_cast_string_with_exponent_to_integer
+PASS             d9_cast_string_with_fraction_to_integer
+PASS             d9_cast_string_with_underscore
+PASS             d9_cast_t_to_boolean
+PASS             d9_cast_yes_to_boolean
+PASS             d9_date_minus_date
+PASS             d9_date_plus_integer
+PASS             d9_dec_mod_tight_result_type
+PASS             d9_decimal_compared_with_double
+PASS             d9_decimal_division_too_wide
+PASS             d9_decimal_mul_scale_too_large
+PASS             d9_decimal_plus_double
+PASS             d9_divide_decimals
+PASS             d9_divide_integers
+PASS             d9_division_by_zero_is_an_error
+PASS             d9_double_to_decimal_exact_binary_value
+PASS             d9_float_arithmetic
+PASS             d9_float_compared_with_integer
+PASS             d9_float_literal_is_exact_decimal
+PASS             d9_in_list_with_a_cast_of_a_literal
+PASS             d9_in_list_with_an_expression
+PASS             d9_integer_literal_does_not_narrow_to_the_column
+PASS             d9_quoted_identifier_is_case_sensitive
+PASS             d9_string_compared_with_date
+PASS             d9_string_compared_with_number_column
+PASS             d9_string_equals_number
+PASS             d9_where_integer_is_not_boolean
+PASS             d9b_a_case_condition_is_evaluated_only_for_the_rows_that_reach_it
+PASS             d9b_an_operand_next_to_a_null_is_still_evaluated
+PASS             d9b_and_skips_the_second_operand_for_decided_rows
+PASS             d9b_or_skips_the_second_operand_for_decided_rows
+
+37 queries: 37 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong

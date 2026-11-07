@@ -583,6 +583,7 @@ async fn session_loop(
             }
             _ => error = Some(WireError::new("08P01", "unexpected frontend message")),
         }
+        let copying = crate::copy::query(&sql).ok().flatten().is_some();
         if let Some(e) = error {
             state.failed();
             failed = !simple;
@@ -816,6 +817,7 @@ async fn session_loop(
                                     Some(event @ (Event::Packet(_) | Event::Data(_))) => {
                                         let is_description = matches!(event, Event::Packet(_));
                                         let mut p = match event { Event::Packet(p) | Event::Data(p) => p, _ => unreachable!() };
+                                        if is_description && p[0]==b'n' && mode==1 { description=p;continue; }
                                         if is_description && p[0]==b'T' {
                                             if mode==1 {description=p;continue;}
                                             if !simple && mode!=2 && expected.as_ref().is_some_and(|e| !extended::same_types(e,&p)) {
@@ -885,12 +887,21 @@ async fn session_loop(
                 }
                 match result {
                     Ok(n) if mode == 0 => {
-                        write
-                            .write_all(
-                                &codec::packet(b'C', format!("SELECT {n}\0").as_bytes())
-                                    .map_err(io::Error::other)?,
-                            )
-                            .await?
+                        if copying {
+                            write
+                                .write_all(
+                                    &codec::packet(b'C', format!("COPY {n}\0").as_bytes())
+                                        .map_err(io::Error::other)?,
+                                )
+                                .await?;
+                        } else {
+                            write
+                                .write_all(
+                                    &codec::packet(b'C', format!("SELECT {n}\0").as_bytes())
+                                        .map_err(io::Error::other)?,
+                                )
+                                .await?;
+                        }
                     }
                     Ok(_) if mode == 1 => {
                         if let Some(s) = &mut parsed {
@@ -1095,20 +1106,37 @@ fn produce(
     metrics: Option<&Metrics>,
     result_formats: &[i16],
 ) -> Result<u64, WireError> {
-    let p = nata_sql::plan_parameters(sql, params, &Source(cancelled));
+    let inner = crate::copy::query(sql)?;
+    let copying = inner.is_some();
+    let p = nata_sql::plan_parameters(inner.unwrap_or(sql), params, &Source(cancelled));
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());
     }
     let p = p.map_err(|e| {
         let mut e = WireError::sql(e);
+        if let Some(inner) = inner {
+            // Error positions remain relative to the entire COPY command.
+            let offset = inner.as_ptr() as usize - sql.as_ptr() as usize;
+            if let Some(pos) = &mut e.pos {
+                let prefix = &sql[..offset];
+                if pos.line == 1 {
+                    pos.col += prefix.rsplit('\n').next().unwrap_or("").chars().count() as u32;
+                }
+                pos.line += prefix.bytes().filter(|b| *b == b'\n').count() as u32;
+            }
+        }
         if !params.is_empty() && !matches!(e.code, "42703" | "42P01" | "42883" | "0A000") {
             e.message = "invalid parameterized query".into();
         }
         e
     })?;
     if mode != 0 {
-        let description =
-            codec::description(&extended::fields(&p)).map_err(|_| WireError::internal())?;
+        let description = if copying {
+            codec::packet(b'n', b"")
+        } else {
+            codec::description(&extended::fields(&p))
+        }
+        .map_err(|_| WireError::internal())?;
         if description.len() > OUTPUT_BYTES {
             return Err(WireError::new("54000", "wire description exceeds 64 KiB"));
         }
@@ -1158,7 +1186,16 @@ fn produce(
         return Ok(n);
     }
     let fields: Vec<_> = p.output.iter().map(|c| (c.name.clone(), c.ty)).collect();
-    send(encode(codec::description(&fields))?)?;
+    if copying {
+        let mut response = vec![1];
+        response.extend((fields.len() as i16).to_be_bytes());
+        for _ in &fields {
+            response.extend(1i16.to_be_bytes());
+        }
+        send(encode(codec::packet(b'H', &response))?)?;
+    } else {
+        send(encode(codec::description(&fields))?)?;
+    }
     let description = codec::description(&fields).map_err(|_| WireError::internal())?;
     let mut rows = 0u64;
     let mut config = nata_exec::ExecConfig::new(threads);
@@ -1199,8 +1236,25 @@ fn produce(
                         column: 1,
                     })
                 })?;
-                let bytes = crate::binary::packet(bytes, &description, result_formats)
-                    .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
+                let bytes = crate::binary::packet(
+                    bytes,
+                    &description,
+                    if copying { &[1] } else { result_formats },
+                )
+                .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
+                let bytes = if copying {
+                    // PostgreSQL (and ADBC's reader) puts the header and first
+                    // tuple in the same CopyData; later messages carry one tuple.
+                    let mut body = if rows == 0 {
+                        crate::copy::HEADER.to_vec()
+                    } else {
+                        Vec::new()
+                    };
+                    body.extend_from_slice(&bytes[5..]);
+                    codec::packet(b'd', &body).expect("checked row size")
+                } else {
+                    bytes
+                };
                 // A single wide row may span buffers. Never increase the bridge byte bound.
                 for chunk in bytes.chunks(OUTPUT_BYTES) {
                     if output.len() + chunk.len() > OUTPUT_BYTES {
@@ -1242,6 +1296,16 @@ fn produce(
         return Err(WireError::cancel());
     }
     result.map_err(WireError::scan)?;
+    if copying {
+        let mut tail = if rows == 0 {
+            crate::copy::HEADER.to_vec()
+        } else {
+            Vec::new()
+        };
+        tail.extend_from_slice(crate::copy::TRAILER);
+        send(encode(codec::packet(b'd', &tail))?)?;
+        send(encode(codec::packet(b'c', b""))?)?;
+    }
     Ok(rows)
 }
 fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
@@ -1253,12 +1317,7 @@ fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
                 "f".into()
             }
         }
-        SqlType::Float | SqlType::Double => match s.as_str() {
-            "nan" | "-nan" => "NaN".into(),
-            "inf" => "Infinity".into(),
-            "-inf" => "-Infinity".into(),
-            _ => s,
-        },
+        SqlType::Float | SqlType::Double => crate::float::text(&s, ty == SqlType::Float),
         SqlType::Decimal { .. } if s.starts_with('.') => format!("0{s}"),
         SqlType::Decimal { .. } if s.starts_with("-.") => format!("-0{}", &s[1..]),
         SqlType::Date if s.len() != 10 || s.starts_with('-') || s.starts_with("0000") => {

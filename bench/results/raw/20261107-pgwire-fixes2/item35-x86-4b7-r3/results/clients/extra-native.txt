@@ -1,0 +1,14 @@
+pgcli default types/value/NULL/preparation10 PASS
+sql: "SELECT nope FROM '/mnt/work/pgwire-work/types.parquet'", error: UndefinedColumn('unknown column "nope"\nLINE 1: SELECT nope FROM \'/mnt/work/pgwire-work/types.parquet\'\n               ^')
+traceback: 'Traceback (most recent call last):\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 420, in run\n    yield self.execute_normal_sql(sql) + (sql, True, False)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 474, in execute_normal_sql\n    cur.execute(split_sql)\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 90, in execute\n    super().execute(*args, **kwargs)\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute\n    raise ex.with_traceback(None)\npsycopg.errors.UndefinedColumn: unknown column "nope"\nLINE 1: SELECT nope FROM \'/mnt/work/pgwire-work/types.parquet\'\n               ^\n'
+pgcli error 42703 position 8 PASS
+sql: "SELECT s FROM '/mnt/work/pgwire-work/large.parquet'", error: QueryCanceled('canceling statement due to user request')
+traceback: 'Traceback (most recent call last):\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 420, in run\n    yield self.execute_normal_sql(sql) + (sql, True, False)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 474, in execute_normal_sql\n    cur.execute(split_sql)\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/pgcli/pgexecute.py", line 90, in execute\n    super().execute(*args, **kwargs)\n  File "/mnt/work/client-venv/lib/python3.11/site-packages/psycopg/cursor.py", line 117, in execute\n    raise ex.with_traceback(None)\npsycopg.errors.QueryCanceled: canceling statement due to user request\n'
+pgcli cancel 57014 PASS
+psql error 42703 caret position 8 PASS
+psql cancel 57014 PASS
+psql SQL PREPARE (no wire preparation API): 1 ERROR:  0A000: not supported yet: Prepare statements
+LINE 1: ...RE p AS SELECT si FROM '/mnt/work/pgwire-work/types.parquet'
+                                                                       ^
+
+psql repeated10 text/NULL PASS; native values are display strings
