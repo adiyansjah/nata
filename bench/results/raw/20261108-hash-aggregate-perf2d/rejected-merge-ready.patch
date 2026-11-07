@@ -1,0 +1,238 @@
+diff --git a/crates/nata-exec/src/aggregate/pipeline.rs b/crates/nata-exec/src/aggregate/pipeline.rs
+index a12b417..f378346 100644
+--- a/crates/nata-exec/src/aggregate/pipeline.rs
++++ b/crates/nata-exec/src/aggregate/pipeline.rs
+@@ -755,83 +755,81 @@ fn merge_step(
+         .aggregate
+         .as_ref()
+         .ok_or_else(|| scan_error("aggregate missing"))?;
+-    if let Some(ticket) = &task.ticket {
+-        let Some(result) = ticket.poll(wake.clone()) else {
+-            return Ok(Step::Blocked);
+-        };
+-        match result.map_err(scan_error)? {
+-            Completion::Read { frame, handle } => {
+-                task.handle = Some(handle);
+-                task.frame = frame;
+-                task.row = 0;
+-                task.ticket = None;
+-                if task.frame.is_none() {
+-                    for (row, states) in task.table.groups.values_mut().enumerate() {
+-                        if row.is_multiple_of(CANCEL_ROWS)
+-                            && task
+-                                .storage
+-                                .cancel
+-                                .as_ref()
+-                                .is_some_and(ScanCancel::is_cancelled)
+-                        {
+-                            return Err(cancel_error());
+-                        }
+-                        for (s, a) in states.iter_mut().zip(&a.aggregates) {
+-                            s.finalize(a).map_err(|e| ScanError::new(e.into_kind()))?;
++    // Keep replay on this worker until completion or a genuinely blocked disk
++    // ticket, just as partial aggregation stays on its worker until pressure.
++    // The dispatcher still owns parked tasks; no CPU worker waits for I/O.
++    loop {
++        if task
++            .storage
++            .cancel
++            .as_ref()
++            .is_some_and(ScanCancel::is_cancelled)
++        {
++            io.cancel();
++            return Err(cancel_error());
++        }
++        if let Some(ticket) = &task.ticket {
++            let Some(result) = ticket.poll(wake.clone()) else {
++                return Ok(Step::Blocked);
++            };
++            match result.map_err(scan_error)? {
++                Completion::Read { frame, handle } => {
++                    task.handle = Some(handle);
++                    task.frame = frame;
++                    task.row = 0;
++                    task.ticket = None;
++                    if task.frame.is_none() {
++                        for (row, states) in task.table.groups.values_mut().enumerate() {
++                            if row.is_multiple_of(CANCEL_ROWS)
++                                && task
++                                    .storage
++                                    .cancel
++                                    .as_ref()
++                                    .is_some_and(ScanCancel::is_cancelled)
++                            {
++                                return Err(cancel_error());
++                            }
++                            for (s, a) in states.iter_mut().zip(&a.aggregates) {
++                                s.finalize(a).map_err(|e| ScanError::new(e.into_kind()))?;
++                            }
+                         }
++                        return Ok(Step::Done(Ok(Merged::Table(std::mem::replace(
++                            &mut task.table,
++                            Table::new(),
++                        )))));
+                     }
+-                    return Ok(Step::Done(Ok(Merged::Table(std::mem::replace(
+-                        &mut task.table,
+-                        Table::new(),
+-                    )))));
+                 }
++                _ => return Err(scan_error("unexpected read completion")),
+             }
+-            _ => return Err(scan_error("unexpected read completion")),
+         }
+-    }
+-    if let Some(frame) = &task.frame {
+-        while task.row < frame.batch().num_rows() {
+-            let (key, state) =
+-                storage::record(frame, task.row, a, task.partition, task.depth, shared.hash)
+-                    .map_err(scan_error)?;
+-            let previous = task.table.groups.get(&key);
+-            let string_bytes = state
+-                .iter()
+-                .enumerate()
+-                .map(|(slot, s)| {
+-                    if let State::Extreme(Atom::Str(s)) = s {
+-                        let old = previous.and_then(|p| p.get(slot)).map_or(0, |s| {
+-                            if let State::Extreme(Atom::Str(s)) = s {
+-                                s.len()
+-                            } else {
+-                                0
+-                            }
+-                        });
+-                        s.len().saturating_sub(old)
+-                    } else {
+-                        0
+-                    }
+-                })
+-                .sum();
+-            if task
+-                .table
+-                .reserve_bytes(&shared.manager, string_bytes)
+-                .is_err()
+-            {
+-                return Ok(Step::Done(Ok(Merged::Repartition {
+-                    file: Arc::clone(&task.file),
+-                    partition: task.partition,
+-                    depth: task.depth,
+-                })));
+-            }
+-            if let Some(dest) = task.table.groups.get_mut(&key) {
+-                for ((dest, source), a) in dest.iter_mut().zip(state).zip(&a.aggregates) {
+-                    dest.merge(source, a)
+-                        .map_err(|e| ScanError::new(e.into_kind()))?;
+-                }
+-            } else {
+-                if (!task.table.groups.is_empty() && task.table.grants.reserved() >= task.limit)
+-                    || task.table.reserve(&shared.manager, &key, a).is_err()
++        if let Some(frame) = &task.frame {
++            while task.row < frame.batch().num_rows() {
++                let (key, state) =
++                    storage::record(frame, task.row, a, task.partition, task.depth, shared.hash)
++                        .map_err(scan_error)?;
++                let previous = task.table.groups.get(&key);
++                let string_bytes = state
++                    .iter()
++                    .enumerate()
++                    .map(|(slot, s)| {
++                        if let State::Extreme(Atom::Str(s)) = s {
++                            let old = previous.and_then(|p| p.get(slot)).map_or(0, |s| {
++                                if let State::Extreme(Atom::Str(s)) = s {
++                                    s.len()
++                                } else {
++                                    0
++                                }
++                            });
++                            s.len().saturating_sub(old)
++                        } else {
++                            0
++                        }
++                    })
++                    .sum();
++                if task
++                    .table
++                    .reserve_bytes(&shared.manager, string_bytes)
++                    .is_err()
+                 {
+                     return Ok(Step::Done(Ok(Merged::Repartition {
+                         file: Arc::clone(&task.file),
+@@ -839,36 +837,54 @@ fn merge_step(
+                         depth: task.depth,
+                     })));
+                 }
+-                task.table.groups.insert(key, state);
++                if let Some(dest) = task.table.groups.get_mut(&key) {
++                    for ((dest, source), a) in dest.iter_mut().zip(state).zip(&a.aggregates) {
++                        dest.merge(source, a)
++                            .map_err(|e| ScanError::new(e.into_kind()))?;
++                    }
++                } else {
++                    if (!task.table.groups.is_empty() && task.table.grants.reserved() >= task.limit)
++                        || task.table.reserve(&shared.manager, &key, a).is_err()
++                    {
++                        return Ok(Step::Done(Ok(Merged::Repartition {
++                            file: Arc::clone(&task.file),
++                            partition: task.partition,
++                            depth: task.depth,
++                        })));
++                    }
++                    task.table.groups.insert(key, state);
++                }
++                task.row += 1;
+             }
+-            task.row += 1;
++            task.frame = None;
+         }
+-        task.frame = None;
+-    }
+-    let file = Arc::clone(&task.file);
+-    let mut handle = task.handle.take();
+-    let storage = Arc::clone(&task.storage);
+-    let partition = u32::try_from(task.partition).map_err(|_| scan_error("spill partition"))?;
+-    let depth = task.depth;
+-    match io.submit(Box::new(move || {
+-        let mut h = match handle.take() {
+-            Some(h) => h,
+-            None => file.open()?,
+-        };
+-        let frame = storage
+-            .workspace
+-            .lock()
+-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+-            .read(&mut h, partition, depth)?;
+-        Ok(Completion::Read { frame, handle: h })
+-    })) {
+-        Submit::Queued(ticket) => {
+-            task.ticket = Some(ticket);
+-            Ok(Step::Yield)
++        let file = Arc::clone(&task.file);
++        let mut handle = task.handle.take();
++        let storage = Arc::clone(&task.storage);
++        let partition = u32::try_from(task.partition).map_err(|_| scan_error("spill partition"))?;
++        let depth = task.depth;
++        match io.submit(Box::new(move || {
++            let mut h = match handle.take() {
++                Some(h) => h,
++                None => file.open()?,
++            };
++            let frame = storage
++                .workspace
++                .lock()
++                .unwrap_or_else(std::sync::PoisonError::into_inner)
++                .read(&mut h, partition, depth)?;
++            Ok(Completion::Read { frame, handle: h })
++        })) {
++            Submit::Queued(ticket) => {
++                task.ticket = Some(ticket);
++                // Consume a ready read on this worker. Only an actually pending
++                // ticket returns to the dispatcher; never wait for disk here.
++            }
++            _ => return Err(scan_error("spill read queue admission")),
+         }
+-        _ => Err(scan_error("spill read queue admission")),
+     }
+ }
++
+ fn files_for_repartition(
+     storage: &Arc<Storage>,
+     shared: &Arc<Shared>,

@@ -1908,6 +1908,13 @@ scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id per
 
 ## Performance step 2d
 
+**Closeout: partial, stopped at the accepted ADR boundary.** Step 0 is kept
+(`b89356153b9bfb4b2e7c2558c9b6c7a750d8e8e3`); step 1's ready-read loop is
+rejected for spill regressions; steps 2–5 are not implemented. The proposed
+fan-out amendment below is for owner acceptance, not an edit to ADR 0010.
+No result mismatch, weakened spill fault/damage test, new dependency, GCP run,
+push or merge occurred. Frozen performance targets remain unfulfilled.
+
 Work starts at `10acff0`; frozen targets and accepted ADRs remain unchanged.
 The clean-VM spill profile above is the motivation, not a denominator for local
 measurements. Local observations below are **unsettled**, warm SF1, shared
@@ -1991,6 +1998,84 @@ Focused cargo-mutants on `Groups::find_row`: **5 caught, 0 missed, 0 timeout,
 0 unviable**; unmutated baseline passes. [Outcomes](raw/20261108-hash-aggregate-perf2d/remove-small-mutants-outcomes.json),
 [deciding log](raw/20261108-hash-aggregate-perf2d/remove-small-mutants.txt).
 
+### 1. Replay ready reads on the current worker
+
+Rule: retain a partition continuation on the worker while it can make progress;
+process completed reads, replay, finalize or repartition there. After submitting
+a read, poll it directly rather than unconditionally returning `Step::Yield`.
+Return `Blocked` for a pending ticket: no worker waits for disk, and the
+existing sticky wake, memory grants, disk tickets, I/O admission, error order
+within the partition, cancellation and cleanup remain. Check cancellation on
+every loop iteration; retain bounded finalization polls. This can remove eager
+handoffs but necessarily retains handoffs for genuinely pending reads, as ADR
+0009 requires. It does not claim worker affinity across a parked disk ticket.
+
+Checks before timing: execution tests (including existing spill fault/damage,
+recursive replay and cleanup tests), fmt, clippy, release build, aggregate
+65/65, forced spill 65/65, SQL 252/252: **PASS**.
+[Complete log](raw/20261108-hash-aggregate-perf2d/merge-ready-checks.txt).
+No loom model or scheduler/memory/I/O primitive is touched.
+
+Focused `merge_step` cargo-mutants: **11 caught, 0 missed, 1 unviable,
+1 timeout**, unmutated baseline PASS. The `task.row += 1` → `*= 1` mutation
+fails progress and is killed by the fixed 180-second test deadline; it is
+reported separately, not as an assertion-caught mutant. Tool exit 3 denotes
+that timeout, not a baseline failure. [Outcomes](raw/20261108-hash-aggregate-perf2d/merge-ready-mutants-outcomes.json),
+[deciding log](raw/20261108-hash-aggregate-perf2d/merge-ready-mutants.txt).
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2d/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--test=aggregate_spill --cargo-arg=--locked --profile release --output /home/dev/perf2d/mutants-merge-ready -p nata-exec -f crates/nata-exec/src/aggregate/pipeline.rs -F 'merge_step' --timeout 180
+python3 scripts/bench-aggregate-perf2d-local.py merge-ready --before /home/dev/perf2d/remove-small --after /home/dev/perf2d/merge-ready --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2d --profile
+```
+
+Decision before the replay timing verdict: retain only with a spill gain larger
+than the identical-control movement, and reject any >3% regression without a
+compensating gain. A reduction in handoffs without an established timing gain
+is insufficient to keep the experiment.
+
+**Verdict: rejected and reverted.** Both spill cells regress beyond 3%:
+paired after/before 1.065x at one thread and 1.041x at eight, versus identical
+controls 0.963x and 1.017x. No compensating gain is established in the other
+cells: the small apparent in-memory improvements are within control movement.
+The simple ready-read loop does not remove handoffs for the normally pending
+small disk reads. Profiles also show no material kernel-share reduction.
+That last causal explanation is **reasoned**, not a measured count of dispatches.
+A worker may not wait for disk under ADR 0009, so blocking it to force partition
+affinity is not a permissible follow-up. No rejected code remains in the tree.
+
+Seconds, medians; paired ratios, with min/quartiles/max in the summary:
+
+| Query | Threads | MiB | Before | After | Control | Paired A/B | Paired C/B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 8192 | 3.080 | 3.165 | 3.107 | 1.021 | 0.947 |
+| q1 | 8 | 8192 | 1.036 | 0.985 | 0.998 | 0.976 | 0.947 |
+| q1 | 1 | 64 | 2.582 | 2.902 | 3.108 | 1.017 | 1.142 |
+| q1 | 8 | 64 | 1.248 | 1.225 | 1.233 | 1.004 | 0.977 |
+| high_cardinality_tpch | 1 | 8192 | 6.226 | 5.382 | 4.794 | 0.985 | 0.758 |
+| high_cardinality_tpch | 8 | 8192 | 2.355 | 2.310 | 2.384 | 0.986 | 1.012 |
+| high_cardinality_tpch | 1 | 64 | 12.918 | 13.772 | 12.481 | 1.065 | 0.963 |
+| high_cardinality_tpch | 8 | 64 | 15.095 | 15.732 | 15.288 | 1.041 | 1.017 |
+
+High-cardinality counters at 64 MiB (decimal MB):
+
+| Threads | Arm | Written MB range | Read MB range | Partitions | Depth |
+|---|---|---:|---:|---:|---:|
+| 1 | all three | 603.860 | 692.132 | 272 | 1 |
+| 8 | before | 959.433–959.690 | 1218.698–1218.957 | 4368 | 2 |
+| 8 | after | 959.533–959.691 | 1218.815–1218.947 | 4368 | 2 |
+| 8 | control | 959.460–959.627 | 1218.736–1218.900 | 4368 | 2 |
+
+Whole-system self-sample shares, Nata/kernel/libc, before → after:
+1-thread spill **45.34/30.08/24.42% → 45.31/30.61/23.87%**;
+8-thread spill **46.31/23.02/30.52% → 45.33/23.83/30.63%**.
+[Summary/hashes](raw/20261108-hash-aggregate-perf2d/merge-ready-summary.json),
+[samples/counters/load](raw/20261108-hash-aggregate-perf2d/merge-ready-samples.json),
+[24 DuckDB gates](raw/20261108-hash-aggregate-perf2d/merge-ready-gates.json),
+[rejected patch against b893561](raw/20261108-hash-aggregate-perf2d/rejected-merge-ready.patch).
+No code commit for this rejected experiment; its compiled binary is identified
+by SHA256 in the summary. The candidate's complete checks and mutants above
+remain evidence, not a certification of a retained replay fix.
+
 ### Step 2 boundary: accepted fan-out rule
 
 ADR 0010's accepted spill decision says: “initial fanout 16, fanout 16 per
@@ -2019,3 +2104,65 @@ Proposed amendment for owner acceptance (not applied):
 The follow-on implementation must test estimator overflow, min/max clamps,
 partition membership under hostile input, skew/collision/no-progress, FD/quota
 bounds and reduction of merge concurrency before any performance verdict.
+
+### Settled prefix handoff (not run)
+
+The [steps](../aggregate-perf2d.steps) compare baseline `c9cc13c`, provisional
+`addsub=10acff0`, then cumulative `no-small=b893561`. There are two fixes,
+below the heavy runner's limit of four. Rejected replay is intentionally absent.
+Both Q1 and high cardinality are included at 1/8 threads and 8 GiB/64 MiB;
+per-arm twins, matched DuckDB budgets, five alternating rounds and all spill
+counters are provided by the existing heavy runner. This only measures the
+implemented prefix; it cannot certify a completed step 2d or its frozen targets.
+
+Validation of the handoff: all four parsed step commands pass `bash -n -c`;
+the existing heavy runner's full inert orchestration self-test passes (including
+ARM, matched spill cells and incomplete DuckDB denominators).
+[Syntax log](raw/20261108-hash-aggregate-perf2d/steps-syntax.txt),
+[self-test](raw/20261108-hash-aggregate-perf2d/heavy-self-test.txt).
+
+**Four-hour cap per architecture**, including all replacement VMs: allow up to
+45 minutes for three clean builds, 80 minutes for eight bounded settle waits,
+30 minutes of alternating measurements, 20 minutes of fixture/value gates/setup,
+and 45 minutes for preemption/restart margin (220 minutes total, rounded up).
+No long proofs or unbounded retry allowance are hidden in this cap. The parent
+must obtain each plan's approved amount; these commands are not spend approval.
+The Debian 12 image lacks `/usr/bin/time`: the `tools` step installs the `time`
+package before any optional profile uses it. The timing runner uses Python's
+clock and does not depend on GNU time.
+
+Run from this branch after the evidence commit. Use fresh run IDs if occupied:
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline c9cc13c --fix addsub=10acff0 --fix no-small=b89356153b9bfb4b2e7c2558c9b6c7a750d8e8e3 --bundle .aggregate-perf2d-inputs
+cp bench/aggregate-perf2d.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2d-prefix-20261108-x86 --data-gb 80 --max-vm-hours 4
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2d-prefix-20261108-x86 --data-gb 80 --max-vm-hours 4 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2d-prefix-20261108-arm64 --data-gb 80 --max-vm-hours 4
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2d-prefix-20261108-arm64 --data-gb 80 --max-vm-hours 4 --approved-usd "$APPROVED_USD_ARM64"
+```
+
+Reproduce the kept-change checks (the recorded runs used the external target
+cache described above; these commands use the default target directory):
+
+```sh
+PERF2D_DATA=$(mktemp -d /tmp/nata-perf2d-check.XXXXXX)
+cargo test --locked --release -j 4 -p nata-exec
+cargo fmt --all --check
+cargo clippy --locked --release -j 4 -p nata-exec --all-targets -- -D warnings
+cargo build --locked --release -j 4 -p nata -p nata-check
+scripts/gen-tpch.sh 0.01 "$PERF2D_DATA"
+scripts/gen-sql-check-data.sh "$PERF2D_DATA"
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/aggregate
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/aggregate --force-aggregate-spill
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/sql
+```
+
+Local build/test commands were serial, at `-j 4`. Disk headroom stayed above
+20 GB, so no stale-output deletion was needed here. All staged commits passed
+`scripts/check-leaks.sh --staged`. Neither Cargo.lock nor an accepted ADR was edited.
+
+After reverting replay, the final normal release build and clippy pass.
+Its CLI SHA256 is `fcdb2e9973dd2219cf597d2bfb5f5aa76dac273a95114e11439f65307dc2ae1a`,
+**identical to the immutable step-0 binary that passed all gates**.
+[Final rebuild and digest comparison](raw/20261108-hash-aggregate-perf2d/final-build.txt).

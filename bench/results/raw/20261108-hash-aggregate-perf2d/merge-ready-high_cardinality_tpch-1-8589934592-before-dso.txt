@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock'
+# Event count (approx.): 3743486944
+#
+# Overhead  Shared Object    
+# ........  .................
+#
+    61.19%  remove-small     
+    27.78%  libc.so.6        
+    10.97%  [kernel.kallsyms]
+
+
+#
+# (Tip: To compare hot regions in two workloads use perf record -b -o file ... ; perf diff --stream file1 file2)
+#

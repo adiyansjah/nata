@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock'
+# Event count (approx.): 3298597168
+#
+# Overhead  Shared Object    
+# ........  .................
+#
+    87.12%  merge-ready      
+    10.69%  libc.so.6        
+     2.19%  [kernel.kallsyms]
+
+
+#
+# (Tip: When collecting LBR backtraces use --stitch-lbr to handle more than 32 deep entries: perf record --call-graph lbr ; perf report --stitch-lbr)
+#

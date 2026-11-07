@@ -1,0 +1,16 @@
+# Parent only. Settled SF1 on c3d-highcpu-8 and n4a-highcpu-8, separately.
+# Package committed cumulative revisions with the exact prepare command in
+# bench/results/20261107-hash-aggregate-perf.md, Performance step 2d.
+# Baseline c9cc13c; addsub=10acff0 remains provisional/unsettled;
+# no-small=b89356153b9bfb4b2e7c2558c9b6c7a750d8e8e3 is the sole kept 2d fix.
+# Replay experiment rejected; fan-out stopped for ADR amendment acceptance.
+# Heavy runner includes Q1 and high cardinality, 1/8 threads, 8 GiB AND 64 MiB,
+# value gates before timing, five alternating rounds and a twin of every arm.
+# Every timing keeps spill bytes written/read, partitions and recursion depth.
+# No GCP identifiers or credentials belong here. These are measurements only.
+prepare mkdir -p "$WORK/aggregate-perf2d/tmp"
+# Debian 12 does not ship /usr/bin/time. Install it before any optional whole-
+# system profile or RSS step uses it; the heavy timing runner itself uses Python.
+tools if [ ! -x /usr/bin/time ]; then sudo apt-get update && sudo apt-get install -y time; fi
+fixtures rm -rf "$WORK/aggregate-perf2d-sf1" && TMPDIR="$WORK/aggregate-perf2d/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2d-sf1"
+timings perf2d_machine=$(uname -m) && case "$perf2d_machine" in x86_64) perf2d_machine=c3d-highcpu-8 ;; aarch64) perf2d_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2d/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2d_machine" --bundle "$SRC/.aggregate-perf2d-inputs" --work "$WORK/aggregate-perf2d" --data "$WORK/aggregate-perf2d-sf1" --out "$RESULTS/aggregate-perf2d-$(date -u +%Y%m%dT%H%M%SZ)"
