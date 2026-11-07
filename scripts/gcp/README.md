@@ -106,6 +106,27 @@ runs only those 15 TLC runs, without repeating the 2 h of work that already has 
   `scripts/gcp/test/test-job-chains.sh` (the job selects only its own step) and `spikes/iceberg-commit/model/test_model_tools.py`
   (`run_model.py`: per-run limits, the budget clamp, TIMEOUT and NOT-RUN as mismatches, unknown names, resume).
 
+## `heavy`: any heavy run, on a machine sized for it (2026-11-07)
+
+Heavy local work (fuzz at nightly size, mutant sweeps, long suites) made the 8-vCPU development VM run at load 30, so the owner decided
+that heavy runs go to Spot VMs sized to the workload. `heavy` is the generic job for that. Write `heavy.steps` at the root of the tree
+you run from (a worktree is fine; it is gitignored and never committed), one step per line, `NAME COMMAND...`:
+
+```
+fuzz-files NATA_FUZZ_SEED=20261107 NATA_FUZZ_CASES=30000 cargo test --release -p nata-parquet --features page-crc --test fuzz_files
+sql-fuzz   cd spikes/sqlfuzz && NATA_BIN=$WORK/target/release/nata python3 -I fuzz.py run-subset --seed 20261107 --cases 100000 --jobs $(nproc) --target-cmd "python3 -I adapters/nata_adapter.py"
+```
+
+Each line is its own resumable step, run from the shipped tree, with its output in `results/NAME.txt` and its exit status in
+`results/NAME.exit`. A failing command is a result, not a failed job: the other steps still run. Names use a-z, 0-9 and `-`.
+Pick the machine for the work: `--machines c3d-highcpu-16` or `-32` (x86-64) or `n4a-highcpu-16`/`-32` (ARM64) for parallel CPU
+work, 8 vCPU when the numbers must be comparable with earlier 8-vCPU baselines. Run the commands locally on small sizes first, then:
+
+```
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-32 --max-vm-hours 1   # worst case about $0.29
+scripts/gcp/orchestrate.sh run  --job heavy --machines c3d-highcpu-32 --max-vm-hours 1 --approved-usd 0.29
+```
+
 ## `settle.sh`: timed blocks start on a quiet machine (2026-11-05)
 
 `settle.sh LABEL [LIMIT=0.5] [MAX_SECONDS=600]` waits until the 1-minute load average is below the limit and prints one line,

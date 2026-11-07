@@ -172,6 +172,10 @@ Cloud resources cost real money, so an agent never creates, starts or resizes on
 2. **Show the cost before running.** Give an estimate with: machine type and architecture, region, Spot or on-demand, vCPUs and memory, expected run time, disk size, and any egress or static IP. State the total in dollars and say it is an estimate. Prices come from the current Google Cloud pricing page or calculator, with the source and date. If a price could not be confirmed, say so.
 3. **Wait for a clear yes.** Do not start anything until the human confirms. A yes covers that run only, not later ones.
    **Local trial first** (added 2026-11-07). Before the cost is shown, the same job has passed locally: the job's script on small data (SF1 or smaller, one round) and `scripts/gcp/test/test-job-chains.sh`. If the trial fails, nothing is launched. Failed or aborted runs were 26% of all GCP spend up to slice 4b ($1.08 of $4.16), mostly script mistakes a local trial catches.
+   **Heavy runs go to Spot VMs sized to the work** (owner, 2026-11-07). Fuzz at nightly size, mutant sweeps, loom at bound 3, sanitizer
+   suites and benchmarks do not run on the development VM (8 vCPU; two children's local fuzz and mutants drove it to load 30). They run as
+   `orchestrate.sh` jobs, the generic one being `heavy` (`scripts/gcp/README.md`), on a machine chosen for the job: 16 or 32 vCPU for
+   parallel work, 8 vCPU where numbers must compare with earlier baselines. Children build and run short tests locally.
 4. **Keep it small and stop it.** Use the smallest machine that answers the question. Delete or stop the VM when the run ends, and report what was created and what was removed. Never leave a VM or disk running unnoticed.
 5. **Record it.** Note the machine type, region and date next to the result in `bench/results/`, so the cost and the hardware are known (see section 6, measurements).
 

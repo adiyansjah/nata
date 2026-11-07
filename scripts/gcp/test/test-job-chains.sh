@@ -15,6 +15,8 @@ finish_job() { echo "FINISHED"; }
 LIB
 fail=0; ok() { echo "ok   $1"; }; bad() { echo "FAIL $1"; fail=1; }
 steps() { mkdir -p "$T/w"; echo "$1" > "$T/w/JOBNAME"; WORK="$T/w" bash "$T/job.sh" 2>&1; }
+# the generic heavy job reads heavy.steps from the shipped tree ($WORK/src)
+mkdir -p "$T/w/src"; printf '# a comment\nfuzz-a echo one\n\nmut-b echo two\n' > "$T/w/src/heavy.steps"
 # every job the orchestrator accepts must reach FINISHED and never FAILJOB
 jobs=$(sed -n 's/.*case "\$JOB" in \(.*\)) ;; \*) die.*/\1/p' "$HERE/orchestrate.sh" | tr '|' ' ')
 [ -n "$jobs" ] || bad "could not read the job list from orchestrate.sh"
@@ -25,6 +27,10 @@ for j in $jobs; do
   [ -z "$dup" ] || bad "job $j runs a step twice: $dup"
 done
 has() { echo "$2" | grep -q "^STEP $1\$"; }
+hv=$(steps heavy); has h-fuzz-a "$hv" && has h-mut-b "$hv" && [ "$(echo "$hv" | grep -c '^STEP h-')" = 2 ] && ok "heavy runs one step per heavy.steps line, skipping comments and blanks" || bad "heavy: $(echo "$hv" | grep STEP | tr '\n' ' ')"
+mv "$T/w/src/heavy.steps" "$T/w/src/heavy.off"; hv=$(steps heavy); echo "$hv" | grep -q 'FAILJOB heavy: no heavy.steps' && ok "heavy without heavy.steps fails" || bad "heavy without heavy.steps: $(echo "$hv" | tail -2 | tr '\n' ' ')"
+printf 'Bad_Name echo x\n' > "$T/w/src/heavy.steps"; hv=$(steps heavy); echo "$hv" | grep -q "FAILJOB heavy: bad step name" && ok "heavy refuses a bad step name" || bad "heavy bad name"
+mv "$T/w/src/heavy.off" "$T/w/src/heavy.steps"
 t=$(steps timing); h=$(steps hashops)
 has h-bench-ov-on "$t" && has np-all "$t" && has p-timing "$t" && has t-compaction "$t" && has t-pushcost "$t" && has t-ap-bench "$t" && ok "timing chains hashops, nullpath, perf and its own steps" || bad "timing is missing a block"
 has h-mutate "$t" && bad "timing must not run the hash-ops mutation step" || ok "timing skips the hash-ops mutation step"

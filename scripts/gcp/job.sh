@@ -386,6 +386,18 @@ case "$JOB" in
     run ec-miri-exec bash -c 'cd "$SRC" && { CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-exec --lib 2>&1 | tail -n 30; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-miri-exec.txt"; tail -1 "$RESULTS/eng-miri-exec.txt" > "$RESULTS/eng-miri-exec-exit.txt"'
     run ec-leaks bash -c 'cd "$SRC" && git init --bare "$WORK/leak-index" >/dev/null && export GIT_DIR="$WORK/leak-index" GIT_WORK_TREE="$SRC" && git add --all && scripts/check-leaks.sh --tree > "$RESULTS/eng-leaks.txt" 2>&1'
     run ec-summary bash -c 'cd "$RESULTS" || exit; failed=0; for f in eng-*-exit.txt; do echo "${f%-exit.txt}: $(cat "$f")"; grep -qx "exit status: 0" "$f" || failed=1; done > eng-summary.txt; cat eng-summary.txt; exit "$failed"' ;;
+  heavy)
+    # Generic heavy run (owner, 2026-11-07: heavy runs go to GCP Spot VMs sized to the workload). The caller writes heavy.steps at the root
+    # of the tree it ships (never committed; .gitignore), one step per line: NAME COMMAND... Each line is its own resumable step, run from
+    # $SRC with its output in $RESULTS/NAME.txt and its exit status in $RESULTS/NAME.exit. A failing command is a RESULT, not a job failure:
+    # the remaining steps still run, and the caller reads the .exit files. Blank lines and lines starting with # are skipped.
+    [ -s "$SRC/heavy.steps" ] || { fail_job "heavy: no heavy.steps in the shipped tree"; exit 1; }
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in ''|'#'*) continue ;; esac
+      name=${line%% *}; cmd=${line#* }
+      case "$name" in *[!a-z0-9-]*|'') fail_job "heavy: bad step name '$name' (a-z, 0-9, -)"; exit 1 ;; esac
+      run "h-$name" bash -c 'cd "$SRC" && { eval "$1"; } > "$RESULTS/$2.txt" 2>&1; echo $? > "$RESULTS/$2.exit"; true' _ "$cmd" "$name"
+    done < "$SRC/heavy.steps" ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.
     run sf-all bash -c 'cd "$SRC/spikes/sqlfuzz" && ./gcp-check.sh "$RESULTS/sqlfuzz" > "$RESULTS/sqlfuzz-run.txt" 2>&1; echo "exit status: $?" > "$RESULTS/sqlfuzz-exit.txt"; true' ;;
