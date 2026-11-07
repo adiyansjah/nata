@@ -114,6 +114,7 @@ owner's delegation, `bench/results/20261106-sql-frontend.md`):
 | `CAST(s AS DATE)` with `'2024/02/29'`, `'2024-2-9'`, `'2024-02-29 10:00:00'` | converts | error: `YYYY-MM-DD` of a date that exists (spaces around are trimmed) |
 | `d IN (CAST(1.5 AS DOUBLE))` | allowed | `not supported yet`: the list holds literals (a `CAST` of a literal is not one) |
 | negating a negative minimum literal: `- -2147483648`, `- -9223372036854775808` (also parenthesized) | folds to the positive value in a wider literal type | INTEGER / BIGINT overflow, respectively: the inner negative literal is typed by its value (8b.10), and outer negation keeps that type |
+| `(w % 99999999.99) * d`, with `w DECIMAL(25,5)` and `d DECIMAL(10,2)` | wider `%` result permits a wider multiplication | `%` is DECIMAL(13,5); multiplication is checked DECIMAL(18,7) and can overflow (decimal-rules 3, 9) |
 | what is evaluated for which rows | see section 9b | see section 9b |
 
 ## 9b. What is evaluated for which rows (decided while building step 3, 2026-11-06)

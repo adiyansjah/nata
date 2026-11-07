@@ -58,6 +58,51 @@ class DifferenceClasses(unittest.TestCase):
         why = f"target raised an error: error: {path}: row group 0: execution error: integer overflow in a unary minus: the result does not fit BIGINT. Cast an operand (line 1, column {col})"
         self.assertTrue(subset_cli.classify(why, sql=sql).startswith("listed: negating"))
 
+    def test_shrunk_minimum_negation_anywhere_requires_the_exact_error(self):
+        from dataclasses import replace
+        _, queries = subset_cli.build(22014202119, 82, 40, 25)
+        base = replace(queries[2], where=None, limit=None)
+        for typ, minimum in [("INTEGER", "-2147483648"), ("BIGINT", "-9223372036854775808")]:
+            why = f"target raised an error: integer overflow in a unary minus: the result does not fit {typ}."
+            neg = Neg(typ, Lit(typ, minimum))
+            for expr in (neg, Bin("BOOLEAN", "<>", neg, Col("SMALLINT", "sm")),
+                         Neg(typ, Neg(typ, neg)),
+                         Case(typ, ((Lit("BOOLEAN", "true"), neg),), Lit(typ, "0"))):
+                query = replace(base, items=(Item(expr, "c1"),))
+                self.assertTrue(subset_cli.shrunk_class(why, query.sql(NO), query).startswith("listed: negating"))
+            query = replace(base, items=(Item(neg, "c1"),))
+            for error in (why.replace("a unary minus", "a multiplication"),
+                          why.replace(typ, "SMALLINT"), "target raised an error: decimal overflow in `*`"):
+                self.assertTrue(subset_cli.shrunk_class(error, query.sql(NO), query).startswith("BUG?"))
+            for expr in (Neg(typ, Col(typ, "b")), Neg(typ, Lit(typ, "-5")),
+                         Bin(typ, "+", neg, Neg(typ, Col(typ, "b")))):
+                query = replace(base, items=(Item(expr, "c1"),))
+                self.assertTrue(subset_cli.shrunk_class(why, query.sql(NO), query).startswith("BUG?"))
+
+    def test_decimal_remainder_product_requires_shape_type_and_overflow_witness(self):
+        from dataclasses import replace
+        tables, queries = subset_cli.build(22014202119, 2406, 40, 25)
+        from decimal import Decimal, localcontext
+        with localcontext() as ctx:
+            ctx.prec = 80
+            remainder = Decimal(tables["t1"][0][8]) % Decimal("99999999.99")
+            self.assertEqual(remainder, Decimal("-69135780.36345"))
+            self.assertEqual(remainder * Decimal(tables["t1"][0][7]), Decimal("-6913578035653642.1963655"))
+        query = replace(queries[6], items=queries[6].items[:1])
+        why = "target raised an error: decimal overflow in `*`: the result does not fit DECIMAL(18,7)."
+        classify = lambda q=query, t=tables, w=why: subset_cli.shrunk_class(w, q.sql(NO), q, t)
+        self.assertTrue(classify().startswith("listed: the tight decimal"))
+        for t in ({"t1": tables["t1"][1:]}, {"t1": []}):
+            self.assertTrue(classify(t=t).startswith("BUG?"))
+        for w in (why.replace("18,7", "25,7"), why.replace("`*`", "`+`")):
+            self.assertTrue(classify(w=w).startswith("BUG?"))
+        for q in (replace(query, where=Lit("BOOLEAN", "true")), replace(query, limit=1),
+                  replace(query, items=(Item(Case("BOOLEAN", ((Lit("BOOLEAN", "false"), query.items[0].e),), Lit("BOOLEAN", "true")), "c0"),)),
+                  replace(query, items=(Item(Bin("DECIMAL(10,2)", "*", Col("DECIMAL(10,2)", "d"), Col("DECIMAL(10,2)", "d")), "c0"),))):
+            self.assertTrue(classify(q=q).startswith("BUG?"))
+        # A '%' in SQL cannot excuse an unrelated decimal overflow.
+        self.assertTrue(subset_cli.shrunk_class(why, "SELECT (d * d), (a % 3) FROM t1").startswith("BUG?"))
+
     def test_between_null_upper_cast_requires_a_reaching_null_row_and_the_exact_error(self):
         from dataclasses import replace
         tables, queries = subset_cli.build(20261107, 2202, 40, 25)

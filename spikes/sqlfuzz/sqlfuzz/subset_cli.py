@@ -214,19 +214,95 @@ def null_between_cast_difference(why, query, tables):
     return witness
 
 
+def expression_nodes(node):
+    """Walk every expression, including CASE pairs and nested projections."""
+    from dataclasses import fields, is_dataclass
+    if isinstance(node, tuple):
+        for child in node: yield from expression_nodes(child)
+    elif is_dataclass(node):
+        yield node
+        for field in fields(node): yield from expression_nodes(getattr(node, field.name))
+
+
+def minimum_negation_ast_class(why, query):
+    """The shrunk AST has no source positions from the original query.
+
+    Require the exact unary error/type and a minimum-literal negation. Reject
+    competing nonliteral negations of that type: their overflow is unproved.
+    Any chain around a negative minimum reaches an overflowing inner negation.
+    """
+    from .render import Neg, Lit
+    if not why.startswith("target raised an error"): return None
+    match = re.search(r"integer overflow in a unary minus: the result does not fit (INTEGER|BIGINT)\.", why)
+    if not match: return None
+    typ = match[1]
+    minimum = "-2147483648" if typ == "INTEGER" else "-9223372036854775808"
+    found = False
+    for node in expression_nodes(query):
+        if not isinstance(node, Neg) or node.t != typ: continue
+        leaf = node.x
+        while isinstance(leaf, Neg) and leaf.t == typ: leaf = leaf.x
+        if not isinstance(leaf, Lit) or leaf.t != typ or not re.fullmatch(r"-?[0-9]+", leaf.text):
+            return None
+        if leaf.text == minimum: found = True
+    if found:
+        return "listed: negating a minimum signed literal overflows its value-based INTEGER/BIGINT type; DuckDB folds a wider literal (dialect 8b.10, 9)"
+    return None
+
+
+def decimal_remainder_product_class(why, query, tables):
+    """Certify the replay's tight % -> Decimal64 multiply with actual rows.
+
+    Keep unknown shapes/filters and other multiplications as candidate bugs.
+    A mere '%' anywhere in SQL must never excuse an unrelated overflow.
+    """
+    from decimal import Decimal, localcontext
+    from .render import Bin, Col, Lit, Cast
+    if not why.startswith("target raised an error") or "decimal overflow in `*`: the result does not fit DECIMAL(18,7)." not in why:
+        return None
+    if query is None or tables is None or query.where is not None or query.limit is not None:
+        return None
+    products = [n for n in expression_nodes(query) if isinstance(n, Bin) and n.op == "*"]
+    expected = Bin("DECIMAL(25,5)", "%", Col("DECIMAL(25,5)", "w"), Lit("DECIMAL(10,2)", "99999999.99"))
+    # Generator annotations are operand families, not bound result types.
+    if len(products) != 1: return None
+    product = products[0]
+    if product.l != expected or product.r != Cast("DECIMAL(10,2)", Col("DECIMAL(10,2)", "d")):
+        return None
+    # Only an unguarded projection (optionally a literal comparison) proves
+    # every row reaches this multiplication. Do not excuse a CASE/AND guard bug.
+    if len(query.items) != 1: return None
+    root = query.items[0].e
+    if root != product and not (isinstance(root, Bin) and root.op in ("=", "<>", "<", "<=", ">", ">=")
+                                and root.r == product and isinstance(root.l, Lit)):
+        return None
+    names = [n for n, _ in subset.COLS]
+    with localcontext() as ctx:
+        ctx.prec = 80
+        for row in tables[query.frm.name]:
+            w, d = row[names.index("w")], row[names.index("d")]
+            if "NULL" in (w, d): continue
+            value = (Decimal(w) % Decimal("99999999.99")) * Decimal(d)
+            if abs(value) >= Decimal(10) ** 11:
+                return "listed: the tight decimal % result makes multiplication overflow DECIMAL(18,7) (decimal-rules 3, 9; dialect 9)"
+    return None
+
+
 def shrunk_class(why, sql, query=None, tables=None):
     """The class of a difference from the SHRUNK query (what is left once everything that does not matter is gone). `listed:` classes are differences that
     docs/dialect.md section 9 or docs/decimal-rules.md section 9 lists and that are consequences of one rule of Nata: errors are raised only for the rows an
     operand or a branch is evaluated for. Anything else is a candidate bug (class `BUG?`) and fails the run."""
     if null_between_cast_difference(why, query, tables):
         return "listed: BETWEEN with a NULL lower comparison still evaluates its upper-bound cast in a CASE condition; DuckDB skips it (dialect 9b)"
+    minimum = minimum_negation_ast_class(why, query)
+    if minimum: return minimum
+    decimal = decimal_remainder_product_class(why, query, tables)
+    if decimal: return decimal
     up = sql.upper()
     m = re.match(r"row \d+ differs: oracle (.*) vs target (.*)$", why)
     if m and m.group(1) != m.group(2) and re.sub(r"'(-?)0\.", r"'\1.", m.group(1)) == re.sub(r"'(-?)0\.", r"'\1.", m.group(2)):
         # the same text but for the zero before the point: a DECIMAL(p,p) (the precision of a literal below one, or of a decimal % result) prints without it
         return "listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9)"
-    if why.startswith("target raised an error") and "decimal overflow" in why and " % " in sql:
-        return "listed: the tight result type of a decimal % is narrower than DuckDB's, so a later operation can overflow where DuckDB's does not (decimal-rules 9)"
     if why.startswith("target raised an error"):
         if "NULL" in up:
             return "listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b)"
@@ -265,11 +341,24 @@ def cmd_run(args):
     def work(item):
         (seed, batch, qid, why, sql), (tables, queries) = item
         sh = shrink(queries[qid], tables, checker(args, faults, reason_class(why)), max_checks=args.shrink_checks)
-        return item, sh
+        # Shrinking can change the failing operation (decimal multiplication to
+        # integer negation in seed 22014202119). Classify its current error.
+        setup = subset.setup_sql(sh[1])
+        oracle = DuckDB(args.duckdb)
+        target = target_for(args, faults)
+        sql = sh[0].sql(NO)
+        ro = oracle.run(setup, [(0, sql)])[0]
+        rt = target.run(setup, [(0, sh[0].sql(frozenset(faults)))])[0]
+        if args.target_cmd and ro.ok and rt.ok:
+            exact_aggregate_oracle(sh[0], sh[1], ro)
+        why = compare(ro, rt, sh[0].ordered)
+        if why and why.startswith("oracle raised an error") and rt.ok and not rt.rows:
+            why += " [Nata answered with 0 rows]"
+        return item, sh, why
     with ThreadPoolExecutor(args.jobs) as ex:
         results = list(ex.map(work, found[:args.shrink]))
-    for (d, _), sh in results:
-        seed, batch, qid, why, sql = d
+    for (d, _), sh, why in results:
+        seed, batch, qid, original_why, sql = d
         cls = shrunk_class(why, sh[0].sql(NO), sh[0], sh[1])
         final[cls] += 1
         path = os.path.join(args.out, f"subset-seed{seed}-b{batch}-q{qid}.sql")
