@@ -130,6 +130,8 @@ mutants! {
     no_success_body_bound,
     /// Response bytes are not reserved against the memory grant before the request.
     no_grant,
+    /// The HTTP client follows redirects (reqwest's default policy) instead of treating a 3xx as an error.
+    default_redirects,
 }
 
 /// Defects of the footer cache (ADR 0012).

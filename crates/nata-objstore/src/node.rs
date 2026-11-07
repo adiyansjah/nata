@@ -70,6 +70,11 @@ impl std::fmt::Debug for ObjectNode {
 
 /// A readable class name for a failed read; the text never carries the dependency's message.
 fn describe(e: &ReadError) -> String {
+    if let Class::Redirect(code) = e.class {
+        return format!(
+            "the store answered with a redirect (HTTP {code}), which is never followed"
+        );
+    }
     let what = match e.class {
         Class::Throttled => "the store throttled the request",
         Class::Server5xx => "the store answered with a server error",
@@ -82,6 +87,7 @@ fn describe(e: &ReadError) -> String {
         Class::BadLength => "the response length disagrees with the range asked for",
         Class::BadRange => "the response is not the range asked for",
         Class::BadResponse => "the response is malformed",
+        Class::Redirect(_) => "the store answered with a redirect",
         Class::NoValidator => {
             "the object has neither a version nor an ETag, so it cannot be pinned"
         }

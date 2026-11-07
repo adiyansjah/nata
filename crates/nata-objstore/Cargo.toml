@@ -17,6 +17,8 @@ object_store = { version = "0.14", default-features = false, features = ["aws", 
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "macros"] }
 futures-util = "0.3"
 bytes = "1"
+# The same reqwest 0.13 (and features) that object_store enables: our connector builds its own client to set the redirect policy.
+reqwest = { version = "0.13", default-features = false, features = ["http2", "rustls", "stream"] }
 parquet = "60"
 
 # Mutation switches of the wrapper (a known-bad version each) exist only for the test suites and the mutant sweep; a shipped binary cannot enable them.

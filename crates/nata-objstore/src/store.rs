@@ -16,7 +16,7 @@ use object_store::path::Path;
 use object_store::{ClientOptions, ObjectStore};
 
 use crate::policy::{Config, Mutants};
-use crate::remote::BoundedConnector;
+use crate::remote::{BoundedConnector, ClientSettings};
 use crate::util::lock;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -335,11 +335,26 @@ fn no_retry() -> object_store::RetryConfig {
     }
 }
 
-fn connector(cfg: &Config, m: &Mutants) -> BoundedConnector {
+/// The connector of EVERY store (and so of every HTTP client `object_store` makes for it: reads, LIST, metadata and token services). It builds the reqwest
+/// client itself so that it can set `redirect::Policy::none()`: a redirect from the endpoint is never followed (`x-amz-security-token` and other custom
+/// credential headers would travel to the new origin). Read paths never need one: the endpoint and the addressing style are configured explicitly.
+fn connector(cfg: &Config, m: &Mutants, allow_http: bool) -> BoundedConnector {
     BoundedConnector {
         cap: cfg.error_body_cap,
         meta_cap: cfg.meta_body_cap,
         bound_success: !m.no_success_body_bound(),
+        client: ClientSettings {
+            connect_timeout: Duration::from_secs(5),
+            // The per-attempt timeout is ours (it must be able to fail as a mutant); the client's own timeout is only a far backstop.
+            timeout: if m.no_attempt_timeout() {
+                None
+            } else {
+                Some(cfg.op_deadline + Duration::from_secs(10))
+            },
+            pool_max_idle_per_host: 64,
+            allow_http,
+            follow_redirects: m.default_redirects(),
+        },
     }
 }
 
@@ -384,7 +399,7 @@ pub fn build_s3(
         b = b.with_region("us-east-1");
     }
     if !m.no_transport_bound() {
-        b = b.with_http_connector(connector(cfg, m));
+        b = b.with_http_connector(connector(cfg, m, allow_http));
     }
     b.build()
         .map(|s| Arc::new(s) as Arc<dyn ObjectStore>)
@@ -399,6 +414,18 @@ pub fn build_gcs(
     cfg: &Config,
     m: &Mutants,
 ) -> Result<Arc<dyn ObjectStore>, String> {
+    build_gcs_with(o, bucket, cfg, m, None)
+}
+
+/// [`build_gcs`] with a given credential provider instead of the environment chain (the tests give the store a static bearer token, which the
+/// fake endpoint, being anonymous, would not otherwise make the client send).
+pub fn build_gcs_with(
+    o: &GcsOptions,
+    bucket: &str,
+    cfg: &Config,
+    m: &Mutants,
+    credentials: Option<GcsCredentials>,
+) -> Result<Arc<dyn ObjectStore>, String> {
     let mut b = GoogleCloudStorageBuilder::new()
         .with_bucket_name(bucket)
         .with_client_options(client_options(cfg, m, o.allow_http))
@@ -407,7 +434,10 @@ pub fn build_gcs(
         b = b.with_config(*k, v.clone());
     }
     if !m.no_transport_bound() {
-        b = b.with_http_connector(connector(cfg, m));
+        b = b.with_http_connector(connector(cfg, m, o.allow_http));
+    }
+    if let Some(c) = credentials {
+        b = b.with_credentials(c);
     }
     b.build()
         .map(|s| Arc::new(s) as Arc<dyn ObjectStore>)
@@ -416,6 +446,9 @@ pub fn build_gcs(
                 .to_string()
         })
 }
+
+pub type GcsCredentials =
+    Arc<dyn object_store::CredentialProvider<Credential = object_store::gcp::GcpCredential>>;
 
 /// A store and the scope its credentials give (for cache keys).
 #[derive(Clone)]

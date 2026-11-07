@@ -6,10 +6,10 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use nata_objfake::{FakeS3, Fault, Plan};
+use nata_objfake::{FakeS3, FakeSink, Fault, Plan};
 use nata_objstore::policy::{Config, Mutants};
 use nata_objstore::remote::{Class, Identity, Kind, Query, ReadError, Remote, Target};
-use nata_objstore::store::{S3Options, build_s3};
+use nata_objstore::store::{GcsCredentials, GcsOptions, S3Options, build_gcs_with, build_s3};
 use nata_objstore::util::Rng;
 use object_store::aws::AmazonS3ConfigKey;
 use object_store::path::Path;
@@ -1060,6 +1060,14 @@ pub async fn all_cases(m: &Mutants) -> Vec<CaseResult> {
             ),
         }
     });
+    case!(
+        "redirect_s3_with_session_token_never_followed",
+        redirect_case("redirect_s3_with_session_token_never_followed", m, false)
+    );
+    case!(
+        "redirect_gcs_with_bearer_never_followed",
+        redirect_case("redirect_gcs_with_bearer_never_followed", m, true)
+    );
     v
 }
 
@@ -1231,3 +1239,178 @@ pub const HOSTILE_CASES: [&str; 9] = [
     "endless_imds_credentials",
     "oversized_imds_credentials",
 ];
+
+/// Planted credentials of the redirect cases: a failure message, a Debug string or the second listener must never hold any of them.
+pub const REDIRECT_CANARIES: [&str; 3] = [
+    "AKIDREDIRECTCANARY",
+    "redirect-secret-canary-0004",
+    "redirect-session-token-canary-0005",
+];
+const REDIRECT_BEARER: &str = "redirect-bearer-canary-0006";
+
+/// A hostile endpoint answers every request with a redirect (301, 302, 307, 308, and one without a `Location`) to a SECOND loopback listener. The store carries
+/// a credential header (S3: `x-amz-security-token` + a signature; GCS: a bearer token). Required: the second listener sees no connection at all, every read and
+/// HEAD ends at once in a `Class::Redirect(code)` naming the status (one attempt: a redirect is not retried), and no canary appears in an error, a Debug
+/// string or the second listener's traffic. The planted-leak self-check proves the canary scan can fail.
+pub async fn redirect_case(name: &'static str, m: &Mutants, gcs: bool) -> CaseResult {
+    let cfg = fast();
+    let fake = FakeS3::start("bkt").await;
+    let sink = FakeSink::start().await;
+    let data = object_bytes(1);
+    fake.put("o.bin", data);
+    let store = if gcs {
+        let o = GcsOptions {
+            config: vec![(
+                object_store::gcp::GoogleConfigKey::BaseUrl,
+                fake.addr.clone(),
+            )],
+            allow_http: true,
+        };
+        let creds: GcsCredentials = Arc::new(object_store::StaticCredentialProvider::new(
+            object_store::gcp::GcpCredential {
+                bearer: REDIRECT_BEARER.to_string(),
+            },
+        ));
+        build_gcs_with(&o, "bkt", &cfg, m, Some(creds))
+    } else {
+        let mut o = fake_s3(&fake);
+        o.config
+            .retain(|(k, _)| *k != AmazonS3ConfigKey::SkipSignature);
+        o.config
+            .push((AmazonS3ConfigKey::AccessKeyId, REDIRECT_CANARIES[0].into()));
+        o.config.push((
+            AmazonS3ConfigKey::SecretAccessKey,
+            REDIRECT_CANARIES[1].into(),
+        ));
+        o.config
+            .push((AmazonS3ConfigKey::Token, REDIRECT_CANARIES[2].into()));
+        build_s3(&o, "bkt", &cfg, m)
+    }
+    .expect("store");
+    let remote = Remote::new(cfg.clone(), m.clone(), 42);
+    let q = remote.query(memory(cfg.grant_bytes));
+    let target = Target {
+        store: store.clone(),
+        path: Path::from("o.bin"),
+    };
+    let mut why: Vec<String> = Vec::new();
+    // our Debug of the target (it holds the store) and the error texts; the library's own Debug of a store is not ours to fix
+    let mut texts: Vec<String> = vec![format!("{target:?}")];
+    let id = match q.head(&target).await {
+        Ok(id) => id,
+        Err(e) => {
+            return CaseResult {
+                name,
+                ok: false,
+                detail: format!("WRONG: the control HEAD failed: {e}"),
+            };
+        }
+    };
+    let credential_reached_the_store = fake
+        .log()
+        .iter()
+        .any(|r| if gcs { r.bearer } else { r.session_token });
+    if !credential_reached_the_store {
+        why.push("the store never sent its credential header to the endpoint (the case would prove nothing)".to_string());
+    }
+    let t = Instant::now();
+    let mut runs = 0;
+    let mut seen = 0;
+    for (code, location) in [
+        (301u16, Some(sink.addr.clone())),
+        (302, Some(sink.addr.clone())),
+        (307, Some(sink.addr.clone())),
+        (308, Some(sink.addr.clone())),
+        (302, None),
+    ] {
+        let redirect = Fault::Redirect {
+            code,
+            location: location.clone(),
+        };
+        fake.set_plan(Plan {
+            sticky: Some(redirect.clone()),
+            head: Some(redirect),
+            ..Default::default()
+        });
+        runs += 1;
+        let get = q.fetch_range(&target, &id, R, Kind::Data).await;
+        let head = q.head(&target).await;
+        // one request each reached the endpoint (no retry, no follow); `set_plan` cleared the log
+        if fake.log().len() != 2 {
+            why.push(format!(
+                "after a {code} the endpoint saw {} requests, expected 2",
+                fake.log().len()
+            ));
+        }
+        seen += fake.log().len();
+        for (what, res) in [("range GET", get.map(|_| ())), ("HEAD", head.map(|_| ()))] {
+            match res {
+                Ok(()) => why.push(format!("{what} after a {code} succeeded")),
+                Err(e) => {
+                    texts.push(format!("{e} / {e:?}"));
+                    if e.class != Class::Redirect(code) || e.attempts != 1 {
+                        why.push(format!("{what} after a {code}: {:?} in {} attempts, expected Redirect({code}) in 1", e.class, e.attempts));
+                    }
+                    if !e.to_string().contains(&format!("Redirect({code})")) {
+                        why.push(format!("the {what} error does not name the status: {e}"));
+                    }
+                    if e.to_string().len() > 200 {
+                        why.push("the error text is not short".to_string());
+                    }
+                }
+            }
+        }
+    }
+    if t.elapsed() > Duration::from_secs(5) {
+        why.push(format!(
+            "{runs} redirect rounds took {} ms",
+            t.elapsed().as_millis()
+        ));
+    }
+    // the second listener saw nothing
+    if sink.connections() != 0 || !sink.requests().is_empty() {
+        why.push(format!(
+            "the redirect target received {} connection(s) and {} request(s) (credential headers: {})",
+            sink.connections(),
+            sink.requests().len(),
+            sink.requests().iter().any(|h| h.contains("x-amz-security-token") || h.contains("authorization"))
+        ));
+    }
+    let all = texts.join("\n");
+    for c in REDIRECT_CANARIES
+        .iter()
+        .copied()
+        .chain([REDIRECT_BEARER, sink.addr.trim_start_matches("http://")])
+    {
+        if all.contains(c) {
+            let at = texts.iter().position(|t| t.contains(c)).unwrap_or(0);
+            why.push(format!(
+                "string #{at} ({}) holds a planted secret of {} bytes",
+                if at == 0 {
+                    "the store's Debug"
+                } else {
+                    "an error"
+                },
+                c.len()
+            ));
+        }
+    }
+    // the scan itself can fail: planted leak
+    let planted = format!("{all} {}", REDIRECT_CANARIES[2]);
+    if !REDIRECT_CANARIES.iter().any(|c| planted.contains(c)) {
+        why.push("the canary scan cannot fail".to_string());
+    }
+    CaseResult {
+        name,
+        ok: why.is_empty(),
+        detail: format!(
+            "rounds={runs} endpoint_requests={seen} target_connections={}{}",
+            sink.connections(),
+            if why.is_empty() {
+                String::new()
+            } else {
+                format!(" WRONG: {}", why.join("; "))
+            }
+        ),
+    }
+}

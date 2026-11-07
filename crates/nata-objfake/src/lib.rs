@@ -83,6 +83,8 @@ pub enum Fault {
     Document { body: Vec<u8> },
     /// These exact bytes instead of a response, then the connection closes (garbage, a half-valid status line, headers without an end).
     Raw { bytes: Vec<u8> },
+    /// A redirect (`code` 3xx) to `location` (the request's key is appended: `<location>/<key>`), or without a `Location` header. For GET, HEAD and LIST.
+    Redirect { code: u16, location: Option<String> },
 }
 
 #[derive(Clone, Debug, Default)]
@@ -130,6 +132,8 @@ pub struct ReqLog {
     /// The access key id of the request's `Authorization` credential scope (never the signature), and whether a session token header was sent.
     pub auth_key: Option<String>,
     pub session_token: bool,
+    /// Whether the request carried an `Authorization: Bearer ...` header (the GCS style).
+    pub bearer: bool,
     /// The raw query string (`list-type=2&prefix=...`).
     pub query: String,
 }
@@ -151,6 +155,75 @@ struct Shared {
     require_key: Mutex<Option<String>>,
     /// Objects per LIST page.
     list_page: AtomicUsize,
+}
+
+/// A second loopback listener that records what reaches it: the target a hostile endpoint redirects to. A test asserts it saw nothing.
+pub struct FakeSink {
+    pub addr: String,
+    seen: Arc<Mutex<SinkSeen>>,
+    task: tokio::task::JoinHandle<()>,
+}
+
+#[derive(Default)]
+struct SinkSeen {
+    connections: usize,
+    /// The head (request line and headers, lower-cased) of every request that arrived.
+    heads: Vec<String>,
+}
+
+impl Drop for FakeSink {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
+
+impl FakeSink {
+    pub async fn start() -> FakeSink {
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = format!("http://{}", listener.local_addr().expect("addr"));
+        let seen = Arc::new(Mutex::new(SinkSeen::default()));
+        let s2 = seen.clone();
+        let task = tokio::spawn(async move {
+            let mut conns = tokio::task::JoinSet::new();
+            loop {
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    break;
+                };
+                s2.lock_().connections += 1;
+                let s3 = s2.clone();
+                conns.spawn(async move {
+                    let mut buf = vec![0u8; 16 << 10];
+                    let mut n = 0;
+                    while n < buf.len() {
+                        match sock.read(&mut buf[n..]).await {
+                            Ok(0) | Err(_) => break,
+                            Ok(k) => n += k,
+                        }
+                        if buf[..n].windows(4).any(|w| w == b"\r\n\r\n") {
+                            break;
+                        }
+                    }
+                    if n > 0 {
+                        s3.lock_()
+                            .heads
+                            .push(String::from_utf8_lossy(&buf[..n]).to_lowercase());
+                        let _ = sock
+                            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n")
+                            .await;
+                    }
+                });
+            }
+        });
+        FakeSink { addr, seen, task }
+    }
+    /// Connections accepted (a connection that sent nothing counts).
+    pub fn connections(&self) -> usize {
+        self.seen.lock_().connections
+    }
+    /// Requests that arrived, as lower-cased heads.
+    pub fn requests(&self) -> Vec<String> {
+        self.seen.lock_().heads.clone()
+    }
 }
 
 pub struct FakeS3 {
@@ -290,6 +363,7 @@ struct Req {
     query: String,
     auth_key: Option<String>,
     session_token: bool,
+    bearer: bool,
 }
 
 fn percent_decode(s: &str) -> String {
@@ -345,6 +419,7 @@ async fn read_head(sock: &mut TcpStream, buf: &mut Vec<u8>) -> std::io::Result<O
             let mut if_match = None;
             let mut auth_key = None;
             let mut session_token = false;
+            let mut bearer = false;
             for l in lines {
                 let Some((k, v)) = l.split_once(':') else {
                     continue;
@@ -360,6 +435,7 @@ async fn read_head(sock: &mut TcpStream, buf: &mut Vec<u8>) -> std::io::Result<O
                 } else if k == "if-match" {
                     if_match = Some(v.to_string());
                 } else if k == "authorization" {
+                    bearer = v.starts_with("Bearer ");
                     auth_key = v
                         .split("Credential=")
                         .nth(1)
@@ -380,6 +456,7 @@ async fn read_head(sock: &mut TcpStream, buf: &mut Vec<u8>) -> std::io::Result<O
                 query,
                 auth_key,
                 session_token,
+                bearer,
             }));
         }
         if buf.len() > 64 * 1024 {
@@ -402,6 +479,10 @@ fn status_line(code: u16) -> &'static str {
         206 => "206 Partial Content",
         403 => "403 Forbidden",
         404 => "404 Not Found",
+        301 => "301 Moved Permanently",
+        302 => "302 Found",
+        307 => "307 Temporary Redirect",
+        308 => "308 Permanent Redirect",
         412 => "412 Precondition Failed",
         416 => "416 Range Not Satisfiable",
         429 => "429 Too Many Requests",
@@ -493,6 +574,7 @@ async fn serve(mut sock: TcpStream, sh: Arc<Shared>) -> std::io::Result<()> {
             ordinal,
             auth_key: req.auth_key.clone(),
             session_token: req.session_token,
+            bearer: req.bearer,
             query: req.query.clone(),
         });
         let keep = respond(&mut sock, &sh, &req, fault).await?;
@@ -515,6 +597,21 @@ async fn respond(
     {
         sock.write_all(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n")
             .await?;
+        return Ok(true);
+    }
+    if let Some(Fault::Redirect { code, location }) = &fault {
+        let loc = location
+            .as_ref()
+            .map(|l| format!("Location: {l}/{}?{}\r\n", req.key, req.query))
+            .unwrap_or_default();
+        sock.write_all(
+            format!(
+                "HTTP/1.1 {}\r\n{loc}Content-Length: 0\r\n\r\n",
+                status_line(*code)
+            )
+            .as_bytes(),
+        )
+        .await?;
         return Ok(true);
     }
     if req.method == "GET" && req.key.is_empty() && req.query.contains("list-type=2") {

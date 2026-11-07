@@ -21,7 +21,7 @@ use futures_util::StreamExt;
 use nata_sched::memory::{Grant, MemoryError, MemoryManager, Reservation, Wake};
 use object_store::client::{
     HttpClient, HttpConnector, HttpError, HttpErrorKind, HttpRequest, HttpResponse,
-    HttpResponseBody, HttpService, ReqwestConnector,
+    HttpResponseBody, HttpService,
 };
 use object_store::path::Path;
 use object_store::{ClientOptions, Error as OsError, GetOptions, GetRange, ObjectStore};
@@ -56,6 +56,8 @@ pub enum Class {
     BadRange,
     /// Anything else malformed (undecodable headers or body framing, unexpected status).
     BadResponse,
+    /// A 3xx answer (the code is in the variant). Never followed: a redirect would carry our credential headers to another origin. Not retried.
+    Redirect(u16),
     /// The object has neither a version nor an ETag: it cannot be pinned.
     NoValidator,
     FooterTooLarge,
@@ -162,6 +164,7 @@ fn parse_status(text: &str) -> Fail {
         404 => Class::NotFound,
         412 => Class::IdentityChanged,
         416 => Class::BadRange,
+        300..=399 if code != 304 => Class::Redirect(code as u16),
         _ => Class::BadResponse,
     };
     Fail { class, retry_after }
@@ -179,6 +182,9 @@ fn classify_http(h: &HttpError) -> Fail {
 // ------------------------------------------------------------------------------------------------ transport bound
 
 /// Wraps the reqwest transport of `object_store`:
+/// * redirects are NEVER followed: the client is built here with `redirect::Policy::none()` (`object_store` has no option for it and reqwest's default
+///   would follow a 3xx and forward custom credential headers such as `x-amz-security-token` to the new origin). A 3xx surfaces as a status error
+///   (`Class::Redirect(code)`, not retried); its `Location` is replaced by a fixed marker so the target never reaches an error text or a log;
 /// * a non-success response keeps at most `cap` bytes of its body (the client crate would otherwise buffer the whole error body, unbounded, to put it in
 ///   an error message), and the body is replaced by a short marker that carries only a valid Retry-After;
 /// * a SUCCESS response to a request that is not a ranged object read (a LIST page, a credential or token JSON, an STS answer) is collected here up to
@@ -189,11 +195,56 @@ pub struct BoundedConnector {
     pub cap: usize,
     pub meta_cap: usize,
     pub bound_success: bool,
+    pub client: ClientSettings,
+}
+
+/// What the reqwest client needs (the part of `ClientOptions` we use; that type cannot be read back). Every HTTP client of every store comes from
+/// [`BoundedConnector::connect`], so every one of them has these settings and no redirect policy but `none`.
+#[derive(Clone, Debug)]
+pub struct ClientSettings {
+    pub connect_timeout: Duration,
+    /// The client's own far backstop timeout (the per-attempt timeout is ours); `None` disables it.
+    pub timeout: Option<Duration>,
+    pub pool_max_idle_per_host: usize,
+    /// Plain http allowed (a local test endpoint); otherwise https only. Plain http also means HTTP/1.1 only.
+    pub allow_http: bool,
+    /// MUTANT ONLY (`default_redirects`): reqwest's default policy (follow up to 10 redirects).
+    pub follow_redirects: bool,
+}
+
+impl ClientSettings {
+    fn build(&self) -> object_store::Result<reqwest::Client> {
+        let mut b = reqwest::Client::builder()
+            .user_agent(concat!("nata-objstore/", env!("CARGO_PKG_VERSION")))
+            .connect_timeout(self.connect_timeout)
+            .pool_max_idle_per_host(self.pool_max_idle_per_host)
+            // compression would interfere with Content-Length, which sizes the reads
+            .no_gzip()
+            .no_brotli()
+            .no_zstd()
+            .no_deflate()
+            .https_only(!self.allow_http)
+            .redirect(if self.follow_redirects {
+                reqwest::redirect::Policy::default()
+            } else {
+                reqwest::redirect::Policy::none()
+            });
+        if let Some(t) = self.timeout {
+            b = b.timeout(t);
+        }
+        if self.allow_http {
+            b = b.http1_only();
+        }
+        b.build().map_err(|_| object_store::Error::Generic {
+            store: "http",
+            source: "cannot build the HTTP client".into(),
+        })
+    }
 }
 
 impl HttpConnector for BoundedConnector {
-    fn connect(&self, options: &ClientOptions) -> object_store::Result<HttpClient> {
-        let inner = ReqwestConnector::default().connect(options)?;
+    fn connect(&self, _options: &ClientOptions) -> object_store::Result<HttpClient> {
+        let inner = HttpClient::new(self.client.build()?);
         Ok(HttpClient::new(BoundedService {
             inner,
             cap: self.cap,
@@ -246,7 +297,15 @@ impl HttpService for BoundedService {
                     HttpResponseBody::from(Bytes::from(buf)),
                 ));
             }
-            let (parts, body) = resp.into_parts();
+            let (mut parts, body) = resp.into_parts();
+            if parts.status.is_redirection() {
+                // Never followed. The library turns a 3xx WITH a Location into a status error and one without into a "bare redirect"; give both the
+                // first form, with a fixed Location, so the target address cannot reach an error text.
+                parts.headers.insert(
+                    "location",
+                    reqwest::header::HeaderValue::from_static("withheld"),
+                );
+            }
             let mut seen = 0usize;
             let mut stream = body.bytes_stream();
             while seen < self.cap {
@@ -409,10 +468,19 @@ impl Identity {
 }
 
 /// One object: the store it lives in and its path there.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Target {
     pub store: Arc<dyn ObjectStore>,
     pub path: Path,
+}
+
+/// The library's Debug of a store prints its credentials (the S3 key id, a static GCS bearer token), so ours shows the path only.
+impl std::fmt::Debug for Target {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Target")
+            .field("path", &self.path.as_ref())
+            .finish_non_exhaustive()
+    }
 }
 
 /// Bytes handed to a caller, with the grant that keeps them charged until the last reader drops them.
@@ -1089,6 +1157,7 @@ mod tests {
             Class::BadLength,
             Class::BadRange,
             Class::BadResponse,
+            Class::Redirect(301),
             Class::NoValidator,
             Class::Cancelled,
             Class::DeadlineExceeded,
