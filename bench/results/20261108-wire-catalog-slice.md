@@ -803,3 +803,16 @@ healthy completion 5.0043 / 5.0049 s: PASS. This first smoke preceded adding CPU
 actors; loaded/full-size certification is NOT RUN. Arithmetic boundaries PASS
 (`test_resource_gates.py`). Resource smoke command:
 `python resources.py --nata <binary> --work <scratch> --smoke` using matrix venv.
+
+### Closeout preparation D: reference-first P16 harness
+
+`p16.py` persists all PostgreSQL medians/twin noise before any Nata timing,
+then alternates paired baseline/current runs with identical clients, fixtures,
+startup inclusion, validation and sinks. Stream gate ≤1.10x PostgreSQL; small
+query gate ≤1.20x baseline; reference twin noise >5% => UNRESOLVED. Every client,
+format and 1/8-worker arm retains its own verdict. Arm set: psql, std Rust raw
+text/binary, JDBC, psycopg, ADBC COPY, plus pgcli. Five primary/twin rounds,
+min/median/spread and samples retained. `test_p16.py` PASS at exact boundaries,
+1.101x/1.201x slowdown and 5.1% reference noise controls. Smoke uses 100 rows,
+one round and 1 worker, always labelled SMOKE ONLY; baseline=current is a harness
+control only. No performance acceptance inferred locally.
