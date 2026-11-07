@@ -1574,3 +1574,158 @@ scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id per
 scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2c-20261108-arm64 --data-gb 80 --max-vm-hours 2
 scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2c-20261108-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
 ```
+
+## Performance step 2c (retry)
+
+The owner-authorized retry replaces the stopped arbitrary-i128 SAT obligation
+with separately checked admission, reduced-width arithmetic lemmas, i128
+boundary properties and a named full-width arithmetic trust point (R26).
+The earlier stop remains historical evidence, cherry-picked as `7b87ea9` from
+`1006777`; no cloud run, target or ADR amendment is part of this retry.
+
+### Input invariant and scope
+
+`nata-parquet/src/reader.rs::column_types_are_as_requested` checks Arrow
+metadata, not the values against decimal precision. Both
+`nata-exec/src/value.rs::Col::read_arrow` and `Col::from_arrow` copy Decimal64
+and Decimal128 values without a magnitude validation. Consequently no
+optimization trusts source metadata alone: selected, jointly valid operands
+must pass a batch maximum-magnitude scan; failure replays the original checked
+column loop, rather than raising a new input-validation error. Boundary tests
+compare the full output/validity prefix before the failed row with that loop.
+
+Q1's inputs are DECIMAL(15,2). Its `1-discount` / `1+tax` intermediates are
+DECIMAL(16,2), but the products are capped at DECIMAL(18,4)/(18,6):
+`15+16 > 18`, `18+16 > 18`. The type-only product rule cannot elide those
+checks. Add/sub alignment with a spare result digit can admit the intermediates.
+This follows the existing decimal rules; widening the result type to manufacture
+admission would change the contract and was not attempted.
+
+### Retry A — product admission (rejected)
+
+**Rule:** Admit only `1<=p1,p2,P<=38 && p1+p2<=P`, then require both operand
+maxima over selected jointly valid rows below their declared powers of ten.
+Keep the original checked loop on any admission failure.
+
+**Verdict:** reject: the timed queries have capped products, so the new product
+path does not execute; apparent many-group gains are not established beyond the
+identical-before controls. Local shared x86-64 VM, warm SF1, whole CLI including
+planning and CSV output, 8 GiB; five alternating rounds, **unsettled**.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.365 | 1.397 | 1.354 | 1.032 | 0.992 |
+| q1 | 8 | 0.412 | 0.413 | 0.395 | 0.982 | 0.966 |
+| high_cardinality_tpch | 1 | 2.987 | 2.879 | 2.964 | 0.964 | 0.958 |
+| high_cardinality_tpch | 8 | 2.169 | 2.146 | 2.191 | 0.972 | 0.925 |
+
+Q1 one-thread self shares: Decimal::column **11.67%→14.58%**,
+ExactSum::add **6.48%→5.96%**, Partial::resume **18.88%→17.71%**.
+These are sampled shares, not causal attribution; the candidate does not admit
+these products. All SF1 value gates passed. Per-cell distributions, min/median,
+paired noise and immutable binary hashes: [summary](raw/20261108-hash-aggregate-perf2c/retry-product-summary.json),
+[samples](raw/20261108-hash-aggregate-perf2c/retry-product-samples.json),
+[gates](raw/20261108-hash-aggregate-perf2c/retry-product-gates.json).
+The [rejected patch](raw/20261108-hash-aggregate-perf2c/rejected-product-retry.patch)
+and [kernel snapshot](raw/20261108-hash-aggregate-perf2c/retry-product-decimal.rs)
+preserve this experiment; its precision proof imports that snapshot, not a
+fictional retained product path. Full touched-crate gates were deferred for this
+rejected candidate; no product implementation is kept.
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py retry-product --before /home/dev/perf2c-retry/before --after /home/dev/perf2c-retry/product --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2c --profile
+```
+
+### Retry B — aligned add/sub admission (provisionally retained)
+
+**Rule:** require each declared operand precision plus its alignment digits to
+be strictly below P, with P<=38, then validate selected jointly valid batch
+magnitudes. Both aligned operand checks and the add/sub result check are then
+redundant: each operand is below 10^(P-1), so their sum/difference is below
+2*10^(P-1)<10^P. Admission failures use the unchanged checked loop. The scalar
+reference stays checked. Q1's capped multiplication checks stay checked.
+
+Local shared x86-64 VM, warm SF1, whole CLI, 8 GiB, five alternating rounds and
+identical-before control; **unsettled**. No frozen-target or ARM64 claim.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.236 | 1.203 | 1.296 | 0.956 | 1.025 |
+| q1 | 8 | 0.382 | 0.371 | 0.381 | 0.942 | 0.992 |
+| high_cardinality_tpch | 1 | 2.874 | 2.885 | 2.866 | 0.981 | 0.996 |
+| high_cardinality_tpch | 8 | 4.587 | 3.919 | 4.334 | 0.849 | 0.956 |
+
+**Verdict:** retain provisionally: Q1 paired time improves 4.4%/5.8%, against
+controls +2.5%/-0.8%; no measured cell regresses. The high-cardinality eight-thread
+cell is particularly noisy under concurrent development-machine load and is
+unresolved, not a settled 15.1% gain. Raw distributions include minima, quartiles
+and paired control ranges. Q1 one-thread self shares: Decimal::column
+**13.24%→9.63%**, ExactSum::add **5.10%→4.56%**, Partial::resume
+**19.30%→19.93%**. Shares are whole-process samples, not additive phase times.
+
+[Summary and binary hashes](raw/20261108-hash-aggregate-perf2c/retry-aligned-summary.json),
+[samples](raw/20261108-hash-aggregate-perf2c/retry-aligned-samples.json),
+[SF1 DuckDB gates](raw/20261108-hash-aggregate-perf2c/retry-aligned-gates.json).
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py retry-aligned --before /home/dev/perf2c-retry/before --after /home/dev/perf2c-retry/aligned --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2c --profile
+```
+
+### Proofs and controls
+
+Eight new harnesses pass: `perf2c_precision` (all u8 precisions), `perf2c_scan`
+(arbitrary i128 values, validity maps and subset selections at two rows;
+nonzero limits), `perf2c_aligned_precision` (all u8 precisions and valid alignment
+exponents), `perf2c_sum_envelope` (all u128 current magnitudes/bounds and u64
+counts), plus exhaustive-symbolic i16 product, binary-magnitude product and
+aligned add/sub lemmas and a u16/u8 accumulation-envelope lemma.
+The batch envelope rounds n upward to a power of two, checks that shifting the
+bound loses no bits, and uses checked u128 addition; its strict `<2^127` result
+is a sufficient condition for the requested `|current|+n*(10^p-1)<2^127` rule.
+This can reject a safe batch; rejection is never an SQL error.
+
+All four existing decimal column harnesses also pass. Each of the 12 completed
+harnesses satisfies both cover goals: **12/12 proofs, 24/24 covers**. Raw logs
+are `retry-kani-HARNESS.txt` under the [raw directory](raw/20261108-hash-aggregate-perf2c/).
+The proofs import production source; the rejected product's precision predicate
+is explicitly imported from its preserved candidate snapshot.
+
+Four independently weakened predicates all produce real verification failures
+(exit 1 and `VERIFICATION:- FAILED`, not compilation failure/timeout): allow
+`p1+p2<=P+1`, drop the magnitude scan, remove the aligned spare digit, and allow
+the envelope to equal `2^127`. [Negative outcomes](raw/20261108-hash-aggregate-perf2c/retry-negative-outcomes.json).
+The portable runner restores each source in a `finally` block:
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/kani-target python3 spikes/kani-nata-kernels/negative-perf2c.py
+```
+
+The named full-width trust point is [R26](../../docs/improvements.md#r26--full-width-arithmetic-lemmas-for-admitted-decimal-batches-2026-11-08).
+It covers lifting the arithmetic inequalities to i128; admission logic passing
+Kani does not certify full-width multiplication or Arrow i256. A separate
+20-second full-width Kissat trial timed out (exit 124), with no proof claim.
+The parent-only steps allow **four hours each** for CaDiCaL and Kissat.
+
+Aligned-add/sub checks: full `cargo test --locked --release -j 4 -p nata-exec
+-p nata-kernels` (test threads 1), fmt, clippy on both crates/all targets with
+warnings denied, and the locked release `nata`/`nata-check` build pass.
+Fresh SF0.01 and SQL fixtures pass **65/65 aggregate, 65/65 forced spill,
+252/252 SQL**. The canonical decimal suite reports **30 pending**, not 30 passes:
+these unchanged fixtures use unsupported SELECT-without-FROM or VALUES/subquery
+forms. The SQL gate and kernel properties exercise supported decimal arithmetic.
+[Complete check log](raw/20261108-hash-aggregate-perf2c/retry-aligned-checks.txt).
+The preserved product candidate's standalone boundary tests also pass **3/3**,
+including all in-range precision pairs at signed `10^p-1` boundaries and
+`i128::MIN` fallback/prefix controls:
+[log](raw/20261108-hash-aggregate-perf2c/retry-product-properties.txt).
+
+Focused cargo-mutants on `aligned_precision|batch_magnitudes`: **28 caught,
+0 missed, 0 timeouts, 0 invalid**, after a passing unmutated control.
+[Outcomes](raw/20261108-hash-aggregate-perf2c/retry-aligned-mutants-outcomes.json),
+[summary](raw/20261108-hash-aggregate-perf2c/retry-aligned-mutants.txt).
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2c-retry/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2c-retry/mutants-aligned -p nata-kernels -f crates/nata-kernels/src/decimal.rs -F 'aligned_precision|batch_magnitudes' --timeout 180
+rustc --edition 2024 --test bench/results/raw/20261108-hash-aggregate-perf2c/retry-product-decimal.rs -o /home/dev/perf2c-retry/product-properties
+/home/dev/perf2c-retry/product-properties
+```

@@ -115,6 +115,7 @@ pub struct Decimal {
     left: i128,
     right: i128,
     limit: u128,
+    input_limits: Option<(u128, u128)>,
 }
 impl Decimal {
     pub fn new(op: Op, sa: u8, sb: u8, p: u8, s: u8) -> Result<Self, Fail> {
@@ -131,16 +132,34 @@ impl Decimal {
         let right = pow10(u32::from(s.saturating_sub(sb))).ok_or(Fail::Overflow)?;
         Ok(Self {
             op,
+            input_limits: None,
             left,
             right,
             limit: pow10(u32::from(p)).ok_or(Fail::Overflow)?.unsigned_abs(),
         })
+    }
+    /// Admit by declared precision, then validate magnitudes once per batch.
+    /// Scan/Arrow metadata alone does not establish the value invariant.
+    pub fn with_precisions(mut self, pa: u8, pb: u8, p: u8) -> Self {
+        if (matches!(self.op, Op::Add | Op::Sub)
+            && aligned_precision(pa, pb, self.left, self.right, p))
+            && pow10(u32::from(p)).map(|n| n.unsigned_abs()) == Some(self.limit)
+        {
+            self.input_limits = pow10(u32::from(pa))
+                .zip(pow10(u32::from(pb)))
+                .map(|(a, b)| (a.unsigned_abs(), b.unsigned_abs()));
+        }
+        self
     }
     /// Dispatch once per column, so multiplication has neither per-row type
     /// dispatch nor a per-row power-of-ten calculation.
     #[allow(
         clippy::too_many_arguments,
         reason = "borrowed column inputs and output buffers"
+    )]
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "R26: batch admission bounds alignment and the exact arithmetic result"
     )]
     pub fn column(
         self,
@@ -152,6 +171,23 @@ impl Decimal {
         out: &mut [i128],
         valid: &mut [bool],
     ) -> Result<(), Fail> {
+        if let Some((la, lb)) = self.input_limits
+            && batch_magnitudes(a, av, b, bv, sel, la, lb)
+        {
+            // Admission bounds alignment and the exact result below 10^P.
+            // Full-width arithmetic lemmas: improvements.md R26.
+            return match self.op {
+                Op::Add => binary(a, av, b, bv, sel, out, valid, |x, y| {
+                    Ok(x.wrapping_mul(self.left)
+                        .wrapping_add(y.wrapping_mul(self.right)))
+                }),
+                Op::Sub => binary(a, av, b, bv, sel, out, valid, |x, y| {
+                    Ok(x.wrapping_mul(self.left)
+                        .wrapping_sub(y.wrapping_mul(self.right)))
+                }),
+                _ => binary(a, av, b, bv, sel, out, valid, |x, y| Ok(x.wrapping_mul(y))),
+            };
+        }
         match self.op {
             Op::Mul => binary(a, av, b, bv, sel, out, valid, |x, y| {
                 self.check(self.product(x, y))
@@ -242,6 +278,51 @@ pub fn integer(op: Op, x: i64, y: i64, lo: i64, hi: i64) -> Result<i64, Fail> {
     v.filter(|v| *v >= lo && *v <= hi).ok_or(Fail::Overflow)
 }
 
+/// Both aligned operands need at least one spare decimal digit. Because
+/// 2*(10^(P-1)-1) < 10^P, alignment and either sign of add/sub fit.
+pub fn aligned_precision(pa: u8, pb: u8, left: i128, right: i128, p: u8) -> bool {
+    if !(1..=38).contains(&pa) || !(1..=38).contains(&pb) || !(1..=38).contains(&p) {
+        return false;
+    }
+    // Compare power factors with 10^(P-pi-1), without multiplying values.
+    let Some(a) = p.checked_sub(pa).and_then(|d| d.checked_sub(1)) else {
+        return false;
+    };
+    let Some(b) = p.checked_sub(pb).and_then(|d| d.checked_sub(1)) else {
+        return false;
+    };
+    left > 0
+        && right > 0
+        && pow10(u32::from(a)).is_some_and(|n| left <= n)
+        && pow10(u32::from(b)).is_some_and(|n| right <= n)
+}
+
+/// Compare the maxima over jointly valid selected rows. A failed scan is not
+/// an SQL error: the original checked loop must decide at the original row.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "borrowed batch inputs and bounds"
+)]
+pub fn batch_magnitudes(
+    a: &[i128],
+    av: &[bool],
+    b: &[i128],
+    bv: &[bool],
+    sel: &[u32],
+    la: u128,
+    lb: u128,
+) -> bool {
+    let (mut ma, mut mb) = (0, 0);
+    for &row in sel {
+        let i = row as usize;
+        if av[i] && bv[i] {
+            ma = ma.max(a[i].unsigned_abs());
+            mb = mb.max(b[i].unsigned_abs());
+        }
+    }
+    ma < la && mb < lb
+}
+
 #[cfg(test)]
 #[allow(
     clippy::arithmetic_side_effects,
@@ -327,5 +408,134 @@ mod tests {
             k.column(&a, &[true; 4], &b, &[true; 4], &[3], &mut out, &mut valid),
             Err(Fail::Overflow)
         );
+    }
+    #[test]
+    fn perf2c_aligned_boundaries_and_checked_fallback() {
+        for op in [Op::Add, Op::Sub] {
+            for p in 2..=38 {
+                for da in 0..p - 1 {
+                    let pa = p - da - 1;
+                    let k = Decimal::new(op, 0, da, p, da)
+                        .expect("test boundary")
+                        .with_precisions(pa, p - 1, p);
+                    let checked = Decimal::new(op, 0, da, p, da).expect("test boundary");
+                    for x in [
+                        pow10(u32::from(pa)).expect("test boundary") - 1,
+                        1 - pow10(u32::from(pa)).expect("test boundary"),
+                        0,
+                    ] {
+                        for y in [
+                            pow10(u32::from(p - 1)).expect("test boundary") - 1,
+                            1 - pow10(u32::from(p - 1)).expect("test boundary"),
+                            0,
+                        ] {
+                            let (mut out, mut valid) = ([0], [false]);
+                            assert_eq!(
+                                k.column(&[x], &[true], &[y], &[true], &[0], &mut out, &mut valid),
+                                Ok(())
+                            );
+                            assert_eq!(Ok(out[0]), checked.scalar(x, y));
+                        }
+                    }
+                }
+            }
+            let k = Decimal::new(op, 0, 0, 2, 0)
+                .expect("test boundary")
+                .with_precisions(1, 1, 2);
+            let checked = Decimal::new(op, 0, 0, 2, 0).expect("test boundary");
+            for x in [10, 99, 100, i128::MIN, i128::MAX] {
+                for y in [0, 1, -1, 99, i128::MIN] {
+                    let (mut out, mut valid) = ([0; 3], [false; 3]);
+                    let (mut reference, mut rv) = ([0; 3], [false; 3]);
+                    let a = [1, 2, x];
+                    let b = [1, 1, y];
+                    assert_eq!(
+                        k.column(
+                            &a,
+                            &[true; 3],
+                            &b,
+                            &[true; 3],
+                            &[0, 1, 2],
+                            &mut out,
+                            &mut valid
+                        ),
+                        checked.column(
+                            &a,
+                            &[true; 3],
+                            &b,
+                            &[true; 3],
+                            &[0, 1, 2],
+                            &mut reference,
+                            &mut rv
+                        )
+                    );
+                    assert_eq!((out, valid), (reference, rv));
+                }
+            }
+        }
+        assert!(!aligned_precision(1, 1, 10, 1, 2));
+        assert!(!aligned_precision(1, 1, 1, 10, 2));
+        assert!(!aligned_precision(1, 1, 0, 1, 2));
+        assert!(!aligned_precision(1, 1, 1, 0, 2));
+        assert!(!aligned_precision(1, 1, 1, 1, 1)); // admitting equal precision lets 9+9 overflow.
+    }
+    #[test]
+    fn perf2c_admission_rejects_each_bad_precondition() {
+        for bad in [0, 39, 255] {
+            assert!(!aligned_precision(bad, 1, 1, 1, 2));
+            assert!(!aligned_precision(1, bad, 1, 1, 2));
+            assert!(!aligned_precision(1, 1, 1, 1, bad));
+        }
+        for bad in [i128::MIN, -1, 0, 10, i128::MAX] {
+            assert!(!aligned_precision(1, 1, bad, 1, 2));
+            assert!(!aligned_precision(1, 1, 1, bad, 2));
+        }
+        assert!(aligned_precision(1, 1, 1, 1, 2));
+        for (a, b) in [
+            (10, 0),
+            (0, 10),
+            (11, 0),
+            (0, 11),
+            (i128::MIN, 0),
+            (0, i128::MIN),
+        ] {
+            assert!(!batch_magnitudes(
+                &[a],
+                &[true],
+                &[b],
+                &[true],
+                &[0],
+                10,
+                10
+            ));
+            assert!(batch_magnitudes(
+                &[a],
+                &[false],
+                &[b],
+                &[true],
+                &[0],
+                10,
+                10
+            ));
+            assert!(batch_magnitudes(
+                &[a],
+                &[true],
+                &[b],
+                &[false],
+                &[0],
+                10,
+                10
+            ));
+            assert!(batch_magnitudes(&[a], &[true], &[b], &[true], &[], 10, 10));
+        }
+        assert!(batch_magnitudes(
+            &[9],
+            &[true],
+            &[-9],
+            &[true],
+            &[0],
+            10,
+            10
+        ));
     }
 }

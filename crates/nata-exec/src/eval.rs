@@ -728,7 +728,19 @@ pub(crate) fn arith_into(
                 ));
             };
             Decimal::new(kernel_op(op), sl, sr, p, s)
-                .and_then(|k| k.column(a, &l.valid, b, &r.valid, sel, d, &mut out.valid))
+                .and_then(|k| {
+                    let (pa, _) = l.ty.as_decimal().ok_or(DecFail::Overflow)?;
+                    let (pb, _) = r.ty.as_decimal().ok_or(DecFail::Overflow)?;
+                    k.with_precisions(pa, pb, p).column(
+                        a,
+                        &l.valid,
+                        b,
+                        &r.valid,
+                        sel,
+                        d,
+                        &mut out.valid,
+                    )
+                })
                 .map_err(|f| match f {
                     DecFail::Overflow => dec_overflow(e, &name),
                     DecFail::DivZero => div_zero(e, op),

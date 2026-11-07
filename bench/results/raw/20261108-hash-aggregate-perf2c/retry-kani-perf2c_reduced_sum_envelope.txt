@@ -1,0 +1,209 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:336:21
+    |
+336 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: `#[warn(semicolon_in_expressions_from_non_local_macros)]` (part of `#[warn(future_incompatible)]`) on by default
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:354:21
+    |
+354 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:368:21
+    |
+368 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:382:21
+    |
+382 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:467:23
+    |
+467 |             Err(e) => assert!(is_zero_msg(&e) == want_zero),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:685:23
+    |
+685 |             Err(e) => assert!(!is_zero_msg(&e)),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 4`
+Checking harness perf2c::perf2c_proofs::perf2c_reduced_sum_envelope...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file /home/dev/perf2b/kani-target/kani/x86_64-unknown-linux-gnu/debug/build/kani-nata-kernels/aaaf381aed6550b2/out/kani_nata_kernels-aaaf381aed6550b2__RNvNtNtCs7m2eH3CPdXC_17kani_nata_kernels6perf2c13perf2c_proofs27perf2c_reduced_sum_envelope.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<u32>::unwrap thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<u32>::unwrap thread 0
+Runtime Symex: 0.0224593s
+size of program expression: 620 steps
+slicing removed 280 assignments
+Generated 23 VCC(s), 21 remaining after simplification
+Runtime Postprocess Equation: 0.000260891s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.00492793s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 7.38e-06s
+Solving with CaDiCaL 3.0.0
+2104 variables, 6892 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000404743s
+Runtime decision procedure: 0.00554124s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+2105 variables, 6893 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000383153s
+Runtime decision procedure: 0.000498554s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+2106 variables, 6894 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.00296654s
+Runtime decision procedure: 0.00309416s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+2107 variables, 6895 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.161991s
+Runtime decision procedure: 0.162095s
+
+RESULTS:
+Check 1: core::num::<impl u32>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u32>::checked_add
+
+Check 2: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.1
+	 - Status: SUCCESS
+	 - Description: "attempt to subtract with overflow"
+	 - Location: src/perf2c.rs:123:39 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 3: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.2
+	 - Status: SUCCESS
+	 - Description: "attempt to subtract with overflow"
+	 - Location: src/perf2c.rs:123:37 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 4: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:124:53 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 5: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.4
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:124:87 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 6: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.5
+	 - Status: SUCCESS
+	 - Description: "attempt to multiply with overflow"
+	 - Location: src/perf2c.rs:126:40 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 7: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.6
+	 - Status: SUCCESS
+	 - Description: "attempt to add with overflow"
+	 - Location: src/perf2c.rs:126:21 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 8: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.7
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:126:70 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 9: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.assertion.8
+	 - Status: SUCCESS
+	 - Description: "assertion failed: u32::from(current)+u32::from(n)*u32::from(bound)<(1u32<<15)"
+	 - Location: src/perf2c.rs:126:13 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 10: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.cover.1
+	 - Status: SATISFIED
+	 - Description: "cover condition: admitted && n>0"
+	 - Location: src/perf2c.rs:128:9 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 11: perf2c::perf2c_proofs::perf2c_reduced_sum_envelope.cover.2
+	 - Status: SATISFIED
+	 - Description: "cover condition: !admitted"
+	 - Location: src/perf2c.rs:128:40 in function perf2c::perf2c_proofs::perf2c_reduced_sum_envelope
+
+Check 12: std::option::Option::<u32>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<u32>::unwrap
+
+Check 13: std::option::unwrap_failed.assertion.1
+	 - Status: SUCCESS
+	 - Description: "called `Option::unwrap()` on a `None` value"
+	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2248:5 in function std::option::unwrap_failed
+
+
+SUMMARY:
+ ** 0 of 11 failed
+
+ ** 2 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.3031657s
+
+Manual Harness Summary:
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.

@@ -1,0 +1,154 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:336:21
+    |
+336 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: `#[warn(semicolon_in_expressions_from_non_local_macros)]` (part of `#[warn(future_incompatible)]`) on by default
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:354:21
+    |
+354 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:368:21
+    |
+368 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:382:21
+    |
+382 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:467:23
+    |
+467 |             Err(e) => assert!(is_zero_msg(&e) == want_zero),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:685:23
+    |
+685 |             Err(e) => assert!(!is_zero_msg(&e)),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: Found the following unsupported constructs:
+             - caller_location (1)
+             - foreign function (1)
+         
+         Verification will fail if one or more of these constructs is reachable.
+         See https://model-checking.github.io/kani/rust-feature-support.html for more details.
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.26s
+warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 4`
+Checking harness perf2c::perf2c_proofs::perf2c_full_product_heavy...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file /home/dev/perf2b/kani-target/kani/x86_64-unknown-linux-gnu/debug/build/kani-nata-kernels/4d08c51dac53a4da/out/kani_nata_kernels-4d08c51dac53a4da__RNvNtNtCs7m2eH3CPdXC_17kani_nata_kernels6perf2c13perf2c_proofs25perf2c_full_product_heavy.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 1 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 2 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 3 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 4 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 5 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 6 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 7 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 8 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 9 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Not unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 10 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 1 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 2 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 3 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 4 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 5 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 6 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 7 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 8 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 9 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Not unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 10 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<i128>::unwrap thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<i128>::unwrap thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 1 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 2 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 3 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 4 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 5 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 6 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 7 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 8 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 9 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Not unwinding loop _RNvMs8_NtCs8xvirJzNMvV_4core3numo15overflowing_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 10 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 3605 column 13 function core::num::<impl u128>::overflowing_pow thread 0
+Runtime Symex: 0.122841s
+size of program expression: 6039 steps
+slicing removed 4234 assignments
+Generated 259 VCC(s), 37 remaining after simplification
+Runtime Postprocess Equation: 0.00175833s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.101013s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 7.57e-06s
+Solving with External SAT solver
+Writing temporary CNF
+Invoking SAT solver
+Solver returned code: 10
+result:SATISFIABLE
+Runtime Solver: 0.330864s
+Runtime decision procedure: 0.432106s
+Running propositional reduction
+Solving with External SAT solver
+exit=124

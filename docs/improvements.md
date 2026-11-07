@@ -104,3 +104,21 @@ Found while waiting on the debt A round after slice 4b closed: about half of the
 | W5 | Enforce the local trial before a GCP launch in the orchestrator: refuse `run` unless a passing local trial of the same job exists for the same source tree | The rule is in `way-of-working.md` section 8 since 2026-11-07, but nothing checks it. Failed or aborted runs were 26% of GCP spend ($1.08 of $4.16); debt A repeated the pattern (`nata-debt-a-arm` failed, `nata-debt-a-x86` aborted, both rerun as `-arm2`, `-x862`) | `scripts/gcp/orchestrate.sh` | next orchestrator change (with R14) | open |
 | W6 | Classify SQL fuzzer mismatches automatically against the documented dialect differences, and report only unexplained ones | Two 100k-query mismatches on 7 Nov (an out-of-range integer literal typed as numeric; a `BETWEEN` with a cast) were sorted by hand against `docs/dialect.md`; aggregates will add many more documented differences | `spikes/sqlfuzz`, `docs/dialect.md` | before slice 5 | open |
 | W7 | A performance trend: nightly SF1 TPC-H on GitHub's free runners, timings saved per commit, so a slowdown between slices shows | Each slice measures itself at closeout; nothing tracks query times from commit to commit. Trend numbers only, verdicts stay on clean GCP VMs (section 6) | nightly workflow, `nata-bench` | before slice 5 | open |
+
+### R26 — full-width arithmetic lemmas for admitted decimal batches (2026-11-08)
+
+Status: explicit trust point under the owner-authorized retry; full-width solver result pending.
+
+Performance step 2c retry separates admission from arithmetic. The named trust
+point is the lift from the reduced-width Kani arithmetic lemmas to i128:
+`|x|<10^a, |y|<10^b => |xy|<10^(a+b)`; aligned add/sub with
+one spare digit; and `|S| + n*M < 2^127` bounds every accumulation prefix.
+These are elementary integer inequalities, not full-width solver results.
+Kani checks admission logic with full-width magnitudes; reduced-width symbolic
+proofs and i128 boundary tests check the arithmetic composition. Invalid source
+precision metadata falls back to the checked loops. SUM admission rejection
+keeps checked i256 promotion; merge, replay and AVG finalization stay checked.
+The original arbitrary-i128 product timed out at 180 s; the retry's 20 s Kissat
+trial also has no result. A parent-only four-hour harness on both CPU types can
+upgrade this trust point; no cloud run or full-width proof is claimed here.
+See [the retry evidence](../bench/results/20261107-hash-aggregate-perf.md).

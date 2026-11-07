@@ -1,0 +1,2096 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.104098278,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150738754,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:5: replace aligned_precision -> bool with true",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 5
+            },
+            "end": {
+              "line": 297,
+              "column": 59
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_5.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.00297758,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151387002,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:5: replace aligned_precision -> bool with false",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 5
+            },
+            "end": {
+              "line": 297,
+              "column": 59
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_5_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.003265889,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150878925,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:59: replace || with && in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 59
+            },
+            "end": {
+              "line": 284,
+              "column": 61
+            }
+          },
+          "replacement": "&&",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_59.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_59.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.203448436,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15068685,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:32: replace || with && in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 32
+            },
+            "end": {
+              "line": 284,
+              "column": 34
+            }
+          },
+          "replacement": "&&",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_32.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_32.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053471369,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150868705,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:8: delete ! in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 8
+            },
+            "end": {
+              "line": 284,
+              "column": 9
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_8.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_8.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103498065,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15083643,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:35: delete ! in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 35
+            },
+            "end": {
+              "line": 284,
+              "column": 36
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_35.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_35.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.210600867,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150921677,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:284:62: delete ! in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 284,
+              "column": 62
+            },
+            "end": {
+              "line": 284,
+              "column": 63
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_284_col_62.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_284_col_62.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.153614373,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150866079,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:297:9: replace && with || in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 297,
+              "column": 9
+            },
+            "end": {
+              "line": 297,
+              "column": 11
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_297_col_9.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_297_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053460799,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150690203,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:296:9: replace && with || in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 296,
+              "column": 9
+            },
+            "end": {
+              "line": 296,
+              "column": 11
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_296_col_9.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_296_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.1029437500000001,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150897516,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:295:9: replace && with || in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 295,
+              "column": 9
+            },
+            "end": {
+              "line": 295,
+              "column": 11
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_295_col_9.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_295_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.303525563,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.200929246,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:294:10: replace > with == in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 294,
+              "column": 10
+            },
+            "end": {
+              "line": 294,
+              "column": 11
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_294_col_10.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_294_col_10.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103719497,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150724928,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:294:10: replace > with < in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 294,
+              "column": 10
+            },
+            "end": {
+              "line": 294,
+              "column": 11
+            }
+          },
+          "replacement": "<",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_294_col_10_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_294_col_10_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.153235295,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151068897,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:294:10: replace > with >= in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 294,
+              "column": 10
+            },
+            "end": {
+              "line": 294,
+              "column": 11
+            }
+          },
+          "replacement": ">=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_294_col_10_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_294_col_10_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103354758,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151107613,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:295:18: replace > with == in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 295,
+              "column": 18
+            },
+            "end": {
+              "line": 295,
+              "column": 19
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_295_col_18.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_295_col_18.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.203857874,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150815787,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:295:18: replace > with < in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 295,
+              "column": 18
+            },
+            "end": {
+              "line": 295,
+              "column": 19
+            }
+          },
+          "replacement": "<",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_295_col_18_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_295_col_18_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.0534356,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151368635,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:295:18: replace > with >= in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 295,
+              "column": 18
+            },
+            "end": {
+              "line": 295,
+              "column": 19
+            }
+          },
+          "replacement": ">=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_295_col_18_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_295_col_18_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103189931,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150923083,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:296:53: replace <= with > in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 296,
+              "column": 53
+            },
+            "end": {
+              "line": 296,
+              "column": 55
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_296_col_53.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_296_col_53.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.102754954,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150730592,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:297:54: replace <= with > in aligned_precision",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "aligned_precision",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 281,
+                "column": 1
+              },
+              "end": {
+                "line": 298,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 297,
+              "column": 54
+            },
+            "end": {
+              "line": 297,
+              "column": 56
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_297_col_54.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_297_col_54.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.305345676,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150978667,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:315:5: replace batch_magnitudes -> bool with true",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 315,
+              "column": 5
+            },
+            "end": {
+              "line": 323,
+              "column": 23
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_315_col_5.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_315_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.614891936,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201042145,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:315:5: replace batch_magnitudes -> bool with false",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 315,
+              "column": 5
+            },
+            "end": {
+              "line": 323,
+              "column": 23
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_315_col_5_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_315_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.81088394,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.251292725,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:318:18: replace && with || in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 318,
+              "column": 18
+            },
+            "end": {
+              "line": 318,
+              "column": 20
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_318_col_18.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_318_col_18.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.5225176660000002,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150978069,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:13: replace && with || in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 13
+            },
+            "end": {
+              "line": 323,
+              "column": 15
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_13.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_13.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.607139717,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201080349,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:8: replace < with == in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 8
+            },
+            "end": {
+              "line": 323,
+              "column": 9
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_8.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_8.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.3038132359999999,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150923719,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:8: replace < with > in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 8
+            },
+            "end": {
+              "line": 323,
+              "column": 9
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_8_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_8_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.7616291419999999,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.251219706,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:8: replace < with <= in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 8
+            },
+            "end": {
+              "line": 323,
+              "column": 9
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_8_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_8_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.559823337,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201095146,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:19: replace < with == in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 19
+            },
+            "end": {
+              "line": 323,
+              "column": 20
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_19.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_19.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.5584396489999999,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.251177506,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:19: replace < with > in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 19
+            },
+            "end": {
+              "line": 323,
+              "column": 20
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_19_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_19_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.506391379,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.251502037,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/decimal.rs:323:19: replace < with <= in batch_magnitudes",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/decimal.rs",
+          "function": {
+            "function_name": "batch_magnitudes",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 300,
+                "column": 1
+              },
+              "end": {
+                "line": 324,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 323,
+              "column": 19
+            },
+            "end": {
+              "line": 323,
+              "column": 20
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__decimal.rs_line_323_col_19_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__decimal.rs_line_323_col_19_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.607434909,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201397504,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 28,
+  "missed": 0,
+  "caught": 28,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-07T22:10:51.152790038Z",
+  "end_time": "2026-11-07T22:11:33.515208121Z",
+  "cargo_mutants_version": "27.1.0"
+}

@@ -1457,3 +1457,11 @@ mod decimal_proofs {
         kani::cover!(ok); kani::cover!(!ok);
     }
 }
+
+mod perf2c;
+
+#[path = "../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-product-decimal.rs"]
+mod rejected_decimal;
+
+#[path = "../../../crates/nata-kernels/src/sum_admission.rs"]
+mod sum_admission;

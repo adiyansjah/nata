@@ -1,0 +1,62 @@
+[
+  {
+    "name": "precision-plus-one",
+    "command": [
+      "timeout",
+      "180",
+      "cargo",
+      "kani",
+      "--manifest-path",
+      "spikes/kani-nata-kernels/Cargo.toml",
+      "--harness",
+      "perf2c_precision"
+    ],
+    "exit": 1,
+    "caught": true
+  },
+  {
+    "name": "drop-scan",
+    "command": [
+      "timeout",
+      "180",
+      "cargo",
+      "kani",
+      "--manifest-path",
+      "spikes/kani-nata-kernels/Cargo.toml",
+      "--harness",
+      "perf2c_scan"
+    ],
+    "exit": 1,
+    "caught": true
+  },
+  {
+    "name": "aligned-no-spare-digit",
+    "command": [
+      "timeout",
+      "180",
+      "cargo",
+      "kani",
+      "--manifest-path",
+      "spikes/kani-nata-kernels/Cargo.toml",
+      "--harness",
+      "perf2c_aligned_precision"
+    ],
+    "exit": 1,
+    "caught": true
+  },
+  {
+    "name": "envelope-off-by-one",
+    "command": [
+      "timeout",
+      "180",
+      "cargo",
+      "kani",
+      "--manifest-path",
+      "spikes/kani-nata-kernels/Cargo.toml",
+      "--harness",
+      "perf2c_sum_envelope"
+    ],
+    "exit": 1,
+    "caught": true
+  }
+]

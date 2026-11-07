@@ -1,0 +1,201 @@
+diff --git a/crates/nata-exec/src/eval.rs b/crates/nata-exec/src/eval.rs
+index 992cde7..23680dd 100644
+--- a/crates/nata-exec/src/eval.rs
++++ b/crates/nata-exec/src/eval.rs
+@@ -728,7 +728,19 @@ pub(crate) fn arith_into(
+                 ));
+             };
+             Decimal::new(kernel_op(op), sl, sr, p, s)
+-                .and_then(|k| k.column(a, &l.valid, b, &r.valid, sel, d, &mut out.valid))
++                .and_then(|k| {
++                    let (pa, _) = l.ty.as_decimal().ok_or(DecFail::Overflow)?;
++                    let (pb, _) = r.ty.as_decimal().ok_or(DecFail::Overflow)?;
++                    k.with_precisions(pa, pb, p).column(
++                        a,
++                        &l.valid,
++                        b,
++                        &r.valid,
++                        sel,
++                        d,
++                        &mut out.valid,
++                    )
++                })
+                 .map_err(|f| match f {
+                     DecFail::Overflow => dec_overflow(e, &name),
+                     DecFail::DivZero => div_zero(e, op),
+diff --git a/crates/nata-kernels/src/decimal.rs b/crates/nata-kernels/src/decimal.rs
+index a1125ba..74a90c5 100644
+--- a/crates/nata-kernels/src/decimal.rs
++++ b/crates/nata-kernels/src/decimal.rs
+@@ -115,6 +115,7 @@ pub struct Decimal {
+     left: i128,
+     right: i128,
+     limit: u128,
++    input_limits: Option<(u128, u128)>,
+ }
+ impl Decimal {
+     pub fn new(op: Op, sa: u8, sb: u8, p: u8, s: u8) -> Result<Self, Fail> {
+@@ -131,17 +132,29 @@ impl Decimal {
+         let right = pow10(u32::from(s.saturating_sub(sb))).ok_or(Fail::Overflow)?;
+         Ok(Self {
+             op,
++            input_limits: None,
+             left,
+             right,
+             limit: pow10(u32::from(p)).ok_or(Fail::Overflow)?.unsigned_abs(),
+         })
+     }
++    /// Admit by declared precision, then validate magnitudes once per batch.
++    /// Scan/Arrow metadata alone does not establish the value invariant.
++    pub fn with_precisions(mut self, pa: u8, pb: u8, p: u8) -> Self {
++        if self.op == Op::Mul && product_precision(pa, pb, p) {
++            self.input_limits = pow10(u32::from(pa))
++                .zip(pow10(u32::from(pb)))
++                .map(|(a, b)| (a.unsigned_abs(), b.unsigned_abs()));
++        }
++        self
++    }
+     /// Dispatch once per column, so multiplication has neither per-row type
+     /// dispatch nor a per-row power-of-ten calculation.
+     #[allow(
+         clippy::too_many_arguments,
+         reason = "borrowed column inputs and output buffers"
+     )]
++    #[allow(clippy::disallowed_methods, reason = "R23: batch admission bounds the exact product")]
+     pub fn column(
+         self,
+         a: &[i128],
+@@ -152,6 +165,15 @@ impl Decimal {
+         out: &mut [i128],
+         valid: &mut [bool],
+     ) -> Result<(), Fail> {
++        if let Some((la, lb)) = self.input_limits
++            && batch_magnitudes(a, av, b, bv, sel, la, lb)
++        {
++            return binary(a, av, b, bv, sel, out, valid, |x, y| {
++                // Admission bounds the exact result below 10^P <= 10^38.
++                // Full-width arithmetic lemma: improvements.md R23.
++                Ok(x.wrapping_mul(y))
++            });
++        }
+         match self.op {
+             Op::Mul => binary(a, av, b, bv, sel, out, valid, |x, y| {
+                 self.check(self.product(x, y))
+@@ -242,6 +264,40 @@ pub fn integer(op: Op, x: i64, y: i64, lo: i64, hi: i64) -> Result<i64, Fail> {
+     v.filter(|v| *v >= lo && *v <= hi).ok_or(Fail::Overflow)
+ }
+ 
++/// Sufficient type rule; capped products deliberately fail admission.
++pub fn product_precision(pa: u8, pb: u8, p: u8) -> bool {
++    (1..=38).contains(&pa)
++        && (1..=38).contains(&pb)
++        && (1..=38).contains(&p)
++        && u16::from(pa).saturating_add(u16::from(pb)) <= u16::from(p)
++}
++
++/// Compare the maxima over jointly valid selected rows. A failed scan is not
++/// an SQL error: the original checked loop must decide at the original row.
++#[allow(
++    clippy::too_many_arguments,
++    reason = "borrowed batch inputs and bounds"
++)]
++pub fn batch_magnitudes(
++    a: &[i128],
++    av: &[bool],
++    b: &[i128],
++    bv: &[bool],
++    sel: &[u32],
++    la: u128,
++    lb: u128,
++) -> bool {
++    let (mut ma, mut mb) = (0, 0);
++    for &row in sel {
++        let i = row as usize;
++        if av[i] && bv[i] {
++            ma = ma.max(a[i].unsigned_abs());
++            mb = mb.max(b[i].unsigned_abs());
++        }
++    }
++    ma < la && mb < lb
++}
++
+ #[cfg(test)]
+ #[allow(
+     clippy::arithmetic_side_effects,
+@@ -328,4 +384,66 @@ mod tests {
+             Err(Fail::Overflow)
+         );
+     }
++    #[test]
++    fn perf2c_product_boundaries_and_fallback_prefix() {
++        for pa in 1..=37 {
++            for pb in 1..=38 - pa {
++                let p = pa + pb;
++                let k = Decimal::new(Op::Mul, 0, 0, p, 0)
++                    .unwrap()
++                    .with_precisions(pa, pb, p);
++                for x in [
++                    pow10(u32::from(pa)).unwrap() - 1,
++                    1 - pow10(u32::from(pa)).unwrap(),
++                    0,
++                ] {
++                    for y in [
++                        pow10(u32::from(pb)).unwrap() - 1,
++                        1 - pow10(u32::from(pb)).unwrap(),
++                        0,
++                    ] {
++                        let (mut out, mut valid) = ([0], [false]);
++                        k.column(&[x], &[true], &[y], &[true], &[0], &mut out, &mut valid)
++                            .unwrap();
++                        assert_eq!(out[0], x.checked_mul(y).unwrap());
++                        assert!(fits(out[0], p));
++                    }
++                }
++            }
++        }
++        let k = Decimal::new(Op::Mul, 0, 0, 2, 0)
++            .unwrap()
++            .with_precisions(1, 1, 2);
++        for bad in [10, 100, i128::MIN, i128::MAX] {
++            let a = [2, 3, bad];
++            let b = [2, 2, 10];
++            let (mut out, mut valid) = ([0; 3], [false; 3]);
++            assert_eq!(
++                k.column(
++                    &a,
++                    &[true; 3],
++                    &b,
++                    &[true; 3],
++                    &[0, 1, 2],
++                    &mut out,
++                    &mut valid
++                ),
++                Err(Fail::Overflow)
++            );
++            assert_eq!(out, [4, 6, 0]);
++            assert_eq!(valid, [true, true, false]);
++            k.column(
++                &a,
++                &[true; 3],
++                &b,
++                &[true; 3],
++                &[0, 1],
++                &mut out,
++                &mut valid,
++            )
++            .unwrap();
++        }
++        assert!(!product_precision(1, 2, 2)); // weakened P+1 rule would admit 9*99.
++        assert!(9 * 99 >= 100);
++    }
+ }
+diff --git a/spikes/kani-nata-kernels/src/lib.rs b/spikes/kani-nata-kernels/src/lib.rs
+index 9369a59..8d69554 100644
+--- a/spikes/kani-nata-kernels/src/lib.rs
++++ b/spikes/kani-nata-kernels/src/lib.rs
+@@ -1457,3 +1457,5 @@ mod decimal_proofs {
+         kani::cover!(ok); kani::cover!(!ok);
+     }
+ }
++
++mod perf2c;
