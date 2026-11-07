@@ -1,0 +1,26 @@
+seed 20261108  queries 100000  oracle-errors 17658 (17%)  rows-compared 244694  optimizer-dependent-in-duckdb 2442  nata-not-supported 98  listed-by-message 46  differences-to-classify 94  [399s]
+  class (by message) listed: CASE of decimals beyond 38 digits is a bind error (decimal-rules 9): 1
+  class (by message) listed: negating a minimum signed literal overflows its value-based INTEGER/BIGINT type; DuckDB folds a wider literal (dialect 8b.10, 9): 45
+  class (by message) nata-error: execution error: 40
+  class (by message) oracle-error-nata-answered: 47
+  class (by message) value: 7
+  not supported:    96  error: not supported yet: a CASE whose results
+  not supported:     1  error: not supported yet: the remainder of DECIMAL(35,5)
+  not supported:     1  error: not supported yet: the remainder of DECIMAL(15,7)
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=20261108 batch=61 query=1: SELECT (CASE WHEN NULL THEN '' WHEN (dt <= dt) THEN '\' ELSE CAST(0.00001 AS VARCHAR) END) AS c1 FROM t2
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=20261108 batch=65 query=22: SELECT (CAST(NULL AS DECIMAL(10,2)) <> (-0.01 % 0)) AS c3 FROM t1
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261108 batch=93 query=18: SELECT CAST((- CAST('9999999999' AS INTEGER)) AS BIGINT) AS c0 FROM t1 WHERE NULL
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261108 batch=106 query=9: SELECT (f OR ((b * b) <= 0)) AS c1 FROM t1
+  e.g. [listed: a DECIMAL(p,p) prints without its leading zero, and ...] seed=20261108 batch=138 query=35: SELECT (CASE WHEN true THEN CAST((w % -0.01) AS VARCHAR) ELSE CAST(NULL AS VARCHAR) END) AS c3 FROM t2 WHERE (sm >= CAST('-1.005' AS DECIMAL(25,5)))
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261108 batch=149 query=18: SELECT (- CAST('9999999999' AS INTEGER)) AS c0 FROM t1 LIMIT 0
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=20261108 batch=210 query=5: SELECT (CAST(NULL AS BIGINT) % (b + b)) AS c2 FROM t2
+  e.g. [listed: DuckDB evaluates a constant expression of a CASE con...] seed=20261108 batch=439 query=20: SELECT (CASE WHEN (CAST('9999999999' AS INTEGER) < 0) THEN sm ELSE sm END) AS c3 FROM t1 LIMIT 0
+  e.g. [listed: DuckDB evaluates a constant expression of a CASE con...] seed=20261108 batch=507 query=26: SELECT (CASE WHEN (0 >= (b - b)) THEN CAST(NULL AS DATE) WHEN (CAST(-12345678901234567890.12345 AS DECIMAL(10,2)) IS NOT NULL) THEN dt ELSE dt END) AS c0, r AS c1 FROM t2
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261108 batch=964 query=3: SELECT (CASE WHEN ((w > sm) OR (sm < 1)) THEN CAST(NULL AS DATE) WHEN (DATE '2000-02-29' <> CAST('2023-02-29' AS DATE)) THEN DATE '2000-01-01' ELSE CAST(NULL AS DATE) END) AS c2 FROM t1 LIMIT 5
+  e.g. [listed: the tight result type of a decimal % is narrower tha...] seed=20261108 batch=1868 query=39: SELECT ((-12345678901234567890.12345 % a) * d) AS c0 FROM t2
+  FINAL CLASS listed: DuckDB evaluates a constant expression of a CASE condition when planning; Nata only for the rows that reach it (dialect 9b): 5
+  FINAL CLASS listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b): 10
+  FINAL CLASS listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b): 39
+  FINAL CLASS listed: a DECIMAL(p,p) prints without its leading zero, and a literal below one or the tight result type of % makes one (dialect 9, decimal-rules 9): 7
+  FINAL CLASS listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b): 32
+  FINAL CLASS listed: the tight result type of a decimal % is narrower than DuckDB's, so a later operation can overflow where DuckDB's does not (decimal-rules 9): 1

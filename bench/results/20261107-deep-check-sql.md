@@ -78,6 +78,14 @@ python3 -I fuzz.py run-subset --seed 20261107 --cases 100000 --jobs 2 --target-c
 python3 -I fuzz.py run-subset --seed 20261108 --cases 100000 --jobs 2 --target-cmd 'python3 -I adapters/nata_adapter.py' --out ~/tmp-0004c/fuzz-out
 ```
 
+**Run by the parent on GCP (2026-11-07):** Spot c3d-highcpu-16, run `card0004-heavy3`, main `21c7e37` (code tree `d2131a21`), `--jobs 6`, both seeds
+in parallel with the damaged-file fuzz. Raw outputs: `raw/20261107-card0004-heavy/`.
+
+| Seed | Queries | Rows compared | Differences | `BUG?` | Exit | Wall time |
+|---|---:|---:|---|---:|---:|---:|
+| 20261107 | 100,000 | 243,221 | 83, all in listed classes | **0** | 0 | 399 s |
+| 20261108 | 100,000 | 244,694 | 94, all in listed classes | **0** | 0 | 399 s |
+
 ## Mutants
 
 | mutant | result |

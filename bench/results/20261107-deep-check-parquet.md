@@ -63,10 +63,10 @@ NATA_FUZZ_SEED=20261108 NATA_FUZZ_CASES=30000 cargo test --release -p nata-parqu
 
 | Seed | Result | Wall time | Machine |
 |---|---|---|---|
-| 20261107 | to be run by the parent on GCP | | |
-| 20261108 | to be run by the parent on GCP | | |
+| 20261107 | **PASS**, exit 0: 240,000 cases, 480,000 scans, no hang; checksummed shapes: 4 / 2 / 1 different rows, all touching a page header or the footer; payload bytes only: **0**; 580 dependency panics caught at the task boundary | 836 s | GCP Spot c3d-highcpu-16, run `card0004-heavy3`, 2026-11-07, main `21c7e37` (code tree `d2131a21`) |
+| 20261108 | **PASS**, exit 0: 240,000 cases, 480,000 scans, no hang; checksummed shapes: different rows only where a page header or the footer changed; payload bytes only: **0**; 643 dependency panics caught at the task boundary | 845 s | GCP Spot c3d-highcpu-16, run `card0004-heavy3`, 2026-11-07, main `21c7e37` (code tree `d2131a21`) |
 
-If a case fails with CRC-covered bytes changed, it is a bug in the verification (the card's rule): replay it with `NATA_FUZZ_ONLY=<shape>:<case>`.
+If a case fails with CRC-covered bytes changed, it is a bug in the verification (the card's rule): replay it with `NATA_FUZZ_ONLY=<shape>:<case>`. Neither run had one. Raw outputs: `raw/20261107-card0004-heavy/` (the four runs ran in parallel on one VM; $0.039 for the VM, orchestrator estimate).
 
 ## Mutants
 
