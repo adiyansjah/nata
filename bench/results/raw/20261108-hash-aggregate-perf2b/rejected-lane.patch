@@ -1,0 +1,146 @@
+diff --git a/crates/nata-kernels/src/aggregate.rs b/crates/nata-kernels/src/aggregate.rs
+--- a/crates/nata-kernels/src/aggregate.rs
++++ b/crates/nata-kernels/src/aggregate.rs
+@@ -7,0 +8 @@
++use crate::lane::Lane;
+@@ -29 +30 @@
+-    Narrow(i128),
++    Narrow(Lane),
+@@ -34 +35 @@
+-        Self::Narrow(0)
++        Self::Narrow(Lane::default())
+@@ -40 +41 @@
+-            Self::Narrow(v) => i256::from_i128(v),
++            Self::Narrow(v) => i256::from_i128(v.value()),
+@@ -45 +46,2 @@
+-        v.to_i128().map_or(Self::Wide(v), Self::Narrow)
++        v.to_i128()
++            .map_or(Self::Wide(v), |n| Self::Narrow(Lane::from_exact(n)))
+@@ -51,0 +54 @@
++    #[inline]
+@@ -58 +61 @@
+-            && let Some(next) = sum.checked_add(value)
++            && sum.add(value).is_some()
+@@ -60 +62,0 @@
+-            *sum = next;
+diff --git a/crates/nata-kernels/src/lib.rs b/crates/nata-kernels/src/lib.rs
+--- a/crates/nata-kernels/src/lib.rs
++++ b/crates/nata-kernels/src/lib.rs
+@@ -5,0 +6 @@
++pub mod lane;
+diff --git a/spikes/kani-nata-kernels/src/lib.rs b/spikes/kani-nata-kernels/src/lib.rs
+--- a/spikes/kani-nata-kernels/src/lib.rs
++++ b/spikes/kani-nata-kernels/src/lib.rs
+@@ -1459,0 +1460,29 @@
++
++#[path = "../../../crates/nata-kernels/src/lane.rs"]
++mod lane;
++
++#[cfg(kani)]
++mod lane_proofs {
++    use super::lane::Lane;
++    #[kani::proof]
++    fn i64_lane_fallback_exact() {
++        let a: i64 = kani::any();
++        let b: i64 = kani::any();
++        let mut lane = Lane::from_exact(i128::from(a));
++        assert_eq!(lane.add(i128::from(b)), Some(()));
++        assert_eq!(lane.value(), i128::from(a) + i128::from(b));
++        kani::cover!(a.checked_add(b).is_none());
++        kani::cover!(a.checked_add(b).is_some());
++    }
++    #[kani::proof]
++    fn i128_lane_fallback_preserves_overflow() {
++        let a: i128 = kani::any();
++        let b: i128 = kani::any();
++        let mut lane = Lane::from_exact(a);
++        let expected = a.checked_add(b);
++        assert_eq!(lane.add(b).is_some(), expected.is_some());
++        assert_eq!(lane.value(), expected.unwrap_or(a));
++        kani::cover!(expected.is_none());
++        kani::cover!(expected.is_some());
++    }
++}
+diff --git a/crates/nata-kernels/src/lane.rs b/crates/nata-kernels/src/lane.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/nata-kernels/src/lane.rs
+@@ -0,0 +1,78 @@
++//! Checked i64 accumulation with an exact i128 fallback. A machine overflow
++//! promotes storage; SQL precision is checked only at aggregate finalization.
++#[derive(Clone, Copy, Debug, Default)]
++pub struct Lane {
++    small: i64,
++    overflow: bool,
++    exact: i128,
++}
++impl PartialEq for Lane {
++    fn eq(&self, other: &Self) -> bool {
++        self.value() == other.value()
++    }
++}
++impl Eq for Lane {}
++impl Lane {
++    pub fn value(self) -> i128 {
++        if self.overflow {
++            self.exact
++        } else {
++            i128::from(self.small)
++        }
++    }
++    pub fn from_exact(value: i128) -> Self {
++        match i64::try_from(value) {
++            Ok(small) => Self {
++                small,
++                overflow: false,
++                exact: 0,
++            },
++            Err(_) => Self {
++                small: 0,
++                overflow: true,
++                exact: value,
++            },
++        }
++    }
++    /// On i128 overflow leave the lane untouched so the caller can promote to
++    /// its checked i256 state. Never reuse the wrapped i64 result on fallback.
++    pub fn add(&mut self, value: i128) -> Option<()> {
++        if !self.overflow
++            && let Ok(value) = i64::try_from(value)
++        {
++            let (next, overflow) = self.small.overflowing_add(value);
++            if !overflow {
++                self.small = next;
++                return Some(());
++            }
++        }
++        let next = self.value().checked_add(value)?;
++        self.exact = next;
++        self.overflow = true;
++        Some(())
++    }
++}
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn fallback_is_exact_and_keeps_state_on_i128_overflow() {
++        for (a, b) in [
++            (i128::from(i64::MAX), 1),
++            (i128::from(i64::MIN), -1),
++            (i128::MAX, 1),
++            (i128::MIN, -1),
++            (0, i128::MAX),
++            (0, i128::MIN),
++        ] {
++            let mut lane = Lane::from_exact(a);
++            assert_eq!(lane.add(b).is_some(), a.checked_add(b).is_some());
++            assert_eq!(lane.value(), a.checked_add(b).unwrap_or(a));
++        }
++        let mut lane = Lane::from_exact(i128::from(i64::MAX));
++        lane.add(1).unwrap();
++        lane.add(-1).unwrap();
++        assert_eq!(lane.value(), i128::from(i64::MAX));
++        assert!(lane.overflow);
++    }
++}

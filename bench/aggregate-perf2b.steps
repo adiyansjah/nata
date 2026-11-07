@@ -1,0 +1,6 @@
+# Parent only: settled SF1, separately on c3d-highcpu-8 and n4a-highcpu-8.
+# Locally prepare --baseline 838e394 --fix perf2b=HEAD --bundle .aggregate-perf2b-inputs.
+# No GCP identifiers or credentials belong in this file.
+prepare mkdir -p "$WORK/aggregate-perf2b/tmp"
+fixtures rm -rf "$WORK/aggregate-perf2b-sf1" && TMPDIR="$WORK/aggregate-perf2b/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2b-sf1"
+timings perf2b_machine=$(uname -m) && case "$perf2b_machine" in x86_64) perf2b_machine=c3d-highcpu-8 ;; aarch64) perf2b_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2b/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2b_machine" --bundle "$SRC/.aggregate-perf2b-inputs" --work "$WORK/aggregate-perf2b" --data "$WORK/aggregate-perf2b-sf1" --out "$RESULTS/aggregate-perf2b-$(date -u +%Y%m%dT%H%M%SZ)"

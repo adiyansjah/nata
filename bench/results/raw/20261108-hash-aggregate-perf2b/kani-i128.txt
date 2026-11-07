@@ -1,0 +1,438 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/spikes/kani-nata-kernels)
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:336:21
+    |
+336 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: `#[warn(semicolon_in_expressions_from_non_local_macros)]` (part of `#[warn(future_incompatible)]`) on by default
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:354:21
+    |
+354 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:368:21
+    |
+368 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:382:21
+    |
+382 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:467:23
+    |
+467 |             Err(e) => assert!(is_zero_msg(&e) == want_zero),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:685:23
+    |
+685 |             Err(e) => assert!(!is_zero_msg(&e)),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/spikes/kani-nata-kernels)
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+Checking harness lane_proofs::i128_lane_fallback_preserves_overflow...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file /home/dev/perf2b/kani-target/kani/x86_64-unknown-linux-gnu/debug/build/kani-nata-kernels/c03ec317872c69b2/out/kani_nata_kernels-c03ec317872c69b2__RNvNtCs7m2eH3CPdXC_17kani_nata_kernels11lane_proofs37i128_lane_fallback_preserves_overflow.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/lane.rs line 24 column 15 function lane::Lane::from_exact thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2869 column 15 function <std::option::Option<i128> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/lane.rs line 49 column 20 function lane::Lane::add thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 633 column 5 function std::option::Option::<()>::is_some thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 633 column 5 function std::option::Option::<i128>::is_some thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1040 column 15 function std::option::Option::<i128>::unwrap_or thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 633 column 5 function std::option::Option::<i128>::is_some thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 633 column 5 function std::option::Option::<i128>::is_some thread 0
+Runtime Symex: 0.0425376s
+size of program expression: 1971 steps
+slicing removed 1265 assignments
+Generated 76 VCC(s), 16 remaining after simplification
+Runtime Postprocess Equation: 0.000433776s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.00947605s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 6.334e-06s
+Solving with CaDiCaL 3.0.0
+8440 variables, 21166 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000883428s
+Runtime decision procedure: 0.01058s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+8441 variables, 21167 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.000691156s
+Runtime decision procedure: 0.000795033s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+8442 variables, 21168 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.198742s
+Runtime decision procedure: 0.198812s
+
+RESULTS:
+Check 1: lane_proofs::i128_lane_fallback_preserves_overflow.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: lane.add(b).is_some() == expected.is_some()"
+	 - Location: src/lib.rs:1483:9 in function lane_proofs::i128_lane_fallback_preserves_overflow
+
+Check 2: lane_proofs::i128_lane_fallback_preserves_overflow.assertion.2
+	 - Status: SUCCESS
+	 - Description: "assertion failed: lane.value() == expected.unwrap_or(a)"
+	 - Location: src/lib.rs:1484:9 in function lane_proofs::i128_lane_fallback_preserves_overflow
+
+Check 3: lane_proofs::i128_lane_fallback_preserves_overflow.cover.1
+	 - Status: SATISFIED
+	 - Description: "cover condition: expected.is_none()"
+	 - Location: src/lib.rs:1485:9 in function lane_proofs::i128_lane_fallback_preserves_overflow
+
+Check 4: lane_proofs::i128_lane_fallback_preserves_overflow.cover.2
+	 - Status: SATISFIED
+	 - Description: "cover condition: expected.is_some()"
+	 - Location: src/lib.rs:1486:9 in function lane_proofs::i128_lane_fallback_preserves_overflow
+
+Check 5: <std::option::Option<()> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<()> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
+
+Check 6: std::option::Option::<i128>::unwrap_or.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1040:15 in function std::option::Option::<i128>::unwrap_or
+
+Check 7: std::option::Option::<()>::is_some.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:633:5 in function std::option::Option::<()>::is_some
+
+Check 8: lane::Lane::from_exact.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:24:15 in function lane::Lane::from_exact
+
+Check 9: <std::option::Option<i128> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i128> as std::ops::Try>::branch
+
+Check 10: lane::Lane::add.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 11: std::option::Option::<i128>::is_some.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:633:5 in function std::option::Option::<i128>::is_some
+
+Check 12: std::option::Option::<i128>::is_some.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 13: std::option::Option::<i128>::is_some.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 14: std::option::Option::<i128>::is_some.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 15: std::option::Option::<i128>::is_some.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 16: std::option::Option::<i128>::is_some.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 17: std::option::Option::<i128>::is_some.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<i128>::is_some
+
+Check 18: std::option::Option::<()>::is_some.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 19: std::option::Option::<()>::is_some.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 20: std::option::Option::<()>::is_some.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 21: std::option::Option::<()>::is_some.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 22: std::option::Option::<()>::is_some.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 23: std::option::Option::<()>::is_some.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:634:18 in function std::option::Option::<()>::is_some
+
+Check 24: lane::Lane::add.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 25: lane::Lane::add.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 26: lane::Lane::add.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 27: lane::Lane::add.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 28: lane::Lane::add.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 29: lane::Lane::add.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:40:13 in function lane::Lane::add
+
+Check 30: lane::Lane::add.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 31: lane::Lane::add.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 32: lane::Lane::add.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 33: lane::Lane::add.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 34: lane::Lane::add.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 35: lane::Lane::add.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:43:36 in function lane::Lane::add
+
+Check 36: lane::Lane::add.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 37: lane::Lane::add.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 38: lane::Lane::add.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 39: lane::Lane::add.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 40: lane::Lane::add.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 41: lane::Lane::add.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:49:20 in function lane::Lane::add
+
+Check 42: lane::Lane::add.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 43: lane::Lane::add.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 44: lane::Lane::add.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 45: lane::Lane::add.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 46: lane::Lane::add.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 47: lane::Lane::add.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:50:9 in function lane::Lane::add
+
+Check 48: lane::Lane::add.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 49: lane::Lane::add.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 50: lane::Lane::add.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 51: lane::Lane::add.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 52: lane::Lane::add.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 53: lane::Lane::add.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:51:9 in function lane::Lane::add
+
+Check 54: lane::Lane::add.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+Check 55: lane::Lane::add.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+Check 56: lane::Lane::add.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+Check 57: lane::Lane::add.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+Check 58: lane::Lane::add.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+Check 59: lane::Lane::add.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/lane.rs:45:17 in function lane::Lane::add
+
+
+SUMMARY:
+ ** 0 of 57 failed
+
+ ** 2 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 0.31836635s
+
+Manual Harness Summary:
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.

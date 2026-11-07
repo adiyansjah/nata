@@ -1,0 +1,180 @@
+
+*** crates/nata-kernels/src/lane.rs:44:16: delete ! in Lane::add
+
+*** mutation diff:
+--- crates/nata-kernels/src/lane.rs
++++ delete ! in Lane::add
+@@ -36,17 +36,17 @@
+     }
+     /// On i128 overflow leave the lane untouched so the caller can promote to
+     /// its checked i256 state. Never reuse the wrapped i64 result on fallback.
+     pub fn add(&mut self, value: i128) -> Option<()> {
+         if !self.overflow
+             && let Ok(value) = i64::try_from(value)
+         {
+             let (next, overflow) = self.small.overflowing_add(value);
+-            if !overflow {
++            if  /* ~ changed by cargo-mutants ~ */overflow {
+                 self.small = next;
+                 return Some(());
+             }
+         }
+         let next = self.value().checked_add(value)?;
+         self.exact = next;
+         self.overflow = true;
+         Some(())
+
+
+*** cargo test --no-run --profile=release --verbose --package=nata-kernels@0.0.0 -j4
+warning: a `-j` argument was passed to Cargo but Cargo is also configured with an external jobserver in its environment, ignoring the `-j` parameter
+       Fresh autocfg v1.5.1
+       Fresh libm v0.2.16
+       Fresh unicode-ident v1.0.27
+       Fresh proc-macro2 v1.0.107
+       Fresh num-traits v0.2.19
+       Fresh quote v1.0.47
+       Fresh syn v2.0.119
+       Fresh zerocopy-derive v0.8.63
+       Fresh cfg-if v1.0.5
+       Fresh zerocopy v0.8.63
+       Fresh num-integer v0.1.47
+       Fresh version_check v0.9.5
+       Fresh num-bigint v0.5.1
+       Fresh libc v0.2.191
+       Fresh half v2.7.1
+       Fresh bytes v1.12.1
+       Fresh getrandom v0.3.4
+       Fresh arrow-buffer v60.1.0
+       Fresh once_cell v1.21.4
+       Fresh iana-time-zone v0.1.65
+       Fresh arrow-schema v60.1.0
+       Fresh num-complex v0.4.6
+       Fresh hashbrown v0.17.1
+       Fresh lexical-util v1.0.7
+       Fresh arrow-data v60.1.0
+       Fresh chrono v0.4.45
+       Fresh ahash v0.8.12
+       Fresh lexical-parse-integer v1.0.6
+       Fresh lexical-write-integer v1.0.6
+       Fresh atoi v3.1.1
+       Fresh base64 v0.23.1
+       Fresh ryu v1.0.23
+       Fresh arrow-array v60.1.0
+       Fresh lexical-parse-float v1.0.6
+       Fresh lexical-write-float v1.0.6
+       Fresh arrow-cmp v60.1.0
+       Fresh lexical-core v1.0.6
+       Fresh arrow-arith v60.1.0
+       Fresh arrow-select v60.1.0
+       Fresh arrow-ord v60.1.0
+       Fresh arrow-cast v60.1.0
+       Dirty nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels): the file `crates/nata-kernels/src/lane.rs` has changed (1794078218.581670420s, 1s after last build at 1794078217.137658212s)
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name nata_kernels --edition=2024 crates/nata-kernels/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=ef3c5d9e46827eec -C extra-filename=-a6ea8d2b20697824 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name nata_kernels --edition=2024 crates/nata-kernels/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=d2d8bf44328d736a -C extra-filename=-d70fa841359d41b8 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rmeta --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rmeta --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rmeta --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rmeta --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rmeta --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rmeta`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name overflow_cost --edition=2024 crates/nata-kernels/examples/overflow_cost.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=2ca9faedbae857bd -C extra-filename=-0be348f6c59d6d2d --out-dir /home/dev/perf2b/target/release/examples -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name aggregate --edition=2024 crates/nata-kernels/tests/aggregate.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=82db53a8a7a3eb59 -C extra-filename=-4ed3ebb4a7df3356 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name guard_diff --edition=2024 crates/nata-kernels/examples/guard_diff.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=f62a4ca957eff16a -C extra-filename=-a43cecb4d53ef9b8 --out-dir /home/dev/perf2b/target/release/examples -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name overflow_checks --edition=2024 crates/nata-kernels/tests/overflow_checks.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=78527ca9dc77e799 -C extra-filename=-d2a49303db1f3637 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name guarded --edition=2024 crates/nata-kernels/tests/guarded.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=adff76281522aeee -C extra-filename=-85f0259d040d5336 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name arrow_behaviour --edition=2024 crates/nata-kernels/tests/arrow_behaviour.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --forbid=unsafe_code '--deny=clippy::unimplemented' '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::arithmetic_side_effects' '--deny=clippy::allow_attributes_without_reason' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6a345a41d7a6422d -C extra-filename=-3bc8b4126d653fe0 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_arith=/home/dev/perf2b/target/release/deps/libarrow_arith-b0f825c2ffcc0aa3.rlib --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-9b6857c570916ac2.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_cast=/home/dev/perf2b/target/release/deps/libarrow_cast-a3655053b23b8878.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-d8fc6e468e2981ca.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-d70fa841359d41b8.rlib`
+    Finished `release` profile [optimized] target(s) in 1.39s
+  Executable `/home/dev/perf2b/target/release/deps/nata_kernels-a6ea8d2b20697824`
+  Executable `/home/dev/perf2b/target/release/deps/aggregate-4ed3ebb4a7df3356`
+  Executable `/home/dev/perf2b/target/release/deps/arrow_behaviour-3bc8b4126d653fe0`
+  Executable `/home/dev/perf2b/target/release/deps/guarded-85f0259d040d5336`
+  Executable `/home/dev/perf2b/target/release/deps/overflow_checks-d2a49303db1f3637`
+
+*** result: Success
+
+*** cargo test --profile=release --verbose --package=nata-kernels@0.0.0 -j4 --lib
+warning: a `-j` argument was passed to Cargo but Cargo is also configured with an external jobserver in its environment, ignoring the `-j` parameter
+       Fresh autocfg v1.5.1
+       Fresh libm v0.2.16
+       Fresh unicode-ident v1.0.27
+       Fresh proc-macro2 v1.0.107
+       Fresh num-traits v0.2.19
+       Fresh quote v1.0.47
+       Fresh syn v2.0.119
+       Fresh zerocopy-derive v0.8.63
+       Fresh cfg-if v1.0.5
+       Fresh zerocopy v0.8.63
+       Fresh num-integer v0.1.47
+       Fresh version_check v0.9.5
+       Fresh half v2.7.1
+       Fresh bytes v1.12.1
+       Fresh num-bigint v0.5.1
+       Fresh libc v0.2.191
+       Fresh arrow-schema v60.1.0
+       Fresh iana-time-zone v0.1.65
+       Fresh once_cell v1.21.4
+       Fresh num-complex v0.4.6
+       Fresh hashbrown v0.17.1
+       Fresh arrow-buffer v60.1.0
+       Fresh getrandom v0.3.4
+       Fresh chrono v0.4.45
+       Fresh lexical-util v1.0.7
+       Fresh atoi v3.1.1
+       Fresh ryu v1.0.23
+       Fresh base64 v0.23.1
+       Fresh arrow-data v60.1.0
+       Fresh ahash v0.8.12
+       Fresh lexical-write-integer v1.0.6
+       Fresh lexical-parse-integer v1.0.6
+       Fresh arrow-array v60.1.0
+       Fresh lexical-parse-float v1.0.6
+       Fresh lexical-write-float v1.0.6
+       Fresh arrow-cmp v60.1.0
+       Fresh lexical-core v1.0.6
+       Fresh arrow-arith v60.1.0
+       Fresh arrow-select v60.1.0
+       Fresh arrow-ord v60.1.0
+       Fresh arrow-cast v60.1.0
+       Fresh nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running `/home/dev/perf2b/target/release/deps/nata_kernels-a6ea8d2b20697824`
+
+running 23 tests
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test decimal::tests::selected_nulls_and_strict_bounds ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test decimal::tests::bounded_columns_match_an_independent_exact_reference ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test lane::tests::fallback_is_exact_and_keeps_state_on_i128_overflow ... FAILED
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+
+failures:
+
+---- lane::tests::fallback_is_exact_and_keeps_state_on_i128_overflow stdout ----
+
+thread 'lane::tests::fallback_is_exact_and_keeps_state_on_i128_overflow' (1356152) panicked at crates/nata-kernels/src/lane.rs:70:13:
+assertion `left == right` failed
+  left: -9223372036854775808
+ right: 9223372036854775808
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    lane::tests::fallback_is_exact_and_keeps_state_on_i128_overflow
+
+test result: FAILED. 22 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p nata-kernels --lib`
+
+*** result: Failure(101)

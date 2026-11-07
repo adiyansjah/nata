@@ -295,155 +295,163 @@ pub(super) fn accumulate(
             }
             let start = Instant::now();
             let step = (|| -> Result<Step<Vec<Table>, ScanError>, ScanError> {
-                if let Some(ticket) = &state.ticket {
-                    let Some(result) = ticket.poll(wake.clone()) else {
-                        return Ok(Step::Blocked);
-                    };
-                    match result.map_err(scan_error)? {
-                        Completion::Written => (),
-                        _ => return Err(scan_error("unexpected write completion")),
+                loop {
+                    if stopped(cancel) {
+                        return Err(cancel_error());
                     }
-                    state.ticket = None;
-                    // All tasks belong to this one spillable operator. Discard the
-                    // coalesced request after release; each row retries reservation.
-                    shared
-                        .manager
-                        .finish(0)
-                        .map_err(|_| scan_error("spill pressure cleanup"))?;
-                }
-                let failed_at = failure
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .as_ref()
-                    .map(|(i, _)| *i);
-                if failed_at.is_some_and(|failed| {
-                    state.source.as_ref().is_some_and(|(i, _, _)| *i > failed)
-                }) {
-                    return Ok(Step::Done(Ok(empty_tables())));
-                }
-                if state.finishing {
-                    return Ok(Step::Done(Ok(std::mem::replace(
-                        &mut state.partial.tables,
-                        empty_tables(),
-                    ))));
-                }
-                if let Some(evaluated) = &mut state.evaluated {
-                    let finished = state
-                        .partial
-                        .resume(evaluated, &|| stopped(cancel))
-                        .map_err(|e| ScanError::new(e.into_kind()))?;
-                    if !finished {
-                        if state.partial.tables.iter().all(|t| t.groups.is_empty()) {
-                            // Finished local states remain revocable until the
-                            // entire scan phase ends. Reclaim one before parking.
-                            let victim = results
-                                .lock()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .pop();
-                            if let Some(tables) = victim {
-                                state.partial.tables = tables;
-                                submit_write(state, &storage, &targets, &io, wake.clone())?;
-                                return Ok(Step::Yield);
-                            }
-                            // A peer may still own its table while its write is
-                            // queued. Park without retaining a CPU slot; its grant
-                            // release wakes the operator, and the row retries.
-                            if state
-                                .pressure_since
-                                .get_or_insert_with(Instant::now)
-                                .elapsed()
-                                > Duration::from_secs(5)
-                            {
-                                return Err(scan_error(
-                                    "aggregate minimum record cannot fit memory budget",
-                                ));
-                            }
-                            state.partial.tables = empty_tables();
-                            shared
-                                .manager
-                                .finish(0)
-                                .map_err(|_| scan_error("memory pressure cleanup"))?;
-                            shared
-                                .manager
-                                .park(0, wake.clone())
-                                .map_err(|_| scan_error("memory pressure park"))?;
+                    if let Some(ticket) = &state.ticket {
+                        let Some(result) = ticket.poll(wake.clone()) else {
                             return Ok(Step::Blocked);
+                        };
+                        match result.map_err(scan_error)? {
+                            Completion::Written => (),
+                            _ => return Err(scan_error("unexpected write completion")),
                         }
-                        submit_write(state, &storage, &targets, &io, wake.clone())?;
-                        return Ok(Step::Yield);
+                        state.ticket = None;
+                        // All tasks belong to this one spillable operator. Discard the
+                        // coalesced request after release; each row retries reservation.
+                        shared
+                            .manager
+                            .finish(0)
+                            .map_err(|_| scan_error("spill pressure cleanup"))?;
                     }
-                    state.pressure_since = None;
-                    state.evaluated = None;
-                    if cfg.aggregate_force_spill || shared.manager.revoked(0).unwrap_or(false) {
-                        submit_write(state, &storage, &targets, &io, wake.clone())?;
-                        return Ok(Step::Yield);
-                    }
-                }
-                if let Some(batch) = &state.input {
-                    // A dictionary can expand to much more text than its codes.
-                    // Stream a prefix through admitted scratch rather than ask
-                    // for a larger multi-row working set under table pressure.
-                    let mut rows = batch.num_rows();
-                    let mut input = batch.clone();
-                    let mut bytes = string_scratch(&input, &shared.plan)
-                        .map_err(|e| ScanError::new(e.into_kind()))?;
-                    while bytes > state.strings.capacity && rows > 1 {
-                        rows = rows.div_ceil(2);
-                        input = batch.slice(0, rows);
-                        bytes = string_scratch(&input, &shared.plan)
-                            .map_err(|e| ScanError::new(e.into_kind()))?;
-                    }
-                    if !state.strings.reserve(&shared.manager, bytes) {
-                        if state.partial.tables.iter().any(|t| !t.groups.is_empty()) {
-                            submit_write(state, &storage, &targets, &io, wake.clone())?;
-                            return Ok(Step::Yield);
-                        }
-                        return Err(memory_error(
-                            shared,
-                            bytes.saturating_add(
-                                shared.manager.snapshot().progress
-                                    + state._decode.bytes()
-                                    + (2 << 20),
-                            ),
-                        ));
-                    }
-                    let evaluated = state
-                        .partial
-                        .evaluate(&input)
-                        .map_err(|e| ScanError::new(e.into_kind()))?;
-                    state.input = (rows < batch.num_rows())
-                        .then(|| batch.slice(rows, batch.num_rows() - rows));
-                    state.evaluated = Some(evaluated);
-                    return Ok(Step::Yield);
-                }
-                if state.cursor.is_none() {
-                    let task: Option<(usize, RowGroupTask)> = tasks
-                        .lock()
-                        .unwrap_or_else(std::sync::PoisonError::into_inner)
-                        .pop_front();
-                    let Some((index, task)) = task else {
-                        state.finishing = true;
-                        return Ok(Step::Yield);
-                    };
-                    if failure
+                    let failed_at = failure
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
                         .as_ref()
-                        .is_some_and(|(failed, _)| index >= *failed)
-                    {
+                        .map(|(i, _)| *i);
+                    if failed_at.is_some_and(|failed| {
+                        state.source.as_ref().is_some_and(|(i, _, _)| *i > failed)
+                    }) {
                         return Ok(Step::Done(Ok(empty_tables())));
                     }
-                    state.source = Some((index, task.path().to_path_buf(), task.row_group()));
-                    state.cursor = Some(task.cursor(256)?);
-                }
-                if let Some(cursor) = &mut state.cursor {
-                    if let Some(batch) = cursor.next_batch()? {
-                        state.input = Some(batch);
-                    } else {
-                        state.cursor = None;
+                    if state.finishing {
+                        return Ok(Step::Done(Ok(std::mem::replace(
+                            &mut state.partial.tables,
+                            empty_tables(),
+                        ))));
+                    }
+                    if let Some(evaluated) = &mut state.evaluated {
+                        let finished = state
+                            .partial
+                            .resume(evaluated, &|| stopped(cancel))
+                            .map_err(|e| ScanError::new(e.into_kind()))?;
+                        if !finished {
+                            if state.partial.tables.iter().all(|t| t.groups.is_empty()) {
+                                // Finished local states remain revocable until the
+                                // entire scan phase ends. Reclaim one before parking.
+                                let victim = results
+                                    .lock()
+                                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                    .pop();
+                                if let Some(tables) = victim {
+                                    state.partial.tables = tables;
+                                    submit_write(state, &storage, &targets, &io, wake.clone())?;
+                                    return Ok(Step::Yield);
+                                }
+                                // A peer may still own its table while its write is
+                                // queued. Park without retaining a CPU slot; its grant
+                                // release wakes the operator, and the row retries.
+                                if state
+                                    .pressure_since
+                                    .get_or_insert_with(Instant::now)
+                                    .elapsed()
+                                    > Duration::from_secs(5)
+                                {
+                                    return Err(scan_error(
+                                        "aggregate minimum record cannot fit memory budget",
+                                    ));
+                                }
+                                state.partial.tables = empty_tables();
+                                shared
+                                    .manager
+                                    .finish(0)
+                                    .map_err(|_| scan_error("memory pressure cleanup"))?;
+                                shared
+                                    .manager
+                                    .park(0, wake.clone())
+                                    .map_err(|_| scan_error("memory pressure park"))?;
+                                return Ok(Step::Blocked);
+                            }
+                            submit_write(state, &storage, &targets, &io, wake.clone())?;
+                            return Ok(Step::Yield);
+                        }
+                        state.pressure_since = None;
+                        state.evaluated = None;
+                        if cfg.aggregate_force_spill || shared.manager.revoked(0).unwrap_or(false) {
+                            submit_write(state, &storage, &targets, &io, wake.clone())?;
+                            return Ok(Step::Yield);
+                        }
+                    }
+                    if let Some(batch) = &state.input {
+                        // A dictionary can expand to much more text than its codes.
+                        // Stream a prefix through admitted scratch rather than ask
+                        // for a larger multi-row working set under table pressure.
+                        let mut rows = batch.num_rows();
+                        let mut input = batch.clone();
+                        let mut bytes = string_scratch(&input, &shared.plan)
+                            .map_err(|e| ScanError::new(e.into_kind()))?;
+                        while bytes > state.strings.capacity && rows > 1 {
+                            rows = rows.div_ceil(2);
+                            input = batch.slice(0, rows);
+                            bytes = string_scratch(&input, &shared.plan)
+                                .map_err(|e| ScanError::new(e.into_kind()))?;
+                        }
+                        if !state.strings.reserve(&shared.manager, bytes) {
+                            if state.partial.tables.iter().any(|t| !t.groups.is_empty()) {
+                                submit_write(state, &storage, &targets, &io, wake.clone())?;
+                                return Ok(Step::Yield);
+                            }
+                            return Err(memory_error(
+                                shared,
+                                bytes.saturating_add(
+                                    shared.manager.snapshot().progress
+                                        + state._decode.bytes()
+                                        + (2 << 20),
+                                ),
+                            ));
+                        }
+                        let evaluated = state
+                            .partial
+                            .evaluate(&input)
+                            .map_err(|e| ScanError::new(e.into_kind()))?;
+                        state.input = (rows < batch.num_rows())
+                            .then(|| batch.slice(rows, batch.num_rows() - rows));
+                        state.evaluated = Some(evaluated);
+                        continue;
+                    }
+                    if state.cursor.is_none() {
+                        let task: Option<(usize, RowGroupTask)> = tasks
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .pop_front();
+                        let Some((index, task)) = task else {
+                            state.finishing = true;
+                            return Ok(Step::Yield);
+                        };
+                        if failure
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .as_ref()
+                            .is_some_and(|(failed, _)| index >= *failed)
+                        {
+                            return Ok(Step::Done(Ok(empty_tables())));
+                        }
+                        state.source = Some((index, task.path().to_path_buf(), task.row_group()));
+                        state.cursor = Some(task.cursor(256)?);
+                    }
+                    if let Some(cursor) = &mut state.cursor {
+                        if let Some(batch) = cursor.next_batch()? {
+                            state.input = Some(batch);
+                        } else {
+                            state.cursor = None;
+                            // A morsel is the scheduling quantum. Decode, evaluate
+                            // and accumulate its batches on this worker; only spill
+                            // or memory pressure parks the continuation mid-morsel.
+                            return Ok(Step::Yield);
+                        }
                     }
                 }
-                Ok(Step::Yield)
             })();
             shared
                 .metrics

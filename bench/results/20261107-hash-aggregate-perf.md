@@ -769,3 +769,294 @@ child's one local sanity run (2.2 s against 1.1 s) was machine noise: the settle
 (Q1 7.7-11.9x DuckDB against 1.5x; high cardinality 3.5-3.7x in memory against 2x; spill 10-14x against 2x). With scalar arithmetic at
 0.2% of the profile, most of Q1's remaining gap is outside the aggregate's arithmetic, while the slice 3 spike ran reduced Q1 at
 0.79-0.94x DuckDB: step 2b profiles the whole path stage by stage against the spike on the same machine before more optimisation.
+
+## Performance step 2b
+
+**STOPPED at the required regression guard.** Retain the morsel scheduling
+change; reject the i64 lane (Q1 +18.5% / +19.5% paired latency, no compensating
+gain). Low-cardinality groups and expression fusion/buffer reuse are unstarted.
+This is a partial handoff, not completion of step 2b.
+
+Local x86-64 shared development VM, **unsettled**; no frozen target verdict.
+The Q1 ≤1.5x, hash ≤2x and spill ≤2x targets and accepted ADRs are unchanged.
+No GCP, push or merge is performed by this implementation task.
+Raw evidence: [machine and input identity](raw/20261108-hash-aggregate-perf2b/machine.json).
+
+### Whole-path baseline, before implementation
+
+Built `838e394` with `cargo build --locked --release -j 4 -p nata -p nata-check`.
+SF1, warm local Parquet, one requested thread, 8 GiB; complete Q1 including
+CLI startup/planning/metadata, scan, expression evaluation, aggregation and CSV.
+`perf record -e cpu-clock -F 999 -g --call-graph dwarf,8192` follows all query
+threads and includes kernel samples. Zero lost samples. Self shares and inclusive
+call graphs are retained, rather than treating user-only samples as whole-path time.
+[Self profile](raw/20261108-hash-aggregate-perf2b/baseline-self.txt),
+[inclusive profile](raw/20261108-hash-aggregate-perf2b/baseline-inclusive.txt),
+[exact invocation and counters](raw/20261108-hash-aggregate-perf2b/baseline-command.json).
+
+| Stage / symbol | Whole-process share | Interpretation |
+|---|---:|---|
+| Kernel `_raw_spin_unlock_irqrestore` + `finish_task_switch` | 14.16% self | Per-batch cooperative dispatcher round trips; all kernel self is 19.48% |
+| `Partial::evaluate` | 31.57% inclusive | Filter, keys, all argument columns and their copies |
+| `Decimal::column` | 12.08% self | Checked i128-backed expression lanes |
+| `Col::from_arrow` | 2.50% self, 10.32% inclusive for principal instance | Copies/widening and allocation, also called by string scratch sizing |
+| `Partial::resume` | 15.05% self, 19.63% inclusive | Group IDs, reservation preparation and aggregate updates |
+| `ExactSum::add` | 3.52% self | Checked exact accumulation |
+| `RowGroupCursor::next_batch` | 16.44% inclusive | Decode plus pushed filter and projection; Parquet reader `next` is 9.54% inclusive |
+| Pushed WHERE predicate / Arrow filter materialization | 0.69% / 2.92% inclusive | Inside cursor, rather than an independent filter task |
+| `plan_sql_with` | 0.05% inclusive | Startup/planning is included, sampling-limited here |
+
+Inclusive shares overlap and must not be added. These are sample shares, not
+attributed latency gains. In particular, the cursor includes filtering and
+projection, so its inclusive share is not a Parquet decode-only percentage.
+
+Design comparison (source inspection): `spikes/arrow-pipeline/src/queries.rs`
+keeps scan → selected filter → projection → task-local sink within one morsel;
+its batch shares Arrow data. `spikes/pipeline-model/src/main.rs::stages`
+separates decode/filter/project/aggregate and its fused variant uses dense IDs.
+`spikes/hash-ops/src/agg.rs` supplies general keys and exact states;
+`spikes/push-cost/src/arms.rs` separates materialization, dispatch and scheduler
+cost with reused buffers. The engine currently yields after each decode,
+evaluation and update of only 256 rows, widens decimal input and clones each
+materialized aggregate argument. The historical reduced-Q1 spike timings are
+not this full-Q1 baseline and are not reused as a denominator.
+
+The baseline's normal and forced-spill differential gates both pass **65/65**:
+[raw checks](raw/20261108-hash-aggregate-perf2b/baseline-checks.txt).
+
+### Experiment method and decision rule
+
+Each implementation change gets its own immutable before/after binaries from
+this worktree. `scripts/bench-aggregate-perf2b-local.py` gates values against
+DuckDB first, then runs five alternating rounds of before, after and an
+identical-before generic control (reverse order on alternate rounds). Full Q1
+and high-cardinality HAVING, one/eight threads, 8 GiB, warm SF1, whole CLI with
+CSV sent to `/dev/null`. Raw samples retain exits, loads and reservation/spill
+counters; summaries retain min/quartiles/median/max, paired after/before and
+control/before ratios and binary hashes. None of this task's builds or checks overlaps timed cells; other development
+processes are not isolated.
+A >3% regression without compensating gain stops the task; changes within
+local control noise are unresolved pending the parent's settled timing.
+
+### 2b/1 — keep a morsel on the CPU worker
+
+**Rule:** remove per-batch dispatch without increasing admitted memory or changing
+sticky wakes, chunked grants, spill pressure/retry, cancellation or error ordering.
+A continuation now decodes/evaluates/accumulates consecutive batches until its
+row-group morsel ends; pressure, disk tickets and real blocked states keep the
+existing cooperative adapter. Cancellation is checked on every loop and inside
+bounded accumulation. Batch size remains 256 so the minimum grant is unchanged.
+
+| Query | Threads | Before median s | After median s | Generic control s | Paired after/before median |
+|---|---:|---:|---:|---:|---:|
+| Q1 | 1 | 2.417 | 1.591 | 2.329 | 0.684 |
+| Q1 | 8 | 1.234 | 0.557 | 1.279 | 0.447 |
+| High cardinality | 1 | 3.802 | 2.924 | 3.796 | 0.776 |
+| High cardinality | 8 | 3.000 | 2.215 | 3.036 | 0.738 |
+
+**Verdict: retain, locally unsettled.** All four cells improve; no >3% regression.
+The complete one-thread Q1 profile changes kernel self **19.48→0.48%**, with
+the two principal hand-off symbols **14.16→0.06%**. The work did not disappear:
+`Partial::resume` becomes 22.40% self, `Decimal::column` 17.28%, `ExactSum::add`
+4.74%, `Col::from_arrow` 4.37% of a smaller CPU denominator.
+[Samples](raw/20261108-hash-aggregate-perf2b/morsel-samples.json),
+[distributions and paired controls](raw/20261108-hash-aggregate-perf2b/morsel-summary.json),
+[profile](raw/20261108-hash-aggregate-perf2b/morsel-self.txt).
+Normal and forced-spill checks pass **65/65 each** after this change:
+[checks](raw/20261108-hash-aggregate-perf2b/morsel-checks.txt).
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py morsel --before BEFORE_BINARY --after AFTER_BINARY --data DATA_SF1 --out bench/results/raw/20261108-hash-aggregate-perf2b
+```
+
+### 2b/2 — rejected i64 exact accumulation lanes; stop rule triggered
+
+**Rule:** use i64 storage and an overflow flag while it fits, falling back to
+exact i128, then the existing checked i256 representation; retain all input,
+count and final SQL precision checks, exact spill bytes and merge semantics.
+The attempted lane kept the exact fallback after an i64 overflow (no wrapped
+value was reused). `ExactSum::add` was also marked inline. Thus this experiment
+measures that combined lane implementation, not an isolated inline effect.
+
+| Query | Threads | Before median s | Lane median s | Generic control s | Paired lane/before median |
+|---|---:|---:|---:|---:|---:|
+| Q1 | 1 | 1.510 | 1.806 | 1.545 | 1.185 |
+| Q1 | 8 | 0.447 | 0.543 | 0.463 | 1.195 |
+| High cardinality | 1 | 2.966 | 2.950 | 2.911 | 0.997 |
+| High cardinality | 8 | 2.166 | 2.116 | 2.129 | 0.984 |
+
+**Verdict: REJECT and STOP under the brief's rule.** Q1 regresses 18.5% / 19.5%
+on paired ratios. The generic-control ratios are 1.022 / 1.004. High-cardinality
+changes are within control noise (controls 0.982 / 0.968), with no compensating
+gain. These are **unsettled local** results, sufficient to reject this attempt,
+not a both-architecture verdict about every possible i64 lane design.
+
+The fresh one-thread whole-process self profile has `ExactSum::add` **4.74→5.81%**,
+`Partial::resume` **22.40→21.85%**, `Decimal::column` **17.28→14.86%** and kernel
+**0.48→0.96%**. Shares alone do not establish why the lane is slower; the extra
+conversion/flag/fallback branching is a reasoned hypothesis, not an attributed
+instruction-cost claim. No additional tuning experiment is run past the stop.
+[Samples](raw/20261108-hash-aggregate-perf2b/lane-samples.json),
+[distributions, hashes and controls](raw/20261108-hash-aggregate-perf2b/lane-summary.json),
+[profile](raw/20261108-hash-aggregate-perf2b/lane-self.txt),
+[SF1 value gates](raw/20261108-hash-aggregate-perf2b/lane-gates.json).
+Normal and forced-spill aggregate gates pass **65/65 each**; no query result changed.
+[SQL checks](raw/20261108-hash-aggregate-perf2b/lane-checks.txt),
+[kernel tests](raw/20261108-hash-aggregate-perf2b/lane-kernel-tests.txt).
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py lane --before MORSEL_BINARY --after LANE_BINARY --data DATA_SF1 --out bench/results/raw/20261108-hash-aggregate-perf2b
+```
+
+The lane is removed from the final production tree. Its exact source/proof patch
+is retained as [rejected-lane.patch](raw/20261108-hash-aggregate-perf2b/rejected-lane.patch) for reproduction. Apply it with `git apply --unidiff-zero` in a private
+copy. Steps **2b/3 low-cardinality
+groups** and **2b/4 expression-to-aggregate fusion/buffer reuse** are **NOT STARTED**,
+as required by the stop rule. This is a partial implementation handoff, not a
+claim that performance step 2b or the frozen Q1 target is complete.
+
+### Kani evidence for the rejected lane
+
+Both harnesses import the actual attempted `crates/nata-kernels/src/lane.rs` by
+path in the existing Kani spike. No Arrow/i256 stub is used for this new helper.
+`i64_lane_fallback_exact` proves arbitrary full-domain signed i64 addends equal
+independent i128 addition, including i64 overflow. `i128_lane_fallback_preserves_overflow`
+proves arbitrary full-domain signed i128 initial states/addends match independent
+checked addition, returning failure without changing state on i128 overflow.
+**2/2 harnesses PASS; 4/4 covers satisfied.** This does not prove the unchanged
+caller count bounds, decimal precision checks, or i256 implementation.
+[64-bit proof](raw/20261108-hash-aggregate-perf2b/kani-i64-control.txt),
+[128-bit proof](raw/20261108-hash-aggregate-perf2b/kani-i128.txt).
+
+The negative control replaces `self.exact = next` with the old i64 value. Its
+unmutated control passes and its full-domain i64 proof has a real assertion
+failure: **CAUGHT**, not a compile failure or timeout.
+[Negative control verdict](raw/20261108-hash-aggregate-perf2b/kani-negative.txt),
+[failing proof](raw/20261108-hash-aggregate-perf2b/kani-i64-mutant.txt).
+Reproduce in a private copy after applying the retained rejected-lane patch:
+
+```sh
+cd spikes/kani-nata-kernels
+CARGO_BUILD_JOBS=4 cargo kani --harness i64_lane_fallback_exact
+CARGO_BUILD_JOBS=4 cargo kani --harness i128_lane_fallback_preserves_overflow
+# Negative control: change self.exact = next to self.exact = i128::from(self.small)
+# in crates/nata-kernels/src/lane.rs, then rerun i64_lane_fallback_exact.
+```
+
+The four existing decimal-column Kani harnesses were also rerun unchanged:
+**4/4 PASS; 8/8 covers satisfied**. Their individual logs are the adjacent
+`kani-existing-*.txt` files. Together with the rejected lane's two harnesses,
+this trial has **6 passing harnesses, 12/12 covers**, plus the caught lane
+negative control. These results do not certify a new i256 implementation.
+
+### Parent's settled timing handoff (not launched here)
+
+[Heavy steps](../aggregate-perf2b.steps) use the existing heavy harness with
+SF1 on **c3d-highcpu-8** and **n4a-highcpu-8**, independently. Baseline is
+`838e394`; the candidate is this branch's HEAD containing only the retained
+morsel change. The rejected lane is evidence, not active candidate code.
+The job builds committed, SHA-256-checked source archives separately, gates all
+16 Nata cells before 240 timed processes, alternates five rounds with twins
+and DuckDB, and refuses unsettled cells. This covers Q1/high-cardinality ×
+1/8 threads × 8 GiB/64 MiB. SF10 scaling and the frozen targets remain open.
+
+Prepare the git-free inputs **after the final commit**. The parent supplies its
+approved spend from each offline plan; the run commands below are instructions,
+not actions taken by this task. No cloud identifiers belong in tracked files.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 838e394 --fix morsel=HEAD --bundle .aggregate-perf2b-inputs
+cp bench/aggregate-perf2b.steps heavy.steps
+
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2b-x86 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2b-x86 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_X86"
+
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2b-arm64 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2b-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
+```
+
+Use fresh run IDs if those labels have already been used. Only the parent runs
+these commands. No GCP plan, VM, API, push or merge was invoked locally.
+
+### Mutation checks and validation notes
+
+`cargo-mutants 27.1.0` was downloaded as a prebuilt verification tool outside
+the repository; no dependency or lockfile changed. The rejected lane's three
+focused runtime mutations are **3 CAUGHT, 0 MISSED, 0 INVALID**, after a passing
+unmutated control: returning `None`, returning success without updating, and
+reversing the overflow-flag test.
+[Verdict](raw/20261108-hash-aggregate-perf2b/mutants-lane.txt),
+[mutations](raw/20261108-hash-aggregate-perf2b/mutants-lane-caught.txt),
+[outcomes](raw/20261108-hash-aggregate-perf2b/mutants-lane-outcomes.json).
+
+The first valid pipeline sweep found **1 CAUGHT, 1 MISSED**. Replacing the
+per-batch `force_spill || revoked` with `&&` survived: existing tests asserted
+that some spill occurred, also satisfied by the final flush. The new native
+test writes one 1,025-row morsel, verifies five 256-row decoded-batch partials,
+the exact count and cleanup. This checks the explicit force-every-batch test
+mode across the new inner loop. It adds no production optimization past the
+stop. [Original sweep](raw/20261108-hash-aggregate-perf2b/mutants-morsel-initial.txt),
+[new passing control](raw/20261108-hash-aggregate-perf2b/forced-batch-test.txt).
+
+Tooling correction: one initial cargo-mutants invocation misplaced libtest's
+`--test-threads`; it failed before testing any mutant. After correcting that,
+the tool's default inherited jobserver FDs made the existing `ulimit -n 4`
+owner-lock child fail while loading `libgcc_s`. Disabling the tool jobserver
+restored the full native control and lets the explicitly supplied `-j4` govern
+build concurrency. This is a harness/environment failure, not an engine query
+mismatch; no such run is counted as a mutant catch.
+[FD failure](raw/20261108-hash-aggregate-perf2b/mutants-jobserver-failure.txt).
+
+Reproduction (lane command needs the rejected patch in a private tree; the
+pipeline command runs against final HEAD):
+
+```sh
+CARGO_TARGET_DIR=WORK/target TMPDIR=WORK/tmp RUST_TEST_THREADS=1 cargo mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --profile release --output WORK/mutants-lane -p nata-kernels -f 'crates/nata-kernels/src/lane.rs' -F 'replace Lane::add.*with (None|Some)|lane.rs:44:16' --timeout 120 -- --lib
+CARGO_TARGET_DIR=WORK/target TMPDIR=WORK/tmp RUST_TEST_THREADS=1 cargo mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --profile release --output WORK/mutants-morsel -p nata-exec -f 'crates/nata-exec/src/aggregate/pipeline.rs' -F 'pipeline.rs:(381:54|519:9):' --timeout 180
+```
+
+The heavy harness's inert self-test passes (both the five-revision x86 schedule
+and the two-revision ARM schedule); it launches no engines or cloud calls.
+[Self-test](raw/20261108-hash-aggregate-perf2b/heavy-self-test.txt).
+This task's local Cargo build/test work is serialized. Direct builds/tests use `-j 4`;
+final mutation runs disable the tool's overriding jobserver. Disk stayed above
+20 GB free, so no stale-target cleanup was needed.
+
+After adding the multi-batch force-spill test, the complete unmutated executor
+control passes and both pipeline mutations are **2 CAUGHT, 0 MISSED, 0 INVALID**:
+the per-batch force/revoke disjunction and the global-empty guard conjunction.
+[Final sweep](raw/20261108-hash-aggregate-perf2b/mutants-morsel-final.txt),
+[outcomes](raw/20261108-hash-aggregate-perf2b/mutants-morsel-final-outcomes.json).
+Thus the final targeted runtime results are **5/5 distinct mutants caught**
+(three on the rejected lane, two on the retained path). The initial missed
+force-spill mutation and the invalid tooling attempts remain recorded above;
+they are not silently reclassified as initial catches.
+
+### Final retained-tree checks
+
+All commands below completed successfully with disk-backed `TMPDIR`. The
+combined raw log is [final-checks.txt](raw/20261108-hash-aggregate-perf2b/final-checks.txt).
+[Final source hashes](raw/20261108-hash-aggregate-perf2b/final-source-sha256.txt).
+
+| Check | Result |
+|---|---|
+| `cargo fmt --all --check` | PASS |
+| `cargo test --locked --release -j 4 -p nata-exec -p nata-kernels -p nata-scan -p nata-sched -- --test-threads=1` | PASS, all four crates |
+| `cargo clippy --locked --release -j 4 -p nata-exec -p nata-kernels -p nata-scan -p nata-sched --all-targets -- -D warnings` | PASS |
+| `cargo build --locked --release -j 4 -p nata -p nata-check` | PASS |
+| `nata-check --data DATA_SF001 --queries check/queries/aggregate --candidate FINAL_BINARY` | PASS, 65/65 |
+| Same gate with `--force-aggregate-spill` | PASS, 65/65 |
+| `CARGO_BUILD_JOBS=4 LOOM_MAX_PREEMPTIONS=2 bash crates/nata-sched/run_memory_loom.sh` | PASS, 16/16 models, bound 2 |
+| Kani, including the preserved rejected lane | PASS, 6/6 harnesses, 12/12 covers; negative control CAUGHT |
+| Final targeted cargo-mutants | PASS, 5/5 caught, zero remaining missed/invalid; initial missed mutant documented and closed |
+| Heavy harness inert self-test / local harness Python compile | PASS |
+| `git diff --exit-code -- Cargo.lock` | PASS, unchanged; no dependency added |
+
+Final status: production contains only the tested morsel continuation change
+and its multi-batch forced-spill regression test. The local evidence supports
+retaining it; settled both-CPU timing is pending. The required regression guard
+stopped the work at the rejected i64 lane. Low-cardinality grouping and P4
+fusion/buffer reuse remain for a new brief, together with the frozen targets.
+
+Staged leak scanning passes (`scripts/check-leaks.sh --staged`). Text logs have
+only trailing whitespace/extra final blank lines normalized for repository checks.

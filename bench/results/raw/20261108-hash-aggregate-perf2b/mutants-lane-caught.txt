@@ -1,0 +1,3 @@
+crates/nata-kernels/src/lane.rs:40:9: replace Lane::add -> Option<()> with None
+crates/nata-kernels/src/lane.rs:40:9: replace Lane::add -> Option<()> with Some(())
+crates/nata-kernels/src/lane.rs:44:16: delete ! in Lane::add

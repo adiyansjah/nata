@@ -1,0 +1,4 @@
+Found 2 mutants to test
+ok       Unmutated baseline in 0s build + 6s test
+MISSED   crates/nata-exec/src/aggregate/pipeline.rs:381:54: replace || with && in accumulate in 29s build + 6s test
+2 mutants tested in 73s: 1 missed, 1 caught

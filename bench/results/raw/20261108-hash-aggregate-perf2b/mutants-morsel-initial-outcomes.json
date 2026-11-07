@@ -1,0 +1,184 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.100845415,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.01163159,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/aggregate/pipeline.rs:381:54: replace || with && in accumulate",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/aggregate/pipeline.rs",
+          "function": {
+            "function_name": "accumulate",
+            "return_type": "-> Result<(ScanReport, Partitions, Arc<Storage>, IoService<Completion>), ScanError>",
+            "span": {
+              "start": {
+                "line": 144,
+                "column": 1
+              },
+              "end": {
+                "line": 591,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 381,
+              "column": 54
+            },
+            "end": {
+              "line": 381,
+              "column": 56
+            }
+          },
+          "replacement": "&&",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/crates__nata-exec__src__aggregate__pipeline.rs_line_381_col_54.log",
+      "diff_path": "diff/crates__nata-exec__src__aggregate__pipeline.rs_line_381_col_54.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 29.153163665,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 6.41384799,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/aggregate/pipeline.rs:519:9: replace && with || in accumulate",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/aggregate/pipeline.rs",
+          "function": {
+            "function_name": "accumulate",
+            "return_type": "-> Result<(ScanReport, Partitions, Arc<Storage>, IoService<Completion>), ScanError>",
+            "span": {
+              "start": {
+                "line": 144,
+                "column": 1
+              },
+              "end": {
+                "line": 591,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 519,
+              "column": 9
+            },
+            "end": {
+              "line": 519,
+              "column": 11
+            }
+          },
+          "replacement": "||",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__aggregate__pipeline.rs_line_519_col_9.log",
+      "diff_path": "diff/crates__nata-exec__src__aggregate__pipeline.rs_line_519_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 31.699092384,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.251169908,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 2,
+  "missed": 1,
+  "caught": 1,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-07T19:07:45.680226224Z",
+  "end_time": "2026-11-07T19:08:59.314957513Z",
+  "cargo_mutants_version": "27.1.0"
+}

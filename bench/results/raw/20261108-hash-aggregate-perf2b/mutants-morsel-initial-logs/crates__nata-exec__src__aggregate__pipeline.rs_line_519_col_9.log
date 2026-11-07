@@ -1,0 +1,268 @@
+
+*** crates/nata-exec/src/aggregate/pipeline.rs:519:9: replace && with || in accumulate
+
+*** mutation diff:
+--- crates/nata-exec/src/aggregate/pipeline.rs
++++ replace && with || in accumulate
+@@ -511,17 +511,17 @@
+         drop(m);
+         for (p, t) in tables.into_iter().enumerate() {
+             if !t.groups.is_empty() {
+                 partitions[p].push(t);
+             }
+         }
+     }
+     if a.keys.is_empty()
+-        && partitions.iter().all(Vec::is_empty)
++        || /* ~ changed by cargo-mutants ~ */ partitions.iter().all(Vec::is_empty)
+         && storage.registry.snapshot().bytes_written == 0
+     {
+         let mut table = Table::new();
+         table
+             .reserve(&shared.manager, &[], a)
+             .map_err(|e| ScanError::new(e.into_kind()))?;
+         table
+             .groups
+
+
+*** cargo test --no-run --profile=release --verbose --package=nata-exec@0.0.0 -j4
+       Fresh autocfg v1.5.1
+       Fresh libm v0.2.16
+       Fresh unicode-ident v1.0.27
+       Fresh proc-macro2 v1.0.107
+       Fresh num-traits v0.2.19
+       Fresh quote v1.0.47
+       Fresh syn v2.0.119
+       Fresh cfg-if v1.0.5
+       Fresh zerocopy-derive v0.8.63
+       Fresh num-integer v0.1.47
+       Fresh zerocopy v0.8.63
+       Fresh version_check v0.9.5
+       Fresh half v2.7.1
+       Fresh num-bigint v0.5.1
+       Fresh bytes v1.12.1
+       Fresh getrandom v0.3.4
+       Fresh arrow-buffer v60.1.0
+       Fresh iana-time-zone v0.1.65
+       Fresh arrow-schema v60.1.0
+       Fresh once_cell v1.21.4
+       Fresh chrono v0.4.45
+       Fresh ahash v0.8.12
+       Fresh arrow-data v60.1.0
+       Fresh libc v0.2.191
+       Fresh num-complex v0.4.6
+       Fresh hashbrown v0.17.1
+       Fresh jobserver v0.1.35
+       Fresh shlex v2.0.1
+       Fresh arrow-array v60.1.0
+       Fresh find-msvc-tools v0.1.15
+       Fresh pkg-config v0.3.34
+       Fresh semver v1.0.28
+       Fresh cc v1.11.0
+       Fresh arrow-cmp v60.1.0
+       Fresh rustc_version v0.4.1
+       Fresh arrow-select v60.1.0
+       Fresh lexical-util v1.0.7
+       Fresh alloc-no-stdlib v3.0.0
+       Fresh zstd-sys v2.1.2+zstd.1.5.7
+       Fresh alloc-stdlib v0.3.0
+       Fresh crossbeam-utils v0.8.23
+       Fresh bitflags v2.13.2
+       Fresh base64 v0.23.1
+       Fresh flatbuffers v25.12.19
+       Fresh brotli-decompressor v6.2.0
+       Fresh crossbeam-epoch v0.9.21
+       Fresh zstd-safe v8.2.0
+       Fresh lexical-parse-integer v1.0.6
+       Fresh lexical-write-integer v1.0.6
+       Fresh twox-hash v2.1.5
+       Fresh zlib-rs v0.6.8
+       Fresh crossbeam-deque v0.8.6
+       Fresh lexical-write-float v1.0.6
+       Fresh lz4_flex v0.14.0
+       Fresh flate2 v1.1.10
+       Fresh zstd v0.14.3
+       Fresh snap v1.1.2
+       Fresh lexical-parse-float v1.0.6
+       Fresh arrow-ipc v60.1.0
+       Fresh brotli v9.1.1
+       Fresh seq-macro v0.3.6
+       Fresh simdutf8 v0.1.5
+       Fresh lexical-core v1.0.6
+       Fresh nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sched)
+       Fresh parquet v60.1.0
+       Fresh arrow-ord v60.1.0
+       Fresh atoi v3.1.1
+       Fresh log v0.4.35
+       Fresh ryu v1.0.23
+       Fresh nata-scan v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-scan)
+       Fresh sqlparser v0.63.0
+       Fresh arrow-cast v60.1.0
+       Fresh nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-parquet)
+       Fresh arrow-arith v60.1.0
+       Fresh nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+       Fresh nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sql)
+       Fresh crc32fast v1.5.4
+       Dirty nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec): the file `crates/nata-exec/src/aggregate/pipeline.rs` has changed (1794078507.360050179s, 36s after last build at 1794078471.895763519s)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec)
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name nata_exec --edition=2024 crates/nata-exec/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=6b266b16d36ff3e9 -C extra-filename=-8949f767bcb46cc5 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name nata_exec --edition=2024 crates/nata-exec/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=366767c5e4d973e0 -C extra-filename=-ed1759fad9070497 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rmeta --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rmeta --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rmeta --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rmeta --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rmeta --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rmeta --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rmeta --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rmeta --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rmeta --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rmeta --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rmeta --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rmeta --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rmeta --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rmeta -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name exec --edition=2024 crates/nata-exec/tests/exec.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=9e7f16e855cd2026 -C extra-filename=-c0adf9f416b9579e --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name decimal_bits --edition=2024 crates/nata-exec/examples/decimal-bits.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=4c10344ff73f09be -C extra-filename=-14cb25cd63fa1b7a --out-dir /home/dev/perf2b/target/release/examples -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name aggregate_spill --edition=2024 crates/nata-exec/tests/aggregate_spill.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=1fb48998462d199f -C extra-filename=-fc9a4114e00022fa --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name deep --edition=2024 crates/nata-exec/tests/deep.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=768c22d307a1aa51 -C extra-filename=-615696ff8d83c036 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name spill --edition=2024 crates/nata-exec/tests/spill.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=cb5339f5962ed0d3 -C extra-filename=-c5916a3cf9bf7ad9 --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name aggregate --edition=2024 crates/nata-exec/tests/aggregate.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=2ebf8627dd516848 -C extra-filename=-d3ab457554f73fae --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+     Running `/home/dev/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/bin/rustc --crate-name scenarios --edition=2024 crates/nata-exec/tests/scenarios.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no '--warn=clippy::unwrap_used' --deny=unsafe_code '--deny=clippy::unimplemented' --warn=unexpected_cfgs '--deny=clippy::todo' '--deny=clippy::disallowed_methods' '--deny=clippy::dbg_macro' '--deny=clippy::cast_possible_wrap' '--deny=clippy::cast_possible_truncation' '--deny=clippy::allow_attributes_without_reason' --check-cfg 'cfg(nata_loom)' -C overflow-checks=on --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=fcfe87255fe60e3f -C extra-filename=-bec0c3bcd7660d1e --out-dir /home/dev/perf2b/target/release/deps -C strip=debuginfo -L dependency=/home/dev/perf2b/target/release/deps --extern arrow_array=/home/dev/perf2b/target/release/deps/libarrow_array-34b9cc131bece727.rlib --extern arrow_buffer=/home/dev/perf2b/target/release/deps/libarrow_buffer-b57ca5eeaf403d0f.rlib --extern arrow_ipc=/home/dev/perf2b/target/release/deps/libarrow_ipc-81446b8346ccdeea.rlib --extern arrow_schema=/home/dev/perf2b/target/release/deps/libarrow_schema-3498f866bcb9f329.rlib --extern arrow_select=/home/dev/perf2b/target/release/deps/libarrow_select-557ab185c583166b.rlib --extern crc32fast=/home/dev/perf2b/target/release/deps/libcrc32fast-c6e656ff5c3db3cf.rlib --extern flatbuffers=/home/dev/perf2b/target/release/deps/libflatbuffers-f8043a87c1af3553.rlib --extern hashbrown=/home/dev/perf2b/target/release/deps/libhashbrown-cb6d85574ed0ab41.rlib --extern libc=/home/dev/perf2b/target/release/deps/liblibc-34e983634f114512.rlib --extern nata_exec=/home/dev/perf2b/target/release/deps/libnata_exec-ed1759fad9070497.rlib --extern nata_kernels=/home/dev/perf2b/target/release/deps/libnata_kernels-08d5c54c8edaebb7.rlib --extern nata_parquet=/home/dev/perf2b/target/release/deps/libnata_parquet-319dece1b34d1632.rlib --extern nata_sched=/home/dev/perf2b/target/release/deps/libnata_sched-6d8429578f017f5e.rlib --extern nata_sql=/home/dev/perf2b/target/release/deps/libnata_sql-1dd1de2de63ae452.rlib --extern parquet=/home/dev/perf2b/target/release/deps/libparquet-f3c48f48cc13cedc.rlib --extern twox_hash=/home/dev/perf2b/target/release/deps/libtwox_hash-e23c696b3e23c88f.rlib -L native=/home/dev/perf2b/target/release/build/zstd-sys-c77ae61a019dc05d/out`
+    Finished `release` profile [optimized] target(s) in 31.63s
+  Executable `/home/dev/perf2b/target/release/deps/nata_exec-8949f767bcb46cc5`
+  Executable `/home/dev/perf2b/target/release/deps/aggregate-d3ab457554f73fae`
+  Executable `/home/dev/perf2b/target/release/deps/aggregate_spill-fc9a4114e00022fa`
+  Executable `/home/dev/perf2b/target/release/deps/deep-615696ff8d83c036`
+  Executable `/home/dev/perf2b/target/release/deps/exec-c0adf9f416b9579e`
+  Executable `/home/dev/perf2b/target/release/deps/scenarios-bec0c3bcd7660d1e`
+  Executable `/home/dev/perf2b/target/release/deps/spill-c5916a3cf9bf7ad9`
+
+*** result: Success
+
+*** cargo test --profile=release --verbose --package=nata-exec@0.0.0 -j4
+       Fresh autocfg v1.5.1
+       Fresh libm v0.2.16
+       Fresh unicode-ident v1.0.27
+       Fresh proc-macro2 v1.0.107
+       Fresh num-traits v0.2.19
+       Fresh cfg-if v1.0.5
+       Fresh quote v1.0.47
+       Fresh num-integer v0.1.47
+       Fresh syn v2.0.119
+       Fresh version_check v0.9.5
+       Fresh num-bigint v0.5.1
+       Fresh zerocopy-derive v0.8.63
+       Fresh zerocopy v0.8.63
+       Fresh bytes v1.12.1
+       Fresh getrandom v0.3.4
+       Fresh half v2.7.1
+       Fresh iana-time-zone v0.1.65
+       Fresh arrow-schema v60.1.0
+       Fresh arrow-buffer v60.1.0
+       Fresh once_cell v1.21.4
+       Fresh libc v0.2.191
+       Fresh chrono v0.4.45
+       Fresh ahash v0.8.12
+       Fresh arrow-data v60.1.0
+       Fresh num-complex v0.4.6
+       Fresh hashbrown v0.17.1
+       Fresh arrow-array v60.1.0
+       Fresh jobserver v0.1.35
+       Fresh find-msvc-tools v0.1.15
+       Fresh shlex v2.0.1
+       Fresh cc v1.11.0
+       Fresh pkg-config v0.3.34
+       Fresh arrow-cmp v60.1.0
+       Fresh semver v1.0.28
+       Fresh arrow-select v60.1.0
+       Fresh rustc_version v0.4.1
+       Fresh lexical-util v1.0.7
+       Fresh alloc-no-stdlib v3.0.0
+       Fresh zstd-sys v2.1.2+zstd.1.5.7
+       Fresh crossbeam-utils v0.8.23
+       Fresh alloc-stdlib v0.3.0
+       Fresh base64 v0.23.1
+       Fresh bitflags v2.13.2
+       Fresh flatbuffers v25.12.19
+       Fresh brotli-decompressor v6.2.0
+       Fresh crossbeam-epoch v0.9.21
+       Fresh zstd-safe v8.2.0
+       Fresh lexical-parse-integer v1.0.6
+       Fresh lexical-write-integer v1.0.6
+       Fresh zlib-rs v0.6.8
+       Fresh twox-hash v2.1.5
+       Fresh zstd v0.14.3
+       Fresh lexical-write-float v1.0.6
+       Fresh flate2 v1.1.10
+       Fresh lz4_flex v0.14.0
+       Fresh lexical-parse-float v1.0.6
+       Fresh snap v1.1.2
+       Fresh brotli v9.1.1
+       Fresh arrow-ipc v60.1.0
+       Fresh crossbeam-deque v0.8.6
+       Fresh simdutf8 v0.1.5
+       Fresh seq-macro v0.3.6
+       Fresh parquet v60.1.0
+       Fresh nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sched)
+       Fresh lexical-core v1.0.6
+       Fresh arrow-ord v60.1.0
+       Fresh atoi v3.1.1
+       Fresh ryu v1.0.23
+       Fresh nata-scan v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-scan)
+       Fresh log v0.4.35
+       Fresh arrow-cast v60.1.0
+       Fresh nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-parquet)
+       Fresh sqlparser v0.63.0
+       Fresh arrow-arith v60.1.0
+       Fresh crc32fast v1.5.4
+       Fresh nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sql)
+       Fresh nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+       Fresh nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec)
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running `/home/dev/perf2b/target/release/deps/nata_exec-8949f767bcb46cc5`
+
+running 28 tests
+test aggregate::hashing::tests::canonical_hash_vectors_and_recursive_seeds ... ok
+test aggregate::hashing::tests::columns_match_owned_keys_for_selected_null_dictionary_and_float_values ... ok
+test aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure ... ok
+test aggregate::pipeline::tests::dictionary_scratch_admission_precedes_revocable_tables ... ok
+test aggregate::pipeline::tests::reusable_scratch_charges_capacity_once_and_releases_every_chunk ... ok
+test aggregate::replay::tests::replay_rejects_impossible_wide_states_and_wrong_aggregate_descriptor ... ok
+test aggregate::replay::tests::typed_records_reject_truncation_trailing_bytes_wrong_tags_and_invalid_values ... ok
+test aggregate::tests::borrowed_lookup_resolves_collisions_and_never_reads_null_junk ... ok
+test aggregate::tests::collision_equality_and_canonical_float_keys ... ok
+test aggregate::tests::final_partition_merges_every_contribution_exactly_once ... ok
+test aggregate::tests::group_vector_keeps_selected_null_arguments_and_distinct_groups ... ok
+test aggregate::tests::partial_polls_at_batch_entry_and_bounded_intervals_in_large_batches ... ok
+test aggregate::tests::resident_finalization_also_polls_at_bounded_intervals ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::three_valued_and_or ... ok
+test exec::projection_memory_tests::bare_projection_allocates_no_row_selection ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running `/home/dev/perf2b/target/release/deps/aggregate-d3ab457554f73fae`
+
+running 6 tests
+test deep_aggregate_having_and_projection_use_sized_stacks ... ok
+test error_budget_cancel_and_sink_failure_release_all_state ... ok
+test high_cardinality_limit_and_having_project_only_admitted_groups ... ok
+test nulls_empty_input_and_selected_arguments ... FAILED
+test partials_merge_once_and_having_sees_the_whole_group ... ok
+test wide_cancellation_final_overflow_and_average_without_narrowing_sum ... ok
+
+failures:
+
+---- nulls_empty_input_and_selected_arguments stdout ----
+
+thread 'nulls_empty_input_and_selected_arguments' (1390232) panicked at crates/nata-exec/src/aggregate.rs:640:52:
+index out of bounds: the len is 1 but the index is 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    nulls_empty_input_and_selected_arguments
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `-p nata-exec --test aggregate`
+
+*** result: Failure(101)

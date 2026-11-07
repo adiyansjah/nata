@@ -1,0 +1,259 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.465669473,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.101044887,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/lane.rs:40:9: replace Lane::add -> Option<()> with None",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/lane.rs",
+          "function": {
+            "function_name": "Lane::add",
+            "return_type": "-> Option<()>",
+            "span": {
+              "start": {
+                "line": 37,
+                "column": 5
+              },
+              "end": {
+                "line": 53,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 40,
+              "column": 9
+            },
+            "end": {
+              "line": 52,
+              "column": 17
+            }
+          },
+          "replacement": "None",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__lane.rs_line_40_col_9.log",
+      "diff_path": "diff/crates__nata-kernels__src__lane.rs_line_40_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.416136633,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.101328791,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/lane.rs:40:9: replace Lane::add -> Option<()> with Some(())",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/lane.rs",
+          "function": {
+            "function_name": "Lane::add",
+            "return_type": "-> Option<()>",
+            "span": {
+              "start": {
+                "line": 37,
+                "column": 5
+              },
+              "end": {
+                "line": 53,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 40,
+              "column": 9
+            },
+            "end": {
+              "line": 52,
+              "column": 17
+            }
+          },
+          "replacement": "Some(())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__lane.rs_line_40_col_9_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__lane.rs_line_40_col_9_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.412446916,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.101124436,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/lane.rs:44:16: delete ! in Lane::add",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/lane.rs",
+          "function": {
+            "function_name": "Lane::add",
+            "return_type": "-> Option<()>",
+            "span": {
+              "start": {
+                "line": 37,
+                "column": 5
+              },
+              "end": {
+                "line": 53,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 44,
+              "column": 16
+            },
+            "end": {
+              "line": 44,
+              "column": 17
+            }
+          },
+          "replacement": "",
+          "genre": "UnaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__lane.rs_line_44_col_16.log",
+      "diff_path": "diff/crates__nata-kernels__src__lane.rs_line_44_col_16.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.459726922,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.10124118,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 3,
+  "missed": 0,
+  "caught": 3,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-07T19:03:33.986470741Z",
+  "end_time": "2026-11-07T19:03:40.148041869Z",
+  "cargo_mutants_version": "27.1.0"
+}

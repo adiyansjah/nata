@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/home/dev/perf2b/morsel",
+    "sql",
+    "--csv",
+    "--report",
+    "--threads",
+    "1",
+    "--aggregate-memory-bytes",
+    "8589934592",
+    "--spill-directory",
+    "/home/dev/perf2b/tmp",
+    "--spill-disk-bytes",
+    "4294967296",
+    "--command=-- tolerance: 1e-8\nSELECT l_returnflag, l_linestatus,\n sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,\n avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price,\n avg(l_discount) AS avg_disc, count(*) AS count_order\nFROM '/home/dev/src/nata/data/tpch-sf1/lineitem.parquet'\nWHERE l_shipdate <= DATE '1998-09-02'\nGROUP BY l_returnflag, l_linestatus;\n"
+  ],
+  "load": [
+    2.05224609375,
+    2.39501953125,
+    3.32470703125
+  ],
+  "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=53296442 columns_read=7 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=1 order=unordered window=1 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=1 peak_footers=1 late=0 peak_rss_kib=18336\naggregate: partial_ns=1599756053 merge_ns=8949 partial_groups=4 largest_partial=4 rehashes=3 reservation_calls=26 reservation_releases=26 memory_lock_wait_ns=2736 peak_reservation=31563293 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16\n",
+  "binary_sha256": "8ced579bad534eb056e15504e0003663c700719c6274b151d7471095b3d5d75b"
+}

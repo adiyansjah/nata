@@ -1,0 +1,745 @@
+   Compiling nata-scan v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-scan)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec)
+   Compiling nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sched)
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+    Finished `release` profile [optimized] target(s) in 39.82s
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_exec-8949f767bcb46cc5)
+
+running 28 tests
+test aggregate::hashing::tests::canonical_hash_vectors_and_recursive_seeds ... ok
+test aggregate::hashing::tests::columns_match_owned_keys_for_selected_null_dictionary_and_float_values ... ok
+test aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure ... ok
+test aggregate::pipeline::tests::dictionary_scratch_admission_precedes_revocable_tables ... ok
+test aggregate::pipeline::tests::reusable_scratch_charges_capacity_once_and_releases_every_chunk ... ok
+test aggregate::replay::tests::replay_rejects_impossible_wide_states_and_wrong_aggregate_descriptor ... ok
+test aggregate::replay::tests::typed_records_reject_truncation_trailing_bytes_wrong_tags_and_invalid_values ... ok
+test aggregate::tests::borrowed_lookup_resolves_collisions_and_never_reads_null_junk ... ok
+test aggregate::tests::collision_equality_and_canonical_float_keys ... ok
+test aggregate::tests::final_partition_merges_every_contribution_exactly_once ... ok
+test aggregate::tests::group_vector_keeps_selected_null_arguments_and_distinct_groups ... ok
+test aggregate::tests::partial_polls_at_batch_entry_and_bounded_intervals_in_large_batches ... ok
+test aggregate::tests::resident_finalization_also_polls_at_bounded_intervals ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::three_valued_and_or ... ok
+test exec::projection_memory_tests::bare_projection_allocates_no_row_selection ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/aggregate.rs (/home/dev/perf2b/target/release/deps/aggregate-d3ab457554f73fae)
+
+running 6 tests
+test deep_aggregate_having_and_projection_use_sized_stacks ... ok
+test error_budget_cancel_and_sink_failure_release_all_state ... ok
+test high_cardinality_limit_and_having_project_only_admitted_groups ... ok
+test nulls_empty_input_and_selected_arguments ... ok
+test partials_merge_once_and_having_sees_the_whole_group ... ok
+test wide_cancellation_final_overflow_and_average_without_narrowing_sum ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running tests/aggregate_spill.rs (/home/dev/perf2b/target/release/deps/aggregate_spill-fc9a4114e00022fa)
+
+running 12 tests
+test a_hot_string_group_coalesces_without_recursive_repartition ... ok
+test an_earlier_argument_error_wins_over_a_later_file_schema_error ... ok
+test cancel_during_spill_joins_io_and_removes_every_file ... ok
+test dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget ... ok
+test disk_quota_error_is_clear_and_query_cleanup_is_complete ... ok
+test forced_spill_flushes_each_decoded_batch_inside_a_morsel ... ok
+test injected_write_failure_returns_error_and_removes_every_file ... ok
+test pressure_releases_reservations_and_recursive_merge_reads_every_partition ... ok
+test real_smallint_and_float32_keys_and_null_extremes_use_the_typed_spill_path ... ok
+test recursion_bound_is_enforced_under_a_process_deadline ...
+running 1 test
+test recursion_bound_is_enforced_under_a_process_deadline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.03s
+
+ok
+test typed_sql_replay_matches_resident_for_every_key_and_state_type ... ok
+test wide_partial_sums_round_trip_without_narrowing_before_merge ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.88s
+
+     Running tests/deep.rs (/home/dev/perf2b/target/release/deps/deep-615696ff8d83c036)
+
+running 4 tests
+test a_chain_of_10001_terms_and_1001_levels_are_still_positioned_errors_not_crashes ... ok
+test an_operator_chain_of_10000_terms_is_evaluated_on_a_2_mb_thread_for_each_operator ... ok
+test explain_and_explain_analyze_of_the_deepest_queries_run_on_a_2_mb_thread ... ok
+test nesting_of_1000_levels_is_evaluated_on_a_2_mb_thread_for_each_construct ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+
+     Running tests/exec.rs (/home/dev/perf2b/target/release/deps/exec-c0adf9f416b9579e)
+
+running 22 tests
+test a_chain_of_10000_terms_is_evaluated_on_a_big_stack ... ok
+test a_limit_shields_the_rows_beyond_it_from_projection_errors_but_not_the_filter ... ok
+test a_limit_stops_the_scan_and_the_report_says_how_far_it_got ... ok
+test a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter ... ok
+test a_query_without_a_column_to_read_still_counts_rows ... ok
+test an_empty_result_has_a_header_and_no_rows ... ok
+test bare_columns_preserve_values_order_duplicates_and_nulls ... ok
+test between_and_in_use_three_valued_logic ... ok
+test between_in_a_case_condition_evaluates_upper_bounds_for_null_but_not_false_lower_bounds ... ok
+test case_evaluates_only_the_branch_a_row_takes ... ok
+test casts_between_text_and_numbers ... ok
+test decimals_are_exact_and_follow_the_result_types_of_the_rules_page ... ok
+test errors_are_raised_only_for_selected_valid_rows ... ok
+test errors_quote_the_query_and_never_a_cell_value ... ok
+test floats_compare_with_nan_above_everything_and_negative_zero_equal_to_zero ... ok
+test integer_arithmetic_is_checked_against_the_type ... ok
+test min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division ... ok
+test nested_negations_overflow_at_the_original_integer_width_only_for_reached_rows ... ok
+test rows_come_in_file_order_for_any_thread_count_and_window ... ok
+test strings_dates_and_booleans ... ok
+test the_files_of_a_glob_are_read_in_name_order ... ok
+test three_valued_logic_keeps_a_row_only_when_the_condition_is_true ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/scenarios.rs (/home/dev/perf2b/target/release/deps/scenarios-bec0c3bcd7660d1e)
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.44s
+
+     Running tests/spill.rs (/home/dev/perf2b/target/release/deps/spill-c5916a3cf9bf7ad9)
+
+running 12 tests
+test altered_inner_offsets_rejected_even_with_repaired_checksum ... ok
+test decoded_buffers_retain_reservation_and_cannot_multiply_workspace ... ok
+test descriptors_are_capped_and_release_on_drop ... ok
+test disk_queue_is_bounded_and_cancel_drops_queued_job_before_wake ... ok
+test disk_service_wakes_before_or_after_park_and_survives_task_panic ... ok
+test frames_round_trip_empty_full_and_multiple ... ok
+test owner_lock_creation_failure_leaves_no_directory ...
+running 1 test
+test owner_lock_creation_failure_leaves_no_directory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+ok
+test private_exclusive_files_and_no_symlink_adoption ... ok
+test quota_short_write_error_cancel_and_panic_leave_no_files ... ok
+test restart_cleanup_rejects_unknown_files_and_symlinks ... ok
+test restart_cleanup_skips_live_and_removes_killed_owner ...
+running 1 test
+ok
+test seeded_corruption_rejected_before_arrow_allocation ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_kernels-825452f22f6dfa27)
+
+running 22 tests
+test decimal::tests::bounded_columns_match_an_independent_exact_reference ... ok
+test decimal::tests::selected_nulls_and_strict_bounds ... ok
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/aggregate.rs (/home/dev/perf2b/target/release/deps/aggregate-80cff984e92aa10d)
+
+running 5 tests
+test arbitrary_precision_oracle_in_every_merge_order ... ok
+test empty_null_and_integer_result_edges ... ok
+test hostile_spilled_states_and_count_merges_are_checked ... ok
+test maximum_valid_count_rescales_before_dividing ... ok
+test wide_intermediates_cancel_and_avg_does_not_narrow_sum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/arrow_behaviour.rs (/home/dev/perf2b/target/release/deps/arrow_behaviour-cd2d76738db781b4)
+
+running 4 tests
+test arrow_decimal_add_does_not_check_the_declared_precision ... ok
+test arrow_decimal_mul_does_check_i128_overflow ... ok
+test arrow_rem_of_min_by_minus_one_is_zero_not_an_error ... ok
+test checked_integer_ops_report_overflow ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/guarded.rs (/home/dev/perf2b/target/release/deps/guarded-976edfbcc65e62a2)
+
+running 13 tests
+test a_selection_that_excludes_the_bad_rows_hides_the_error_and_one_that_includes_them_raises_it ... ok
+test arrow_skips_null_slots_by_itself ... ok
+test arrow_without_compaction_errors_on_a_row_the_guard_removed ... ok
+test arrow_without_compaction_errors_on_min_over_minus_one_in_a_removed_row ... ok
+test case_as_selection_splitting_gives_the_else_value_to_guarded_rows ... ok
+test case_guarding_minus_one_protects_the_overflow_row_only ... ok
+test every_executor_matches_the_row_by_row_reference_on_every_table_and_query ... ok
+test failures_in_null_slots_are_not_errors ... ok
+test the_arrow_error_kinds_map_to_the_same_categories_as_ours ... ok
+test the_guard_does_not_protect_a_surviving_min_over_minus_one ... ok
+test the_guard_removes_the_zero_divisor_rows_so_there_is_no_error ... ok
+test the_second_guard_protects_the_nested_division ... ok
+test without_the_guard_a_surviving_zero_divisor_is_an_error ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/overflow_checks.rs (/home/dev/perf2b/target/release/deps/overflow_checks-fdb66469a71d3095)
+
+running 1 test
+test an_unchecked_addition_panics_instead_of_wrapping ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_scan-416509c7118c7d5e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/duckdb_oracle.rs (/home/dev/perf2b/target/release/deps/duckdb_oracle-90c9dbee0aab2e10)
+
+running 2 tests
+test the_facts_behind_the_rules_hold_in_duckdb ... ok
+test the_row_oracle_agrees_with_duckdb ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.76s
+
+     Running tests/effectiveness.rs (/home/dev/perf2b/target/release/deps/effectiveness-06628be6a0a8a0d3)
+
+running 6 tests
+test clustered_random_data_skips_the_disjoint_groups ... ok
+test r2_range_predicate_on_sorted_integers_skips_at_least_60_percent ... ok
+test r2_year_predicate_on_sorted_dates_skips_at_least_60_percent_and_exactly_the_empty_groups ... ok
+test tightness_floats ... ok
+test tightness_integers_dates_booleans_and_decimals ... ok
+test tightness_text ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+
+     Running tests/rules.rs (/home/dev/perf2b/target/release/deps/rules-b5faee9fe79cce6f)
+
+running 35 tests
+test all_null_row_group_with_each_operator ... ok
+test all_null_with_bounds_is_a_contradiction_and_kept ... ok
+test binary_increment_skips_trailing_ff ... ok
+test contradictory_statistics_are_kept ... ok
+test decimal_extremes_and_validation ... ok
+test decimal_literal_with_more_fraction_digits_than_the_column ... ok
+test decimal_rescaling_does_not_overflow ... ok
+test empty_row_group_is_skipped_for_every_predicate ... ok
+test float32_columns_compare_as_the_double_they_widen_to ... ok
+test float_group_with_unknown_nan_rows ... ok
+test float_group_without_nan_rows ... ok
+test float_infinities_are_ordinary_numbers ... ok
+test float_nan_count_above_the_row_count_is_contradictory ... ok
+test int32_column_with_wide_literals_is_compared_exactly ... ok
+test integer_boundaries_of_each_operator ... ok
+test integer_extremes_do_not_overflow ... ok
+test is_null_and_is_not_null_use_the_null_count ... ok
+test missing_statistics_never_skip ... ok
+test nan_in_the_bounds_is_not_trusted ... ok
+test nan_literal ... ok
+test one_provably_empty_term_skips_the_conjunction ... ok
+test one_row_group ... ok
+test one_sided_statistics_are_used_on_their_side_only ... ok
+test skip_reason_is_out_of_range ... ok
+test statistics_without_a_null_count_still_prune_comparisons ... ok
+test text_order_is_by_bytes_for_non_ascii ... ok
+test text_truncated_at_a_character_boundary_is_usable ... ok
+test text_with_exact_bounds_is_compared_bytewise ... ok
+test timestamps_and_booleans ... ok
+test truncated_bounds_are_bounds_only ... ok
+test truncated_maximum_that_cannot_be_used ... ok
+test unknown_column_unsupported_type_and_mismatched_literal_are_kept ... ok
+test utf8_bound_from_bytes_refuses_a_cut_character ... ok
+test year_range_on_dates ... ok
+test zeros_are_equal_whatever_their_sign ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/soundness.rs (/home/dev/perf2b/target/release/deps/soundness-fa54a23197078632)
+
+running 7 tests
+test can_skip_is_sound_against_a_row_by_row_oracle ... ok
+test control_missing_bound_as_zero_is_rejected ... ok
+test control_missing_null_count_as_zero_is_rejected ... ok
+test control_nan_blind_reader_is_rejected ... ok
+test control_nan_trusting_reference_is_rejected ... ok
+test control_truncated_as_exact_reader_is_rejected ... ok
+test generator_reaches_the_hard_situations ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.83s
+
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_sched-d0efbec5b31b5de7)
+
+running 4 tests
+test cooperative::tests::early_wake_and_parked_tasks_do_not_occupy_the_worker ... ok
+test cooperative::tests::sink_failure_joins_running_steps_and_drops_parked_state ... ok
+test unordered::tests::partitions_run_once_and_overlap ... ok
+test unordered::tests::sink_error_drains_and_joins ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/facade.rs (/home/dev/perf2b/target/release/deps/facade-be359cd7d6e43dee)
+
+running 1 test
+test only_the_facade_names_std_synchronisation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/loom_sched.rs (/home/dev/perf2b/target/release/deps/loom_sched-a91989127586c15f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/memory.rs (/home/dev/perf2b/target/release/deps/memory-f1bbdb810fd1b3b4)
+
+running 16 tests
+test abandoned_fifo_head_cannot_starve_successor ... ok
+test callbacks_run_outside_manager_lock ... ok
+test cancel_drop_races ... ok
+test cancellation_during_spill_keeps_grant_until_disk_completion ... ok
+test cancellation_wakes_every_operator_and_is_sticky ... ok
+test chunk_pending_retry_keeps_request_size_after_spill_changes_free_memory ... ok
+test chunked_allocations_keep_capacity_charged_until_spill_completes ... ok
+test competing_grants_never_multiply_budget ... ok
+test fifo_arrival_after_release_waits_for_head_instead_of_erroring ... ok
+test fifo_successor_wakes_without_another_release ... ok
+test invalid_minimum_and_changed_request_fail_clearly ... ok
+test one_worker_release_before_park_makes_progress ... ok
+test pressure_does_not_revoke_another_operators_fair_share ... ok
+test release_before_during_after_park ... ok
+test spill_pressure_wakes_a_parked_victim ... ok
+test spill_request_racing_release_keeps_notification_and_progress ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sched.rs (/home/dev/perf2b/target/release/deps/sched-4223159e102c33ed)
+
+running 24 tests
+test a_file_that_cannot_be_opened_has_its_place_in_the_order ... ok
+test a_file_that_cannot_be_opened_has_its_place_in_the_order_with_footers_ahead ... ok
+test a_later_file_that_is_opened_first_waits_for_the_earlier_one ... ok
+test a_limit_stops_after_exactly_the_first_k_results_and_leaves_nothing_behind ... ok
+test a_limit_with_footers_ahead_opens_few_files_and_leaves_nothing_behind ... ok
+test a_panic_in_a_task_is_an_error_not_a_hang ... ok
+test a_panic_in_the_sink_still_joins_every_worker ... ok
+test a_run_with_no_files_and_one_with_empty_files_finish ... ok
+test a_sink_error_cancels_everything_and_wins_over_a_task_error ... ok
+test a_slow_consumer_never_has_more_than_a_window_of_results_alive ... ok
+test a_slow_early_task_does_not_make_the_reorder_buffer_grow ... ok
+test a_worker_waiting_for_tasks_is_woken_when_the_opening_of_a_file_ends ... ok
+test an_error_after_a_satisfied_limit_is_never_reported ... ok
+test an_error_cancels_the_tasks_above_it_even_while_a_lower_task_is_still_running ... ok
+test an_external_cancel_with_footers_pending_joins_everyone ... ok
+test cancel_from_outside_reaches_blocked_tasks_a_blocked_consumer_and_idle_workers ... ok
+test footers_ahead_do_not_open_the_files_all_at_once ... ok
+test footers_are_opened_at_the_same_time_only_when_ahead_allows ... ok
+test ordered_output_is_the_sequential_order_for_every_thread_count_and_window ... ok
+test the_error_of_a_lower_task_wins_over_a_file_that_cannot_be_opened ... ok
+test the_error_of_the_lowest_task_wins_whoever_is_first ... ok
+test unordered_output_is_the_same_multiset ... ok
+test unordered_output_with_footers_ahead_is_the_same_multiset ... ok
+test with_footers_ahead_the_ordered_output_is_still_the_sequential_order ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.70s
+
+   Doc-tests nata_exec
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nata_kernels
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nata_scan
+
+running 1 test
+test crates/nata-scan/src/lib.rs - (line 4) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.16s; merged doctests compilation took 0.15s
+   Doc-tests nata_sched
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Checking libm v0.2.16
+    Checking cfg-if v1.0.5
+    Checking zerocopy v0.8.63
+    Checking libc v0.2.191
+    Checking bytes v1.12.1
+    Checking once_cell v1.21.4
+    Checking iana-time-zone v0.1.65
+    Checking arrow-schema v60.1.0
+    Checking num-traits v0.2.19
+    Checking getrandom v0.3.4
+    Checking hashbrown v0.17.1
+    Checking lexical-util v1.0.7
+    Checking num-integer v0.1.47
+    Checking num-complex v0.4.6
+    Checking chrono v0.4.45
+    Checking num-bigint v0.5.1
+    Checking base64 v0.23.1
+    Checking lexical-parse-integer v1.0.6
+    Checking lexical-write-integer v1.0.6
+    Checking lexical-parse-float v1.0.6
+    Checking lexical-write-float v1.0.6
+    Checking crossbeam-utils v0.8.23
+    Checking half v2.7.1
+    Checking ahash v0.8.12
+    Checking lexical-core v1.0.6
+    Checking atoi v3.1.1
+    Checking ryu v1.0.23
+    Checking alloc-no-stdlib v3.0.0
+    Checking crossbeam-epoch v0.9.21
+    Checking nata-scan v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-scan)
+    Checking alloc-stdlib v0.3.0
+    Checking zstd-sys v2.1.2+zstd.1.5.7
+    Checking arrow-buffer v60.1.0
+    Checking bitflags v2.13.2
+    Checking zstd-safe v8.2.0
+    Checking crossbeam-deque v0.8.6
+    Checking flatbuffers v25.12.19
+    Checking nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sched)
+    Checking brotli-decompressor v6.2.0
+    Checking twox-hash v2.1.5
+    Checking zlib-rs v0.6.8
+    Checking lz4_flex v0.14.0
+    Checking arrow-data v60.1.0
+    Checking zstd v0.14.3
+    Checking snap v1.1.2
+    Checking brotli v9.1.1
+    Checking simdutf8 v0.1.5
+    Checking log v0.4.35
+    Checking sqlparser v0.63.0
+    Checking arrow-array v60.1.0
+    Checking flate2 v1.1.10
+    Checking crc32fast v1.5.4
+    Checking arrow-cmp v60.1.0
+    Checking arrow-arith v60.1.0
+    Checking arrow-select v60.1.0
+    Checking arrow-ord v60.1.0
+    Checking arrow-ipc v60.1.0
+    Checking arrow-cast v60.1.0
+    Checking parquet v60.1.0
+    Checking nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+    Checking nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-parquet)
+    Checking nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sql)
+    Checking nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec)
+    Finished `release` profile [optimized] target(s) in 18.79s
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-kernels)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-exec)
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-pgwire)
+   Compiling nata v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata)
+    Finished `release` profile [optimized] target(s) in 39.80s
+PASS             arg_overflow
+PASS             avg_b
+PASS             avg_dec183
+PASS             avg_dec33
+PASS             avg_dec3810
+PASS             avg_dec52
+PASS             avg_i
+PASS             avg_si
+PASS             avg_ti
+PASS             constant_boolean
+PASS             constant_decimal
+PASS             dictionary_partials
+PASS             expressions
+PASS             extreme_b
+PASS             extreme_d
+PASS             extreme_dec3810
+PASS             extreme_dt
+PASS             extreme_f
+PASS             extreme_r
+PASS             extreme_s
+PASS             extreme_ti
+PASS             global_all_null
+PASS             global_dups
+PASS             global_empty
+PASS             global_filter_empty
+PASS             global_one_row
+PASS             group_all_null
+PASS             group_dups
+PASS             group_empty
+PASS             group_filter_empty
+PASS             group_one_row
+PASS             having_boolean
+PASS             having_count
+PASS             having_keys
+PASS             having_overflow
+PASS             hidden_having_aggregate
+PASS             high_cardinality
+PASS             high_cardinality_tpch
+PASS             key_b
+PASS             key_d
+PASS             key_dec183
+PASS             key_dec33
+PASS             key_dec3810
+PASS             key_dec52
+PASS             key_dt
+PASS             key_f
+PASS             key_i
+PASS             key_r
+PASS             key_s
+PASS             key_si
+PASS             key_ti
+PASS             limit_overflow
+PASS             many_partials
+PASS             q1
+PASS             sum_b
+PASS             sum_dec183
+PASS             sum_dec33
+PASS             sum_dec3810
+PASS             sum_dec52
+PASS             sum_i
+PASS             sum_overflow
+PASS             sum_precision_overflow
+PASS             sum_si
+PASS             sum_ti
+PASS             where_before_args
+
+65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+PASS             arg_overflow
+PASS             avg_b
+PASS             avg_dec183
+PASS             avg_dec33
+PASS             avg_dec3810
+PASS             avg_dec52
+PASS             avg_i
+PASS             avg_si
+PASS             avg_ti
+PASS             constant_boolean
+PASS             constant_decimal
+PASS             dictionary_partials
+PASS             expressions
+PASS             extreme_b
+PASS             extreme_d
+PASS             extreme_dec3810
+PASS             extreme_dt
+PASS             extreme_f
+PASS             extreme_r
+PASS             extreme_s
+PASS             extreme_ti
+PASS             global_all_null
+PASS             global_dups
+PASS             global_empty
+PASS             global_filter_empty
+PASS             global_one_row
+PASS             group_all_null
+PASS             group_dups
+PASS             group_empty
+PASS             group_filter_empty
+PASS             group_one_row
+PASS             having_boolean
+PASS             having_count
+PASS             having_keys
+PASS             having_overflow
+PASS             hidden_having_aggregate
+PASS             high_cardinality
+PASS             high_cardinality_tpch
+PASS             key_b
+PASS             key_d
+PASS             key_dec183
+PASS             key_dec33
+PASS             key_dec3810
+PASS             key_dec52
+PASS             key_dt
+PASS             key_f
+PASS             key_i
+PASS             key_r
+PASS             key_s
+PASS             key_si
+PASS             key_ti
+PASS             limit_overflow
+PASS             many_partials
+PASS             q1
+PASS             sum_b
+PASS             sum_dec183
+PASS             sum_dec33
+PASS             sum_dec3810
+PASS             sum_dec52
+PASS             sum_i
+PASS             sum_overflow
+PASS             sum_precision_overflow
+PASS             sum_si
+PASS             sum_ti
+PASS             where_before_args
+
+65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+   Compiling rustversion v1.0.23
+   Compiling once_cell v1.21.4
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling tracing-core v0.1.36
+   Compiling cc v1.11.0
+   Compiling log v0.4.35
+   Compiling libc v0.2.191
+   Compiling regex-syntax v0.8.11
+   Compiling crossbeam-utils v0.8.23
+   Compiling cfg-if v1.0.5
+   Compiling crossbeam-epoch v0.9.21
+   Compiling pin-project-lite v0.2.17
+   Compiling lazy_static v1.5.1
+   Compiling tracing v0.1.44
+   Compiling sharded-slab v0.1.7
+   Compiling regex-automata v0.4.18
+   Compiling thread_local v1.1.10
+   Compiling tracing-log v0.2.0
+   Compiling smallvec v1.16.4
+   Compiling nu-ansi-term v0.50.3
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling generator v0.8.11
+   Compiling scoped-tls v1.0.1
+   Compiling loom v0.7.2
+   Compiling crossbeam-deque v0.8.6
+   Compiling nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-01280601/crates/nata-sched)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.12s
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test abandoned_fifo_head_cannot_starve_successor ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test callbacks_run_outside_manager_lock ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=652 bound=2
+test cancel_drop_races ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.06s
+
+
+running 1 test
+[loom] memory: executions=151 bound=2
+test cancellation_during_spill_keeps_grant_until_disk_completion ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test cancellation_wakes_every_operator_and_is_sticky ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test chunk_pending_retry_keeps_request_size_after_spill_changes_free_memory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=80 bound=2
+test chunked_allocations_keep_capacity_charged_until_spill_completes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+
+running 1 test
+[loom] memory: executions=33 bound=2
+test competing_grants_never_multiply_budget ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test fifo_arrival_after_release_waits_for_head_instead_of_erroring ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test fifo_successor_wakes_without_another_release ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test invalid_minimum_and_changed_request_fail_clearly ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test one_worker_release_before_park_makes_progress ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test pressure_does_not_revoke_another_operators_fair_share ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=39 bound=2
+test release_before_during_after_park ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test spill_pressure_wakes_a_parked_victim ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=44 bound=2
+test spill_request_racing_release_keeps_notification_and_progress ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s

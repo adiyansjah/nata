@@ -417,3 +417,27 @@ fn an_earlier_argument_error_wins_over_a_later_file_schema_error() {
     );
     empty(&base);
 }
+
+#[test]
+fn forced_spill_flushes_each_decoded_batch_inside_a_morsel() {
+    let d = dir("spill-batch-morsel");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("spill directory");
+    let path = d.join("t.parquet");
+    let input: ArrayRef = Arc::new(Int32Array::from_iter_values(0..1025));
+    let batch = RecordBatch::try_from_iter([("id", input)]).expect("batch");
+    // One morsel contains five of the retained 256-row decode batches. Merely
+    // flushing once at morsel/end-of-input would exercise spill but violate
+    // the test mode's promise to flush every input batch.
+    write_batch(&path, &batch, 1025);
+    let sql = format!("SELECT count(*) FROM '{}'", path.display());
+    let result = run_with(&sql, &cfg(&base, 1));
+    assert_eq!(rows(result.csv.expect("count")), vec!["1025"]);
+    let stats = result.report.expect("report").aggregate.expect("aggregate");
+    assert_eq!(
+        stats.partial_groups, 5,
+        "one global partial per decoded batch"
+    );
+    empty(&base);
+    std::fs::remove_dir_all(d).expect("cleanup");
+}
