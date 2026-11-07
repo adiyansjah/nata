@@ -576,8 +576,8 @@ impl Query {
                 // 1. grant first (before any request permit: a permit holder never waits for a grant, so there is no cycle)
                 let _grant = self.acquire(&self.remote.grant, units as u32).await?;
                 // 2. permits; none is held while the retry loop sleeps
-                let _q = self.acquire(&self.sem, 1).await?;
-                let _n = self.acquire(&self.remote.node_sem, 1).await?;
+                let _q = if m.no_inflight_cap { None } else { Some(self.acquire(&self.sem, 1).await?) };
+                let _n = if m.no_inflight_cap { None } else { Some(self.acquire(&self.remote.node_sem, 1).await?) };
                 self.remote.stats.inflight.up();
                 let _gg = GaugeGuard(&self.remote.stats.inflight);
                 let ki = kind as usize;

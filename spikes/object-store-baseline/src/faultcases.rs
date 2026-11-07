@@ -464,6 +464,31 @@ pub async fn all_cases(m: &Mutants) -> Vec<CaseResult> {
         let ok = matches!(&res, Err(e) if e.class == Class::DeadlineExceeded) && ms < 2500;
         CaseResult { name: "operation_deadline_bounds_a_long_retry_chain", ok, detail: format!("elapsed_ms={ms} result={:?} (deadline 1200 ms)", res.map(|b| b.len()).map_err(|e| (e.class, e.attempts))) }
     });
+    case!("inflight_caps_per_query_and_per_node", async {
+        let mut why = Vec::new();
+        // (a) one query, 60 concurrent reads against a 200 ms endpoint: at most 16 attempts active
+        let r = Rig::new(fast(), m.clone()).await;
+        let id = r.id().await;
+        r.fake.set_plan(Plan::always(Fault::Delay { ms: 200 }));
+        let hs: Vec<_> = (0..60u64).map(|i| { let (q, p, idc) = (r.q.clone(), r.path.clone(), id.clone()); tokio::spawn(async move { q.fetch_range(&p, &idc, i * 1000..i * 1000 + 500, Kind::Data).await }) }).collect();
+        for h in hs { if h.await.unwrap().is_err() { why.push("a read failed".to_string()); } }
+        let peak_q = r.remote.stats.inflight.peak();
+        if peak_q > 16 || peak_q < 8 { why.push(format!("one query: peak {peak_q} active attempts, expected 8..=16")); }
+        // (b) three queries, 30 reads each: the node cap of 32 binds, not 3 x 16
+        let r = Rig::new(fast(), m.clone()).await;
+        let id = r.id().await;
+        r.fake.set_plan(Plan::always(Fault::Delay { ms: 200 }));
+        let mut hs = Vec::new();
+        for _ in 0..3 {
+            let q = r.remote.query();
+            for i in 0..30u64 { let (q, p, idc) = (q.clone(), r.path.clone(), id.clone()); hs.push(tokio::spawn(async move { q.fetch_range(&p, &idc, i * 1000..i * 1000 + 500, Kind::Data).await })); }
+        }
+        for h in hs { if h.await.unwrap().is_err() { why.push("a read failed".to_string()); } }
+        let peak_n = r.remote.stats.inflight.peak();
+        if peak_n > 32 || peak_n < 17 { why.push(format!("three queries: peak {peak_n} active attempts, expected 17..=32 (node cap 32)")); }
+        if r.remote.stats.inflight.cur() != 0 { why.push("attempts still counted in flight after the reads".to_string()); }
+        CaseResult { name: "inflight_caps_per_query_and_per_node", ok: why.is_empty(), detail: format!("peak active attempts: one query {peak_q} (cap 16); three queries {peak_n} (cap 32) {}", if why.is_empty() { String::new() } else { format!("WRONG: {}", why.join("; ")) }) }
+    });
     case!("seeded_chaos_every_read_exact_or_bounded_error", async {
         let seed = 20261107u64;
         let faults = vec![status(503, None), status(500, None), status(429, None), Fault::Reset, Fault::TruncateAfter { after: 2000 }, Fault::TruncateChunked { after: 1000 }, Fault::Delay { ms: 30 }];

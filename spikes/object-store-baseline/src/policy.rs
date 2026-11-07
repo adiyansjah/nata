@@ -85,6 +85,8 @@ pub struct Mutants {
     pub ignore_retry_after: bool,
     /// Keep the bytes of a failed attempt and append the retry's bytes (duplicate bytes).
     pub append_on_retry: bool,
+    /// No per-query or per-node cap on active attempts.
+    pub no_inflight_cap: bool,
 }
 
 impl Mutants {
@@ -100,6 +102,7 @@ impl Mutants {
             ("no_transport_bound", Mutants { no_transport_bound: true, ..Default::default() }),
             ("ignore_retry_after", Mutants { ignore_retry_after: true, ..Default::default() }),
             ("append_on_retry", Mutants { append_on_retry: true, ..Default::default() }),
+            ("no_inflight_cap", Mutants { no_inflight_cap: true, ..Default::default() }),
         ]
     }
 }
