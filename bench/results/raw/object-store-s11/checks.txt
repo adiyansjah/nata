@@ -1,0 +1,22 @@
+Local verification, 2026-11-08 (Asia/Jakarta)
+Architecture: x86_64
+Code tree: 2cd6e9db28bf95d61d6ed20674816cb821a5ca3c1eb68ea58385a05230925a36
+TMPDIR: on-disk $HOME/tmp-s11; heavy local commands sequential
+Cargo.lock: unchanged; no new dependency/version
+PASS cargo fmt --check
+PASS cargo clippy --workspace --all-targets -- -D warnings
+PASS cargo clippy -p nata-objstore --all-targets --features mutants -- -D warnings
+PASS cargo test --workspace: 565 reported passes, 0 failures, 2 intentional ignores
+PASS cargo deny check: advisories, bans, licenses, sources
+PASS objstore-sweep mutants: clean controls; 18 caught, 0 survived
+PASS check_bridge_mutants.sh, cfg nata_loom, bound 2: 9 short models; both mutants caught (exit 101)
+PASS checker exit parser: timeout 124 and build error 1 rejected despite assertion text
+NOT COMPLETED combined five-thread model: local bound 2 hit 180-second cap; GCP bound 3 remains due
+PASS nata-check: scan 5, sql 252, sql-differences 55, aggregate 65; local and fake, zero mismatch/error
+PASS delayed fake window experiment: 32,000 correct rows in every arm; raw samples in window.txt
+PASS cells driver fake smoke: 12 proj/sel/meta cells; one round/worker; identical SF0.01 files, not frozen layouts
+PASS unsupported full-cell canary: 4 NOT-MEASURED, exit 1; strlen/date_diff refused by standalone CLI
+PASS shell/Python/YAML and all step-command syntax checks
+PASS scripts/gcp/test/test-job-chains.sh
+PASS scripts/check-leaks.sh --staged (run immediately before commit)
+NOT RUN bound 3, nightly-size probes, real stores, spike-paired driver, cloud jobs

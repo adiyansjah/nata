@@ -16,3 +16,7 @@ crossbeam-deque = "=0.8.6"
 
 [lints]
 workspace = true
+
+[features]
+bridge-drop-wake = []
+bridge-drop-cancel = []

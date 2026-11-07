@@ -1,28 +1,27 @@
-# Card 0006 walking skeleton, REAL bucket: the steps the parent runs on the two CPU types (n4a-highcpu-8 and c3d-highcpu-8: the machine types the frozen ceilings
-# were measured on) with the write-test identity's env file. The bucket name and prefix live ONLY in the git-ignored `gcs.env` next to `run-reference.sh`
-# (NATA_OBJ_BUCKET=, NATA_OBJ_PREFIX=; shipped with the tree, read at run time, never printed and never committed).
-#
-# Uploading and deleting use the spike's `osb` (it holds the write-test identity logic); Nata itself reads with the VM's read-only identity (metadata server).
-# Order, one `heavy` step each (names a-z, 0-9, -):
-build         cargo build --release -p nata -p nata-objfake
-rr-build      bash spikes/object-store-baseline/run-reference.sh build
-rr-data       bash spikes/object-store-baseline/run-reference.sh data
-rr-preflight  bash spikes/object-store-baseline/run-reference.sh preflight
-rr-upload     bash spikes/object-store-baseline/run-reference.sh upload
-# 1. the correctness smoke on the real bucket: the example query of the card, then the differential sets against DuckDB (the reference reads $WORK/data locally)
+# Parent only: same file for n4a-highcpu-8 and c3d-highcpu-8.
+# Supply NATA_OBJ_ENV_FILE as a private absolute path at runtime. No identifiers
+# or credentials belong here. run-reference reads that file only when run.
+# Build/test small locally and run scripts/gcp/test/test-job-chains.sh first.
+# Every exit code is a gate; keep cleanup/leakscan even if a cell misses.
+machine bash -c 'machine_type=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s|.*/||"); printf "%s\n" "$machine_type"'
+build cargo build --locked --release -p nata -p nata-objfake
+rr-build bash spikes/object-store-baseline/run-reference.sh build
+rr-data bash spikes/object-store-baseline/run-reference.sh data
+rr-preflight bash spikes/object-store-baseline/run-reference.sh preflight
+rr-upload bash spikes/object-store-baseline/run-reference.sh upload
 smoke-example bash scripts/object-store/gcs.sh smoke
-check-upload  bash scripts/object-store/gcs.sh upload-check
-check-gcs     bash scripts/object-store/gcs.sh check
-# 2. the cells against the frozen ceilings (Nata CLI against DuckDB httpfs, alternating, twins); the spike's own wrapper arm runs in the same VM right after,
-#    so that the 1.2x-of-spike ceiling can be read from two files taken minutes apart (NOT interleaved: say so in the record)
-cells-sf1     bash scripts/object-store/gcs.sh cells sf1
-cells-sf10    bash scripts/object-store/gcs.sh cells sf10
-rr-bench-sf1  bash spikes/object-store-baseline/run-reference.sh bench-sf1
-rr-bench-sf10 bash spikes/object-store-baseline/run-reference.sh bench-sf10
-# 3. the default clients (psql, psycopg, pgjdbc; setup as scripts/aggregate-client-setup.sh) against `nata serve` with one registered gs:// table and its local twin
-#    (SF1 lineitem; the layout file holds the same rows in the same order); the cache is per process, so two statements per client also show a warm footer
-client-setup  bash scripts/aggregate-client-setup.sh
-client-smoke  bash -c 'set -a; . spikes/object-store-baseline/gcs.env; set +a; "$WORK/aggregate-client/bin/python" scripts/object-store/client-smoke.py --nata target/release/nata --parquet "$WORK/osb-data/src-A/lineitem.parquet" --work "$WORK/objstore-smoke" --store "gs://$NATA_OBJ_BUCKET/$NATA_OBJ_PREFIX/sf1/mid1/part-0000.parquet" --jar "$WORK/aggregate-pgjdbc.jar"'
-# 4. cleanup: delete everything the run uploaded and prove the prefix is empty, then scan the results for the bucket, prefix and service account
-rr-cleanup    bash spikes/object-store-baseline/run-reference.sh cleanup
-rr-leakscan   bash spikes/object-store-baseline/run-reference.sh leakscan
+check-upload bash scripts/object-store/gcs.sh upload-check
+check-gcs bash scripts/object-store/gcs.sh check
+# Per cell/round: Nata, spike wrapper control, DuckDB, Nata twin, spike twin,
+# DuckDB twin. Control validates against local DuckDB answers on every run;
+# all timed Nata/DuckDB answers are checked. Both ceilings include twin noise.
+# Full uses the frozen all-16-column reductions: unsupported SQL must fail,
+# never silently substitute an easier query or retune a frozen ceiling.
+cells-sf1 bash scripts/object-store/gcs.sh cells sf1
+cells-sf10 bash scripts/object-store/gcs.sh cells sf10
+rr-scale bash spikes/object-store-baseline/run-reference.sh bench-scale
+rr-rss bash spikes/object-store-baseline/run-reference.sh bench-rss
+client-setup bash scripts/aggregate-client-setup.sh
+client-smoke bash -c 'set -a; . "${NATA_OBJ_ENV_FILE:?}"; set +a; "$WORK/aggregate-client/bin/python" scripts/object-store/client-smoke.py --nata target/release/nata --parquet "$WORK/osb-data/src-A/lineitem.parquet" --work "$WORK/objstore-smoke" --store "gs://$NATA_OBJ_BUCKET/$NATA_OBJ_PREFIX/sf1/mid1/part-0000.parquet" --jar "$WORK/aggregate-pgjdbc.jar"'
+rr-cleanup bash spikes/object-store-baseline/run-reference.sh cleanup
+rr-leakscan bash spikes/object-store-baseline/run-reference.sh leakscan

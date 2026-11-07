@@ -3,7 +3,7 @@
 //! The scan never talks to the network: it asks a [`RemoteQuery`] for the footer of an object ([`RemoteQuery::open`]: identity lookup, then the cached
 //! parsed footer) and for the byte ranges of one row group ([`RemoteQuery::fetch`]). The implementation (`nata-objstore`) owns the I/O runtime, the
 //! request policy, the footer cache and the memory grants; a `fetch` returns bytes that are already in memory and charged, so the decoder on the CPU
-//! worker only reads from memory. Both calls wait for the answer on the calling worker thread and poll `cancel` while they wait.
+//! worker only reads from memory. Parallel scans use owned requests polled with a sticky scheduler wake; synchronous methods remain for planning and cursor callers.
 //!
 //! Locations are `s3://bucket/key` and `gs://bucket/key` strings carried in the scan's `PathBuf`s; nothing here resolves them.
 
@@ -80,17 +80,25 @@ pub struct RemoteBytes {
 
 /// Process-wide: knows the stores, the cache and the runtime.
 pub trait RemoteIo: Send + Sync + Debug {
-    /// Start a query: its own attempt cap, memory grant and cancellation. Dropping the query cancels whatever it still has in flight.
+    /// A query-local binder/execution handoff sharing the process cache/runtime.
+    fn scoped(&self) -> Option<Arc<dyn RemoteIo>> {
+        None
+    }
+    /// Node allowance (cache plus response service) withheld before dividing execution admissions.
+    fn reserved_bytes(&self) -> usize {
+        0
+    }
+    /// Start a query: its own attempt cap, memory grant and cancellation. Owned requests abort on drop; `cancel` stops all requests of this query.
     fn begin(&self) -> Result<Arc<dyn RemoteQuery>, RemoteError>;
     /// The objects a location or glob names, sorted by name (`s3://bucket/dir/*.parquet`). A location without a glob character is returned as it is
     /// (its existence is the reader's business). At most a bounded number of objects.
     fn expand(&self, pattern: &str, cancel: &dyn Fn() -> bool) -> Result<Vec<String>, RemoteError>;
     /// The parsed footer of one object (identity lookup plus the cached footer): what the binder reads the schema from.
-    fn footer(
-        &self,
-        location: &str,
-        cancel: &dyn Fn() -> bool,
-    ) -> Result<Arc<ParquetMetaData>, RemoteError>;
+    fn footer(&self, location: &str, cancel: &dyn Fn() -> bool) -> Result<RemoteFile, RemoteError>;
+}
+
+pub trait Request<T>: Send {
+    fn poll(&mut self, wake: &nata_sched::bridge::Waker) -> Option<Result<T, RemoteError>>;
 }
 
 pub trait RemoteQuery: Send + Sync + Debug {
@@ -103,6 +111,15 @@ pub trait RemoteQuery: Send + Sync + Debug {
         ranges: &[Range<u64>],
         cancel: &dyn Fn() -> bool,
     ) -> Result<RemoteBytes, RemoteError>;
+    fn start_open(&self, location: &str) -> Box<dyn Request<RemoteFile>>;
+    fn start_fetch(
+        &self,
+        file: &RemoteFile,
+        ranges: &[Range<u64>],
+    ) -> Box<dyn Request<RemoteBytes>>;
+    fn metrics(&self) -> Option<String> {
+        None
+    }
     /// Stop everything this query has in flight; later calls fail with `Cancelled`.
     fn cancel(&self);
 }

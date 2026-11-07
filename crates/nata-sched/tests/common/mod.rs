@@ -2,8 +2,11 @@
 //! `--cfg nata_loom` it is made of loom primitives and loom explores the real scheduler together with it.
 #![allow(dead_code, reason = "each test file uses a different part")]
 
-use nata_sched::sync::{Arc, AtomicUsize, Ordering, yield_now};
-use nata_sched::{CancelToken, Run, Work};
+use nata_sched::bridge::Completion;
+use nata_sched::sync::{
+    Arc, AtomicUsize, JoinHandle, Mutex, Ordering, lock, spawn_named, yield_now,
+};
+use nata_sched::{CancelToken, OpenStep, Parker, Run, Work};
 
 /// A counted resource (the `Tracked` pattern of spikes/sim-harness): counted while alive. A scheduler that forgets to drop a task, a result or a handle
 /// leaves the counter above zero.
@@ -26,6 +29,8 @@ impl Drop for Tracked {
 pub struct ModelTask {
     pub id: usize,
     _handle: Tracked,
+    /// The request a parking task waits for (made the first time it runs); `None` until then, and for a task that never parks.
+    wait: Option<Arc<Completion<()>>>,
 }
 
 pub struct ModelOut {
@@ -79,6 +84,14 @@ pub struct Model {
     pub wait_for_open_started: Vec<(usize, usize)>,
     /// A std-only pause in every opening, in milliseconds (a slow footer read).
     pub open_pause_ms: u64,
+    /// These task ids park: their first run starts a request (an I/O thread that completes it at once) and returns `Parked`; the run after the wake finishes.
+    pub park_tasks: Vec<usize>,
+    /// These task ids park and their request is never answered: only a cancel (or the end of the scan) settles them.
+    pub stall_tasks: Vec<usize>,
+    /// These files park their opening the same way (a request answered by an I/O thread).
+    pub park_opens: Vec<usize>,
+    /// The I/O threads started so far; `join_io` joins them (loom fails an execution in which a thread is left running).
+    pub io_threads: Mutex<Vec<JoinHandle<()>>>,
     /// Live tasks + outputs.
     pub live: Arc<AtomicUsize>,
     /// Tasks that saw the cancellation and stopped.
@@ -107,6 +120,10 @@ impl Model {
             opens_peak: AtomicUsize::new(0),
             wait_for_open_started: vec![],
             open_pause_ms: 0,
+            park_tasks: vec![],
+            stall_tasks: vec![],
+            park_opens: vec![],
+            io_threads: Mutex::new(vec![]),
             live: Arc::new(AtomicUsize::new(0)),
             stopped: AtomicUsize::new(0),
             outs: Arc::new(AtomicUsize::new(0)),
@@ -132,19 +149,52 @@ impl Model {
     pub fn live_now(&self) -> usize {
         self.live.load(Ordering::SeqCst)
     }
-}
 
-impl Work for Model {
-    type Task = ModelTask;
-    type Out = ModelOut;
-    type Err = ModelErr;
-
-    fn files(&self) -> usize {
-        self.files.len()
+    /// The I/O side of a model request: a thread that answers it.
+    fn start_io(&self, c: &Arc<Completion<()>>) {
+        let c = Arc::clone(c);
+        let h = spawn_named("model-io".into(), move || c.complete(())).expect("thread");
+        lock(&self.io_threads).push(h);
     }
 
-    fn open(&self, file: usize) -> Result<Vec<ModelTask>, ModelErr> {
-        self.opens[file].fetch_add(1, Ordering::SeqCst);
+    /// Join the I/O threads (call after the scheduler returned).
+    pub fn join_io(&self) {
+        let hs: Vec<_> = lock(&self.io_threads).drain(..).collect();
+        for h in hs {
+            assert!(nata_sched::sync::join(h), "an I/O thread panicked");
+        }
+    }
+}
+
+impl Model {
+    fn open_step(
+        &self,
+        file: usize,
+        resume: Option<Arc<Completion<()>>>,
+        park: &Parker<'_>,
+    ) -> OpenStep<ModelTask, Arc<Completion<()>>, ModelErr> {
+        if self.park_opens.contains(&file) {
+            let c = match resume {
+                Some(c) => c,
+                None => {
+                    self.opens[file].fetch_add(1, Ordering::SeqCst);
+                    let c = Completion::new();
+                    self.start_io(&c);
+                    c
+                }
+            };
+            if c.poll(&park.waker()).is_none() {
+                return OpenStep::Parked(c);
+            }
+            return OpenStep::Ready(self.open_now(file, false));
+        }
+        OpenStep::Ready(self.open_now(file, true))
+    }
+
+    fn open_now(&self, file: usize, count: bool) -> Result<Vec<ModelTask>, ModelErr> {
+        if count {
+            self.opens[file].fetch_add(1, Ordering::SeqCst);
+        }
         let now = self.opens_now.fetch_add(1, Ordering::SeqCst) + 1;
         self.opens_peak.fetch_max(now, Ordering::SeqCst);
         #[cfg(not(nata_loom))]
@@ -163,6 +213,7 @@ impl Work for Model {
                 .map(|i| ModelTask {
                     id: file * 10 + i,
                     _handle: Tracked::new(&self.live),
+                    wait: None,
                 })
                 .collect())
         };
@@ -170,9 +221,48 @@ impl Work for Model {
         self.opens_done[file].fetch_add(1, Ordering::SeqCst);
         result
     }
+}
 
-    fn run(&self, task: &ModelTask, cancel: &CancelToken) -> Run<ModelOut, ModelErr> {
-        self.runs[task.id].fetch_add(1, Ordering::SeqCst);
+impl Work for Model {
+    type Task = ModelTask;
+    type Out = ModelOut;
+    type Err = ModelErr;
+    type Open = Arc<Completion<()>>;
+
+    fn files(&self) -> usize {
+        self.files.len()
+    }
+
+    fn open(
+        &self,
+        file: usize,
+        resume: Option<Arc<Completion<()>>>,
+        park: &Parker<'_>,
+    ) -> OpenStep<ModelTask, Arc<Completion<()>>, ModelErr> {
+        Model::open_step(self, file, resume, park)
+    }
+
+    fn run(&self, task: &mut ModelTask, cancel: &CancelToken<'_>) -> Run<ModelOut, ModelErr> {
+        if task.wait.is_none() {
+            self.runs[task.id].fetch_add(1, Ordering::SeqCst);
+        }
+        let parks = self.park_tasks.contains(&task.id);
+        if parks || self.stall_tasks.contains(&task.id) {
+            let c = match &task.wait {
+                Some(c) => Arc::clone(c),
+                None => {
+                    let c = Completion::new();
+                    if parks {
+                        self.start_io(&c);
+                    }
+                    task.wait = Some(Arc::clone(&c));
+                    c
+                }
+            };
+            if c.poll(&cancel.waker()).is_none() {
+                return Run::Parked;
+            }
+        }
         if self.panic_tasks.contains(&task.id) {
             panic!("model task {} panics", task.id);
         }

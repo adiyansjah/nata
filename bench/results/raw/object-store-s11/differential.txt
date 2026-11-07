@@ -1,0 +1,20 @@
+== scan             local
+5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+== scan             fake
+5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+object store (in-process endpoint): 16 GET and 5 HEAD requests served
+== sql              local
+252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+== sql              fake
+252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+object store (in-process endpoint): 779 GET and 517 HEAD requests served
+== sql-differences  local
+55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+== sql-differences  fake
+55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+object store (in-process endpoint): 93 GET and 99 HEAD requests served
+== aggregate        local
+65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+== aggregate        fake
+65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+object store (in-process endpoint): 210 GET and 133 HEAD requests served

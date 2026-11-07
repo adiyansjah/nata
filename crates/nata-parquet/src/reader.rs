@@ -441,8 +441,14 @@ impl ScanPlan {
             return Err(ScanError::usage("no file given"));
         };
         let remote = match remote {
-            Some(io) => Some(io.begin().map_err(|e| remote_error(&e, first_path))?),
-            None => None,
+            Some(io)
+                if paths
+                    .iter()
+                    .any(|p| p.to_str().is_some_and(is_remote_location)) =>
+            {
+                Some(io.begin().map_err(|e| remote_error(&e, first_path))?)
+            }
+            _ => None,
         };
         let ctx = Arc::new(Ctx {
             opener,
@@ -455,7 +461,7 @@ impl ScanPlan {
         });
         let mut spec: Option<Spec> = None;
         let (first, pushed) = guarded(first_path, None, || {
-            read_file(first_path, 0, options, &mut spec, &ctx)
+            read_file(first_path, 0, options, &mut spec, &ctx, None)
         })?;
         let spec = spec.ok_or_else(|| ScanError::usage("no file given"))?;
         let applied = options.prune && pushed > 0;
@@ -539,6 +545,31 @@ impl ScanPlan {
     /// `open` and is handed out once from there (a second call reads it again). The returned file frees its metadata when the last `Arc` of it,
     /// held by the tasks, is dropped.
     pub fn open_file(&self, index: usize) -> Result<Arc<FileScan>, ScanError> {
+        self.open_prepared(index, None)
+    }
+
+    pub(crate) fn open_error(&self, index: usize, error: &crate::remote::RemoteError) -> ScanError {
+        remote_error(error, &self.paths[index])
+    }
+    pub(crate) fn start_open(
+        &self,
+        index: usize,
+    ) -> Option<Box<dyn crate::remote::Request<RemoteFile>>> {
+        if index == 0 {
+            return None;
+        } // already opened during planning
+        let location = self.paths.get(index)?.to_str()?;
+        if !is_remote_location(location) {
+            return None;
+        }
+        Some(self.ctx.remote.as_ref()?.start_open(location))
+    }
+
+    pub(crate) fn open_prepared(
+        &self,
+        index: usize,
+        prepared: Option<RemoteFile>,
+    ) -> Result<Arc<FileScan>, ScanError> {
         let Some(path) = self.paths.get(index) else {
             return Err(ScanError::new(ErrorKind::Internal(
                 "a file number beyond the plan was asked for".into(),
@@ -558,7 +589,7 @@ impl ScanPlan {
                 // the plan's spec is read-only after `open`; `read_file` takes it by value (a few column names and literals)
                 let mut spec = Some(self.spec.clone());
                 guarded(path, None, || {
-                    read_file(path, index, &self.options, &mut spec, &self.ctx)
+                    read_file(path, index, &self.options, &mut spec, &self.ctx, prepared)
                 })
                 .map(|(f, _)| Arc::new(f))
                 .inspect_err(|_| self.abandon_from(index.saturating_add(1)))?
@@ -694,10 +725,13 @@ fn read_file(
     options: &ScanOptions,
     spec: &mut Option<Spec>,
     ctx: &Arc<Ctx>,
+    prepared: Option<RemoteFile>,
 ) -> Result<(FileScan, usize), ScanError> {
     let mut metadata_grant = None;
     // a file in a store: the identity lookup and the (cached) footer come from the remote reader; there is no handle to open
-    let remote_file = if let Some(location) = path.to_str().filter(|l| is_remote_location(l)) {
+    let remote_file = if prepared.is_some() {
+        prepared
+    } else if let Some(location) = path.to_str().filter(|l| is_remote_location(l)) {
         let Some(query) = &ctx.remote else {
             return Err(ScanError::not_supported(
                 "reading from object storage without an object-store reader",
@@ -1206,6 +1240,23 @@ impl RowGroupTask {
             .in_file(path)
             .in_row_group(rg));
         };
+        let ranges = self.remote_ranges(remote)?;
+        let abandoned = || cancel() || f.ctx.abandon_from_file.load(Ordering::SeqCst) <= f.index;
+        match query.fetch(remote, &ranges, &abandoned) {
+            Ok(got) => Ok(Some(OpenedSource {
+                source: Source::Remote(Arc::new(Blob::new(remote.length, got))),
+                fail_reads_after: None,
+                read_delay: None,
+                guard: None,
+            })),
+            Err(e) if e.kind == RemoteErrorKind::Cancelled => Ok(None),
+            Err(e) => Err(remote_error(&e, path).in_row_group(rg)),
+        }
+    }
+
+    fn remote_ranges(&self, remote: &RemoteFile) -> Result<Vec<std::ops::Range<u64>>, ScanError> {
+        let f = &*self.file;
+        let (path, rg) = (&f.path, self.row_group);
         let bad = |what: &str| {
             ScanError::new(ErrorKind::Corrupt(what.into()))
                 .in_file(path)
@@ -1228,17 +1279,44 @@ impl RowGroupTask {
                 .ok_or_else(|| bad("a column chunk lies outside the file"))?;
             ranges.push(start..end);
         }
-        let abandoned = || cancel() || f.ctx.abandon_from_file.load(Ordering::SeqCst) <= f.index;
-        match query.fetch(remote, &ranges, &abandoned) {
-            Ok(got) => Ok(Some(OpenedSource {
-                source: Source::Remote(Arc::new(Blob::new(remote.length, got))),
-                fail_reads_after: None,
-                read_delay: None,
-                guard: None,
-            })),
-            Err(e) if e.kind == RemoteErrorKind::Cancelled => Ok(None),
-            Err(e) => Err(remote_error(&e, path).in_row_group(rg)),
-        }
+        Ok(ranges)
+    }
+
+    pub(crate) fn start_fetch(
+        &self,
+    ) -> Result<Option<Box<dyn crate::remote::Request<crate::remote::RemoteBytes>>>, ScanError>
+    {
+        guarded(&self.file.path, Some(self.row_group), || {
+            let Some(remote) = &self.file.remote else {
+                return Ok(None);
+            };
+            let ranges = self.remote_ranges(remote)?;
+            Ok(Some(
+                self.file
+                    .ctx
+                    .remote
+                    .as_ref()
+                    .expect("remote query")
+                    .start_fetch(remote, &ranges),
+            ))
+        })
+    }
+
+    pub(crate) fn run_prepared(
+        &self,
+        cancel: &dyn Fn() -> bool,
+        bytes: crate::remote::RemoteBytes,
+    ) -> Result<TaskResult, ScanError> {
+        let length = self.file.remote.as_ref().expect("remote file").length;
+        let source = OpenedSource {
+            source: Source::Remote(Arc::new(Blob::new(length, bytes))),
+            fail_reads_after: None,
+            read_delay: None,
+            guard: None,
+        };
+        guarded(&self.file.path, Some(self.row_group), || {
+            self.run_unguarded(cancel, Some(source))
+        })
     }
 
     /// Read this row group: decode, filter exactly, project. Any failure is an error that names the file and this row group; no rows are returned
@@ -1256,10 +1334,14 @@ impl RowGroupTask {
     /// its handle and the batches it holds, and returns `Cancelled`.
     pub fn run_cancellable(&self, cancel: &dyn Fn() -> bool) -> Result<TaskResult, ScanError> {
         let (path, rg) = (&self.file.path, self.row_group);
-        guarded(path, Some(rg), || self.run_unguarded(cancel))
+        guarded(path, Some(rg), || self.run_unguarded(cancel, None))
     }
 
-    fn run_unguarded(&self, cancel: &dyn Fn() -> bool) -> Result<TaskResult, ScanError> {
+    fn run_unguarded(
+        &self,
+        cancel: &dyn Fn() -> bool,
+        prepared: Option<OpenedSource>,
+    ) -> Result<TaskResult, ScanError> {
         let f = &*self.file;
         let stats = &*f.ctx.stats;
         let abandoned = || {
@@ -1274,7 +1356,10 @@ impl RowGroupTask {
             fail_reads_after,
             read_delay,
             guard: _guard,
-        }) = self.open_source(cancel)?
+        }) = (match prepared {
+            Some(s) => Some(s),
+            None => self.open_source(cancel)?,
+        })
         else {
             return abandoned();
         };
@@ -1712,6 +1797,7 @@ impl TaskRun<'_> {
 /// that stops early (`--limit`, an error) has not read the footers of the files it never reached (`files_opened < files`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScanReport {
+    pub remote_metrics: Option<String>,
     pub files: usize,
     pub files_opened: usize,
     pub row_groups_total: u64,
@@ -1753,6 +1839,7 @@ impl ScanReport {
     ) -> ScanReport {
         let st = &plan.ctx.stats;
         ScanReport {
+            remote_metrics: plan.ctx.remote.as_ref().and_then(|q| q.metrics()),
             files: plan.file_count(),
             files_opened: ScanStats::get(&st.files_opened) as usize,
             row_groups_total: ScanStats::get(&st.row_groups_total),

@@ -1,0 +1,14 @@
+LOOM_MAX_PREEMPTIONS=2; production code via cfg nata_loom
+test parked_core::two_workers_wake_and_cancel_two_parked_jobs ... ok
+test cancel_reaches_a_parked_waiter_without_io ... ok
+test completion_registration_and_shared_fill_cancellation ... ok
+test completion_wake_is_sticky ... ok
+test footer_open_can_park ... ok
+test grant_wait_does_not_wake_itself_repeatedly ... ok
+test io_completion_before_or_after_park_is_not_lost ... ok
+test real_grant_gate_stays_within_budget_and_wakes ... ok
+test shrinking_construction_returns_query_and_node_capacity_once ... ok
+bridge-drop-wake CAUGHT (exit 101)
+bridge-drop-cancel CAUGHT (exit 101)
+Combined two-CPU/two-I/O model: local bound-2 timeout at 180 s; NOT COMPLETED.
+Timeout/build-error checker canaries: exit 124 and exit 1 rejected as INVALID.

@@ -486,7 +486,7 @@ pub(crate) fn first_readable_column(
             let meta = remote
                 .footer(location, &|| false)
                 .map_err(|e| nata_parquet::remote_scan_error(&e, first))?;
-            nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+            nata_parquet::schema::leaves(meta.metadata.file_metadata().schema_descr())
                 .map_err(|m| ScanError::not_supported(m).in_file(first))?
         }
         _ => nata_parquet::read_leaves(first)?,

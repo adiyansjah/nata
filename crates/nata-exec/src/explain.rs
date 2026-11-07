@@ -85,6 +85,10 @@ pub fn analyze_text(plan: &LogicalPlan, r: &ExecReport) -> String {
             ));
         }
     }
+    if let Some(metrics) = &scan.remote_metrics {
+        out.push_str(metrics);
+        out.push('\n');
+    }
     if let Some(a) = &r.aggregate {
         out.push_str(&format!("{}\n", a.line()));
     }

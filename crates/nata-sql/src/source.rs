@@ -79,7 +79,7 @@ impl SourceProvider for RoutedSource<'_> {
             .remote
             .footer(location, self.cancel)
             .map_err(|e| nata_parquet::remote_scan_error(&e, file))?;
-        nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+        nata_parquet::schema::leaves(meta.metadata.file_metadata().schema_descr())
             .map_err(|m| ScanError::not_supported(m).in_file(file))
     }
 }

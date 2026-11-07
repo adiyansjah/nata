@@ -21,7 +21,7 @@
 use std::sync::{Arc, Mutex};
 
 use arrow_array::RecordBatch;
-use nata_sched::{CancelToken, Config, Finish, Flow, Run, Scheduler, Work};
+use nata_sched::{CancelToken, Config, Finish, Flow, OpenStep, Parker, Run, Scheduler, Work};
 
 use crate::error::{ErrorKind, ScanError};
 use crate::reader::{Limiter, RowGroupTask, ScanPlan, ScanReport, TaskOutput, TaskResult};
@@ -54,12 +54,17 @@ impl ParallelConfig {
     }
 }
 
+struct ScanTask {
+    task: RowGroupTask,
+    pending: Option<Box<dyn crate::remote::Request<crate::remote::RemoteBytes>>>,
+}
 struct ScanWork {
     plan: Arc<ScanPlan>,
 }
 
 impl Work for ScanWork {
-    type Task = RowGroupTask;
+    type Task = ScanTask;
+    type Open = Box<dyn crate::remote::Request<crate::remote::RemoteFile>>;
     type Out = TaskOutput;
     type Err = ScanError;
 
@@ -67,17 +72,63 @@ impl Work for ScanWork {
         self.plan.file_count()
     }
 
-    fn open(&self, file: usize) -> Result<Vec<RowGroupTask>, ScanError> {
-        // the Arc<FileScan> is dropped here; the tasks keep it alive until the last of them is gone
-        Ok(self.plan.open_file(file)?.tasks())
+    fn open(
+        &self,
+        file: usize,
+        resume: Option<Self::Open>,
+        park: &Parker<'_>,
+    ) -> OpenStep<Self::Task, Self::Open, ScanError> {
+        let mut pending = resume.or_else(|| self.plan.start_open(file));
+        let prepared = if let Some(p) = &mut pending {
+            match p.poll(&park.waker()) {
+                None => return OpenStep::Parked(pending.expect("pending")),
+                Some(Ok(f)) => Some(f),
+                Some(Err(e)) => {
+                    return OpenStep::Ready(Err(self.plan.open_error(file, &e)));
+                }
+            }
+        } else {
+            None
+        };
+        OpenStep::Ready(self.plan.open_prepared(file, prepared).map(|f| {
+            f.tasks()
+                .into_iter()
+                .map(|task| ScanTask {
+                    task,
+                    pending: None,
+                })
+                .collect()
+        }))
     }
 
-    fn run(&self, task: &RowGroupTask, cancel: &CancelToken) -> Run<TaskOutput, ScanError> {
-        match task.run_cancellable(&|| cancel.is_cancelled()) {
-            Ok(TaskResult::Done(o)) => Run::Done(o),
-            Ok(TaskResult::Cancelled) => Run::Cancelled,
+    fn run(&self, state: &mut ScanTask, cancel: &CancelToken<'_>) -> Run<TaskOutput, ScanError> {
+        let task = &state.task;
+        let result = (|| {
+            if state.pending.is_none() {
+                state.pending = task.start_fetch()?;
+            }
+            if let Some(p) = &mut state.pending {
+                match p.poll(&cancel.waker()) {
+                    None => return Ok(None),
+                    Some(Ok(bytes)) => {
+                        state.pending = None;
+                        return task
+                            .run_prepared(&|| cancel.is_cancelled(), bytes)
+                            .map(Some);
+                    }
+                    Some(Err(e)) => {
+                        return Err(crate::reader::remote_error(&e, task.path())
+                            .in_row_group(task.row_group()));
+                    }
+                }
+            }
+            task.run_cancellable(&|| cancel.is_cancelled()).map(Some)
+        })();
+        match result {
+            Ok(None) => Run::Parked,
+            Ok(Some(TaskResult::Done(o))) => Run::Done(o),
+            Ok(Some(TaskResult::Cancelled)) => Run::Cancelled,
             Err(e) => {
-                // a failed row group makes every later file's result unreachable: stop their blocked remote reads (a no-op for local files)
                 self.plan.abandon_from(task.file_index().saturating_add(1));
                 Run::Failed(e)
             }

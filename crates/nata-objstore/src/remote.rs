@@ -18,7 +18,8 @@ use std::time::{Duration, Instant};
 
 use bytes::Bytes;
 use futures_util::StreamExt;
-use nata_sched::memory::{Grant, MemoryError, MemoryManager, Reservation, Wake};
+use nata_sched::bridge::{QueueSlot, ReserveFail, ReserveStep, reserve_step};
+use nata_sched::memory::{Grant, MemoryManager, Wake};
 use object_store::client::{
     HttpClient, HttpConnector, HttpError, HttpErrorKind, HttpRequest, HttpResponse,
     HttpResponseBody, HttpService,
@@ -498,6 +499,8 @@ pub struct Remote {
     node_sem: Semaphore,
     seed: u64,
     ops: AtomicU64,
+    gate: Arc<tokio::sync::Mutex<()>>,
+    wake: Arc<Notify>,
 }
 
 impl Remote {
@@ -509,12 +512,24 @@ impl Remote {
             stats: Stats::default(),
             seed,
             ops: AtomicU64::new(0),
+            gate: Arc::new(tokio::sync::Mutex::new(())),
+            wake: Arc::new(Notify::new()),
         })
     }
 
     /// A query: its own permit pool (fair FIFO), cancel token, optional deadline, and the memory service its response bytes are granted from.
     pub fn query(self: &Arc<Self>, memory: Arc<MemoryManager>) -> Arc<Query> {
         self.query_with_deadline(memory, None)
+    }
+
+    pub(crate) fn query_with_node(
+        self: &Arc<Self>,
+        memory: Arc<MemoryManager>,
+        node: Arc<MemoryManager>,
+    ) -> Arc<Query> {
+        let mut q = self.query(memory);
+        Arc::get_mut(&mut q).expect("new query").node_memory = Some(node);
+        q
     }
 
     pub fn query_with_deadline(
@@ -524,12 +539,13 @@ impl Remote {
     ) -> Arc<Query> {
         Arc::new(Query {
             remote: self.clone(),
-            sem: Semaphore::new(self.cfg.query_inflight),
+            sem: Arc::new(Semaphore::new(self.cfg.query_inflight)),
             cancel: CancelToken::new(),
             deadline,
             memory,
-            gate: tokio::sync::Mutex::new(()),
+            gate: Arc::new(tokio::sync::Mutex::new(())),
             wake: Arc::new(Notify::new()),
+            node_memory: None,
         })
     }
 }
@@ -544,25 +560,18 @@ impl Wake for NotifyWake {
 }
 
 /// Removes this reader's place in the memory service's queue however its wait ends (a grant, a cancel, a dropped future).
-struct QueueSlot<'a>(&'a MemoryManager);
-
-impl Drop for QueueSlot<'_> {
-    fn drop(&mut self) {
-        let _ = self.0.finish(OPERATOR);
-    }
-}
-
 /// The one operator the object-store reads register with the query's memory service.
 pub const OPERATOR: usize = 0;
 
 pub struct Query {
     pub remote: Arc<Remote>,
-    sem: Semaphore,
+    sem: Arc<Semaphore>,
     pub cancel: Arc<CancelToken>,
     deadline: Option<Instant>,
     memory: Arc<MemoryManager>,
+    node_memory: Option<Arc<MemoryManager>>,
     /// The memory service keeps ONE outstanding request per operator: reads that need a grant take turns here, in arrival order.
-    gate: tokio::sync::Mutex<()>,
+    gate: Arc<tokio::sync::Mutex<()>>,
     wake: Arc<Notify>,
 }
 
@@ -578,7 +587,6 @@ impl Query {
     /// Cancel everything this query has in flight: waits for grants and permits, requests, sleeps.
     pub fn cancel_all(&self) {
         self.cancel.cancel();
-        self.memory.cancel();
     }
 
     /// Run `attempt` under the retry policy. `attempt(n)` makes try number n (1-based) and must acquire its own permits.
@@ -684,30 +692,102 @@ impl Query {
             return Ok(None);
         }
         let bytes = usize::try_from(bytes).map_err(|_| fail(Class::GrantTooSmall))?;
-        let _turn = tokio::select! { g = self.gate.lock() => g, _ = self.cancel.cancelled() => return Err(fail(Class::Cancelled)) };
-        let _slot = QueueSlot(&self.memory);
+        let query = self.memory.snapshot();
+        if bytes > query.budget - query.progress {
+            return Err(fail(Class::GrantTooSmall));
+        }
+        // Fixed query shares sum to no more than the node allowance under the
+        // caller's admission bound. Reserve this query's share first; waiting
+        // for its own live buffers must not retain another node reservation.
+        let grant = self
+            .reserve_from(&self.memory, &self.gate, &self.wake, bytes)
+            .await?;
+        let grant = if let Some(node) = &self.node_memory {
+            let parent = self
+                .reserve_from(node, &self.remote.gate, &self.remote.wake, bytes)
+                .await?;
+            grant.with_parent(parent)
+        } else {
+            grant
+        };
+        Ok(Some(grant))
+    }
+
+    async fn reserve_from(
+        &self,
+        memory: &Arc<MemoryManager>,
+        gate: &tokio::sync::Mutex<()>,
+        wake: &Arc<Notify>,
+        bytes: usize,
+    ) -> Result<Grant, Fail> {
+        let _turn = tokio::select! { g = gate.lock() => g, _ = self.cancel.cancelled() => return Err(fail(Class::Cancelled)) };
+        let _slot = QueueSlot::new(memory, OPERATOR);
         loop {
-            match MemoryManager::request(&self.memory, OPERATOR, bytes) {
-                Ok(Reservation::Granted(g)) => return Ok(Some(g)),
-                Ok(Reservation::Pending { .. }) => {
-                    self.memory
-                        .park(OPERATOR, NotifyWake(self.wake.clone()))
-                        .map_err(|_| fail(Class::Other))?;
-                    tokio::select! { _ = self.wake.notified() => {}, _ = self.cancel.cancelled() => return Err(fail(Class::Cancelled)) }
+            match reserve_step(memory, OPERATOR, bytes, NotifyWake(wake.clone())) {
+                ReserveStep::Granted(g) => return Ok(g),
+                ReserveStep::Wait => {
+                    tokio::select! { _ = wake.notified() => {}, _ = self.cancel.cancelled() => return Err(fail(Class::Cancelled)) }
                 }
-                Err(MemoryError::MinimumExceedsBudget | MemoryError::NoReclaimableState) => {
-                    return Err(fail(Class::GrantTooSmall));
+                ReserveStep::Failed(e) => {
+                    return Err(fail(match e {
+                        ReserveFail::TooLarge => Class::GrantTooSmall,
+                        ReserveFail::Cancelled => Class::Cancelled,
+                        ReserveFail::Other => Class::Other,
+                    }));
                 }
-                Err(MemoryError::Cancelled) => return Err(fail(Class::Cancelled)),
-                Err(_) => return Err(fail(Class::Other)),
             }
         }
+    }
+
+    /// One logical read, including grant/permit wait and all of its requests.
+    pub(crate) fn for_read(&self) -> Arc<Query> {
+        let deadline = if self.remote.mutants.no_deadline() {
+            self.deadline
+        } else {
+            let end = Instant::now() + self.cfg().op_deadline;
+            Some(self.deadline.map_or(end, |d| d.min(end)))
+        };
+        Arc::new(Query {
+            remote: self.remote.clone(),
+            sem: self.sem.clone(),
+            cancel: self.cancel.clone(),
+            deadline,
+            memory: self.memory.clone(),
+            node_memory: self.node_memory.clone(),
+            gate: self.gate.clone(),
+            wake: self.wake.clone(),
+        })
+    }
+
+    pub(crate) fn fill_query(&self) -> Arc<Query> {
+        Arc::new(Query {
+            remote: self.remote.clone(),
+            sem: self.sem.clone(),
+            cancel: CancelToken::new(),
+            deadline: self.deadline,
+            memory: self.memory.clone(),
+            node_memory: self.node_memory.clone(),
+            gate: self.gate.clone(),
+            wake: self.wake.clone(),
+        })
+    }
+    pub(crate) async fn cancelled(&self) {
+        self.cancel.cancelled().await;
     }
 
     /// The same, for a caller outside the retry loop (it has no attempts to count).
     pub async fn grant(&self, bytes: u64) -> Result<Option<Grant>, ReadError> {
         let t0 = Instant::now();
-        self.reserve(bytes).await.map_err(|f| ReadError {
+        let deadline = self.deadline.map_or(t0 + self.cfg().op_deadline, |d| {
+            d.min(t0 + self.cfg().op_deadline)
+        });
+        let result = tokio::time::timeout_at(
+            tokio::time::Instant::from_std(deadline),
+            self.reserve(bytes),
+        )
+        .await
+        .unwrap_or_else(|_| Err(fail(Class::DeadlineExceeded)));
+        result.map_err(|f| ReadError {
             class: f.class,
             attempts: 0,
             elapsed: t0.elapsed(),
@@ -768,16 +848,17 @@ impl Query {
         range: Range<u64>,
         kind: Kind,
     ) -> Result<Fetched<Bytes>, ReadError> {
+        let q = self.for_read();
         let t0 = Instant::now();
         let r = async {
-            self.check_range(id, &range, t0)?;
-            let grant = self.grant(range.end - range.start).await?;
-            let data = self.fetch_range_inner(t, id, range.clone(), kind).await?;
+            q.check_range(id, &range, t0)?;
+            let grant = q.grant(range.end - range.start).await?;
+            let data = q.fetch_range_inner(t, id, range.clone(), kind).await?;
             Ok(Fetched { data, grant })
         }
         .await;
         match r {
-            Err(_) if self.remote.mutants.swallow_error() => Ok(Fetched {
+            Err(_) if q.remote.mutants.swallow_error() => Ok(Fetched {
                 data: Bytes::from(vec![0u8; (range.end - range.start) as usize]),
                 grant: None,
             }),
@@ -931,16 +1012,17 @@ impl Query {
         plan: &[crate::plan::Planned],
         kind: Kind,
     ) -> Result<Fetched<Vec<Bytes>>, ReadError> {
+        let q = self.for_read();
         let t0 = Instant::now();
         let mut total = 0u64;
         for p in plan {
-            self.check_range(id, &p.fetch, t0)?;
+            q.check_range(id, &p.fetch, t0)?;
             total = total.saturating_add(p.fetch.end - p.fetch.start);
         }
-        let grant = self.grant(total).await?;
+        let grant = q.grant(total).await?;
         let fetched: Vec<Result<Bytes, ReadError>> = futures_util::future::join_all(
             plan.iter()
-                .map(|p| self.fetch_range_inner(t, id, p.fetch.clone(), kind)),
+                .map(|p| q.fetch_range_inner(t, id, p.fetch.clone(), kind)),
         )
         .await;
         let mut got = Vec::with_capacity(fetched.len());
@@ -961,7 +1043,7 @@ impl Query {
             }
         }
         if let Some(e) = first_err {
-            return match self.remote.mutants.swallow_error() {
+            return match q.remote.mutants.swallow_error() {
                 true => Ok(Fetched {
                     data: needed
                         .iter()
@@ -1017,6 +1099,7 @@ impl Query {
     /// The Parquet footer metadata bytes (without the 8-byte tail): one suffix read, one more only if the footer is longer than the first read. The
     /// length is checked against the cap BEFORE any further allocation. The grant of the bytes returns with them.
     pub async fn footer(&self, t: &Target, id: &Identity) -> Result<Fetched<Bytes>, ReadError> {
+        let q = self.for_read();
         let bad = |class: Class| ReadError {
             class,
             attempts: 0,
@@ -1025,7 +1108,7 @@ impl Query {
         if id.size < 12 {
             return Err(bad(Class::BadFooter));
         }
-        let want = id.size.min(self.cfg().footer_prefetch);
+        let want = id.size.min(q.cfg().footer_prefetch);
         // the magic number at the start of the file: parquet-rs reads the footer only, so a file whose first four bytes are wrong would still decode
         // (the local reader refuses it the same way, `check_magic`). A file inside the first read has it already; otherwise one 4-byte read, in parallel
         // with the tail read so that it adds a request, not a round trip.
@@ -1036,12 +1119,12 @@ impl Query {
             let ok = tail.data.starts_with(b"PAR1");
             (tail, ok)
         } else {
-            let (tail, head) = futures_util::future::join(
-                self.fetch_range(t, id, id.size - want..id.size, Kind::Footer),
-                self.fetch_range(t, id, 0..4, Kind::Footer),
+            let (tail, head) = futures_util::future::try_join(
+                q.fetch_range(t, id, id.size - want..id.size, Kind::Footer),
+                q.fetch_range(t, id, 0..4, Kind::Footer),
             )
-            .await;
-            (tail?, head?.data.as_ref() == b"PAR1")
+            .await?;
+            (tail, head.data.as_ref() == b"PAR1")
         };
         if !head_ok {
             return Err(bad(Class::BadFooter));
@@ -1052,7 +1135,7 @@ impl Query {
         let mlen = parquet::file::metadata::FooterTail::try_new(&last8)
             .map_err(|_| bad(Class::BadFooter))?
             .metadata_length() as u64;
-        if mlen > self.cfg().footer_cap {
+        if mlen > q.cfg().footer_cap {
             return Err(bad(Class::FooterTooLarge));
         }
         if mlen + 8 > id.size {

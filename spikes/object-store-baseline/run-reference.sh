@@ -15,7 +15,7 @@
 #   cleanup     (gcs) delete everything under the prefix and prove the prefix is empty
 #   leakscan    no bucket, prefix, service account or project id in the results
 #
-# The bucket and prefix come from gcs.env next to this script (git-ignored, shipped with the tree) and are never written to a result.
+# The bucket and prefix come from runtime env file next to this script (git-ignored, shipped with the tree) and are never written to a result.
 # NATA_OSB_MODE=trial runs the same steps at TPC-H SF0.1/0.2 against an endpoint named by NATA_OBJ_* (the local fake), without upload/cleanup.
 set -u -o pipefail
 unset AI_AGENT
@@ -35,8 +35,8 @@ mkdir -p "$OUT" "$DATA"
 OSB=$CARGO_TARGET_DIR/release/osb
 export NATA_SETTLE=${NATA_SETTLE-$REPO/scripts/gcp/settle.sh}   # NATA_SETTLE= (empty) skips the wait
 if [ "$MODE" = gcs ]; then
-  [ -f "$HERE/gcs.env" ] || { echo "gcs.env is missing next to run-reference.sh (NATA_OBJ_BUCKET=, NATA_OBJ_PREFIX=)"; exit 4; }
-  set -a; . "$HERE/gcs.env"; set +a
+  : "${NATA_OBJ_ENV_FILE:?set the private runtime env file path}"
+  set -a; . "$NATA_OBJ_ENV_FILE"; set +a
 fi
 # scale factors: the real ones, or the trial's
 if [ "$MODE" = trial ]; then SF_A=0.1; SF_B=0.2; K_A=trial; else SF_A=1; SF_B=10; K_A=sf1; fi

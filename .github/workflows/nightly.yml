@@ -217,3 +217,67 @@ jobs:
           mkdir -p "$TMPDIR"
           export NATA_PGWIRE_CONTENTION=$(nproc)
           cargo test --release -p nata-pgwire --test reliability -- --nocapture
+
+  object-store-faults:
+    name: Object-store faults, bounded bodies and mutants (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Fault cases, cache, hostile-length children and clean-first mutant sweep
+        run: |
+          export TMPDIR="$RUNNER_TEMP/objstore"
+          mkdir -p "$TMPDIR"
+          cargo test --locked --release -p nata-objstore --test suites --test scan --test credentials --test redirects -- --test-threads=1
+          cargo run --locked --release -p nata-objstore --features mutants --bin objstore-sweep -- mutants
+
+  object-store-fuzz:
+    name: Object-store ${{ matrix.target }} (${{ matrix.os }})
+    needs: seeds
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+        target: [transport_responses, damaged_objects]
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Nightly-size bounded transport and Parquet probes
+        env:
+          NATA_OBJ_FUZZ_SEED: ${{ needs.seeds.outputs.seed }}
+          NATA_OBJ_FUZZ_CASES: "200000"
+        run: |
+          export TMPDIR="$RUNNER_TEMP/objstore"
+          mkdir -p "$TMPDIR"
+          echo "SEED $NATA_OBJ_FUZZ_SEED, $NATA_OBJ_FUZZ_CASES cases; replay NATA_OBJ_FUZZ_ONLY=<case>"
+          cargo test --locked --release -p nata-objstore --test fuzz ${{ matrix.target }} -- --nocapture --test-threads=1
+
+  # The combined two-CPU/two-I/O (five-thread) exploration stays in the GCP
+  # heavy steps; its bound-2 local probe exceeded 180 seconds.
+  object-store-bridge:
+    name: Parked bridge, fill waiters and grant gate at bound 3
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: loom-bridge
+      - name: Clean control then dropped-wake and undelivered-cancel mutants
+        env:
+          LOOM_MAX_PREEMPTIONS: "3"
+          BRIDGE_MODEL_TIMEOUT: "1200"
+        run: |
+          export TMPDIR="$RUNNER_TEMP/bridge"
+          mkdir -p "$TMPDIR"
+          bash crates/nata-sched/check_bridge_mutants.sh

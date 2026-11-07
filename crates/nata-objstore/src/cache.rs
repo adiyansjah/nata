@@ -4,12 +4,13 @@
 //! ETag + length) + reader version. A warm lookup still does the identity lookup (a HEAD, counted as `Kind::Head`) and issues NO footer GET.
 //! Charge: parsed metadata size (`ParquetMetaData::memory_size`) + key bytes + bookkeeping, not the footer wire length. Cap: bytes and entries,
 //! LRU among UNPINNED entries; a pinned entry (a live `Arc<Handle>`) stays charged even after eviction, until the last handle drops. When room
-//! cannot be made, the entry is BYPASSED (served to the query uncached), never admitted over the cap. Duplicate concurrent misses are not
-//! single-flighted (ADR 0012 prefers bypass over an unverified protocol): each loads, the first to publish wins.
+//! cannot be made, the entry is BYPASSED (served to the query uncached), never admitted over the cap. Concurrent misses share a bounded fill; cancelling the last waiter aborts it.
 
+use futures_util::FutureExt;
+use nata_sched::bridge::{Broadcast, Waker};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 use nata_sched::memory::Grant;
 use parquet::file::metadata::{ParquetMetaData, ParquetMetaDataReader};
@@ -31,7 +32,11 @@ pub struct MetaKey {
 
 impl MetaKey {
     fn bytes(&self) -> u64 {
-        (self.provider.len() + self.scope.len() + self.path.len() + self.identity.len() + 4) as u64
+        (self.provider.capacity()
+            + self.scope.capacity()
+            + self.path.capacity()
+            + self.identity.capacity()
+            + 4) as u64
     }
 }
 
@@ -43,6 +48,7 @@ pub struct Handle {
     /// A bypassed footer (not admitted to the cache) stays charged to the QUERY'S grant for as long as the scan holds it (ADR 0012: hold the parsed
     /// footer under the query grant instead of the cache).
     _hold: Option<Grant>,
+    _reservation: Option<Arc<Grant>>,
 }
 
 impl Handle {
@@ -91,6 +97,8 @@ pub struct MetaCache {
     retained: Arc<AtomicU64>,
     pub stats: CacheStats,
     pub mutants: CacheMutants,
+    fills: Mutex<HashMap<MetaKey, Weak<Fill>>>,
+    reservation: Mutex<Option<Arc<Grant>>>,
 }
 
 impl MetaCache {
@@ -120,7 +128,16 @@ impl MetaCache {
             retained: Arc::new(AtomicU64::new(0)),
             stats: CacheStats::default(),
             mutants,
+            fills: Mutex::new(HashMap::new()),
+            reservation: Mutex::new(None),
         })
+    }
+    pub fn reserve(&self, grant: Grant) {
+        *lock(&self.reservation) = Some(Arc::new(grant));
+    }
+    /// Live subscribers holding shared fills (bounded diagnostic, no keys).
+    pub fn fill_waiters(&self) -> usize {
+        lock(&self.fills).values().map(Weak::strong_count).sum()
     }
     pub fn retained_bytes(&self) -> u64 {
         self.retained.load(SeqCst)
@@ -180,6 +197,7 @@ impl MetaCache {
                     charge: 0,
                     retained: s.retained.clone(),
                     _hold: hold,
+                    _reservation: None,
                 }),
                 Outcome::Bypass,
             )
@@ -231,6 +249,7 @@ impl MetaCache {
             charge,
             retained: self.retained.clone(),
             _hold: None,
+            _reservation: lock(&self.reservation).clone(),
         });
         g.0.insert(
             key,
@@ -243,7 +262,19 @@ impl MetaCache {
     }
 }
 
+type FillResult = Result<(Arc<Handle>, Option<Outcome>), ReadError>;
+struct Fill {
+    done: Arc<Broadcast<FillResult>>,
+    task: tokio::task::JoinHandle<()>,
+}
+impl Drop for Fill {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
+}
+
 /// Footer service: identity lookup, cache lookup, fetch and parse on a miss.
+#[derive(Clone)]
 pub struct MetaService {
     pub cache: Option<Arc<MetaCache>>,
     pub provider: String,
@@ -284,6 +315,8 @@ impl MetaService {
 
     /// Open `t` (named `location` in the key): pin its identity (HEAD), then serve the footer from the cache or fetch and parse it.
     pub async fn open(&self, q: &Query, t: &Target, location: &str) -> Result<Opened, ReadError> {
+        let operation = q.for_read();
+        let q = operation.as_ref();
         if let Some(c) = self.cache.as_ref().filter(|c| c.mutants.no_validation()) {
             // known-bad: trust the cache by path, no identity lookup (a replaced object is served stale)
             let found = lock(&c.inner)
@@ -318,23 +351,106 @@ impl MetaService {
             }
             c.stats.misses.fetch_add(1, SeqCst);
         }
+        let (handle, outcome) = if let Some(c) = &self.cache {
+            let fill = {
+                let mut fills = lock(&c.fills);
+                fills.retain(|_, f| f.strong_count() > 0);
+                if let Some(fill) = fills.get(&key).and_then(Weak::upgrade) {
+                    fill
+                } else {
+                    // A previous fill may have published between get() and
+                    // acquiring the fill table. Do not start another GET.
+                    if let Some(handle) = c.get(&key) {
+                        c.stats.hits.fetch_add(1, SeqCst);
+                        return Ok(Opened {
+                            identity: id,
+                            handle,
+                            outcome: Some(Outcome::Hit),
+                        });
+                    }
+                    if fills.len() >= 32 {
+                        return Err(ReadError {
+                            class: Class::GrantTooSmall,
+                            attempts: 0,
+                            elapsed: Default::default(),
+                        });
+                    }
+                    let done = Broadcast::new();
+                    let result = done.clone();
+                    let svc = self.clone();
+                    let q = q.fill_query();
+                    let t = t.clone();
+                    let id = id.clone();
+                    let key2 = key.clone();
+                    let task = tokio::spawn(async move {
+                        let loaded = std::panic::AssertUnwindSafe(svc.load(&q, &t, &id, &key2))
+                            .catch_unwind()
+                            .await
+                            .unwrap_or_else(|_| {
+                                Err(ReadError {
+                                    class: Class::BadFooter,
+                                    attempts: 0,
+                                    elapsed: Default::default(),
+                                })
+                            });
+                        result.complete(loaded);
+                    });
+                    let fill = Arc::new(Fill { done, task });
+                    fills.insert(key.clone(), Arc::downgrade(&fill));
+                    fill
+                }
+            };
+            let sub = Broadcast::subscribe(&fill.done, 32).ok_or(ReadError {
+                class: Class::GrantTooSmall,
+                attempts: 0,
+                elapsed: Default::default(),
+            })?;
+            let result = tokio::select! {
+                r = futures_util::future::poll_fn(|cx| {
+                    let w = cx.waker().clone();
+                    match sub.poll(&Waker::new(move || w.wake_by_ref())) { Some(r) => std::task::Poll::Ready(r), None => std::task::Poll::Pending }
+                }) => r,
+                _ = q.cancelled() => Err(ReadError { class: Class::Cancelled, attempts: 0, elapsed: Default::default() }),
+            };
+            drop(sub);
+            drop(fill);
+            result?
+        } else {
+            self.load(q, t, &id, &key).await?
+        };
+        Ok(Opened {
+            identity: id,
+            handle,
+            outcome,
+        })
+    }
+    async fn load(&self, q: &Query, t: &Target, id: &Identity, key: &MetaKey) -> FillResult {
         let bad = |class: Class| ReadError {
             class,
             attempts: 0,
             elapsed: Default::default(),
         };
-        let footer = q.footer(t, &id).await?;
+        let footer = q.footer(t, id).await?;
         let stage = staging_bytes(footer.data.len()).ok_or_else(|| bad(Class::GrantTooSmall))?;
-        let hold = q.grant(stage).await?;
+        let mut hold = q.grant(stage).await?;
         let meta = ParquetMetaDataReader::decode_metadata(&footer.data)
             .map_err(|_| bad(Class::BadFooter))?;
         drop(footer); // the wire bytes and their grant are done; the parsed footer is charged by the staging grant or the cache
         if meta.memory_size() as u64 > stage {
             return Err(bad(Class::BadFooter)); // more than the staging bound: refused, never published
         }
-        let (handle, outcome) = match &self.cache {
+        let retained = (meta.memory_size() as u64)
+            .checked_add(key.bytes())
+            .and_then(|n| n.checked_add(160))
+            .filter(|n| *n <= stage)
+            .ok_or_else(|| bad(Class::BadFooter))?;
+        if let Some(g) = &mut hold {
+            g.shrink_to(usize::try_from(retained).map_err(|_| bad(Class::GrantTooSmall))?)
+                .map_err(|_| bad(Class::GrantTooSmall))?;
+        }
+        let result = match &self.cache {
             Some(c) => {
-                let (h, o) = c.admit(&key, meta, hold);
+                let (h, o) = c.admit(key, meta, hold);
                 (h, Some(o))
             }
             None => (
@@ -343,14 +459,11 @@ impl MetaService {
                     charge: 0,
                     retained: Arc::new(AtomicU64::new(0)),
                     _hold: hold,
+                    _reservation: None,
                 }),
                 None,
             ),
         };
-        Ok(Opened {
-            identity: id,
-            handle,
-            outcome,
-        })
+        Ok(result)
     }
 }

@@ -174,6 +174,7 @@ fn run_query(
         a.object_memory_bytes
             .unwrap_or_else(|| crate::default_object_memory(1)),
     ));
+    let remote = remote.scoped().unwrap_or(remote);
     let stop = || interrupted.load(Ordering::SeqCst);
     let routed = RoutedSource {
         local: &source,
@@ -230,9 +231,20 @@ fn run_query(
         .iter()
         .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location))
     {
-        // one waiting worker per request in flight (ADR 0011's attempt cap of 16): the bridge parks nothing yet, so the workers ARE the unit window
-        cfg.threads = cfg.threads.max(16);
-        cfg.window = a.window.unwrap_or_else(|| cfg.threads.saturating_mul(2));
+        cfg.window = a.window.unwrap_or(16);
+        let pool = a
+            .aggregate_memory_bytes
+            .unwrap_or_else(nata_exec::default_memory_pool);
+        cfg.aggregate_memory_bytes = match nata_exec::default_memory_pool()
+            .checked_sub(remote.reserved_bytes())
+            .filter(|p| *p > 0)
+        {
+            Some(p) => Some(pool.min(p)),
+            None => {
+                say("error: object-store reservation exceeds node memory pool\n");
+                return ExitCode::from(1);
+            }
+        };
     }
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
     let types: Vec<_> = planned.output.iter().map(|c| c.ty).collect();

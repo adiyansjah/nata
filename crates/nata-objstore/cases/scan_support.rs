@@ -50,6 +50,7 @@ impl ScanRig {
         o.s3 = fake_s3(&fake);
         o.cfg = cfg;
         o.cache = cache;
+        o.max_queries = 8;
         let handle = ObjectHandle::new(o).expect("node");
         let dir = std::env::temp_dir().join(format!("nata-objstore-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -93,10 +94,11 @@ impl ScanRig {
     }
 
     pub fn sql(&self, sql: &str, cancel: Option<&ScanCancel>) -> Result<String, ScanError> {
+        let io = self.io.scoped().unwrap_or_else(|| self.io.clone());
         let stop = || cancel.is_some_and(ScanCancel::is_cancelled);
         let routed = RoutedSource {
             local: &FsSource,
-            remote: self.io.as_ref(),
+            remote: io.as_ref(),
             cancel: &stop,
         };
         let planned = plan_sql_with(sql, &routed, BindOptions::default())
@@ -106,7 +108,7 @@ impl ScanRig {
         let out = Buf::default();
         let mut writer = ResultWriter::new(out.clone(), Format::Csv, names, &types);
         let mut cfg = ExecConfig::new(4);
-        cfg.remote = Some(Arc::clone(&self.io));
+        cfg.remote = Some(io);
         execute(Arc::new(planned.plan), &cfg, cancel, |b| {
             writer.write_batch(b)
         })?;

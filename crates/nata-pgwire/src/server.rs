@@ -174,6 +174,12 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
             "aggregate memory admission requires a positive pool no larger than the physical/cgroup pool",
         ));
     }
+    let object_allowance = execution.remote.as_ref().map_or(0, |r| r.reserved_bytes());
+    let available = system_pool
+        .checked_sub(object_allowance)
+        .filter(|p| *p > 0)
+        .ok_or_else(|| io::Error::other("object-store reservation exceeds node pool"))?;
+    let pool = pool.min(available);
     execution.aggregate_memory_bytes = Some(pool / config.max_queries);
     let base = execution
         .aggregate_spill_directory
@@ -1369,7 +1375,7 @@ impl SourceProvider for Source<'_> {
             let meta = remote
                 .footer(location, &|| self.0.load(Ordering::SeqCst))
                 .map_err(|e| nata_parquet::remote_scan_error(&e, p))?;
-            return nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+            return nata_parquet::schema::leaves(meta.metadata.file_metadata().schema_descr())
                 .map_err(|m| ScanError::not_supported(m).in_file(p));
         }
         nata_sql::FsSource.leaves(p)
@@ -1391,6 +1397,12 @@ fn produce(
     search_path: &[String],
     gate: Option<&fetch::Gate>,
 ) -> Result<u64, WireError> {
+    let mut scoped_execution = execution.clone();
+    scoped_execution.remote = execution
+        .remote
+        .as_ref()
+        .map(|io| io.scoped().unwrap_or_else(|| io.clone()));
+    let execution = &scoped_execution;
     let inner = crate::copy::query(sql)?;
     let copying = inner.is_some();
     let p = nata_sql::plan_parameters(
@@ -1511,6 +1523,14 @@ fn produce(
     let description = codec::description(&fields).map_err(|_| WireError::internal())?;
     let mut rows = 0u64;
     let mut config = execution.clone();
+    if p.plan
+        .scan
+        .files
+        .iter()
+        .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location))
+    {
+        config.window = 16;
+    }
     config.opener = metrics.and_then(|m| m.opener.clone());
     let mut observed = nata_exec::Observed::default();
     let mut copy_error = None;

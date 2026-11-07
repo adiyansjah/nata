@@ -119,15 +119,21 @@ fn a_slow_early_task_does_not_make_the_reorder_buffer_grow() {
         type Task = ModelTask;
         type Out = ModelOut;
         type Err = ModelErr;
+        type Open = <Model as nata_sched::Work>::Open;
         fn files(&self) -> usize {
             self.0.files()
         }
-        fn open(&self, f: usize) -> Result<Vec<ModelTask>, ModelErr> {
-            self.0.open(f)
+        fn open(
+            &self,
+            f: usize,
+            state: Option<Self::Open>,
+            park: &nata_sched::Parker<'_>,
+        ) -> nata_sched::OpenStep<ModelTask, Self::Open, ModelErr> {
+            self.0.open(f, state, park)
         }
         fn run(
             &self,
-            t: &ModelTask,
+            t: &mut ModelTask,
             c: &nata_sched::CancelToken,
         ) -> nata_sched::Run<ModelOut, ModelErr> {
             if t.id == 0 {

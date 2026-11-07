@@ -246,3 +246,34 @@ fn a_path_with_an_unsupported_scheme_is_not_supported_yet() {
         text(&o.stderr)
     );
 }
+
+#[test]
+fn remote_workers_stay_at_the_requested_cpu_budget_and_report_io() {
+    let rig = Rig::new("worker-budget");
+    rig.put("t.parquet", parquet(64, 8, 1));
+    let uri = format!("s3://{BUCKET}/t.parquet");
+    let sql = format!("EXPLAIN ANALYZE SELECT id FROM '{uri}'");
+    let out = rig.nata(&["sql", "--threads", "1", "-c", &sql]);
+    assert!(out.status.success(), "{}", text(&out.stderr));
+    let report = text(&out.stdout);
+    assert!(report.contains("threads=1, window=16"), "{report}");
+    for counter in [
+        "cache_hits=",
+        "cache_misses=1",
+        "footer_gets=1",
+        "data_gets=",
+        "fetched_bytes=",
+        "retries=",
+    ] {
+        assert!(report.contains(counter), "{report}");
+    }
+    no_secret(&out, true);
+    let out = rig.nata(&["scan", &uri, "--threads", "1", "--count"]);
+    assert!(out.status.success(), "{}", text(&out.stderr));
+    assert!(
+        text(&out.stderr).contains("threads=1 order=ordered window=16"),
+        "{}",
+        text(&out.stderr)
+    );
+    no_secret(&out, true);
+}

@@ -89,6 +89,7 @@ pub struct Grant {
     manager: Arc<MemoryManager>,
     id: u64,
     bytes: usize,
+    parent: Option<Box<Grant>>,
 }
 
 pub enum Reservation {
@@ -178,6 +179,7 @@ impl MemoryManager {
                 manager: Arc::clone(manager),
                 id,
                 bytes,
+                parent: None,
             };
             // A smaller FIFO successor may fit even though the predecessor
             // failed earlier. Its retry must not need another release event.
@@ -203,7 +205,9 @@ impl MemoryManager {
         }
         s.pressure = s.pressure.saturating_add(1);
         let mut wakes = manager.notify_front(&mut s);
-        if let Some(victim) = victim {
+        // Pressure is sticky until release/finish. Re-notifying an already
+        // revoked operator on every retry would spin a parked range reader.
+        if let Some(victim) = victim.filter(|v| !s.operators[*v].revoke) {
             s.operators[victim].revoke = true;
             s.operators[victim].notified = true;
             if let Some(waker) = s.operators[victim].waker.take() {
@@ -328,6 +332,25 @@ impl MemoryManager {
         wake_all(wake);
     }
 
+    fn shrink_grant(&self, id: u64, bytes: usize) {
+        let mut s = lock(&self.state);
+        let (operator, previous) = *s.live.get(&id).expect("live reservation");
+        assert!(
+            bytes <= previous,
+            "reservation cannot grow without admission"
+        );
+        s.live.get_mut(&id).expect("live reservation").1 = bytes;
+        let released = previous - bytes;
+        s.held -= released;
+        s.operators[operator].held -= released;
+        if s.operators[operator].held == 0 {
+            s.operators[operator].revoke = false;
+        }
+        let wake = self.notify_front(&mut s);
+        drop(s);
+        wake_all(wake);
+    }
+
     pub fn snapshot(&self) -> Snapshot {
         let s = lock(&self.state);
         Snapshot {
@@ -355,6 +378,31 @@ fn wake_all(wakers: Vec<Box<dyn Wake>>) {
 }
 
 impl Grant {
+    /// Keep the upstream node reservation until this query reservation drops.
+    pub fn with_parent(mut self, parent: Grant) -> Self {
+        assert!(
+            parent.bytes() >= self.bytes,
+            "upstream reservation is too small"
+        );
+        self.parent = Some(Box::new(parent));
+        self
+    }
+
+    /// Return unused construction capacity once the retained allocation is known.
+    pub fn shrink_to(&mut self, bytes: usize) -> Result<(), MemoryError> {
+        if bytes == 0 || bytes > self.bytes {
+            return Err(MemoryError::InvalidBudget);
+        }
+        if bytes < self.bytes {
+            self.manager.shrink_grant(self.id, bytes);
+            self.bytes = bytes;
+            if let Some(parent) = &mut self.parent {
+                parent.shrink_to(bytes)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn bytes(&self) -> usize {
         self.bytes
     }

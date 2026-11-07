@@ -57,8 +57,7 @@ enum Command {
         spill_directory: Option<PathBuf>,
         #[arg(long, hide = true)]
         force_aggregate_spill: bool,
-        /// Response bytes one query may hold from object storage (`s3://`, `gs://`): the query's memory budget for reads. Default: the node pool over max-queries,
-        /// at most 1 GiB. Developer option.
+        /// Object-store node allowance, including the 64 MiB footer cache. Also caps each query's reads. Default: the node pool over max-queries, at most 1 GiB. Developer option.
         #[arg(long)]
         object_memory_bytes: Option<usize>,
     },
@@ -111,7 +110,7 @@ enum Command {
         /// Differential-test mode: route aggregate states through spill IPC.
         #[arg(long, hide = true)]
         force_aggregate_spill: bool,
-        /// Response bytes the query may hold from object storage (`s3://`, `gs://`). Default: the memory pool, at most 1 GiB. Developer option.
+        /// Object-store allowance for cache and live responses. Default: the memory pool, at most 1 GiB. Developer option.
         #[arg(long)]
         object_memory_bytes: Option<usize>,
     },
@@ -146,7 +145,7 @@ enum Command {
         /// Print rows as row groups finish, in no promised order (default: the order of the files, row groups and rows, for any thread count).
         #[arg(long)]
         unordered: bool,
-        /// Row groups in flight at once, running or finished and waiting for the writer (default: twice the thread count, chosen from the slice 3 benchmark: bench/results/20261106-scan-bench.md). Developer option.
+        /// Row groups in flight, including parked remote reads (default: 16 for remote files, twice the thread count for local files). Developer option.
         #[arg(long)]
         window: Option<usize>,
         /// Decode the filter columns first and the other columns only for the rows that pass the filter (register item P1). Same rows as without.
@@ -207,8 +206,8 @@ struct ScanArgs {
     window: Option<usize>,
 }
 
-/// The response bytes one query may hold from object storage (ADR 0009's budget `B` for reads): the node memory pool over the admitted queries, between 64 MiB
-/// and 1 GiB.
+/// Object-store node allowance (cache and shared live responses), withheld
+/// from execution admissions. Conservatively sized using the query count.
 pub fn default_object_memory(queries: usize) -> usize {
     (nata_exec::default_memory_pool() / queries.max(1)).clamp(64 << 20, 1 << 30)
 }
@@ -254,15 +253,9 @@ fn scan(a: ScanArgs) -> ExitCode {
     let remote: Arc<dyn nata_parquet::RemoteIo> = Arc::new(nata_objstore::LazyObjectIo::from_env(
         default_object_memory(1),
     ));
-    let threads = if files
+    let is_remote = files
         .iter()
-        .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location))
-    {
-        // one waiting worker per request in flight (ADR 0011's attempt cap of 16) until the parked bridge of the next step of slice 11
-        threads.max(16)
-    } else {
-        threads
-    };
+        .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location));
     let result = (|| {
         let plan = Arc::new(ScanPlan::open_remote(
             &files,
@@ -280,7 +273,11 @@ fn scan(a: ScanArgs) -> ExitCode {
         let cfg = ParallelConfig {
             threads,
             // 2 x threads: on SF10 the 8-thread scan is 1.4x faster than with window = threads on both CPU types (scan benchmark)
-            window: window.unwrap_or(threads.saturating_mul(2)),
+            window: window.unwrap_or(if is_remote {
+                16
+            } else {
+                threads.saturating_mul(2)
+            }),
             ordered: !unordered,
             footers_ahead,
         };
@@ -351,15 +348,21 @@ fn main() -> ExitCode {
                 let _ = writeln!(std::io::stderr(), "error: internal server error");
             }));
             // `s3://` and `gs://` locations: the reader starts on first use, with the credentials of the process environment
-            let remote: Arc<dyn nata_parquet::RemoteIo> = Arc::new(
-                nata_objstore::LazyObjectIo::from_env(object_memory_bytes.unwrap_or_else(|| {
-                    default_object_memory(max_queries.unwrap_or_else(|| {
+            let remote: Arc<dyn nata_parquet::RemoteIo> =
+                Arc::new(nata_objstore::LazyObjectIo::from_env_with_queries(
+                    object_memory_bytes.unwrap_or_else(|| {
+                        default_object_memory(max_queries.unwrap_or_else(|| {
+                            threads.unwrap_or_else(|| {
+                                std::thread::available_parallelism().map_or(1, usize::from)
+                            })
+                        }))
+                    }),
+                    max_queries.unwrap_or_else(|| {
                         threads.unwrap_or_else(|| {
                             std::thread::available_parallelism().map_or(1, usize::from)
                         })
-                    }))
-                })),
-            );
+                    }),
+                ));
             let config = nata_pgwire::server::Config {
                 catalog: match catalog {
                     Some(path) => match nata_pgwire::catalog::Snapshot::load_with(
