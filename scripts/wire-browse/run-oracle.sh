@@ -31,6 +31,7 @@ trap '"$pg_bin/pg_ctl" -D "$pg_data" stop -m immediate' EXIT
 case "${ORACLE_EXTRA:-}" in
   "") ;;
   resources) "$WORK/wire-skeleton-venv/bin/python" "$root/scripts/wire-browse/resources.py" --nata "${CARGO_TARGET_DIR:-$root/target}/debug/nata" --work "$RESULTS/resources" --postgres 'host=127.0.0.1 port=55432 user=nata dbname=nata' ;;
+  resources-smoke) "$WORK/wire-skeleton-venv/bin/python" "$root/scripts/wire-browse/resources.py" --nata "${CARGO_TARGET_DIR:-$root/target}/debug/nata" --work "$RESULTS/resources-smoke" --smoke --tables 64 1024 --widths 1 64 --workers 1 8 --postgres 'host=127.0.0.1 port=55432 user=nata dbname=nata' ;;
   p16) "$WORK/wire-skeleton-venv/bin/python" "$root/scripts/wire-browse/p16.py" --nata "$WORK/target-p16/release/nata" --baseline "$WORK/target-p16-baseline/release/nata" --jar "$WORK/wire-skeleton-pgjdbc.jar" --work "$RESULTS/p16" --postgres 'host=127.0.0.1 port=55432 user=nata dbname=nata' ;;
   *) echo 'unknown oracle extra gate' >&2; exit 2 ;;
 esac

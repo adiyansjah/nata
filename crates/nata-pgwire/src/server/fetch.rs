@@ -1,7 +1,8 @@
 //! One retained producer per portal, bounded by the existing admission and byte bridge.
-use super::lifecycle::{Credit, Enter, Once, Phase};
+use super::lifecycle::{Credit, Enter, Lease, Once};
 use super::*;
 use std::cell::Cell;
+use std::sync::Weak;
 pub(super) struct Deadline(tokio::task::JoinHandle<()>);
 impl Deadline {
     pub(super) fn start(duration: Option<Duration>, session: &Arc<Session>) -> Option<Self> {
@@ -44,6 +45,7 @@ struct Execution {
     token: ScanCancel,
     cancelled: Arc<AtomicBool>,
     join: JoinCell,
+    idle: Arc<Idle>,
 }
 type JoinCell = Arc<Once<(oneshot::Receiver<()>, std::thread::JoinHandle<()>)>>;
 fn reap(join: &JoinCell) {
@@ -55,25 +57,122 @@ fn reap(join: &JoinCell) {
         });
     }
 }
-impl Execution {
-    fn lease(&self, duration: Duration) -> Deadline {
-        let token = self.token.clone();
-        let cancelled = Arc::clone(&self.cancelled);
-        let resume = Arc::clone(&self.resume);
-        let join = Arc::clone(&self.join);
+/// A candidate is tied to one retained producer, never to a registry's current token.
+struct Idle {
+    phase: Arc<Lease<Instant>>,
+    token: ScanCancel,
+    cancelled: Arc<AtomicBool>,
+    resume: Arc<Credit>,
+    join: JoinCell,
+}
+impl Idle {
+    fn expire(&self, at: Instant) -> bool {
+        self.phase.expire(at, || {
+            self.cancelled.store(true, Ordering::SeqCst);
+            self.token.cancel();
+            let _ = self.resume.send(0);
+            reap(&self.join);
+        })
+    }
+    fn lease(self: &Arc<Self>, at: Instant) -> Deadline {
+        let idle = Arc::clone(self);
         Deadline(tokio::spawn(async move {
-            tokio::time::sleep(duration).await;
-            cancelled.store(true, Ordering::SeqCst);
-            token.cancel();
-            // A parked producer waits on the credit channel, not on the active
-            // statement token. Wake it so it can observe cancellation and exit.
-            let _ = resume.send(0);
-            reap(&join);
+            tokio::time::sleep_until((at + Duration::from_secs(5)).into()).await;
+            idle.expire(at);
         }))
+    }
+}
+
+/// Only suspended producers are listed. Weak entries neither retain work nor
+/// outlive its object cap; publication prunes to at most the admission count.
+pub(super) struct Admissions {
+    permits: Arc<Semaphore>,
+    limit: usize,
+    idle: Mutex<Vec<Weak<Idle>>>,
+    changed: tokio::sync::Notify,
+}
+impl Admissions {
+    pub(super) fn new(count: usize) -> Self {
+        Self {
+            permits: Arc::new(Semaphore::new(count)),
+            limit: count,
+            idle: Mutex::new(Vec::new()),
+            changed: tokio::sync::Notify::new(),
+        }
+    }
+    fn publish(&self, idle: &Arc<Idle>) {
+        let mut entries = self.idle.lock().expect("idle portals");
+        entries.retain(|w| {
+            w.upgrade()
+                .is_some_and(|p| !Arc::ptr_eq(&p, idle) && p.phase.suspended().is_some())
+        });
+        // Timer expiry can release an admission during pruning. Recheck until
+        // that stale entry is gone; the publishing producer owns one admission.
+        while entries.len() >= self.limit {
+            entries.retain(|w| w.upgrade().is_some_and(|p| p.phase.suspended().is_some()));
+        }
+        entries.push(Arc::downgrade(idle));
+        self.changed.notify_waiters();
+    }
+    // Selection serializes waiters; the lease lock independently arbitrates resume.
+    fn yield_oldest(&self) -> (bool, Option<Instant>) {
+        let mut entries = self.idle.lock().expect("idle portals");
+        loop {
+            if self.permits.available_permits() != 0 {
+                return (false, None);
+            }
+            let candidate = entries
+                .iter()
+                .filter_map(Weak::upgrade)
+                .filter_map(|p| p.phase.suspended().map(|at| (p, at)))
+                .min_by_key(|(_, at)| *at);
+            let Some((idle, at)) = candidate else {
+                return (false, None);
+            };
+            let eligible = at + Duration::from_millis(250);
+            if Instant::now() < eligible {
+                return (false, Some(eligible));
+            }
+            let expired = idle.expire(at);
+            entries.retain(|w| w.upgrade().is_some_and(|p| !Arc::ptr_eq(&p, &idle)));
+            if expired {
+                return (true, None);
+            }
+            // Resume won. Re-select rather than cancelling that executing query.
+        }
+    }
+    pub(super) async fn acquire(
+        &self,
+    ) -> Result<tokio::sync::OwnedSemaphorePermit, tokio::sync::AcquireError> {
+        let admission = Arc::clone(&self.permits).acquire_owned();
+        tokio::pin!(admission);
+        let pressure = async {
+            loop {
+                let notified = self.changed.notified();
+                tokio::pin!(notified);
+                notified.as_mut().enable(); // register before inspecting publication
+                let (yielded, next) = self.yield_oldest();
+                if yielded {
+                    break;
+                } // one successful expiry per waiting query
+                if let Some(next) = next {
+                    tokio::select! { _ = &mut notified => {}, _ = tokio::time::sleep_until(next.into()) => {} }
+                } else {
+                    notified.await;
+                }
+            }
+            std::future::pending::<()>().await;
+        };
+        tokio::select! {
+            biased;
+            permit = &mut admission => permit,
+            _ = pressure => unreachable!(),
+        }
     }
 }
 impl Drop for Execution {
     fn drop(&mut self) {
+        self.idle.phase.close();
         self.token.cancel();
         self.cancelled.store(true, Ordering::SeqCst);
         self.resume.close();
@@ -85,14 +184,14 @@ impl Drop for Execution {
 }
 pub(super) struct Run {
     execution: Option<Execution>,
-    phase: Phase<Instant>,
+    phase: Arc<Lease<Instant>>,
     expiry: Option<Deadline>,
 }
 impl Run {
     pub(super) fn new() -> Self {
         Self {
             execution: None,
-            phase: Phase::Bound,
+            phase: Arc::new(Lease::new()),
             expiry: None,
         }
     }
@@ -100,10 +199,15 @@ impl Run {
         self.phase.suspended().map(|at| at + Duration::from_secs(5))
     }
     pub(super) fn expire(&mut self) {
-        if self.deadline().is_some_and(|d| Instant::now() >= d) {
+        if let Some(at) = self.phase.suspended()
+            && Instant::now() >= at + Duration::from_secs(5)
+            && let Some(e) = &self.execution
+        {
+            e.idle.expire(at);
+        }
+        if self.phase.expired() {
             self.expiry.take();
             self.execution.take();
-            self.phase.expire();
         }
     }
     #[allow(clippy::too_many_arguments)]
@@ -111,7 +215,7 @@ impl Run {
         &mut self,
         write: &mut W,
         registered: &Registered,
-        queries: &Arc<Semaphore>,
+        queries: &Arc<Admissions>,
         execution: &nata_exec::ExecConfig,
         metrics: &Option<Arc<Metrics>>,
         snapshot: &Arc<crate::catalog::Snapshot>,
@@ -172,7 +276,7 @@ impl Run {
                 let permit = tokio::select! {
                     _ = stopped.changed() => return Err(WireError::cancel()),
                     _ = disconnected.changed() => return Err(WireError::cancel()),
-                    p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(queries).acquire_owned()) => p.ok().and_then(Result::ok).ok_or_else(|| WireError::new("53300", "query admission timeout"))?,
+                    p = tokio::time::timeout(Duration::from_secs(5), queries.acquire()) => p.ok().and_then(Result::ok).ok_or_else(|| WireError::new("53300", "query admission timeout"))?,
                 };
                 let (tx, rx) = mpsc::channel(BRIDGE_BUFFERS);
                 let resume = Arc::new(Credit::new());
@@ -196,7 +300,9 @@ impl Run {
                     let _ = tx.blocking_send(Event::Finished(outcome.unwrap_or_else(|_| Err(WireError::internal()))));
                     let _ = done.send(());
                 }).map_err(|_| WireError::internal())?;
-                self.execution = Some(Execution { rx, resume, token, cancelled, join: Arc::new(Once::new((joined, worker))) });
+                let join = Arc::new(Once::new((joined, worker)));
+                let idle = Arc::new(Idle { phase: Arc::clone(&self.phase), token: token.clone(), cancelled: Arc::clone(&cancelled), resume: Arc::clone(&resume), join: Arc::clone(&join) });
+                self.execution = Some(Execution { rx, resume, token, cancelled, join, idle });
             } else if let Some(execution) = &self.execution {
                 execution.resume.send(limit as usize).map_err(|_| WireError::internal())?;
             }
@@ -241,8 +347,10 @@ impl Run {
                         let _parked = registered.session.active.take(); // suspension transition
                         // Exact-end fetches suspend too: exhaustion is only observed on resume.
                         terminal(write, &codec::packet(b's', b"").map_err(|_| WireError::internal())?, &mut stopped, disconnected).await?;
-                        self.phase.suspend(Instant::now());
-                        self.expiry = Some(e.lease(Duration::from_secs(5)));
+                        let at = Instant::now();
+                        self.phase.suspend(at);
+                        self.expiry = Some(e.idle.lease(at));
+                        queries.publish(&e.idle);
                         return Ok(());
                     }
                     Event::Finished(result) => {
@@ -316,20 +424,23 @@ mod tests {
             let _ = observed.send(());
             let _ = done.send(());
         });
-        let (_, rx) = mpsc::channel(BRIDGE_BUFFERS);
-        let execution = Execution {
-            rx,
-            resume,
+        let phase = Arc::new(Lease::new());
+        phase.enter();
+        let at = Instant::now() - Duration::from_secs(5) + Duration::from_millis(1);
+        phase.suspend(at);
+        let idle = Arc::new(Idle {
+            phase,
             token: ScanCancel::new(),
             cancelled,
+            resume,
             join: Arc::new(Once::new((joined, worker))),
-        };
-        let _lease = execution.lease(Duration::from_millis(1));
+        });
+        let _lease = idle.lease(at);
         tokio::time::timeout(Duration::from_secs(1), exited)
             .await
             .expect("lease deadline")
             .expect("producer exit");
-        assert!(execution.join.take().is_none());
+        assert!(idle.join.take().is_none());
     }
     #[tokio::test]
     async fn deadline_is_pinned_to_its_execution_not_a_replacement() {

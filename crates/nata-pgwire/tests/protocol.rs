@@ -2030,3 +2030,123 @@ fn extended_timeout_covers_parse_flush_idle_until_sync_then_restarts() {
     assert_eq!(s.metrics.admitted.now(), 0);
     assert_eq!(tags(&c.sync()), b"EZ");
 }
+
+#[test]
+fn admission_pressure_preserves_young_portals_and_yields_only_oldest_once() {
+    let s = Server::start(4);
+    let mut a = s.client();
+    let mut b = s.client();
+    let mut healthy = s.client();
+    healthy.query("SET statement_timeout = '100ms'");
+    park(&mut a);
+    park(&mut b);
+    let started = Instant::now();
+    assert_code(
+        &healthy.query(&format!("SELECT i FROM '{}'", fixture())),
+        "57014",
+    );
+    assert!(started.elapsed() < Duration::from_millis(250));
+    // Neither young portal was sacrificed to the timed-out waiter.
+    assert_eq!(tags(&fetched(&mut a, 1)), b"Ds");
+    assert_eq!(tags(&fetched(&mut b, 1)), b"Ds");
+    healthy.query("SET statement_timeout = 0");
+    std::thread::sleep(Duration::from_millis(275));
+    let started = Instant::now();
+    assert_eq!(
+        values(&healthy.query(&format!("SELECT i FROM '{}' LIMIT 1", fixture()))).len(),
+        1
+    );
+    assert!(started.elapsed() < Duration::from_secs(5));
+    let expired = fetched(&mut a, 1);
+    assert_code(&expired, "34000");
+    assert_eq!(
+        error_field(&expired[0].1, b'M'),
+        Some("suspended portal expired")
+    );
+    // One waiter frees exactly one admission, even when both are old enough.
+    assert_eq!(tags(&fetched(&mut b, 1)), b"Ds");
+    a.sync();
+    a.query("ROLLBACK");
+    assert_eq!(values(&a.query("SELECT 1")), vec![vec![Some("1".into())]]);
+}
+
+#[derive(Debug)]
+struct HeldOpen {
+    release: Arc<(std::sync::Mutex<bool>, std::sync::Condvar)>,
+}
+impl nata_parquet::Opener for HeldOpen {
+    fn open(
+        &self,
+        path: &std::path::Path,
+        why: nata_parquet::OpenFor,
+    ) -> std::io::Result<nata_parquet::OpenFile> {
+        let (lock, wake) = &*self.release;
+        let mut released = lock.lock().expect("hold");
+        while !*released {
+            released = wake.wait(released).expect("release");
+        }
+        nata_parquet::Opener::open(&nata_parquet::FsOpener, path, why)
+    }
+}
+#[test]
+fn admission_pressure_never_yields_executing_work_and_keeps_five_second_wait() {
+    let release = Arc::new((std::sync::Mutex::new(false), std::sync::Condvar::new()));
+    // Always unblock the test workers, including during an assertion failure.
+    struct Release(Arc<(std::sync::Mutex<bool>, std::sync::Condvar)>);
+    impl Drop for Release {
+        fn drop(&mut self) {
+            *self.0.0.lock().expect("release") = true;
+            self.0.1.notify_all();
+        }
+    }
+    let metrics = Arc::new(Metrics {
+        opener: Some(Arc::new(HeldOpen {
+            release: release.clone(),
+        })),
+        ..Metrics::default()
+    });
+    let s = Server::start_with(4, metrics);
+    let _release = Release(release);
+    let mut a = s.client();
+    let mut b = s.client();
+    let mut waiter = s.client();
+    let sql = format!("SELECT i FROM '{}'", fixture());
+    // Execute with a positive row limit, but block before PortalSuspended.
+    for c in [&mut a, &mut b] {
+        c.query("BEGIN");
+        c.parse(&sql, &[]);
+        c.bind(&[], 0, 0);
+        c.execute(1);
+        c.frame(b'H', b"");
+    }
+    wait_until(|| s.metrics.admitted.now() == 2);
+    let started = Instant::now();
+    assert_code(&waiter.query(&sql), "53300");
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed >= Duration::from_secs(5) && elapsed < Duration::from_secs(6),
+        "{elapsed:?}"
+    );
+    assert_eq!(
+        s.metrics.admitted.now(),
+        2,
+        "executing work retains admission"
+    );
+    drop(_release);
+    for c in [&mut a, &mut b] {
+        let mut result = Vec::new();
+        loop {
+            let m = read(&mut c.socket);
+            let end = matches!(m.0, b's' | b'E');
+            result.push(m);
+            if end {
+                break;
+            }
+        }
+        assert_eq!(
+            tags(&result),
+            b"12Ds",
+            "executing portal must survive pressure"
+        );
+    }
+}

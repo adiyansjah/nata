@@ -64,6 +64,7 @@ def run(a, count, width, workers, fd_limit):
     with (work/'server.log').open('w') as log:
         server=subprocess.Popen([str(a.nata.resolve()),'serve','--catalog',str(registry),'--listen',f'127.0.0.1:{port}','--threads',str(workers),'--max-queries',str(workers),'--aggregate-memory-bytes',str(engine)],stdout=log,stderr=log,preexec_fn=limits)
         clients=[]
+        parked=[]
         load=[subprocess.Popen([sys.executable,'-c','while True: pass'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL) for _ in range(workers)]
         try:
             def ready():
@@ -124,18 +125,31 @@ def run(a, count, width, workers, fd_limit):
                 list(pool.map(browse,clients))
             elapsed=time.monotonic()-started
             assert elapsed<=5, ('admission deadline exceeded',elapsed)
-            for c in parked:c.close()
+            yielded=0
+            for c in parked:
+                c.send('E',b'p\0'+i(1));c.send('H')
+                response=c.until(('s','E'))[-1]
+                if response[0]=='E':
+                    error=bytes.fromhex(response[1])
+                    assert b'34000' in error and b'suspended portal expired' in error, response
+                    yielded+=1
+                c.close()
+            parked=[]
+            assert yielded>=1, 'no suspended admission yielded'
             for c in clients:c.close()
             clients=[]
             rss,hwm,_=proc(server.pid)
             assert peak_ok(hwm,ceiling), ('peak RSS excess',hwm,ceiling)
             wait(lambda:cleanup_ok(proc(server.pid)[0],idle,proc(server.pid)[2],fds))
             final=proc(server.pid)
-            result=dict(browse_gate=browse_gate,postgres_context=pg_context,tables=count,width=width,workers=workers,sessions=a.sessions,peak=hwm,budget=ceiling,idle=idle,final=final,admission_seconds=elapsed,verdict='PASS')
+            result=dict(browse_gate=browse_gate,postgres_context=pg_context,tables=count,width=width,workers=workers,sessions=a.sessions,peak=hwm,budget=ceiling,idle=idle,final=final,admission_seconds=elapsed,yielded_portals=yielded,verdict='PASS')
             (work/'result.json').write_text(json.dumps(result,indent=2)+'\n')
             print(json.dumps(result),flush=True)
         finally:
             for c in clients:c.close()
+            for c in parked:
+                try:c.close()
+                except OSError:pass
             for child in load:child.terminate()
             for child in load:child.wait(timeout=10)
             server.terminate();server.wait(timeout=10)
@@ -143,9 +157,21 @@ def run(a, count, width, workers, fd_limit):
 if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--nata',type=Path,required=True);ap.add_argument('--work',type=Path,required=True)
-    ap.add_argument('--postgres');ap.add_argument('--smoke',action='store_true');a=ap.parse_args()
-    a.sessions=4 if a.smoke else 64;a.rows=100 if a.smoke else 1000000
-    for count in ([4] if a.smoke else [64,1024,10000]):
-        for width in ([2] if a.smoke else [1,64]):
-            for workers in ([1] if a.smoke else [1,8]):
-                for fd in [0,256]:run(a,count,width,workers,fd)
+    ap.add_argument('--postgres');ap.add_argument('--smoke',action='store_true')
+    ap.add_argument('--workers',type=int,nargs='+',choices=[1,8],help='Override the worker grid, including smoke')
+    ap.add_argument('--sessions',type=int,help='Override session count (at most the existing 64-session cap)')
+    ap.add_argument('--tables',type=int,nargs='+',help='Override catalog sizes for a local smoke')
+    ap.add_argument('--widths',type=int,nargs='+',help='Override column widths for a local smoke')
+    ap.add_argument('--repeat',type=int,default=1,help='Repeat every loaded fairness/resource arm')
+    a=ap.parse_args()
+    assert a.repeat > 0
+    a.sessions=a.sessions or (max(4,2*max(a.workers or [1])) if a.smoke else 64)
+    assert max(a.workers or [1]) < a.sessions <= 64
+    a.rows=100 if a.smoke else 1000000
+    base=a.work
+    for repetition in range(a.repeat):
+        a.work=base/f'repeat-{repetition+1}'
+        for count in (a.tables or ([4] if a.smoke else [64,1024,10000])):
+            for width in (a.widths or ([2] if a.smoke else [1,64])):
+                for workers in (a.workers or ([1] if a.smoke else [1,8])):
+                    for fd in [0,256]:run(a,count,width,workers,fd)

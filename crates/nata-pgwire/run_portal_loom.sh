@@ -30,4 +30,4 @@ while read -r name; do
     count=$((count+1))
     timeout "${PORTAL_LOOM_TIMEOUT:-600}" "$bin" "$name" --exact --nocapture
  done < <("$bin" --list | sed -n 's/: test$//p')
-[ "$count" -eq 7 ]
+[ "$count" -eq 10 ]

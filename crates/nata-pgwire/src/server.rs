@@ -204,7 +204,7 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
     let sockets = Arc::new(Semaphore::new(config.max_connections + 8));
     let pending = Arc::new(Semaphore::new(8));
     let sessions = Arc::new(Semaphore::new(config.max_connections));
-    let queries = Arc::new(Semaphore::new(config.max_queries));
+    let queries = Arc::new(fetch::Admissions::new(config.max_queries));
     let registry: Registry = Arc::default();
     let ids = AtomicI32::new(1);
     loop {
@@ -426,7 +426,7 @@ async fn handshake(
 async fn session_loop(
     socket: TcpStream,
     registered: &Registered,
-    queries: Arc<Semaphore>,
+    queries: Arc<fetch::Admissions>,
     execution: nata_exec::ExecConfig,
     metrics: Option<Arc<Metrics>>,
     mut state: session::State,
@@ -959,7 +959,7 @@ async fn session_loop(
                 );
                 let queued = Instant::now();
                 let permit = tokio::select! {
-                    p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(&queries).acquire_owned()) => p.ok().and_then(Result::ok),
+                    p = tokio::time::timeout(Duration::from_secs(5), queries.acquire()) => p.ok().and_then(Result::ok),
                     _ = stopped.changed() => None,
                     _ = disconnected.changed() => None,
                 };

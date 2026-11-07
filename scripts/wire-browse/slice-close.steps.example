@@ -1,5 +1,5 @@
-# Prepared gate commands; resource fairness currently FAILS (see results record).
-# Do not treat this as a passing closeout plan. Copy via package-close.sh.
+# Prepared gates; local fairness passes after ADR 0015 admission-pressure yield.
+# Full closeout is still open; copy via package-close.sh.
 # Serial steps; every exit is a gate.
 # Matrix exit 1 is retained separately and accepted ONLY by exact deviations.
 # DBeaver failures, P16 misses/noise and resource excess remain failing gates.
@@ -17,12 +17,15 @@ metadata-scratch cargo test --locked -j 4 -p nata-pgwire --lib metadata_scratch_
 loaded-native NATA_PGWIRE_CONTENTION=8 cargo test --locked -j 4 -p nata-pgwire --test reliability -- --nocapture
 metadata-fuzz NATA_METADATA_CASES=1000000 cargo test --locked -j 4 -p nata-pgwire --lib seeded_metadata_fuzz -- --nocapture
 wire-mutants LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 python3 crates/nata-pgwire/mutate.py --work "$WORK/wire-browse-mutants"
+# Includes admission_yield_races_resume, admission_yield_races_close and two_admission_waiters_one_idle_portal.
 portal-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 bash crates/nata-pgwire/run_portal_loom.sh
 scheduler-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash crates/nata-sched/run_loom.sh
 memory-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash crates/nata-sched/run_memory_loom.sh
 bridge-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 BRIDGE_COMBINED_IO=1 bash crates/nata-sched/run_bridge_loom.sh
 resource-gate-mutants "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/check-gate-mutants.py
 p16-gate-controls "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/test_p16.py
+admission-yield-mutants "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/yield-mutants.py --target "${CARGO_TARGET_DIR:-target}" --work "$WORK/yield-mutants"
+loaded-fairness "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/resources.py --nata "${CARGO_TARGET_DIR:-target}/debug/nata" --work "$RESULTS/loaded-fairness" --smoke --sessions 64 --workers 1 8 --repeat 3
 resource-gates ORACLE_EXTRA=resources PG_MAJOR=15 bash scripts/wire-browse/run-oracle.sh
 snapshot-cap-mutant "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/snapshot-mutant.py --nata "${CARGO_TARGET_DIR:-target}/debug/nata" --work "$WORK/snapshot-cap-mutant"
 pg16-parity PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh

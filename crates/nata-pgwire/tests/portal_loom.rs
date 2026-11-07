@@ -2,7 +2,7 @@
 //! I/O/timer delivery are boundary events, not an emulation of Tokio or Parquet.
 #[path = "../src/server/lifecycle.rs"]
 mod lifecycle;
-use lifecycle::{Cancel, Credit, Enter, Exchange, Once, Phase, Slot};
+use lifecycle::{Cancel, Credit, Enter, Exchange, Lease, Once, Phase, Slot};
 #[cfg(nata_portal_loom)]
 use loom::{
     sync::{
@@ -102,6 +102,10 @@ fn execute_limit_suspend_inert_cancel_resume_and_exact_end() {
         assert_eq!(phase.enter(), Enter::Complete, "completion is terminal");
         assert_eq!(phase, Phase::Complete);
         assert!(phase.suspended().is_none());
+        let shared = Lease::<u64>::new();
+        shared.enter();
+        shared.complete();
+        assert_eq!(shared.enter(), Enter::Complete);
         let mut unlimited = 0;
         assert!(!lifecycle::row(&mut unlimited));
         assert!(exchange.sync(b'I'));
@@ -247,5 +251,88 @@ fn cancel_selection_linearizes_before_suspension_publication() {
         assert_eq!(token.cancelled(), at_publication, "cancel after suspension");
         slot.cancel();
         assert_eq!(token.cancelled(), at_publication, "suspended cancel inert");
+    });
+}
+
+// The real shared lease lock and pinned cleanup callback, with logical idle time.
+#[test]
+fn admission_yield_races_resume() {
+    model(|| {
+        let lease = Arc::new(Lease::new());
+        lease.enter();
+        lease.suspend(0);
+        let token = Token::new();
+        let l = lease.clone();
+        let t = token.clone();
+        let waiter = thread::spawn(move || l.expire(0, || t.cancel()));
+        let resumed = lease.enter();
+        let yielded = waiter.join().expect("waiter");
+        assert_eq!(yielded, resumed == Enter::Expired);
+        assert_eq!(token.cancelled(), yielded);
+        assert!(lease.suspended().is_none());
+        // A stale selection must not expire a later suspension of the same portal.
+        if !yielded {
+            lease.suspend(1);
+            assert!(!lease.expire(0, || token.cancel()));
+        }
+    });
+}
+#[test]
+fn admission_yield_races_close() {
+    model(|| {
+        let lease = Arc::new(Lease::new());
+        lease.enter();
+        lease.suspend(0);
+        let owner = Arc::new(Once::new(()));
+        let releases = Arc::new(AtomicUsize::new(0));
+        let credit = Arc::new(Credit::new());
+        let token = Token::new();
+        let l = lease.clone();
+        let o = owner.clone();
+        let r = releases.clone();
+        let c = credit.clone();
+        let t = token.clone();
+        let waiter = thread::spawn(move || {
+            l.expire(0, || {
+                t.cancel();
+                let _ = c.send(0);
+                if o.take().is_some() {
+                    r.fetch_add(1, Ordering::SeqCst);
+                }
+            })
+        });
+        lease.close();
+        token.cancel();
+        credit.close();
+        if owner.take().is_some() {
+            releases.fetch_add(1, Ordering::SeqCst);
+        }
+        waiter.join().expect("waiter");
+        assert!(token.cancelled());
+        assert_eq!(credit.wait(), Err(()));
+        assert_eq!(releases.load(Ordering::SeqCst), 1);
+        assert!(lease.expired());
+    });
+}
+#[test]
+fn two_admission_waiters_one_idle_portal() {
+    model(|| {
+        let lease = Arc::new(Lease::new());
+        lease.enter();
+        lease.suspend(0);
+        let releases = Arc::new(AtomicUsize::new(0));
+        let l = lease.clone();
+        let r = releases.clone();
+        let first = thread::spawn(move || {
+            l.expire(0, || {
+                r.fetch_add(1, Ordering::SeqCst);
+            })
+        });
+        let second = lease.expire(0, || {
+            releases.fetch_add(1, Ordering::SeqCst);
+        });
+        assert_ne!(first.join().expect("waiter"), second);
+        assert_eq!(releases.load(Ordering::SeqCst), 1);
+        assert_eq!(lease.enter(), Enter::Expired);
     });
 }

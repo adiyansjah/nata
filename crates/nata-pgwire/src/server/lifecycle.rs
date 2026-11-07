@@ -172,3 +172,42 @@ impl<T: Copy + Ord> Exchange<T> {
         transaction == b'I'
     }
 }
+
+/// Resume and expiry linearize on this lock. The expiry callback runs before a
+/// losing resume can observe the terminal marker; it pins this execution only.
+pub(super) struct Lease<T>(Mutex<Phase<T>>);
+impl<T: Copy + Eq> Lease<T> {
+    pub(super) fn new() -> Self {
+        Self(Mutex::new(Phase::Bound))
+    }
+    pub(super) fn enter(&self) -> Enter {
+        self.0.lock().expect("lease").enter()
+    }
+    pub(super) fn suspend(&self, at: T) {
+        self.0.lock().expect("lease").suspend(at);
+    }
+    pub(super) fn complete(&self) {
+        self.0.lock().expect("lease").complete();
+    }
+    pub(super) fn suspended(&self) -> Option<T> {
+        self.0.lock().expect("lease").suspended()
+    }
+    pub(super) fn close(&self) {
+        let mut phase = self.0.lock().expect("lease");
+        if phase.suspended().is_some() {
+            phase.expire();
+        }
+    }
+    pub(super) fn expired(&self) -> bool {
+        matches!(*self.0.lock().expect("lease"), Phase::Expired)
+    }
+    pub(super) fn expire(&self, at: T, stop: impl FnOnce()) -> bool {
+        let mut phase = self.0.lock().expect("lease");
+        if phase.suspended() != Some(at) {
+            return false;
+        }
+        phase.expire();
+        stop();
+        true
+    }
+}
