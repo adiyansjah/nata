@@ -493,6 +493,6 @@ mod tests {
         let i_timer = s.find(".timer on").unwrap();
         assert!(i_out < i_secret && i_secret < i_back && i_back < i_timer);
         assert!(s.contains("https://storage.googleapis.com/bkt/p/sf1/small1/part-0000.parquet"));
-        assert_eq!(s.matches("TOK").count(), 1);
+        assert_eq!(s.matches("'TOK'").count(), 1);
     }
 }
