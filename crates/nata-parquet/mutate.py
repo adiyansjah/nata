@@ -25,6 +25,8 @@ NEW_GROUPS = [["-p", "nata-parquet", "--test", "parallel"], ["-p", "nata-parquet
 LATE_GROUPS = [["-p", "nata-parquet", "--test", "late"]] + GROUPS
 # R4 (page checksums): mutants named crc-* run the checksum tests of the crate and of the `nata` binary first.
 CRC_GROUPS = [["-p", "nata-parquet", "--test", "checksums"], ["-p", "nata", "--test", "scan_cli"]] + GROUPS
+# Card 0004, item A (a damaged page header made the Thrift reader loop at end of file): mutants named damaged-* run the pinned fixture test first.
+DAMAGED_GROUPS = [["-p", "nata-parquet", "--test", "damaged_regressions"]] + GROUPS
 NEW_ENV = {"NATA_SCENARIOS": "1200", "NATA_FUZZ_CASES": "300", "NATA_FILES": "1500", "NATA_BIG_GROUPS": "60"}
 
 A, F, R, C, E, S, K = "src/adapter.rs", "src/filter.rs", "src/reader.rs", "src/csv.rs", "src/error.rs", "src/schema.rs", "src/civil.rs"
@@ -185,6 +187,10 @@ M = {
  # --- step 4a: page checksums (R4). The measured default is off; these mutants must fail the explicit opt-in guards. The no-feature fuzz build still exposes silent corruption.
  "crc-on-by-default-in-nata-parquet": ("Cargo.toml", 'default = []', 'default = ["page-crc"]'),
  "crc-on-by-default-in-the-nata-binary": ("../nata/Cargo.toml", 'default = []', 'default = ["page-crc"]'),
+ # --- card 0004 item A: a second read at end of file is an error (CountingRead::at_eof). Without it parquet-rs 60.1.0 skips a damaged page header's list of billions of
+ # entries with empty reads, about 10,000 a second, and the scan never ends. The test `damaged_regressions` ends the scan at a 20 s deadline and fails.
+ "damaged-eof-check-removed": (R, "if self.at_eof && !buf.is_empty() {", "if false && self.at_eof && !buf.is_empty() {"),
+ "damaged-eof-never-recorded": (R, "if n == 0 && !buf.is_empty() {\n            self.at_eof = true;\n        }", ""),
 }
 
 
@@ -287,7 +293,7 @@ def run_one(args):
     rc, out = cargo(base, work, slot_name, ["test", "--release", "--offline", "-p", "nata-parquet", "--lib", "--no-run"])
     if rc != 0:
         return n, "INVALID", "does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
-    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else LATE_GROUPS if n.startswith("late-") else CRC_GROUPS if n.startswith("crc-") else GROUPS)
+    ok, out, group = run_groups(base, work, slot_name, NEW_GROUPS if n.startswith("par-") else DAMAGED_GROUPS if n.startswith("damaged-") else LATE_GROUPS if n.startswith("late-") else CRC_GROUPS if n.startswith("crc-") else GROUPS)
     if "could not compile" in out or "error[E" in out:
         return n, "INVALID", "test group does not compile: " + " ".join(l for l in out.splitlines() if l.startswith("error"))[:300]
     if ok:
