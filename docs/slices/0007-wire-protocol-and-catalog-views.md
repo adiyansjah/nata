@@ -68,6 +68,16 @@ All new numerical budgets below are **targets**, not observations. Provisional p
 - Use same fixture/order/types/bytes, connection lifetime, startup inclusion, cache, client decode/sink and hardware per arm. Report engine/source time separately: PostgreSQL table scans versus Parquet are an end-to-end protocol reference, not proof of pure codec cost. Performance changes require correct outputs and a gain beyond twin noise on both CPUs; retain bounds even if a faster unbounded variant wins.
 - Keep existing hand codec/runtime. No speculative pgwire reuse bake-off: ADR 0008 requires a released decoder fix and full R1 replay before reconsideration. No new dependencies approved here. Parent implementation brief must name direct dependencies at locked versions, deny/unsafe inventory obligations; an unlocked crate stops for approval.
 - Owner must accept T1 security deferral, SQL-cursor boundary, COPY expansion and bounded portal tradeoff. If these cannot fit a small complete slice, return a proposed split before implementation; do not merge stubs, silently omit a client or change accepted ADRs.
+- **RSS and browse budget, frozen by the parent on 2026-11-08, before any loaded Nata measurement** (the closeout child stopped at
+  item 3 because no budget was frozen). The budget is derived from the caps this card already sets, not from a measurement:
+  for the loaded browse/streaming workload with S concurrent sessions, Nata's peak RSS (cgroup `memory.peak`, or `VmHWM` when no
+  cgroup) must stay within **idle RSS + S × (16 MiB snapshot cap + 512 KiB wire buffers) + the engine query budget configured for the
+  run + 64 MiB fixed allowance**, and must return to within **idle RSS + 64 MiB** within 10 s after every session closes. FDs return
+  to the idle count after close. Each term is printed by the gate; any excess is a FAIL, never a re-derived budget. A mutant that
+  removes the snapshot cap must exceed it. PostgreSQL's RSS for the same workload is recorded beside it as context only.
+- **P16 freeze procedure (unchanged rule, made runnable):** the heavy job runs the PostgreSQL arms first on each CPU, writes their
+  medians and twin noise, and only then runs the Nata arms; the ≤1.10x per-client target is judged against those PostgreSQL arms
+  from the same VM. An unresolved PostgreSQL cell (twin noise over 5%) marks that cell UNRESOLVED, never MET.
 
 ## 4. Baseline spike (only unresolved choices; not run in this planning task)
 
