@@ -159,7 +159,7 @@ impl Decimal {
     )]
     #[allow(
         clippy::disallowed_methods,
-        reason = "R26: batch admission bounds alignment and the exact arithmetic result"
+        reason = "R27: batch admission bounds alignment and the exact arithmetic result"
     )]
     pub fn column(
         self,
@@ -175,7 +175,7 @@ impl Decimal {
             && batch_magnitudes(a, av, b, bv, sel, la, lb)
         {
             // Admission bounds alignment and the exact result below 10^P.
-            // Full-width arithmetic lemmas: improvements.md R26.
+            // Full-width arithmetic lemmas: improvements.md R27.
             return match self.op {
                 Op::Add => binary(a, av, b, bv, sel, out, valid, |x, y| {
                     Ok(x.wrapping_mul(self.left)

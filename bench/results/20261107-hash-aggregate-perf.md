@@ -1587,7 +1587,7 @@ pass; all local timing remains unsettled. The canonical decimal set stays pendin
 
 The owner-authorized retry replaces the stopped arbitrary-i128 SAT obligation
 with separately checked admission, reduced-width arithmetic lemmas, i128
-boundary properties and a named full-width arithmetic trust point (R26).
+boundary properties and a named full-width arithmetic trust point (R27).
 The earlier stop remains historical evidence, cherry-picked as `7b87ea9` from
 `1006777`; no cloud run, target or ADR amendment is part of this retry.
 
@@ -1709,7 +1709,7 @@ The portable runner restores each source in a `finally` block:
 CARGO_TARGET_DIR=/home/dev/perf2b/kani-target python3 spikes/kani-nata-kernels/negative-perf2c.py
 ```
 
-The named full-width trust point is [R26](../../docs/improvements.md#r26--full-width-arithmetic-lemmas-for-admitted-decimal-batches-2026-11-08).
+The named full-width trust point is [R27](../../docs/improvements.md#r27--full-width-arithmetic-lemmas-for-admitted-decimal-batches-2026-11-08).
 It covers lifting the arithmetic inequalities to i128; admission logic passing
 Kani does not certify full-width multiplication or Arrow i256. A separate
 20-second full-width Kissat trial timed out (exit 124), with no proof claim.

@@ -105,7 +105,7 @@ Found while waiting on the debt A round after slice 4b closed: about half of the
 | W6 | Classify SQL fuzzer mismatches automatically against the documented dialect differences, and report only unexplained ones | Two 100k-query mismatches on 7 Nov (an out-of-range integer literal typed as numeric; a `BETWEEN` with a cast) were sorted by hand against `docs/dialect.md`; aggregates will add many more documented differences | `spikes/sqlfuzz`, `docs/dialect.md` | before slice 5 | open |
 | W7 | A performance trend: nightly SF1 TPC-H on GitHub's free runners, timings saved per commit, so a slowdown between slices shows | Each slice measures itself at closeout; nothing tracks query times from commit to commit. Trend numbers only, verdicts stay on clean GCP VMs (section 6) | nightly workflow, `nata-bench` | before slice 5 | open |
 
-### R26 — full-width arithmetic lemmas for admitted decimal batches (2026-11-08)
+### R27 — full-width arithmetic lemmas for admitted decimal batches (2026-11-08)
 
 Status: explicit trust point under the owner-authorized retry; full-width solver result pending.
 
@@ -123,7 +123,7 @@ trial also has no result. A parent-only four-hour harness on both CPU types can
 upgrade this trust point; no cloud run or full-width proof is claimed here.
 See [the retry evidence](../bench/results/20261107-hash-aggregate-perf.md).
 
-R26 retry verdict: only aligned add/sub is retained provisionally. The product
+R27 retry verdict: only aligned add/sub is retained provisionally. The product
 trial has no established gain on capped Q1 products; the SUM candidate regresses
 Q1 by 58.5%/33.6% and is rejected. Its admission helper and proof properties live
 in the raw evidence, not the production kernel. SUM updates, promotion, merge,
