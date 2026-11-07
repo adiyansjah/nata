@@ -106,3 +106,4 @@ Closed R13/R15/R16/R17/R18/R19/R20/P15/R21 remain regression obligations (includ
 - **Closing-commit deep checks:** record exact SHA and manually triggered nightly full fuzz, loom bound 3 and full SQL subset results. Each failure fixed or explicitly deviated with a register item; changed closing code requires fresh deep checks:
 - Deviations and every performance miss remain visible; no target change after Nata measurements:
 - Register: per-item result/remaining scope, every new finding with evidence/path/next slice; count additions to apply next-slice payback:
+- 2026-11-07, follow-up from the PostgreSQL capture: the skeleton restarts `statement_timeout` per Execute, but PostgreSQL keeps the timer running across a suspended portal until Sync (ADR 0015, correction). Change Nata to match, with a test against `fixtures/wirecapture/*/suspended-timeout-restart.json` and a mutant that restores the per-Execute restart.
