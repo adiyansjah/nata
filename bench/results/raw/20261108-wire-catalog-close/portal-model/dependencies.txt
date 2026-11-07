@@ -1,0 +1,9 @@
+No package/version added to Cargo.lock: only nata-pgwire -> loom edge.
+Conditional model-only direct dependency: loom =0.7.2, already locked.
+Native crate remains forbid(unsafe_code).
+Lexical inventory (includes comments/docs, not a security audit):
+loom-0.7.2/src/**/*.rs: 46 files, 52 words matching \bunsafe\b.
+generator-0.8.11/src/**/*.rs: 24 files, 134 words matching \bunsafe\b.
+Both packages were already selected/locked by nata-sched's model build.
+The model checks synchronization in lifecycle.rs; Tokio, socket/scan internals,
+admission resources and actual timer delivery are not instrumented by loom.

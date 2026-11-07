@@ -1,0 +1,38 @@
+
+running 7 tests
+test cancel_selection_linearizes_before_suspension_publication ... ok
+test close_before_or_after_park_cannot_lose_wake ... ok
+test execute_limit_suspend_inert_cancel_resume_and_exact_end ... FAILED
+test expiry_credit_before_or_after_park_cannot_lose_wake ... ok
+test pinned_timer_and_cancel_do_not_follow_replacement ... ok
+test resume_races_expiry_and_cleanup_wakes_once ... FAILED
+test timeout_across_suspension_error_drain_until_sync_and_rollback ... ok
+
+failures:
+
+failures:
+    execute_limit_suspend_inert_cancel_resume_and_exact_end
+    resume_races_expiry_and_cleanup_wakes_once
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-s10-model/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 2.99s
+     Running tests/portal_loom.rs (/home/dev/tmp-s10-model/mutants/target/debug/deps/portal_loom-6330a6a0b4a7dd08)
+[portal-loom] executions=4 bound=2
+[portal-loom] executions=3 bound=2
+
+thread 'execute_limit_suspend_inert_cancel_resume_and_exact_end' (2209318) panicked at crates/nata-pgwire/tests/portal_loom.rs:102:9:
+assertion `left == right` failed: completion is terminal
+  left: Start
+ right: Complete
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[portal-loom] executions=3 bound=2
+[portal-loom] executions=4 bound=2
+
+thread 'resume_races_expiry_and_cleanup_wakes_once' (2209321) panicked at crates/nata-pgwire/tests/portal_loom.rs:155:9:
+assertion `left == right` failed: expiry is terminal
+  left: Start
+ right: Expired
+[portal-loom] executions=1 bound=2
+error: test failed, to rerun pass `-p nata-pgwire --test portal_loom`

@@ -1,0 +1,135 @@
+ok   job ci finishes
+ok   job bench finishes
+ok   job all finishes
+ok   job genops finishes
+ok   job verify finishes
+ok   job hashops finishes
+ok   job kani finishes
+ok   job kani-mut finishes
+ok   job decimal finishes
+ok   job parmut finishes
+ok   job parmut-hashops finishes
+ok   job crates finishes
+ok   job fairness-bench finishes
+ok   job bridge finishes
+ok   job perf finishes
+ok   job cpack finishes
+ok   job hashtests finishes
+ok   job kani-crate finishes
+ok   job kani-solvers finishes
+ok   job nullpath finishes
+ok   job armcheck finishes
+ok   job kani-mut-crate finishes
+ok   job timing finishes
+ok   job armcheck-retry finishes
+ok   job objscan finishes
+ok   job simharness finishes
+ok   job iceberg finishes
+ok   job iceberg-smoke finishes
+ok   job icebergmodel finishes
+ok   job icebergspikes finishes
+ok   job icebergcs finishes
+ok   job icebergpolaris finishes
+ok   job pushpin finishes
+ok   job netexchsim finishes
+ok   job netexchreal finishes
+ok   job failmodel finishes
+ok   job failmodel-retry finishes
+ok   job opsbeyond finishes
+ok   job spillbench finishes
+ok   job scanbench finishes
+ok   job pgwirebench finishes
+ok   job wirecapture finishes
+ok   job item35 finishes
+ok   job pgwirecheck finishes
+ok   job slice4bench finishes
+ok   job slice4close finishes
+ok   job debt-rss finishes
+ok   job cgroupcheck finishes
+ok   job eng-checks finishes
+ok   job scale-sf10 finishes
+ok   job scale-sf100 finishes
+ok   job scale-cores finishes
+ok   job sqlfuzz finishes
+ok   job aggref finishes
+ok   job aggref-scale finishes
+ok   job heavy finishes
+ok   job parquetwrite finishes
+ok   job icebergplan finishes
+ok   job icebergplan-mut finishes
+ok   aggref runs only its reference script
+ok   aggref-scale runs only its reference script
+ok   heavy runs one step per heavy.steps line, skipping comments and blanks
+ok   heavy without heavy.steps fails
+ok   heavy refuses a bad step name
+ok   timing chains hashops, nullpath, perf and its own steps
+ok   timing skips the hash-ops mutation step
+ok   hashops alone still runs the mutation step
+ok   in timing, correctness steps come before the benchmarks
+ok   nullpath alone runs only its own steps
+ok   perf alone runs only its own steps
+ok   armcheck runs only its own steps
+ok   armcheck-retry runs only the five tasks that did not finish
+ok   armcheck runs all tasks
+ok   icebergplan-mut runs only the mutation phase
+ok   icebergplan runs all phases
+ok   icebergmodel runs the one model-mode step
+ok   icebergmodel does not run the full iceberg check
+ok   icebergmodel runs no step of any other job (only the common setup and ic-model)
+ok   iceberg still runs the full check (IC_MODE unset), not the model-only step
+ok   objscan sources spikes/object-store-scan/objstore.env, which is git-ignored
+ok   icebergpolaris runs the one polaris-mode step
+ok   icebergpolaris runs no step of any other job
+ok   pushpin runs the build and the one pin-check step
+ok   pushpin runs no step of any other job
+ok   netexchsim runs the one step nx-all
+ok   netexchsim runs no step of any other job
+ok   vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)
+ok   icebergspikes runs the one spikes-mode step
+ok   icebergspikes does not run the full check
+ok   icebergspikes does not run the model step
+ok   icebergspikes runs no step of any other job
+ok   timing: settle-h-bench-ov-on comes before h-bench-ov-on
+ok   timing: settle-h-membench-ov-off comes before h-membench-ov-off
+ok   timing: settle-h-duckdb comes before h-duckdb
+ok   timing: settle-np-all comes before np-all
+ok   timing: settle-p-timing comes before p-timing
+ok   timing: settle-t-compaction comes before t-compaction
+ok   timing: settle-t-pushcost comes before t-pushcost
+ok   timing: settle-t-ap-bench comes before t-ap-bench
+ok   cpack: settle-f-overhead comes before f-overhead
+ok   cpack: settle-b-measure-latency comes before b-measure-latency
+ok   cpack: settle-b-measure-memory comes before b-measure-memory
+ok   cpack: settle-b-measure-idle comes before b-measure-idle
+ok   fairness-bench: settle-f-overhead comes before f-overhead
+ok   bridge: settle-b-measure-latency comes before b-measure-latency
+ok   bridge: settle-b-measure-memory comes before b-measure-memory
+ok   bridge: settle-b-measure-idle comes before b-measure-idle
+ok   kani-solvers runs k-install, kw-proofs, kw-mutants, kc-solvers only
+ok   verify: settle-v-genops-bench-ov-false-1 comes before v-genops-bench-ov-false-1
+ok   verify: settle-v-genops-membench-ov-true-2 comes before v-genops-membench-ov-true-2
+ok   job hashops has no settle steps
+ok   job armcheck has no settle steps
+ok   job simharness has no settle steps
+ok   job objscan has no settle steps
+ok   job iceberg has no settle steps
+ok   job icebergmodel has no settle steps
+ok   job icebergspikes has no settle steps
+ok   job icebergpolaris has no settle steps
+ok   job pushpin has no settle steps
+ok   job netexchsim has no settle steps
+ok   perf alone settles before p-timing
+ok   settle step: a quiet machine settles at once
+ok   settle step: a busy machine is given up on cleanly (exit 0, says NOT SETTLED)
+ok   pgwirebench chain
+ok   pgwirebench startup dependencies
+ok   item35 chain
+ok   item35 startup dependencies
+ok   pgwirecheck runs protocol, live lifecycle and mutants in order
+ok   slice4bench runs s4-gen-sf1, s4-gen-sf10, s4-build, s4-pyarrow, s4-bench only, in that order
+ok   slice4bench builds the build without the page checksum and runs the late, footers and crc blocks
+ok   slice4close selects all checks before timing
+ok   startup installs slice4close venv support
+ok   an unknown job is refused
+ok   wirecapture only runs its PostgreSQL reference script
+all job-chain tests passed

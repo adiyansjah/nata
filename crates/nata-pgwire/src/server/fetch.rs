@@ -1,4 +1,5 @@
 //! One retained producer per portal, bounded by the existing admission and byte bridge.
+use super::lifecycle::{Credit, Enter, Once, Phase};
 use super::*;
 use std::cell::Cell;
 pub(super) struct Deadline(tokio::task::JoinHandle<()>);
@@ -6,11 +7,7 @@ impl Deadline {
     pub(super) fn start(duration: Option<Duration>, session: &Arc<Session>) -> Option<Self> {
         duration.map(|d| {
             // Pin the token, never cancel whichever query replaces it later.
-            let active = session
-                .active
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .clone();
+            let active = session.active.current();
             Self(tokio::spawn(async move {
                 tokio::time::sleep(d).await;
                 if let Some(active) = active {
@@ -27,35 +24,30 @@ impl Drop for Deadline {
 }
 pub(super) struct Gate {
     remaining: Cell<usize>,
-    resume: std::sync::mpsc::Receiver<usize>,
+    resume: Arc<Credit>,
 }
 impl Gate {
     pub(super) fn row(&self) -> bool {
-        let n = self.remaining.get();
-        if n == 0 {
-            return false;
-        }
-        self.remaining.set(n - 1);
-        n == 1
+        let mut n = self.remaining.get();
+        let suspend = lifecycle::row(&mut n);
+        self.remaining.set(n);
+        suspend
     }
     pub(super) fn wait(&self) -> Result<(), ()> {
-        self.remaining.set(self.resume.recv().map_err(|_| ())?);
+        self.remaining.set(self.resume.wait()?);
         Ok(())
     }
 }
 struct Execution {
     rx: mpsc::Receiver<Event>,
-    resume: Option<std::sync::mpsc::Sender<usize>>,
+    resume: Arc<Credit>,
     token: ScanCancel,
     cancelled: Arc<AtomicBool>,
     join: JoinCell,
 }
-type JoinCell = Arc<Mutex<Option<(oneshot::Receiver<()>, std::thread::JoinHandle<()>)>>>;
+type JoinCell = Arc<Once<(oneshot::Receiver<()>, std::thread::JoinHandle<()>)>>;
 fn reap(join: &JoinCell) {
-    let joined = join
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner)
-        .take();
+    let joined = join.take();
     if let Some((done, worker)) = joined {
         tokio::spawn(async move {
             let _ = done.await;
@@ -67,7 +59,7 @@ impl Execution {
     fn lease(&self, duration: Duration) -> Deadline {
         let token = self.token.clone();
         let cancelled = Arc::clone(&self.cancelled);
-        let resume = self.resume.as_ref().expect("resume").clone();
+        let resume = Arc::clone(&self.resume);
         let join = Arc::clone(&self.join);
         Deadline(tokio::spawn(async move {
             tokio::time::sleep(duration).await;
@@ -84,7 +76,7 @@ impl Drop for Execution {
     fn drop(&mut self) {
         self.token.cancel();
         self.cancelled.store(true, Ordering::SeqCst);
-        self.resume.take();
+        self.resume.close();
         self.rx.close();
         // Expiry and cleanup race through one join owner; never block a socket
         // worker waiting for a producer, and never join the same thread twice.
@@ -93,30 +85,25 @@ impl Drop for Execution {
 }
 pub(super) struct Run {
     execution: Option<Execution>,
-    suspended: Option<Instant>,
+    phase: Phase<Instant>,
     expiry: Option<Deadline>,
-    complete: bool,
-    expired: bool,
 }
 impl Run {
     pub(super) fn new() -> Self {
         Self {
             execution: None,
-            suspended: None,
+            phase: Phase::Bound,
             expiry: None,
-            complete: false,
-            expired: false,
         }
     }
     pub(super) fn deadline(&self) -> Option<Instant> {
-        self.suspended.map(|at| at + Duration::from_secs(5))
+        self.phase.suspended().map(|at| at + Duration::from_secs(5))
     }
     pub(super) fn expire(&mut self) {
         if self.deadline().is_some_and(|d| Instant::now() >= d) {
             self.expiry.take();
             self.execution.take();
-            self.suspended = None;
-            self.expired = true;
+            self.phase.expire();
         }
     }
     #[allow(clippy::too_many_arguments)]
@@ -139,10 +126,11 @@ impl Run {
         if deadline.is_some_and(|d| Instant::now() >= d) {
             return Err(WireError::timeout());
         }
-        if self.expired {
+        let enter = self.phase.enter();
+        if enter == Enter::Expired {
             return Err(WireError::new("34000", "suspended portal expired"));
         }
-        if self.complete {
+        if enter == Enter::Complete {
             let packet = codec::packet(b'C', b"SELECT 0\0").map_err(|_| WireError::internal())?;
             let writing = async {
                 write.write_all(&packet).await?;
@@ -170,11 +158,7 @@ impl Run {
             || Arc::new(AtomicBool::new(false)),
             |e| Arc::clone(&e.cancelled),
         );
-        *registered
-            .session
-            .active
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Active {
+        registered.session.active.install(Active {
             token: token.clone(),
             stop,
             cancelled: Arc::clone(&cancelled),
@@ -191,7 +175,8 @@ impl Run {
                     p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(queries).acquire_owned()) => p.ok().and_then(Result::ok).ok_or_else(|| WireError::new("53300", "query admission timeout"))?,
                 };
                 let (tx, rx) = mpsc::channel(BRIDGE_BUFFERS);
-                let (resume, resumed) = std::sync::mpsc::channel();
+                let resume = Arc::new(Credit::new());
+                let resumed = Arc::clone(&resume);
                 let (done, joined) = oneshot::channel();
                 let p = portal.clone();
                 let execution = execution.clone();
@@ -211,11 +196,10 @@ impl Run {
                     let _ = tx.blocking_send(Event::Finished(outcome.unwrap_or_else(|_| Err(WireError::internal()))));
                     let _ = done.send(());
                 }).map_err(|_| WireError::internal())?;
-                self.execution = Some(Execution { rx, resume: Some(resume), token, cancelled, join: Arc::new(Mutex::new(Some((joined, worker)))) });
+                self.execution = Some(Execution { rx, resume, token, cancelled, join: Arc::new(Once::new((joined, worker))) });
             } else if let Some(execution) = &self.execution {
-                execution.resume.as_ref().expect("resume").send(limit as usize).map_err(|_| WireError::internal())?;
+                execution.resume.send(limit as usize).map_err(|_| WireError::internal())?;
             }
-            self.suspended = None;
             let e = self.execution.as_mut().expect("execution");
             let mut rows = 0;
             let mut boundary = FrameBoundary::default();
@@ -254,10 +238,10 @@ impl Run {
                         // Remove the cancel target BEFORE publishing suspension. Keep
                         // its sender alive until the final write completes so receiver
                         // closure cannot masquerade as a CancelRequest.
-                        let _parked = registered.session.active.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take(); // suspension transition
+                        let _parked = registered.session.active.take(); // suspension transition
                         // Exact-end fetches suspend too: exhaustion is only observed on resume.
                         terminal(write, &codec::packet(b's', b"").map_err(|_| WireError::internal())?, &mut stopped, disconnected).await?;
-                        self.suspended = Some(Instant::now());
+                        self.phase.suspend(Instant::now());
                         self.expiry = Some(e.lease(Duration::from_secs(5)));
                         return Ok(());
                     }
@@ -265,13 +249,13 @@ impl Run {
                         result?;
                         if deadline.is_some_and(|d| Instant::now() >= d) { return Err(WireError::timeout()); }
                         terminal(write, &codec::packet(b'C', format!("SELECT {rows}\0").as_bytes()).map_err(|_| WireError::internal())?, &mut stopped, disconnected).await?;
-                        self.execution.take(); self.complete = true;
+                        self.execution.take(); self.phase.complete();
                         return Ok(());
                     }
                 }
             }
         }.await;
-        if self.suspended.is_none() {
+        if self.phase.suspended().is_none() {
             registered.session.finish();
         }
         if result.is_err() {
@@ -316,7 +300,8 @@ mod tests {
     }
     #[tokio::test]
     async fn idle_lease_wakes_and_reaps_without_session_loop_polling() {
-        let (resume, resumed) = std::sync::mpsc::channel();
+        let resume = Arc::new(Credit::new());
+        let resumed = Arc::clone(&resume);
         let (done, joined) = oneshot::channel();
         let (observed, exited) = oneshot::channel();
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -334,17 +319,17 @@ mod tests {
         let (_, rx) = mpsc::channel(BRIDGE_BUFFERS);
         let execution = Execution {
             rx,
-            resume: Some(resume),
+            resume,
             token: ScanCancel::new(),
             cancelled,
-            join: Arc::new(Mutex::new(Some((joined, worker)))),
+            join: Arc::new(Once::new((joined, worker))),
         };
         let _lease = execution.lease(Duration::from_millis(1));
         tokio::time::timeout(Duration::from_secs(1), exited)
             .await
             .expect("lease deadline")
             .expect("producer exit");
-        assert!(execution.join.lock().expect("join").is_none());
+        assert!(execution.join.take().is_none());
     }
     #[tokio::test]
     async fn deadline_is_pinned_to_its_execution_not_a_replacement() {
@@ -352,10 +337,10 @@ mod tests {
         let next = active();
         let session = Arc::new(Session {
             secret: 0,
-            active: Mutex::new(Some(first.clone())),
+            active: lifecycle::Slot::new(Some(first.clone())),
         });
         let _deadline = Deadline::start(Some(Duration::from_millis(1)), &session);
-        *session.active.lock().expect("active") = Some(next.clone());
+        session.active.install(next.clone());
         tokio::time::sleep(Duration::from_millis(10)).await;
         assert!(first.token.is_cancelled());
         assert!(!next.token.is_cancelled());

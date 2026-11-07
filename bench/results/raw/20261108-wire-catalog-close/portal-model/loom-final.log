@@ -1,0 +1,50 @@
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 2.67s
+
+running 1 test
+[portal-loom] executions=4 bound=2
+test cancel_selection_linearizes_before_suspension_publication ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 1 test
+[portal-loom] executions=3 bound=2
+test close_before_or_after_park_cannot_lose_wake ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 1 test
+[portal-loom] executions=11 bound=2
+test execute_limit_suspend_inert_cancel_resume_and_exact_end ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 1 test
+[portal-loom] executions=3 bound=2
+test expiry_credit_before_or_after_park_cannot_lose_wake ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 1 test
+[portal-loom] executions=4 bound=2
+test pinned_timer_and_cancel_do_not_follow_replacement ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 1 test
+[portal-loom] executions=302 bound=2
+test resume_races_expiry_and_cleanup_wakes_once ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.02s
+
+
+running 1 test
+[portal-loom] executions=1 bound=2
+test timeout_across_suspension_error_drain_until_sync_and_rollback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s

@@ -1,0 +1,51 @@
+
+running 7 tests
+test cancel_selection_linearizes_before_suspension_publication ... ok
+test close_before_or_after_park_cannot_lose_wake ... ok
+test execute_limit_suspend_inert_cancel_resume_and_exact_end ...    Compiling nata-pgwire v0.0.0 (/home/dev/tmp-s10-model/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 3.16s
+     Running tests/portal_loom.rs (/home/dev/tmp-s10-model/mutants/target/debug/deps/portal_loom-6330a6a0b4a7dd08)
+[portal-loom] executions=4 bound=2
+[portal-loom] executions=3 bound=2
+
+thread 'execute_limit_suspend_inert_cancel_resume_and_exact_end' (2209521) panicked at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/rt/execution.rs:216:13:
+deadlock; threads = [(Id(0), Blocked(Location(None))), (Id(1), Blocked(Location(None)))]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'execute_limit_suspend_inert_cancel_resume_and_exact_end' (2209521) panicked at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/rt/thread.rs:276:39:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0:     0x55e8c54638e1 - <<std[68c81ae915296b05]::sys::backtrace::BacktraceLock>::print::DisplayBacktrace as core[efd5e57aef94d71e]::fmt::Display>::fmt
+   1:     0x55e8c547873a - core[efd5e57aef94d71e]::fmt::write
+   2:     0x55e8c546928c - <std[68c81ae915296b05]::sys::stdio::unix::Stderr as core[efd5e57aef94d71e]::io::write::Write>::write_fmt
+   3:     0x55e8c543f7e6 - std[68c81ae915296b05]::panicking::default_hook::{closure#0}
+   4:     0x55e8c545bbf1 - std[68c81ae915296b05]::panicking::default_hook
+   5:     0x55e8c5427b5a - generator[980badc33cac0ae]::detail::gen::catch_unwind_filter::<generator[980badc33cac0ae]::detail::gen::gen_init_impl::{closure#0}, ()>::{closure#0}::{closure#0}
+   6:     0x55e8c545bf52 - std[68c81ae915296b05]::panicking::panic_with_hook
+   7:     0x55e8c543f8c4 - std[68c81ae915296b05]::panicking::panic_handler::{closure#0}
+   8:     0x55e8c5437c79 - std[68c81ae915296b05]::sys::backtrace::__rust_end_short_backtrace::<std[68c81ae915296b05]::panicking::panic_handler::{closure#0}, !>
+   9:     0x55e8c544059d - __rustc[3d2f79520d6fa809]::rust_begin_unwind
+  10:     0x55e8c5478f8c - core[efd5e57aef94d71e]::panicking::panic_fmt
+  11:     0x55e8c5478f52 - core[efd5e57aef94d71e]::panicking::panic
+  12:     0x55e8c5478c59 - core[efd5e57aef94d71e]::option::unwrap_failed
+  13:     0x55e8c541b6ec - <loom[52c2e950f96d1e11]::rt::object::Ref<loom[52c2e950f96d1e11]::rt::arc::State>>::set_action
+  14:     0x55e8c540fe80 - <scoped_tls[dde208a91275d10]::ScopedKey<core[efd5e57aef94d71e]::cell::RefCell<loom[52c2e950f96d1e11]::rt::scheduler::State>>>::with::<<loom[52c2e950f96d1e11]::rt::scheduler::Scheduler>::with_state<<loom[52c2e950f96d1e11]::rt::scheduler::Scheduler>::with_execution<loom[52c2e950f96d1e11]::rt::branch<<loom[52c2e950f96d1e11]::rt::object::Ref<loom[52c2e950f96d1e11]::rt::arc::State>>::branch_action<loom[52c2e950f96d1e11]::rt::arc::Action>::{closure#0}, ()>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>::{closure#0}, ((), bool)>
+  15:     0x55e8c5422066 - <loom[52c2e950f96d1e11]::rt::arc::Arc>::ref_dec
+  16:     0x55e8c53c59f8 - <loom[52c2e950f96d1e11]::sync::arc::Arc<portal_loom[8e3d551904144c13]::lifecycle::Credit> as core[efd5e57aef94d71e]::ops::drop::Drop>::drop
+  17:     0x55e8c539c5c4 - core[efd5e57aef94d71e]::ptr::drop_glue::<loom[52c2e950f96d1e11]::sync::arc::Arc<portal_loom[8e3d551904144c13]::lifecycle::Credit>>
+  18:     0x55e8c53b15f7 - portal_loom[8e3d551904144c13]::execute_limit_suspend_inert_cancel_resume_and_exact_end::{closure#0}
+  19:     0x55e8c53af3d6 - portal_loom[8e3d551904144c13]::model::<portal_loom[8e3d551904144c13]::execute_limit_suspend_inert_cancel_resume_and_exact_end::{closure#0}>::{closure#1}
+  20:     0x55e8c5398d8a - <loom[52c2e950f96d1e11]::model::Builder>::check::<portal_loom[8e3d551904144c13]::model<portal_loom[8e3d551904144c13]::execute_limit_suspend_inert_cancel_resume_and_exact_end::{closure#0}>::{closure#1}>::{closure#0}
+  21:     0x55e8c539dff9 - <<loom[52c2e950f96d1e11]::model::Builder>::check<portal_loom[8e3d551904144c13]::model<portal_loom[8e3d551904144c13]::execute_limit_suspend_inert_cancel_resume_and_exact_end::{closure#0}>::{closure#1}>::{closure#0} as core[efd5e57aef94d71e]::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  22:     0x55e8c5425a75 - <generator[980badc33cac0ae]::stack::StackBox<<generator[980badc33cac0ae]::gen_impl::GeneratorImpl<core[efd5e57aef94d71e]::option::Option<alloc[c23e483dde3f7cfb]::boxed::Box<dyn core[efd5e57aef94d71e]::ops::function::FnOnce<(), Output = ()>>>, ()>>::init_code<loom[52c2e950f96d1e11]::rt::scheduler::spawn_thread::{closure#0}>::{closure#0}>>::call_once
+  23:     0x55e8c5428585 - generator[980badc33cac0ae]::detail::gen::gen_init_impl
+  24:     0x55e8c5428509 - generator[980badc33cac0ae]::detail::asm::gen_init
+  25:                0x0 - <unknown>
+
+thread 'execute_limit_suspend_inert_cancel_resume_and_exact_end' (2209521) panicked at /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/core/src/panicking.rs:233:5:
+panic in a destructor during cleanup
+thread caused non-unwinding panic. aborting.
+error: test failed, to rerun pass `-p nata-pgwire --test portal_loom`
+
+Caused by:
+  process didn't exit successfully: `/home/dev/tmp-s10-model/mutants/target/debug/deps/portal_loom-6330a6a0b4a7dd08 --test-threads=1 --nocapture` (signal: 6, SIGABRT: process abort signal)

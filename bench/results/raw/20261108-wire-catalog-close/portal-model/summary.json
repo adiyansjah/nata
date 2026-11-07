@@ -1,0 +1,27 @@
+{
+  "bound": 2,
+  "models": 7,
+  "executions": [
+    4,
+    3,
+    11,
+    3,
+    4,
+    302,
+    1
+  ],
+  "total_executions": 328,
+  "model_mutants": {
+    "caught": 10,
+    "missed": 0,
+    "invalid": 0
+  },
+  "bound_3": "NOT RUN; heavy step prepared",
+  "native_timer_mutant": {
+    "caught": 1,
+    "missed": 0,
+    "invalid": 0
+  },
+  "registered_mutant_anchors": 96,
+  "policy_ownership": "Phase::enter and Exchange::begin are the sole production decisions, not masked by outer guards"
+}

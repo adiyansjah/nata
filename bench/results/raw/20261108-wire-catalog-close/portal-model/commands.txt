@@ -1,0 +1,22 @@
+All commands from repository root; serial builds, -j 4. No timing or GCP runs.
+export CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+mkdir -p "$HOME/tmp-s10-model/tmp"
+export TMPDIR="$HOME/tmp-s10-model/tmp"
+PORTAL_LOOM_TARGET="$HOME/tmp-s10-model/loom" LOOM_MAX_PREEMPTIONS=2 bash crates/nata-pgwire/run_portal_loom.sh
+# Separate private-copy target, never run real source tests against mutant binaries.
+LOOM_MAX_PREEMPTIONS=2 python3 crates/nata-pgwire/mutate.py portal-resume-terminal portal-cancel-after-publication portal-credit-lost-wake portal-close-lost-wake portal-double-release portal-stale-token portal-suspended-cancel portal-timeout-restarts portal-error-drain-lost portal-sync-keeps-error --work "$HOME/tmp-s10-model/mutants"
+python3 crates/nata-pgwire/mutate.py portal-deadline-follows-replacement --filter deadline_is_pinned_to_its_execution_not_a_replacement --work "$HOME/tmp-s10-model/mutants"
+# Dependency cache may be retained only after cargo clean -p nata-pgwire removes ALL
+# private-copy pgwire artifacts. Run the real-source native checks after that clean.
+export CARGO_TARGET_DIR="$HOME/tmp-s10-model/native"
+cargo test --locked -p nata-pgwire -j 4
+cargo fmt --all --check
+cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings
+cargo deny check
+export WORK="$HOME/tmp-slice-close/clients" RESULTS="$HOME/tmp-s10-model/results-final"
+# PATH: installed Python 3.12 with ensurepip; extracted JDK21; psql/pg_config17.
+bash scripts/wire-skeleton/run.sh
+mkdir -p "$HOME/tmp-s10-model/oracle-final-work"
+ln -s "$WORK/wire-skeleton-venv" "$HOME/tmp-s10-model/oracle-final-work/wire-skeleton-venv"
+WORK="$HOME/tmp-s10-model/oracle-final-work" bash scripts/wire-browse/run-oracle.sh
+bash scripts/gcp/test/test-job-chains.sh

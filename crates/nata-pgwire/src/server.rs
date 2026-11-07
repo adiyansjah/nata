@@ -15,10 +15,12 @@ use tokio::sync::{Semaphore, mpsc, oneshot, watch};
 
 use crate::codec::{self, Message};
 mod fetch;
+mod lifecycle;
 use crate::{
     extended::{self, Portal, Statement},
     session,
 };
+use lifecycle::Cancel;
 
 /// Counters for resource-bound checks and embedding. No SQL, values or keys.
 #[derive(Default)]
@@ -90,7 +92,7 @@ struct Active {
     stop: watch::Sender<bool>,
     cancelled: Arc<AtomicBool>,
 }
-impl Active {
+impl lifecycle::Cancel for Active {
     fn cancel(&self) {
         self.cancelled.store(true, Ordering::SeqCst);
         self.token.cancel();
@@ -99,26 +101,17 @@ impl Active {
 }
 struct Session {
     secret: i32,
-    active: Mutex<Option<Active>>,
+    active: lifecycle::Slot<Active>,
 }
 impl Session {
     fn cancel(&self) {
-        if let Some(a) = self
-            .active
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .as_ref()
-        {
-            a.cancel();
-        }
+        self.active.cancel();
     }
     fn finish(&self) {
-        self.active
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .take();
+        self.active.take();
     }
 }
+
 type Registry = Arc<Mutex<HashMap<i32, Arc<Session>>>>;
 struct Registered {
     id: i32,
@@ -301,7 +294,7 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
             }
             let session = Arc::new(Session {
                 secret: i32::from_ne_bytes(random),
-                active: Mutex::new(None),
+                active: lifecycle::Slot::new(None),
             });
             // IDs must never overwrite a live session, even after wrapping.
             {
@@ -468,15 +461,14 @@ async fn session_loop(
     state.catalog = Arc::clone(&catalog);
     let mut objects = Objects::new(metrics.clone());
     let mut runs: HashMap<String, fetch::Run> = HashMap::new();
-    let mut failed = false;
-    let mut statement_deadline: Option<Instant> = None;
+    let mut exchange = lifecycle::Exchange::new();
     loop {
-        if !failed && statement_deadline.is_some_and(|d| Instant::now() >= d) {
+        if exchange.timed_out(Instant::now()) {
             registered.session.finish();
             runs.clear();
             objects.portals.clear();
             state.failed();
-            failed = true;
+            exchange.failed = true;
             send_wire_error(&mut write, &WireError::timeout(), "").await;
         }
         runs.retain(|name, _| objects.portals.get(name).is_some());
@@ -491,7 +483,7 @@ async fn session_loop(
                 let lease = runs
                     .values()
                     .filter_map(fetch::Run::deadline)
-                    .chain(statement_deadline.filter(|_| !failed))
+                    .chain(exchange.deadline().filter(|_| !exchange.failed))
                     .min();
                 let received = if let Some(lease) = lease {
                     match tokio::time::timeout_at(lease.into(), input.recv()).await {
@@ -516,9 +508,7 @@ async fn session_loop(
             return Ok(());
         }
         if matches!(m, Message::Sync) {
-            statement_deadline = None;
-            failed = false;
-            if state.transaction == b'I' {
+            if exchange.sync(state.transaction) {
                 objects.portals.clear();
             }
             write
@@ -527,7 +517,7 @@ async fn session_loop(
             write.flush().await?;
             continue;
         }
-        if failed {
+        if exchange.ignoring() {
             continue;
         }
         if matches!(m, Message::Flush) {
@@ -542,9 +532,8 @@ async fn session_loop(
                 | Message::Bind { .. }
                 | Message::Describe(..)
                 | Message::Execute(..)
-        ) && statement_deadline.is_none()
-        {
-            statement_deadline = state.timeout().map(|d| Instant::now() + d);
+        ) {
+            exchange.begin(state.timeout().map(|d| Instant::now() + d));
         }
         if let Message::Execute(name, limit) = &m
             && let Some(p) = objects.portals.get(name).cloned()
@@ -588,7 +577,7 @@ async fn session_loop(
                     &metrics,
                     &catalog,
                     &state,
-                    statement_deadline,
+                    exchange.deadline(),
                     &p,
                     *limit,
                     &mut disconnected,
@@ -601,8 +590,8 @@ async fn session_loop(
                     return Ok(());
                 }
                 state.failed();
-                failed = true;
-                let e = deadline_error(e, statement_deadline);
+                exchange.failed = true;
+                let e = deadline_error(e, exchange.deadline());
                 send_wire_error(&mut write, &e, &p.statement.sql).await;
                 runs.clear();
                 objects.portals.clear();
@@ -614,7 +603,7 @@ async fn session_loop(
         let operation_deadline = if simple {
             state.timeout().map(|d| started + d)
         } else {
-            statement_deadline
+            exchange.deadline()
         };
         // Modes: 0 executes, 1 validates Parse, 2 describes a statement, 3 describes a portal.
         let mut mode = 0;
@@ -761,7 +750,7 @@ async fn session_loop(
         let copying = crate::copy::query(&sql).ok().flatten().is_some();
         if let Some(e) = error {
             state.failed();
-            failed = !simple;
+            exchange.failed = !simple;
             let e = deadline_error(e, operation_deadline);
             send_wire_error(&mut write, &e, &sql).await;
             let _ = writeln!(
@@ -928,7 +917,7 @@ async fn session_loop(
                 );
                 if let Err(e) = result {
                     state.failed();
-                    failed = !simple;
+                    exchange.failed = !simple;
                     let e = deadline_error(e, operation_deadline);
                     send_wire_error(&mut write, &e, &sql).await;
                 } else if mode == 1 {
@@ -959,11 +948,7 @@ async fn session_loop(
                 let (stop, mut stopped) = watch::channel(false);
                 let token = ScanCancel::new();
                 let cancelled = Arc::new(AtomicBool::new(false));
-                *registered
-                    .session
-                    .active
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(Active {
+                registered.session.active.install(Active {
                     token: token.clone(),
                     stop,
                     cancelled: Arc::clone(&cancelled),
@@ -1156,14 +1141,14 @@ async fn session_loop(
                     Ok(_) => {}
                     Err(e) => {
                         state.failed();
-                        failed = !simple;
+                        exchange.failed = !simple;
                         let e = deadline_error(e, operation_deadline);
                         send_wire_error(&mut write, &e, &sql).await;
                     }
                 }
             }
         }
-        if failed || state.transaction == b'E' {
+        if exchange.failed || state.transaction == b'E' {
             runs.clear();
             objects.portals.clear();
         }

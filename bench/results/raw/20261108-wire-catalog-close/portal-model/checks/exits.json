@@ -1,0 +1,75 @@
+{
+  "native-tests": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "nata-pgwire",
+      "-j",
+      "4"
+    ],
+    "exit": 0,
+    "expected": 0
+  },
+  "fmt": {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "exit": 0,
+    "expected": 0
+  },
+  "clippy": {
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "nata-pgwire",
+      "--all-targets",
+      "-j",
+      "4",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "expected": 0
+  },
+  "deny": {
+    "command": [
+      "cargo",
+      "deny",
+      "check"
+    ],
+    "exit": 0,
+    "expected": 0
+  },
+  "matrix": {
+    "command": [
+      "bash",
+      "scripts/wire-skeleton/run.sh"
+    ],
+    "exit": 1,
+    "expected": 1
+  },
+  "pg17-browse": {
+    "command": [
+      "bash",
+      "scripts/wire-browse/run-oracle.sh"
+    ],
+    "exit": 0,
+    "expected": 0
+  },
+  "job-chains": {
+    "command": [
+      "bash",
+      "scripts/gcp/test/test-job-chains.sh"
+    ],
+    "exit": 0,
+    "expected": 0
+  }
+}

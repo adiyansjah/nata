@@ -1,0 +1,86 @@
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: /home/dev/tmp-slice-close/clients/wire-skeleton-venv/bin/python3 -m pip install --upgrade pip
+   Compiling nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-exec)
+   Compiling nata-objstore v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-objstore)
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata-pgwire)
+   Compiling nata v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fa5c94e5/crates/nata)
+    Finished `dev` profile [unoptimized] target(s) in 8.87s
+psql connect PASS
+psql select PASS
+psql d PASS
+psql dt PASS
+psql dn PASS
+psql df PASS
+psql l PASS
+psql copy PASS
+psql copy-text PASS
+psql copy-csv PASS
+psql copy-table PASS
+psql timeout PASS
+psql cancel PASS
+psql recovery PASS
+psycopg connect PASS
+psycopg select PASS
+psycopg tables PASS
+psycopg columns PASS
+psycopg tables-filtered PASS
+psycopg columns-filtered PASS
+psycopg types PASS
+psycopg copy PASS
+psycopg copy-text PASS
+psycopg copy-csv PASS
+psycopg copy-table PASS
+psycopg timeout PASS
+psycopg cancel PASS
+psycopg recovery PASS
+raw fixture-byte-comparison PASS
+raw suspended-fixture-projections PASS
+raw malformed-frame PASS
+pgcli connect PASS
+pgcli select PASS
+pgcli completion schemata PASS
+pgcli completion tables PASS
+pgcli completion views PASS
+pgcli completion types PASS
+pgcli completion databases PASS
+pgcli completion casing PASS
+pgcli completion functions PASS
+pgcli completion PASS
+pgcli copy PASS
+pgcli timeout PASS
+pgcli cancel PASS
+pgcli recovery PASS
+ADBC connect PASS
+ADBC info PASS
+ADBC select PASS
+ADBC copy PASS
+ADBC objects-all PASS
+ADBC objects-catalogs PASS
+ADBC objects-db_schemas PASS
+ADBC objects-tables PASS
+ADBC objects-columns PASS
+ADBC schema PASS
+ADBC timeout PASS
+ADBC cancel PASS
+ADBC recovery PASS
+connect: PASS driver=42.7.14
+select: PASS
+getCatalogs: PASS
+getSchemas: PASS
+getTables: PASS
+getColumns: PASS
+getPrimaryKeys: PASS
+getIndexInfo: PASS
+getTypeInfo: PASS
+getFunctions: PASS
+positive-fetch: PASS
+timeout: PASS
+cancel: PASS
+copy-text: PASS
+copy-csv: PASS
+copy-table: PASS
+copy: PASS
+recovery: PASS

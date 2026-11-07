@@ -18,7 +18,7 @@ anyhow = "1"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 # `nata_loom` selects the model-checked build of crates/nata-sched (see its src/sync.rs); it is not a feature.
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)', 'cfg(nata_portal_loom)'] }
 
 [workspace.lints.clippy]
 todo = "deny"

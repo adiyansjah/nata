@@ -551,3 +551,109 @@ preserving evidence; scratch/build caches are local and contain no cloud data.
 
 Item-1 tested code-content SHA-256 (`scripts/code-tree.sh`):
 `224dfaa80ac330b2dfab67ef125a45706c3414b96b26564b0cbd885c5ff05aa9`.
+
+## Slice-close continuation: item 2 (2026-11-08)
+
+**Partial; slice 10 remains OPEN.** This continuation from `30cbbda` finishes
+item 2's implementation and local controls, then hands back before item 4.
+Items 4/3/5/7/6 are not implemented by this commit. The heavy template now has
+**five**, rather than six, explicit unprepared exit-1 gates. Do not launch it as
+complete slice-close acceptance. No GCP, timing benchmark, push, merge, new
+locked package, unsafe production code, ADR amendment or target change.
+
+| Item | Rule | Numbers / verdict | Command / remaining work |
+|---|---|---|---|
+| 2. Production portal lifecycle | Real production transitions; local loom bound 2 / heavy bound 3; suspended cancel inert, timeout through Sync, wake and exactly-once cleanup, replacement isolation, error drain | **Local PASS:** 7 models, **328 executions** at bound 2; **11/11 focused mutants CAUGHT**, 0 missed, 0 INVALID. Bound 3 and both-CPU replay **NOT RUN**, prepared as a heavy gate | `LOOM_MAX_PREEMPTIONS=2 bash crates/nata-pgwire/run_portal_loom.sh`; focused commands in raw evidence below |
+| 4. Nine client API cells | Every mandatory matrix row must be PASS; impossible APIs require a proposed parent-approved deviation, never a silent pass | **Acceptance FAIL:** 76 PASS / 0 FAIL / **9 not run**, matrix exits **1**. No new API probe or source-backed impossibility decision in this continuation | `WORK=... RESULTS=... bash scripts/wire-skeleton/run.sh`; next investigate positive-fetch for psql/psycopg/pgcli/ADBC and malformed-frame for all five clients, individually. Propose, do not apply, any deviation mechanism |
+| 3. Loaded resources / large catalog | 16 MiB metadata cap, two 64 KiB queued buffers, 5 s idle expiry, 2 s cleanup/send; 64 sessions, 1/8 workers, 64/1,024/10,000 tables, default/forced FD limits and healthy admission progress | **NOT PREPARED / NOT RUN** beyond inherited native controls. New metadata RSS/scratch adequacy and full-client contention budgets remain unfrozen in the reference record; no threshold invented | Replace `resource-gates` blocker with independent scratch/RSS/FD/admission sampling, cap-removal controls and matched large-catalog reference controls. Parent must resolve any missing reference-derived budget before Nata resource acceptance |
+| 5. PG16 parity | Official PGDG apt source on Debian 12; verify actual major/version and compare identical corpus on both CPUs | **NOT PREPARED / NOT RUN**. This turn's oracle is PG17.11, not PG16 | Replace `pg16-parity` with an explicit PG16 installer/cluster/oracle mode, source/package verification and dry-run/failure controls; retain default PG15 distinction |
+| 7. P16 | Frozen per-client/arm/CPU streaming median ≤1.10x matched PostgreSQL, 1/8 workers; paired small-query/prepare/reuse regression ≤1.20x pre-change Nata; planted slowdown fails | **NOT PREPARED / NOT RUN**. No local timing or threshold changes | Replace `p16-streaming-and-regression` with correctness-first alternating primary/twin harness, exact same clients/fixtures/sinks, min/median/spread, first-row check and miss profiles; run timing only on parent's heavy VMs |
+| 6. DBeaver / R24 | Actual shipped pgjdbc and source-derived connection-init/navigator capture; real UI required for UI certification | **NOT PREPARED / NOT RUN; R24 OPEN** | Replace `dbeaver-r24` with version-pinned DBeaver source/JAR evidence and faithful headless replay; disclose that headless replay cannot certify actual navigator UI |
+
+### Production seam and model limits
+
+`crates/nata-pgwire/src/server/lifecycle.rs` is included directly by the model
+and compiled into the server. `fetch::Gate` uses its row-credit transition and
+sticky close/wake; `Run` uses its phase/terminal Execute decision; `Session` uses
+its cancel slot; expiry and Drop share its take-once join owner. The event loop
+uses its first-message deadline, error-drain and Sync state. Terminal Execute
+and deadline-start decisions live in the core itself, so an outer production
+guard cannot mask those core mutants. The credit slot holds one Execute credit,
+not an unbounded resume queue; cancel selection stays locked through the cancel
+operation, before suspension publication.
+
+The crate-specific `nata_portal_loom` cfg swaps only that seam's Mutex/Condvar.
+Reusing the scheduler's `nata_loom` cfg made downstream Parquet's std/loom Arc
+APIs incompatible: that build failure is retained as **INVALID infrastructure**,
+not a mutant catch. A script edit overlapping that first running shell also
+failed; the finalized script subsequently passed. Both errors are retained in
+raw evidence, separate from the final passing commands.
+
+The seven cases explore **4, 3, 11, 3, 4, 302 and 1** executions respectively:
+cancel versus suspension publication; close versus park; four rows/two exact-end
+fetches, inert suspended cancel and resume; expiry credit versus park; pinned
+timer versus replacement; resume/expiry/cleanup ownership; and timeout across
+suspension followed by ignore-until-Sync and transaction/idle Sync cleanup.
+Completed/expired Execute decisions are terminal. Clock ticks, I/O and rollback
+cleanup are supplied boundary events: this does **not** instrument Tokio,
+sockets, scan internals, engine admissions/reservations or actual wall-clock
+delivery, nor prove unbounded sessions/fetches. Native tests check that wiring;
+item 3 still owes loaded resource/cleanup evidence. See
+`crates/nata-pgwire/PORTAL_MODEL.md` for bounds and reproduction.
+
+**Mutants:** all ten model controls CAUGHT: terminal resume, cancel selected
+outside the publication lock, lost credit notification, lost sticky close,
+non-idempotent cleanup, stale installed target, suspended cancel target retained,
+timeout restarted, error drain lost, and Sync error reset lost. The additional
+real-Tokio `portal-deadline-follows-replacement` mutant is CAUGHT by the native
+pinning test. The double-release control makes repeated cleanup try to own an
+already-taken join and panic; safe Rust cannot copy that non-Clone join handle.
+Lost wakes fail with loom deadlocks, not wall-clock timeouts. Every unmutated
+control passes; source fingerprints remain unchanged by private-copy mutation.
+All **96/96** registered edit anchors apply once. The full 96-mutant sweep is
+**NOT RUN locally**; the heavy wire-mutant step now also selects bound 3.
+
+**Final checks, after centralizing both decisions:** `cargo test --locked -p
+nata-pgwire -j 4`: **66 passed**, 0 failed/ignored (16 lib, 3 codec, 7 native
+model cases, 36 protocol, 4 reliability). Workspace fmt check, targeted all-target
+clippy with warnings denied, cargo-deny, Python/shell syntax and job-chain stubs
+PASS. Deny retains only existing unmatched allowance warnings. Local matrix
+acceptance **FAILS** as above. Local `/usr/lib/postgresql/17` oracle **PASS**:
+56/56 browse statements, 3/3 binary controls, 95/95 helper cases and 36/36 inventory
+classifications. PostgreSQL **17.11** / Nata marker **16.0**, x86-64, rustc
+**1.99.1**, local JDK **21.0.13**; no clean-VM/performance claim. R22, R24, R25,
+P14 and P16 remain open, including R25's full timeout-fixture decision.
+
+[Raw evidence and commands](raw/20261108-wire-catalog-close/portal-model/)
+include all focused failures, final model counts, final test/clippy/deny and
+matrix/oracle outputs. Text logs have trailing whitespace normalized only; JSON
+oracle payloads are unchanged. Builds/tests ran serially at `-j 4`. Private pgwire
+artifacts were package-cleaned before final real-source tests; obsolete build
+outputs and this run's stopped oracle cluster were reclaimed as disk approached
+20 GB. No package/version was added to Cargo.lock: only the conditional edge to
+already-locked **loom 0.7.2**. Its existing model-only unsafe inventory (lexical,
+including docs/comments) is recorded separately; no new unsafe code was added.
+
+Tested code-content SHA-256 (`scripts/code-tree.sh`):
+`d082db8f7edb3a1f520e5d3aac338ba63dee86117101c9719fdfa6ef892a1d03`.
+Commit SHA is supplied in the implementation handoff, avoiding self-reference.
+
+### Parent heavy commands (not executed; template still partial)
+
+The previous n4a-highcpu-16 / c3d-highcpu-16 pairing retains reference CPU
+classes and capacity for eight query workers, four build jobs and load/sampling
+actors. The inherited **2-hour cap per CPU** and **60 GB data disk** remain a
+reasoned ceiling/headroom for the prepared prefix, not a certified estimate for
+the five unbuilt gates. Re-plan sizing/hours after implementing them and obtain
+the real spend bound from `plan`. The first step records actual machine type
+from instance metadata; every `.exit`, including matrix exit 1, is a gate.
+Closing-commit bound-3, full mutants, deep/fuzz/sanitizer and both-CPU runs remain
+mandatory, in addition to the five unfinished items above.
+
+```sh
+cp scripts/wire-browse/slice-close.steps.example heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
+```

@@ -1,0 +1,685 @@
+[
+  {
+    "client": "ADBC",
+    "object": "function:array_agg",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      61
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "ADBC",
+    "object": "function:pg_my_temp_schema",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      58
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "ADBC",
+    "object": "function:unnest",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      61
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgcli",
+    "object": "function:array_agg",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      49
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgcli",
+    "object": "function:generate_subscripts",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      49
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgcli",
+    "object": "function:unnest",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      45,
+      49
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgcli",
+    "object": "pg_catalog.pg_depend",
+    "columns": [
+      "deptype",
+      "objid"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "deptype",
+      "objid"
+    ],
+    "statements": [
+      52
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgcli",
+    "object": "pg_catalog.pg_proc",
+    "columns": [
+      "oid",
+      "proallargtypes",
+      "proargdefaults",
+      "proargmodes",
+      "proargnames",
+      "proargtypes",
+      "prokind",
+      "proname",
+      "pronamespace",
+      "proretset",
+      "prorettype"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "proargdefaults"
+    ],
+    "statements": [
+      52
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:array_upper",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      32,
+      36
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:current_catalog",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      29
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:generate_series",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      32,
+      36
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:information_schema._pg_expandarray",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      33,
+      34,
+      66
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:pg_catalog.btrim",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      34
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:pg_catalog.substring",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      37
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:pg_get_function_result",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      37
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:replace",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      27
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "function:row_number",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      30
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "pgjdbc",
+    "object": "pg_catalog.pg_index",
+    "columns": [
+      "indexrelid",
+      "indisclustered",
+      "indisunique",
+      "indkey",
+      "indoption",
+      "indpred",
+      "indrelid"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "indisclustered",
+      "indoption",
+      "indpred"
+    ],
+    "statements": [
+      34,
+      66
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.array_to_string",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      7,
+      15,
+      22,
+      65
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.array_upper",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.generate_series",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.pg_get_function_arguments",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      21
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.pg_get_function_result",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      21
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.pg_get_statisticsobjdef_columns",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      8,
+      16
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:pg_catalog.pg_relation_is_publishable",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "function:string_agg",
+    "columns": [],
+    "covered": false,
+    "missing_columns": [],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_class",
+    "columns": [
+      "oid",
+      "relam",
+      "relchecks",
+      "relforcerowsecurity",
+      "relhasindex",
+      "relhasrules",
+      "relhastriggers",
+      "relispartition",
+      "relkind",
+      "relname",
+      "relnamespace",
+      "reloftype",
+      "relowner",
+      "relpartbound",
+      "relpersistence",
+      "relreplident",
+      "relrowsecurity",
+      "reltablespace",
+      "reltoastrelid"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "relpartbound"
+    ],
+    "statements": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      9,
+      10,
+      11,
+      12,
+      13,
+      17,
+      18,
+      19
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_database",
+    "columns": [
+      "datacl",
+      "datcollate",
+      "datctype",
+      "datdba",
+      "daticulocale",
+      "datlocprovider",
+      "datname",
+      "encoding"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "datacl",
+      "daticulocale",
+      "datlocprovider"
+    ],
+    "statements": [
+      22,
+      65
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_inherits",
+    "columns": [
+      "inhdetachpending",
+      "inhparent",
+      "inhrelid",
+      "inhseqno"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "inhdetachpending"
+    ],
+    "statements": [
+      10,
+      11,
+      18,
+      19
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_policy",
+    "columns": [
+      "polcmd",
+      "polname",
+      "polpermissive",
+      "polqual",
+      "polrelid",
+      "polroles",
+      "polwithcheck"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "polcmd",
+      "polname",
+      "polpermissive",
+      "polqual",
+      "polrelid",
+      "polroles",
+      "polwithcheck"
+    ],
+    "statements": [
+      7,
+      15
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_publication",
+    "columns": [
+      "oid",
+      "puballtables",
+      "pubname"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "oid",
+      "puballtables",
+      "pubname"
+    ],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_publication_namespace",
+    "columns": [
+      "pnnspid",
+      "pnpubid"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "pnnspid",
+      "pnpubid"
+    ],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_publication_rel",
+    "columns": [
+      "prattrs",
+      "prpubid",
+      "prqual",
+      "prrelid"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "prattrs",
+      "prpubid",
+      "prqual",
+      "prrelid"
+    ],
+    "statements": [
+      9,
+      17
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psql",
+    "object": "pg_catalog.pg_statistic_ext",
+    "columns": [
+      "oid",
+      "stxkind",
+      "stxname",
+      "stxnamespace",
+      "stxrelid",
+      "stxstattarget"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "oid",
+      "stxkind",
+      "stxname",
+      "stxnamespace",
+      "stxrelid",
+      "stxstattarget"
+    ],
+    "statements": [
+      8,
+      16
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psycopg",
+    "object": "information_schema.columns",
+    "columns": [
+      "character_maximum_length",
+      "character_octet_length",
+      "character_set_catalog",
+      "character_set_name",
+      "character_set_schema",
+      "collation_catalog",
+      "collation_name",
+      "collation_schema",
+      "column_default",
+      "column_name",
+      "data_type",
+      "datetime_precision",
+      "domain_catalog",
+      "domain_name",
+      "domain_schema",
+      "dtd_identifier",
+      "generation_expression",
+      "identity_cycle",
+      "identity_generation",
+      "identity_increment",
+      "identity_maximum",
+      "identity_minimum",
+      "identity_start",
+      "interval_precision",
+      "interval_type",
+      "is_generated",
+      "is_identity",
+      "is_nullable",
+      "is_self_referencing",
+      "is_updatable",
+      "maximum_cardinality",
+      "numeric_precision",
+      "numeric_precision_radix",
+      "numeric_scale",
+      "ordinal_position",
+      "scope_catalog",
+      "scope_name",
+      "scope_schema",
+      "table_catalog",
+      "table_name",
+      "table_schema",
+      "udt_catalog",
+      "udt_name",
+      "udt_schema"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "character_set_catalog",
+      "character_set_name",
+      "character_set_schema",
+      "collation_catalog",
+      "collation_name",
+      "collation_schema",
+      "dtd_identifier",
+      "identity_cycle",
+      "identity_generation",
+      "identity_increment",
+      "identity_maximum",
+      "identity_minimum",
+      "identity_start",
+      "interval_precision",
+      "interval_type",
+      "is_self_referencing",
+      "maximum_cardinality",
+      "scope_catalog",
+      "scope_name",
+      "scope_schema"
+    ],
+    "statements": [
+      41
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  },
+  {
+    "client": "psycopg",
+    "object": "information_schema.tables",
+    "columns": [
+      "commit_action",
+      "is_insertable_into",
+      "is_typed",
+      "reference_generation",
+      "self_referencing_column_name",
+      "table_catalog",
+      "table_name",
+      "table_schema",
+      "table_type",
+      "user_defined_type_catalog",
+      "user_defined_type_name",
+      "user_defined_type_schema"
+    ],
+    "covered": false,
+    "missing_columns": [
+      "commit_action",
+      "is_typed",
+      "reference_generation",
+      "self_referencing_column_name",
+      "user_defined_type_catalog",
+      "user_defined_type_name",
+      "user_defined_type_schema"
+    ],
+    "statements": [
+      40
+    ],
+    "effect": "Served only inside the frozen snapshot shapes; capabilities absent from the registry yield typed empty results. Standalone/other shapes retain tested 0A000 refusal.",
+    "verdict": "PASS"
+  }
+]

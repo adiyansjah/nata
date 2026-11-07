@@ -61,10 +61,10 @@ MUTANTS = {
                              'return sql.chars().take(i).map(char::len_utf8).sum::<usize>() + 1;',
                              'codec'),
  'sync-keeps-error-state': ('crates/nata-pgwire/src/server.rs',
-                            '            failed = false;',
-                            '            // mutant: never clear failed',
+                            '            if exchange.sync(state.transaction) {',
+                            "            if state.transaction == b'I' {",
                             'protocol'),
- 'extended-ignores-error-state': ('crates/nata-pgwire/src/server.rs', '        if failed {', '        if false {', 'protocol'),
+ 'extended-ignores-error-state': ('crates/nata-pgwire/src/server.rs', '        if exchange.ignoring() {', '        if false {', 'protocol'),
  'lost-bind-complete': ('crates/nata-pgwire/src/server.rs',
                         'codec::packet(b\'2\', b"")',
                         'codec::packet(b\'4\', b"")',
@@ -81,7 +81,7 @@ MUTANTS = {
                                    "if target == b'S' { 2 } else { 3 }",
                                    "if target == b'S' { 2 } else { 2 }",
                                    'protocol'),
- 'execute-row-limit-ignored': ('crates/nata-pgwire/src/server/fetch.rs', 'n == 1', 'false', 'protocol'),
+ 'execute-row-limit-ignored': ('crates/nata-pgwire/src/server/fetch.rs', 'lifecycle::row(&mut n)', '{ n = n.saturating_sub(1); false }', 'protocol'),
  'binary-formats-accepted': ('crates/nata-pgwire/src/extended.rs',
                              'if formats.iter().any(|f| !matches!(*f, 0 | 1)) {',
                              'if false {',
@@ -127,13 +127,13 @@ MUTANTS = {
 
 MUTANTS.update({
  'rowless-limit-refused': (SERVER, 'if column_count(&p.statement.description) != 0 {', 'if true {', 'protocol'),
- 'session-cancellation-disabled': (SERVER, '            a.cancel();', '            let _ = a;', 'reliability'),
+ 'session-cancellation-disabled': (SERVER, '        self.active.cancel();', '        // cancel lost', 'reliability'),
  'unbounded-bridge-slow-reader': (SERVER, 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(1_100_000)', 'reliability'),
  'live-decoder-guard-removed': (CODEC, 'if n > self.0.len() {', 'if false {', 'reliability'),
  'session-registry-leaked-after-kill': (SERVER, 'registry.remove(&self.id);', 'registry.get(&self.id);', 'reliability'),
  'named-statement-not-stored': (SERVER, 'self.map.insert(name, value).is_none()', 'name.is_empty() && self.map.insert(name, value).is_none()', 'protocol'),
  'named-overwrite-allowed': (SERVER, '!name.is_empty() && self.statements.get(name).is_some()', 'false && !name.is_empty() && self.statements.get(name).is_some()', 'protocol'),
- 'portal-survives-sync': (SERVER, "if state.transaction == b'I' {\n                objects.portals.clear();", "if false {\n                objects.portals.clear();", 'protocol'),
+ 'portal-survives-sync': (SERVER, "if exchange.sync(state.transaction) {\n                objects.portals.clear();", "if { exchange.sync(state.transaction); false } {\n                objects.portals.clear();", 'protocol'),
  'statement-count-cap-removed': (SERVER, 'self.statements.map.len() >= 256', 'false', 'protocol'),
  'statement-byte-cap-removed': (SERVER, 'bytes + name.len() + sql.len() > 4 * codec::MAX_SQL', 'false', 'protocol'),
  'portal-byte-cap-removed': (SERVER, 'bytes + name.len() + size(portal) > 16 * codec::MAX_SQL', 'false', 'protocol'),
@@ -167,12 +167,12 @@ MUTANTS.update({
 MUTANTS.update({
  'information-schema-column-missing': ('crates/nata-pgwire/src/metadata.rs', 'for (i, c) in t.source.columns.iter().enumerate() {', 'for (i, c) in t.source.columns.iter().enumerate().skip(1) {', 'lib'),
  'refused-catalog-answers-rows': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query outside the frozen browsing and ADBC bootstrap shapes",\n        ));', 'out.rows.push(vec![Some("invented".into())]); return Ok(Some(out));', 'protocol'),
- 'statement-timeout-restart-per-execute': (SERVER, '// Suspension preserves the statement deadline until Sync.', 'if result.is_ok() { statement_deadline = None; }', 'protocol'),
+ 'statement-timeout-restart-per-execute': (SERVER, '// Suspension preserves the statement deadline until Sync.', "if result.is_ok() { exchange.sync(state.transaction); }", 'protocol'),
  'portal-idle-wake-missing': ('crates/nata-pgwire/src/server/fetch.rs', 'let _ = resume.send(0);', 'let _ = resume;', 'lib'),
  'exact-end-suspension-missing': ('crates/nata-pgwire/src/server/fetch.rs', "codec::packet(b's', b\"\")", "codec::packet(b'C', b\"SELECT 0\\0\")", 'protocol'),
  'statement-timeout-not-enforced': ('crates/nata-pgwire/src/session.rs', '(ms != 0).then(', 'false.then(', 'protocol'),
  'refused-catalog-silent-empty': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query outside the frozen browsing and ADBC bootstrap shapes",\n        ));', 'return Ok(Some(out));', 'protocol'),
- 'cancel-applied-while-suspended': ('crates/nata-pgwire/src/server/fetch.rs', '.take(); // suspension transition', '.clone(); // suspension transition', 'protocol'),
+ 'cancel-applied-while-suspended': ('crates/nata-pgwire/src/server/fetch.rs', '.take(); // suspension transition', '.current(); // suspension transition', 'protocol'),
 })
 
 MUTANTS.update({
@@ -189,6 +189,21 @@ MUTANTS.update({
  'settings-datestyle-ignores-dmy': (SESSION, 'l.contains("dmy")', 'false', 'lib'),
  'show-describe-loses-column': ('crates/nata-pgwire/src/session/helpers.rs', 'let selected = [3, 6, 5, 4, 7, 8];', 'let selected = [3, 6, 5, 4, 8, 7];', 'lib'),
  'settings-pg-settings-wrong-value': ('crates/nata-pgwire/src/session/helpers.rs', 'Some(value.clone()),', 'Some("invented".into()),', 'lib'),
+})
+
+LIFECYCLE = 'crates/nata-pgwire/src/server/lifecycle.rs'
+MUTANTS.update({
+ 'portal-deadline-follows-replacement': ('crates/nata-pgwire/src/server/fetch.rs', 'let active = session.active.current();\n            Self(tokio::spawn(async move {\n                tokio::time::sleep(d).await;\n                if let Some(active) = active {', 'let session = Arc::clone(session);\n            Self(tokio::spawn(async move {\n                tokio::time::sleep(d).await;\n                if let Some(active) = session.active.current() {', 'lib'),
+ 'portal-resume-terminal': (LIFECYCLE, 'matches!(self, Self::Complete | Self::Expired)', 'false', 'portal_loom'),
+ 'portal-cancel-after-publication': (LIFECYCLE, 'if let Some(target) = self.0.lock().expect("cancel slot").as_ref() {', 'let selected = self.current();\n        if let Some(target) = selected {', 'portal_loom'),
+ 'portal-credit-lost-wake': (LIFECYCLE, 'self.wake.notify_all();\n        Ok(())', '/* lost resume/expiry notification */\n        Ok(())', 'portal_loom'),
+ 'portal-close-lost-wake': (LIFECYCLE, 'self.value.lock().expect("credit").1 = true;', 'self.value.lock().expect("credit").1 = false;', 'portal_loom'),
+ 'portal-double-release': (LIFECYCLE, 'self.0.lock().expect("cleanup owner").take()', 'self.0.lock().expect("cleanup owner").take().map(Some).unwrap_or_else(|| panic!("double release"))', 'portal_loom'),
+ 'portal-stale-token': (LIFECYCLE, '*self.0.lock().expect("cancel slot") = Some(value);', 'let _ = value; // retain stale target', 'portal_loom'),
+ 'portal-suspended-cancel': (LIFECYCLE, 'self.0.lock().expect("cancel slot").take()', 'self.0.lock().expect("cancel slot").clone()', 'portal_loom'),
+ 'portal-timeout-restarts': (LIFECYCLE, 'if self.deadline.is_none() {', 'if true {', 'portal_loom'),
+ 'portal-error-drain-lost': (LIFECYCLE, 'pub(super) fn ignoring(&self) -> bool {\n        self.failed', 'pub(super) fn ignoring(&self) -> bool {\n        false', 'portal_loom'),
+ 'portal-sync-keeps-error': (LIFECYCLE, 'self.failed = false;', '/* error not reset */', 'portal_loom'),
 })
 
 def fingerprint():
@@ -215,15 +230,18 @@ def main():
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.work/'target'), CARGO_TERM_COLOR='never')
     def test(suite):
         try:
-            p = subprocess.run(['cargo','test','--locked','-j','4','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite])+([a.filter] if a.filter else []), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
+            test_env = dict(env)
+            if suite == 'portal_loom':
+                test_env['RUSTFLAGS'] = test_env.get('RUSTFLAGS', '') + ' --cfg nata_portal_loom'
+            p = subprocess.run(['cargo','test','--locked','-j','4','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite])+([a.filter] if a.filter else [])+(['--','--test-threads=1','--nocapture'] if suite == 'portal_loom' else []), cwd=ws, env=test_env, capture_output=True, text=True, timeout=1200)
             return p.returncode, p.stdout+p.stderr
         except subprocess.TimeoutExpired:
             return 99, 'timeout'
     names = a.names or list(MUTANTS)
     for suite in sorted({MUTANTS[n][3] for n in names}):
         rc, out = test(suite)
+        (a.work/('unmutated-'+suite+'.log')).write_text(out)
         if rc:
-            (a.work/('unmutated-'+suite+'.log')).write_text(out)
             print('unmutated copy FAILS\n'+out[-4000:]); return 2
         print('unmutated '+suite+': PASS', flush=True)
     bad = 0
@@ -236,7 +254,7 @@ def main():
         else:
             p.write_text(original.replace(old,new))
             rc, out = test(suite)
-            status = 'SURVIVED' if rc == 0 else ('CAUGHT' if rc != 99 and ('test result: FAILED' in out or 'process didn\'t exit successfully' in out) and 'could not compile' not in out else 'INVALID')
+            status = 'SURVIVED' if rc == 0 else ('CAUGHT' if rc != 99 and ('test result: FAILED' in out or 'process didn\'t exit successfully' in out or ('panicked' in out and 'deadlock' in out)) and 'could not compile' not in out else 'INVALID')
         p.write_text(original)
         (a.work/(name+'.log')).write_text(out)
         print(name+': '+status, flush=True)

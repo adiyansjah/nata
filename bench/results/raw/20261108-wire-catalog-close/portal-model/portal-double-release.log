@@ -1,0 +1,34 @@
+
+running 7 tests
+test cancel_selection_linearizes_before_suspension_publication ... ok
+test close_before_or_after_park_cannot_lose_wake ... ok
+test execute_limit_suspend_inert_cancel_resume_and_exact_end ... ok
+test expiry_credit_before_or_after_park_cannot_lose_wake ... ok
+test pinned_timer_and_cancel_do_not_follow_replacement ... ok
+test resume_races_expiry_and_cleanup_wakes_once ... FAILED
+test timeout_across_suspension_error_drain_until_sync_and_rollback ... FAILED
+
+failures:
+
+failures:
+    resume_races_expiry_and_cleanup_wakes_once
+    timeout_across_suspension_error_drain_until_sync_and_rollback
+
+test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-s10-model/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 3.60s
+     Running tests/portal_loom.rs (/home/dev/tmp-s10-model/mutants/target/debug/deps/portal_loom-6330a6a0b4a7dd08)
+[portal-loom] executions=4 bound=2
+[portal-loom] executions=3 bound=2
+[portal-loom] executions=11 bound=2
+[portal-loom] executions=3 bound=2
+[portal-loom] executions=4 bound=2
+
+thread 'resume_races_expiry_and_cleanup_wakes_once' (2209744) panicked at crates/nata-pgwire/tests/../src/server/lifecycle.rs:42:82:
+double release
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'timeout_across_suspension_error_drain_until_sync_and_rollback' (2209745) panicked at crates/nata-pgwire/tests/../src/server/lifecycle.rs:42:82:
+double release
+error: test failed, to rerun pass `-p nata-pgwire --test portal_loom`

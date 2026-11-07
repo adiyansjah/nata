@@ -1,0 +1,49 @@
+INVALID build attempt, not a mutant catch. Corrected by crate-specific nata_portal_loom.
+error[E0308]: mismatched types
+   --> crates/nata-parquet/src/parallel.rs:226:13
+    |
+225 |         let sched = Scheduler::new(
+    |                     -------------- arguments to this function are incorrect
+226 |             work,
+    |             ^^^^ expected `Arc<_>`, found `Arc<ScanWork>`
+    |
+    = note: `std::sync::Arc<ScanWork>` and `nata_sched::sync::Arc<_>` have similar names, but are actually distinct types
+note: `std::sync::Arc<ScanWork>` is defined in crate `alloc`
+   --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/alloc/src/sync.rs:274:0
+note: `nata_sched::sync::Arc<_>` is defined in crate `loom`
+   --> /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/sync/arc.rs:9:1
+    |
+  9 | pub struct Arc<T: ?Sized> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+note: associated function defined here
+   --> crates/nata-sched/src/lib.rs:697:12
+    |
+697 |     pub fn new(work: Arc<W>, cfg: Config) -> Scheduler<W> {
+    |            ^^^
+help: call `Into::into` on this expression to convert `std::sync::Arc<ScanWork>` into `nata_sched::sync::Arc<_>`
+    |
+226 |             work.into(),
+    |                 +++++++
+
+
+error[E0308]: mismatched types
+   --> crates/nata-parquet/src/reader.rs:789:70
+    |
+789 |                     match nata_sched::memory::MemoryManager::request(memory, 0, bytes) {
+    |                           ------------------------------------------ ^^^^^^ expected `nata_sched::sync::Arc<MemoryManager>`, found `std::sync::Arc<MemoryManager>`
+    |                           |
+    |                           arguments to this function are incorrect
+    |
+    = note: `std::sync::Arc<MemoryManager>` and `nata_sched::sync::Arc<MemoryManager>` have similar names, but are actually distinct types
+note: `std::sync::Arc<MemoryManager>` is defined in crate `alloc`
+   --> /rustc/58cf8f9c35b355199727627d07ae34a4e2846d67/library/alloc/src/sync.rs:274:0
+note: `nata_sched::sync::Arc<MemoryManager>` is defined in crate `loom`
+   --> /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/loom-0.7.2/src/sync/arc.rs:9:1
+    |
+  9 | pub struct Arc<T: ?Sized> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^
+note: associated function defined here
+   --> crates/nata-sched/src/memory.rs:141:12
+    |
+141 |     pub fn request(
+    |            ^^^^^^^
