@@ -1,0 +1,33 @@
+psql connect PASS
+psql select PASS
+psql d FAIL 1
+psql dt FAIL 1
+psql dn FAIL 1
+psql df FAIL 1
+psql l FAIL 1
+psql timeout FAIL 1
+psql copy PASS
+psycopg connect PASS
+psycopg select PASS
+psycopg tables FAIL 0A000
+psycopg columns FAIL 0A000
+psycopg types FAIL 0A000
+psycopg timeout FAIL 0A000
+psycopg copy PASS
+psycopg error-recovery PASS
+psycopg SQL-cursor-refusal PASS
+psycopg cancel-recovery PASS
+raw malformed-frame-isolation PASS
+connect: PASS driver=42.7.7
+select: PASS
+getCatalogs: FAIL 0A000
+getSchemas: FAIL 42883
+getTables: FAIL 42883
+getColumns: FAIL 42883
+getPrimaryKeys: FAIL 42883
+getIndexInfo: FAIL 42883
+getTypeInfo: FAIL 0A000
+positive-fetch: FAIL 0A000
+timeout: FAIL 0A000
+copy: PASS
+error-recovery: PASS
