@@ -738,3 +738,34 @@ R12/P11 have this implementation and its evidence. Their register entries stay
 open pending the parent's settled both-CPU verdict and the remaining
 text/date/float conversion adapters; the bounded proofs above do not certify
 those adapters or the full i128 input domain.
+
+
+## Step 2a timing on settled machines (runs `perf2a-x86`, `perf2a-arm64`, added by the parent, 2026-11-08)
+
+Baseline `af2a5a2` against the vectorized commit, both built from committed archives on the same VM, 5 alternating rounds with a twin,
+DuckDB 2.0.0 alongside, SF1. VM compute $0.037 (x86-64) and $0.042 (ARM64). Raw: `raw/20261108-hash-aggregate-perf2a-gcp/`. The
+child's one local sanity run (2.2 s against 1.1 s) was machine noise: the settled runs show no regression in any cell.
+
+| Machine | Query | Threads | Budget | baseline s | vectorized s | change | DuckDB s | vectorized / DuckDB |
+|---|---|---:|---|---:|---:|---:|---:|---:|
+| c3d-highcpu-8 | q1 | 1 | in memory | 2.628 | 2.145 | 0.82x | 0.235 | 9.1x |
+| c3d-highcpu-8 | q1 | 1 | 64 MiB | 2.571 | 2.173 | 0.85x | 0.239 | 9.1x |
+| c3d-highcpu-8 | q1 | 8 | in memory | 1.101 | 0.917 | 0.83x | 0.106 | 8.6x |
+| c3d-highcpu-8 | q1 | 8 | 64 MiB | 1.199 | 1.072 | 0.89x | 0.104 | 10.3x |
+| c3d-highcpu-8 | high_cardinality_tpch | 1 | in memory | 4.715 | 4.463 | 0.95x | 1.235 | 3.6x |
+| c3d-highcpu-8 | high_cardinality_tpch | 1 | 64 MiB | 14.830 | 14.688 | 0.99x | 1.385 | 10.6x |
+| c3d-highcpu-8 | high_cardinality_tpch | 8 | in memory | 3.100 | 3.097 | 1.00x | 0.890 | 3.5x |
+| c3d-highcpu-8 | high_cardinality_tpch | 8 | 64 MiB | 17.254 | 17.332 | 1.00x | 1.236 | 14.0x |
+| n4a-highcpu-8 | q1 | 1 | in memory | 2.241 | 1.829 | 0.82x | 0.230 | 7.9x |
+| n4a-highcpu-8 | q1 | 1 | 64 MiB | 2.237 | 1.827 | 0.82x | 0.238 | 7.7x |
+| n4a-highcpu-8 | q1 | 8 | in memory | 0.728 | 0.652 | 0.90x | 0.079 | 8.3x |
+| n4a-highcpu-8 | q1 | 8 | 64 MiB | 1.079 | 0.932 | 0.86x | 0.078 | 11.9x |
+| n4a-highcpu-8 | high_cardinality_tpch | 1 | in memory | 3.964 | 3.816 | 0.96x | 1.026 | 3.7x |
+| n4a-highcpu-8 | high_cardinality_tpch | 1 | 64 MiB | 12.006 | 11.834 | 0.99x | 1.186 | 10.0x |
+| n4a-highcpu-8 | high_cardinality_tpch | 8 | in memory | 2.725 | 2.707 | 0.99x | 0.723 | 3.7x |
+| n4a-highcpu-8 | high_cardinality_tpch | 8 | 64 MiB | 13.463 | 13.513 | 1.00x | 0.980 | 13.8x |
+
+**Verdict:** Q1 11-18% faster on both CPU types, the high-cardinality query and spill unchanged. Against the frozen targets: **NOT MET**
+(Q1 7.7-11.9x DuckDB against 1.5x; high cardinality 3.5-3.7x in memory against 2x; spill 10-14x against 2x). With scalar arithmetic at
+0.2% of the profile, most of Q1's remaining gap is outside the aggregate's arithmetic, while the slice 3 spike ran reduced Q1 at
+0.79-0.94x DuckDB: step 2b profiles the whole path stage by stage against the spike on the same machine before more optimisation.
