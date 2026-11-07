@@ -816,3 +816,16 @@ min/median/spread and samples retained. `test_p16.py` PASS at exact boundaries,
 1.101x/1.201x slowdown and 5.1% reference noise controls. Smoke uses 100 rows,
 one round and 1 worker, always labelled SMOKE ONLY; baseline=current is a harness
 control only. No performance acceptance inferred locally.
+
+### Closeout preparation E: DBeaver R24 source limit
+
+DBeaver 25.2.0 sources and exact file/line citations in
+`scripts/wire-skeleton/dbeaver.json`; headless JDBC replay is integrated in the
+matrix via `DBEAVER_JAR`. Local declared-fallback pgjdbc 42.7.2 replay:
+**1 PASS / 5 FAIL**: version passes; current_database reports 42883;
+database/schema/table/column native navigator shapes report 0A000. These shapes
+are beyond the frozen corpus, so no catalog emulation was added. `RELEASE[42.7.2]`
+is a dynamic dependency declaration, not evidence of an installed UI's shipped
+JAR. R24 remains OPEN; this source replay does not complete shipped-driver/UI or
+optional keys/indexes/properties certification. Matrix/checker must retain these
+as FAIL; the parent's nine deviations cannot waive new DBeaver failures.

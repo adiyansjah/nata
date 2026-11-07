@@ -246,6 +246,21 @@ try:
         for line in j.stdout.splitlines():
             if ': ' in line:k,v=line.split(': ',1);results['pgjdbc '+k]=v
     else:results['pgjdbc']='not run: --jar absent'
+    # DBeaver 25.2.0 source-derived native PostgreSQL navigator path.
+    # Explicit fallback JAR is distinct from the generic JDBC matrix JAR.
+    dbeaver_jar=os.environ.get('DBEAVER_JAR')
+    if dbeaver_jar:
+        corpus=json.loads((root/'scripts/wire-skeleton/dbeaver.json').read_text())
+        files=[]
+        for n,item in enumerate(corpus['queries']):
+            f=a.work/f'dbeaver-{n}.sql';f.write_text(item['sql']);files.append(str(f))
+        subprocess.run(['javac','-cp',dbeaver_jar,'-d',str(a.work),str(root/'scripts/wire-skeleton/DBeaverReplay.java')],check=True)
+        replay=subprocess.run(['java','-cp',str(a.work)+':'+dbeaver_jar,'DBeaverReplay',str(port),*files],check=True,capture_output=True,text=True)
+        (a.work/'dbeaver-replay.txt').write_text(replay.stdout)
+        for line in replay.stdout.splitlines():
+            if ': ' in line:
+                n,result=line.split(': ',1)
+                results['DBeaver source '+corpus['queries'][int(n)]['action']]=result
 finally:
     for client in ('psql','pgjdbc','psycopg','pgcli','ADBC'):
         for action in ('positive-fetch','copy','timeout','cancel','recovery','malformed-frame'):

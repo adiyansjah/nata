@@ -1,0 +1,38 @@
+{
+  "version": "25.2.0",
+  "driver_declaration": "maven:/org.postgresql:postgresql:RELEASE[42.7.2]",
+  "driver_source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/plugin.xml#L343",
+  "limit": "Source replay only. RELEASE is resolved at installation; 42.7.2 is the declared fallback, not proof of a GUI installation's bundled driver. No UI certification.",
+  "queries": [
+    {
+      "action": "connection-current-database",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreDataSource.java#L204",
+      "sql": "SELECT current_database()"
+    },
+    {
+      "action": "connection-version",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreDataSource.java#L448",
+      "sql": "SELECT version()"
+    },
+    {
+      "action": "databases",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreDataSource.java#L232",
+      "sql": "SELECT db.oid,db.* FROM pg_catalog.pg_database db WHERE 1 = 1 AND datallowconn AND NOT datistemplate OR db.datname ='nata'\nORDER BY db.datname"
+    },
+    {
+      "action": "schemas",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreDatabase.java#L1340",
+      "sql": "SELECT n.oid,n.*,d.description FROM pg_catalog.pg_namespace n\nLEFT OUTER JOIN pg_catalog.pg_description d ON d.objoid=n.oid AND d.objsubid=0 AND d.classoid='pg_namespace'::regclass\nORDER BY n.nspname"
+    },
+    {
+      "action": "tables",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreSchema.java#L850",
+      "sql": "SELECT c.oid,c.*,d.description,pg_catalog.pg_get_expr(c.relpartbound, c.oid) as partition_expr,  pg_catalog.pg_get_partkeydef(c.oid) as partition_key \nFROM pg_catalog.pg_class c\nLEFT OUTER JOIN pg_catalog.pg_description d ON d.objoid=c.oid AND d.objsubid=0 AND d.classoid='pg_class'::regclass\nWHERE c.relnamespace='public'::regnamespace AND c.relkind not in ('i','I','c')"
+    },
+    {
+      "action": "columns",
+      "source": "https://github.com/dbeaver/dbeaver/blob/25.2.0/plugins/org.jkiss.dbeaver.ext.postgresql/src/org/jkiss/dbeaver/ext/postgresql/model/PostgreSchema.java#L888",
+      "sql": "SELECT c.relname,a.*,pg_catalog.pg_get_expr(ad.adbin, ad.adrelid, true) as def_value,dsc.description,dep.objid\nFROM pg_catalog.pg_attribute a\nINNER JOIN pg_catalog.pg_class c ON (a.attrelid=c.oid)\nLEFT OUTER JOIN pg_catalog.pg_attrdef ad ON (a.attrelid=ad.adrelid AND a.attnum = ad.adnum)\nLEFT OUTER JOIN pg_catalog.pg_description dsc ON (c.oid=dsc.objoid AND a.attnum = dsc.objsubid)\nLEFT OUTER JOIN pg_depend dep on dep.refobjid = a.attrelid AND dep.deptype = 'i' and dep.refobjsubid = a.attnum and dep.classid = dep.refclassid\nWHERE NOT a.attisdropped AND c.relkind not in ('i','I','c') AND c.oid='public.all_types'::regclass\nORDER BY a.attnum"
+    }
+  ]
+}

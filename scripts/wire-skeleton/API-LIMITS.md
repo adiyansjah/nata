@@ -45,3 +45,23 @@ cap or 128 KiB queue is not a process RSS ceiling. Supplying one would invent a
 new target; accepting without it changes the card rule. Parent must supply a
 reference-only RSS/adequacy freeze before resource acceptance proceeds. No ADR,
 threshold or heavy-template exit has been changed here.
+
+## Parent decision and DBeaver source replay, 2026-11-08
+
+The parent subsequently accepted the nine deviations in `deviations.json` and
+froze the card's RSS formula; the historical proposal/stop above is superseded
+by that dated decision. `check-deviations.py` checks every non-PASS cell and
+rejects unknown not-run cells and all FAIL rows.
+
+`dbeaver.json` cites the DBeaver **25.2.0** native PostgreSQL source paths and
+line numbers for initialization and database/schema/table/column expansion.
+`DBEAVER_JAR` runs those queries through JDBC inside the matrix. The version's
+plugin.xml declares `RELEASE[42.7.2]`: 42.7.2 is a fallback, while RELEASE resolves
+at installation. The local source replay uses that declared fallback and records
+the actual JDBC metadata version; it cannot establish the bundled/resolved JAR
+of a real DBeaver installation. No claim of UI capture or shipped-JAR certification.
+Object lookup parameters are bound to the synthetic public.all_types identity.
+The six probes cover connection/version and navigator expansion, not all optional
+properties, key/index tabs, user preferences or extension branches. Unsupported
+queries remain FAIL, not invented empty catalogs or accepted API deviations.
+R24 stays OPEN for those failures and the real UI/installed-driver evidence.
