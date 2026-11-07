@@ -1,0 +1,25 @@
+
+running 2 tests
+test metadata::tests::snapshot_columns_preserve_every_field_in_order ... ok
+test browse::tests::snapshot_filters_identity_types_and_ordering ... FAILED
+
+failures:
+
+---- browse::tests::snapshot_filters_identity_types_and_ordering stdout ----
+
+thread 'browse::tests::snapshot_filters_identity_types_and_ordering' (1034565) panicked at crates/nata-pgwire/src/browse.rs:921:9:
+assertion `left == right` failed
+  left: Some("24")
+ right: Some("23")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    browse::tests::snapshot_filters_identity_types_and_ordering
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-browse/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.24s
+     Running unittests src/lib.rs (/home/dev/tmp-browse/mutants/target/debug/deps/nata_pgwire-fc1e69ef8cad2ee7)
+error: test failed, to rerun pass `-p nata-pgwire --lib`

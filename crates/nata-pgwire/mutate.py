@@ -166,13 +166,19 @@ MUTANTS.update({
 
 MUTANTS.update({
  'information-schema-column-missing': ('crates/nata-pgwire/src/metadata.rs', 'for (i, c) in t.source.columns.iter().enumerate() {', 'for (i, c) in t.source.columns.iter().enumerate().skip(1) {', 'lib'),
- 'refused-catalog-answers-rows': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query; only exact ADBC type bootstrap is supported",\n        ));', 'out.rows.push(vec![Some("invented".into())]); return Ok(Some(out));', 'protocol'),
+ 'refused-catalog-answers-rows': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query outside the frozen browsing and ADBC bootstrap shapes",\n        ));', 'out.rows.push(vec![Some("invented".into())]); return Ok(Some(out));', 'protocol'),
  'statement-timeout-restart-per-execute': (SERVER, '// Suspension preserves the statement deadline until Sync.', 'if result.is_ok() { statement_deadline = None; }', 'protocol'),
  'portal-idle-wake-missing': ('crates/nata-pgwire/src/server/fetch.rs', 'let _ = resume.send(0);', 'let _ = resume;', 'lib'),
  'exact-end-suspension-missing': ('crates/nata-pgwire/src/server/fetch.rs', "codec::packet(b's', b\"\")", "codec::packet(b'C', b\"SELECT 0\\0\")", 'protocol'),
  'statement-timeout-not-enforced': ('crates/nata-pgwire/src/session.rs', '(ms != 0).then(', 'false.then(', 'protocol'),
- 'refused-catalog-silent-empty': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query; only exact ADBC type bootstrap is supported",\n        ));', 'return Ok(Some(out));', 'protocol'),
+ 'refused-catalog-silent-empty': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query outside the frozen browsing and ADBC bootstrap shapes",\n        ));', 'return Ok(Some(out));', 'protocol'),
  'cancel-applied-while-suspended': ('crates/nata-pgwire/src/server/fetch.rs', '.take(); // suspension transition', '.clone(); // suspension transition', 'protocol'),
+})
+
+MUTANTS.update({
+ 'browse-wrong-attribute-oid': ('crates/nata-pgwire/src/browse.rs', 'let (oid, len, modif) = crate::codec::type_info(ty);', 'let (_, len, modif) = crate::codec::type_info(ty); let oid = 24;', 'lib'),
+ 'browse-column-missing': ('crates/nata-pgwire/src/browse.rs', 'for (i, c) in t.source.columns.iter().enumerate() {\n                        let ty = column_type(t, i)?;', 'for (i, c) in t.source.columns.iter().enumerate().skip(1) {\n                        let ty = column_type(t, i)?;', 'lib'),
+ 'browse-wrong-column-order': ('crates/nata-pgwire/src/browse.rs', 'ordered.sort_by_key(|t| (&t.schema, &t.name));', 'ordered.sort_by_key(|t| std::cmp::Reverse((&t.schema, &t.name)));', 'lib'),
 })
 
 def fingerprint():

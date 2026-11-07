@@ -1,0 +1,575 @@
+[
+  {
+    "shape": 0,
+    "statements": [
+      0
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Visible registered tables; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/0.sql"
+  },
+  {
+    "shape": 1,
+    "statements": [
+      1
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered tables across schemas; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/1.sql"
+  },
+  {
+    "shape": 2,
+    "statements": [
+      2,
+      3
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Schema-pattern table list; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/2.sql"
+  },
+  {
+    "shape": 4,
+    "statements": [
+      4,
+      12
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Relation identity by schema/name pattern; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/4.sql"
+  },
+  {
+    "shape": 5,
+    "statements": [
+      5,
+      13
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered table properties; absent PostgreSQL heap/replication capabilities; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/5.sql"
+  },
+  {
+    "shape": 6,
+    "statements": [
+      6,
+      14
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Attributes, format_type, absent defaults/collations/identity/generated expressions; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/6.sql"
+  },
+  {
+    "shape": 7,
+    "statements": [
+      7,
+      15
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No row policies; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/7.sql"
+  },
+  {
+    "shape": 8,
+    "statements": [
+      8,
+      16
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No extended statistics; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/8.sql"
+  },
+  {
+    "shape": 9,
+    "statements": [
+      9,
+      17
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No publications or publication membership; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/9.sql"
+  },
+  {
+    "shape": 10,
+    "statements": [
+      10,
+      18
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No inheritance parents; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/10.sql"
+  },
+  {
+    "shape": 11,
+    "statements": [
+      11,
+      19
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No inheritance children or partitions; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/11.sql"
+  },
+  {
+    "shape": 20,
+    "statements": [
+      20
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered schema names and compatibility owner; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/20.sql"
+  },
+  {
+    "shape": 21,
+    "statements": [
+      21
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No SQL-callable user functions; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/21.sql"
+  },
+  {
+    "shape": 22,
+    "statements": [
+      22
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered catalogs; C byte ordering; unknown locale provider/ICU/ACL; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/22.sql"
+  },
+  {
+    "shape": 26,
+    "statements": [
+      26
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered catalogs; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/26.sql"
+  },
+  {
+    "shape": 27,
+    "statements": [
+      27
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Namespaces with effective search_path predicates; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/27.sql"
+  },
+  {
+    "shape": 28,
+    "statements": [
+      28
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered tables, namespace classification and absent descriptions; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/28.sql"
+  },
+  {
+    "shape": 29,
+    "statements": [
+      29
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Current catalog routing label; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/29.sql"
+  },
+  {
+    "shape": 30,
+    "statements": [
+      30
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Source columns, exact type OIDs/typmods/lengths and source ordinals; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/30.sql"
+  },
+  {
+    "shape": 31,
+    "statements": [
+      31
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Supported scalar type namespace/name by OID; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/31.sql"
+  },
+  {
+    "shape": 32,
+    "statements": [
+      32
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Supported scalar type flags by OID; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/32.sql"
+  },
+  {
+    "shape": 33,
+    "statements": [
+      33
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No primary keys; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/33.sql"
+  },
+  {
+    "shape": 34,
+    "statements": [
+      34
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No indexes; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/34.sql"
+  },
+  {
+    "shape": 35,
+    "statements": [
+      35
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Supported scalar wire types; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/35.sql"
+  },
+  {
+    "shape": 36,
+    "statements": [
+      36
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Supported scalar type flags in OID order; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/36.sql"
+  },
+  {
+    "shape": 37,
+    "statements": [
+      37
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No SQL-callable functions; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/37.sql"
+  },
+  {
+    "shape": 40,
+    "statements": [
+      40
+    ],
+    "clients": [
+      "psycopg"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Complete captured information_schema.tables projection; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/40.sql"
+  },
+  {
+    "shape": 41,
+    "statements": [
+      41
+    ],
+    "clients": [
+      "psycopg"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Complete captured information_schema.columns projection; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/41.sql"
+  },
+  {
+    "shape": 42,
+    "statements": [
+      42
+    ],
+    "clients": [
+      "psycopg"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Supported scalar type/namespace join; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/42.sql"
+  },
+  {
+    "shape": 45,
+    "statements": [
+      45
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Effective current_schemas, unnested as names; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/45.sql"
+  },
+  {
+    "shape": 46,
+    "statements": [
+      46
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Compatibility and registered namespaces; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/46.sql"
+  },
+  {
+    "shape": 47,
+    "statements": [
+      47
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Table/view completion over registered relations; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/47.sql"
+  },
+  {
+    "shape": 48,
+    "statements": [
+      48
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Attribute completion and absent defaults; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/48.sql"
+  },
+  {
+    "shape": 49,
+    "statements": [
+      49
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No foreign keys; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/49.sql"
+  },
+  {
+    "shape": 50,
+    "statements": [
+      50
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No user-defined non-table types; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/50.sql"
+  },
+  {
+    "shape": 51,
+    "statements": [
+      51
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered catalogs; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/51.sql"
+  },
+  {
+    "shape": 52,
+    "statements": [
+      52
+    ],
+    "clients": [
+      "pgcli"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No SQL-callable functions, extension dependencies or argument defaults; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/52.sql"
+  },
+  {
+    "shape": 54,
+    "statements": [
+      54
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Snapshot attribute bootstrap, ordered by relation OID and source ordinal; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/session.rs"
+  },
+  {
+    "shape": 55,
+    "statements": [
+      55
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Scalar type bootstrap, exact receive names and array identities; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/session.rs"
+  },
+  {
+    "shape": 57,
+    "statements": [
+      57
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered catalogs; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/57.sql"
+  },
+  {
+    "shape": 58,
+    "statements": [
+      58
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered non-system namespaces; no temp schema; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/58.sql"
+  },
+  {
+    "shape": 59,
+    "statements": [
+      59
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered relations by namespace and relation kind; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/59.sql"
+  },
+  {
+    "shape": 60,
+    "statements": [
+      60
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered columns, ordinals, absent comments and type names; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/60.sql"
+  },
+  {
+    "shape": 61,
+    "statements": [
+      61
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "No constraints for GetObjects; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/61.sql"
+  },
+  {
+    "shape": 62,
+    "statements": [
+      62
+    ],
+    "clients": [
+      "ADBC"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Registered regclass identity and attributes in source ordinal order; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/62.sql"
+  },
+  {
+    "shape": 65,
+    "statements": [
+      65
+    ],
+    "clients": [
+      "psql"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Captured psql 17 catalog-list variant, including absent ICU rules and NULL ACL array_length semantics; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/65.sql"
+  },
+  {
+    "shape": 66,
+    "statements": [
+      66
+    ],
+    "clients": [
+      "pgjdbc"
+    ],
+    "choice": "recognised normalized shape -> typed snapshot operation",
+    "reason": "Captured pgjdbc 42.7.7 primary-key variant over absent indexes, including indnkeyatts; direct lowering covers the frozen client SQL without general joins, subqueries, arrays or window operators for user data.",
+    "source": "crates/nata-pgwire/src/browse/66.sql"
+  }
+]

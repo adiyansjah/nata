@@ -73,7 +73,23 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
             .map_err(|_| invalid())?
             .to_be_bytes()
             .to_vec(),
-        23 => s
+        24 => {
+            let oid: i32 = match s {
+                "boolrecv" => 2436,
+                "int8recv" => 2408,
+                "int2recv" => 2404,
+                "int4recv" => 2406,
+                "textrecv" => 2414,
+                "float4recv" => 2424,
+                "float8recv" => 2426,
+                "varcharrecv" => 2432,
+                "date_recv" => 2468,
+                "numeric_recv" => 2460,
+                _ => return Err(invalid()),
+            };
+            oid.to_be_bytes().to_vec()
+        }
+        23 | 26 => s
             .parse::<i32>()
             .map_err(|_| invalid())?
             .to_be_bytes()
@@ -93,7 +109,12 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
             .map_err(|_| invalid())?
             .to_be_bytes()
             .to_vec(),
-        25 | 1043 => s.as_bytes().to_vec(),
+        18 => match s.as_bytes() {
+            [] => vec![0],
+            [c] => vec![*c],
+            _ => return Err(invalid()),
+        },
+        19 | 25 | 1043 => s.as_bytes().to_vec(),
         1082 => crate::date::binary(s)?.to_vec(),
         1700 => {
             let negative = s.starts_with('-');

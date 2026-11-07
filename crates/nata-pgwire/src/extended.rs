@@ -43,7 +43,9 @@ impl Statement {
             if *t == 0 {
                 *t = 25;
             }
-            literal(*t, None)?;
+            if !(crate::browse::recognizes(&sql) && matches!(*t, 1009 | 1002 | 26 | 19 | 18)) {
+                literal(*t, None)?;
+            }
         }
         Ok(Self {
             sql,
@@ -74,17 +76,24 @@ impl Statement {
                 .types
                 .iter()
                 .zip(params)
-                .map(|(t, p)| literal(*t, p.as_deref()))
+                .map(|(t, p)| literal(self.parameter_type(*t), p.as_deref()))
                 .collect::<Result<_, _>>()?,
         })
+    }
+    fn parameter_type(&self, t: i32) -> i32 {
+        if crate::browse::recognizes(&self.sql) && matches!(t, 1009 | 1002 | 26 | 19 | 18) {
+            25
+        } else {
+            t
+        }
     }
     pub fn dummy(&self) -> Result<Vec<Expr>, WireError> {
         self.types
             .iter()
             .map(|t| {
                 literal(
-                    *t,
-                    Some(match t {
+                    self.parameter_type(*t),
+                    Some(match self.parameter_type(*t) {
                         16 => "false",
                         25 | 1043 => "",
                         1082 => "2000-01-01",

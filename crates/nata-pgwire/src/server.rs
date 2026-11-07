@@ -554,8 +554,14 @@ async fn session_loop(
                 .clone()
                 .evaluate(&p.statement.sql)
                 .is_ok_and(|r| r.is_some())
-                || crate::metadata::query(&catalog, &state.database, &p.statement.sql)
-                    .is_ok_and(|r| r.is_some())
+                || crate::metadata::query_with(
+                    &catalog,
+                    &state.database,
+                    &state.search_path(),
+                    &p.statement.sql,
+                    &p.params,
+                )
+                .is_ok_and(|r| r.is_some())
             {
                 Err(WireError::unsupported(
                     "bounded fetch of session or metadata rows",
@@ -767,7 +773,14 @@ async fn session_loop(
             let mut chatter = if state.transaction == b'E' {
                 next_state.evaluate(&sql)
             } else {
-                crate::metadata::query(&catalog, &state.database, &sql).and_then(|r| {
+                crate::metadata::query_with(
+                    &catalog,
+                    &state.database,
+                    &state.search_path(),
+                    &sql,
+                    &params,
+                )
+                .and_then(|r| {
                     if r.is_some() {
                         Ok(r)
                     } else {
@@ -842,14 +855,13 @@ async fn session_loop(
                             let packet = if r.fields.is_empty() {
                                 codec::packet(b'n', b"")
                             } else {
-                                codec::description(&r.fields)
+                                r.description()
                             };
                             let packet = packet.map_err(|_| WireError::internal())?;
                             let packet = if mode == 3 {
                                 crate::binary::packet(
                                     packet,
-                                    &codec::description(&r.fields)
-                                        .map_err(|_| WireError::internal())?,
+                                    &r.description().map_err(|_| WireError::internal())?,
                                     &portal.as_ref().expect("portal").results,
                                 )?
                             } else {
@@ -861,7 +873,7 @@ async fn session_loop(
                                 .map_err(|_| WireError::internal())?;
                         }
                         if mode == 0 {
-                            for (k, v) in r.status {
+                            for (k, v) in &r.status {
                                 write
                                     .write_all(
                                         &codec::packet(b'S', format!("{k}\0{v}\0").as_bytes())
@@ -870,12 +882,11 @@ async fn session_loop(
                                     .await
                                     .map_err(|_| WireError::internal())?;
                             }
-                            for row in r.rows {
+                            for row in &r.rows {
                                 write
                                     .write_all(&crate::binary::packet(
-                                        codec::row(&row).map_err(|_| WireError::internal())?,
-                                        &codec::description(&r.fields)
-                                            .map_err(|_| WireError::internal())?,
+                                        codec::row(row).map_err(|_| WireError::internal())?,
+                                        &r.description().map_err(|_| WireError::internal())?,
                                         &portal
                                             .as_ref()
                                             .map_or_else(Vec::new, |p| p.results.clone()),
@@ -916,17 +927,21 @@ async fn session_loop(
                     send_wire_error(&mut write, &e, &sql).await;
                 } else if mode == 1 {
                     if let Some(mut s) = parsed {
-                        if let Ok(Some(r)) = crate::metadata::query(&catalog, &state.database, &sql)
-                            .and_then(|r| {
-                                if r.is_some() {
-                                    Ok(r)
-                                } else {
-                                    state.clone().evaluate(&sql)
-                                }
-                            })
-                        {
-                            s.description =
-                                codec::description(&r.fields).map_err(io::Error::other)?;
+                        if let Ok(Some(r)) = crate::metadata::query_with(
+                            &catalog,
+                            &state.database,
+                            &state.search_path(),
+                            &sql,
+                            &params,
+                        )
+                        .and_then(|r| {
+                            if r.is_some() {
+                                Ok(r)
+                            } else {
+                                state.clone().evaluate(&sql)
+                            }
+                        }) {
+                            s.description = r.description().map_err(io::Error::other)?;
                         }
                         objects.statements.insert(object_name.clone(), s);
                     }

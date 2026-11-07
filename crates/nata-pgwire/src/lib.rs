@@ -10,3 +10,5 @@ mod float;
 mod metadata;
 pub mod server;
 mod session;
+
+mod browse;

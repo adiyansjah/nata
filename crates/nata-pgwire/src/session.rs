@@ -15,10 +15,30 @@ pub(crate) struct State {
 }
 pub(crate) struct Response {
     pub fields: Vec<(String, SqlType)>,
+    pub wire_types: Vec<(i32, i16, i32)>,
     pub rows: Vec<Vec<Option<String>>>,
     pub command: String,
     pub status: Vec<(String, String)>,
     pub deallocate: Option<Option<String>>,
+}
+impl Response {
+    pub fn description(&self) -> Result<Vec<u8>, crate::codec::Invalid> {
+        let mut packet = crate::codec::description(&self.fields)?;
+        let mut at = 7;
+        for (oid, size, modifier) in &self.wire_types {
+            at += packet[at..]
+                .iter()
+                .position(|b| *b == 0)
+                .ok_or(crate::codec::Invalid)?
+                + 1;
+            at += 6;
+            packet[at..at + 4].copy_from_slice(&oid.to_be_bytes());
+            packet[at + 4..at + 6].copy_from_slice(&size.to_be_bytes());
+            packet[at + 6..at + 10].copy_from_slice(&modifier.to_be_bytes());
+            at += 12;
+        }
+        Ok(packet)
+    }
 }
 impl Default for State {
     fn default() -> Self {
@@ -215,6 +235,7 @@ impl State {
         let w: Vec<_> = lower.iter().map(String::as_str).collect();
         let mut out = Response {
             fields: vec![],
+            wire_types: vec![],
             rows: vec![],
             command: String::new(),
             status: vec![],
@@ -466,6 +487,7 @@ fn bootstrap(
     }
     let mut out = Response {
         fields: vec![],
+        wire_types: vec![],
         rows: vec![],
         command: String::new(),
         status: vec![],
@@ -486,12 +508,23 @@ fn bootstrap(
                 ]);
             }
         }
+        out.rows
+            .sort_by_key(|row| row[0].as_ref().and_then(|v| v.parse::<i32>().ok()));
+        out.wire_types = vec![(26, 4, -1), (19, 64, -1), (26, 4, -1)];
         out.fields = vec![
             ("attrelid".into(), SqlType::Integer),
             ("attname".into(), SqlType::Varchar),
             ("atttypid".into(), SqlType::Integer),
         ];
     } else if ts == tokens(TYPES)? {
+        out.wire_types = vec![
+            (26, 4, -1),
+            (19, 64, -1),
+            (24, 4, -1),
+            (26, 4, -1),
+            (26, 4, -1),
+            (26, 4, -1),
+        ];
         out.fields = [
             ("oid", SqlType::Integer),
             ("typname", SqlType::Varchar),
@@ -522,7 +555,7 @@ fn bootstrap(
                     recv.into(),
                     "0".into(),
                     "0".into(),
-                    "0".into(),
+                    crate::browse::array_oid(oid).to_string(),
                 ]
                 .into_iter()
                 .map(Some)
@@ -531,7 +564,7 @@ fn bootstrap(
         }
     } else {
         return Err(WireError::unsupported(
-            "catalog query; only exact ADBC type bootstrap is supported",
+            "catalog query outside the frozen browsing and ADBC bootstrap shapes",
         ));
     }
     out.command = format!("SELECT {}", out.rows.len());

@@ -260,11 +260,25 @@ pub(crate) fn query(
         .collect();
     Ok(Some(Response {
         fields,
+        wire_types: vec![],
         command: format!("SELECT {}", rows.len()),
         rows,
         status: vec![],
         deallocate: None,
     }))
+}
+
+pub(crate) fn query_with(
+    snapshot: &Snapshot,
+    database: &str,
+    search_path: &[String],
+    sql: &str,
+    params: &[nata_sql::ast::Expr],
+) -> Result<Option<Response>, WireError> {
+    if let Some(r) = crate::browse::query(snapshot, database, search_path, sql, params)? {
+        return Ok(Some(r));
+    }
+    query(snapshot, database, sql)
 }
 
 #[cfg(test)]
@@ -369,7 +383,7 @@ mod tests {
                 seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
                 sql.push_str(pieces[(seed >> 32) as usize % pieces.len()]);
             }
-            let _ = query(&Snapshot::default(), "nata", &sql);
+            let _ = query_with(&Snapshot::default(), "nata", &["public".into()], &sql, &[]);
         }
     }
 }

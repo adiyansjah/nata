@@ -1,0 +1,32 @@
+
+running 1 test
+test exact_adbc_bootstrap_and_unknown_catalog_refusal ... FAILED
+
+failures:
+
+---- exact_adbc_bootstrap_and_unknown_catalog_refusal stdout ----
+
+thread 'exact_adbc_bootstrap_and_unknown_catalog_refusal' (1037961) panicked at crates/nata-pgwire/tests/support/mod.rs:330:58:
+error
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    exact_adbc_bootstrap_and_unknown_catalog_refusal
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 35 filtered out; finished in 0.01s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-browse/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
+     Running tests/protocol.rs (/home/dev/tmp-browse/mutants/target/debug/deps/protocol-a764388a9b1f74b1)
+nata serve listening=127.0.0.1:40813 max_connections=2 query_admission=2 workers=2
+aggregate_node_pool=8387985408 aggregate_query_budget=4193992704 aggregate_disk_share=10926635008 memory_source=physical-cgroup
+scan_end_us=4169
+session=1 duration_us=4351 rows=1 state=00000 queue_wait_us=12 worker_share=1
+session=1 duration_us=160 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=322 rows=10 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=226 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=169 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=236 rows=10 state=00000 queue_wait_us=0 worker_share=0
+session=1 duration_us=96 rows=1 state=00000 queue_wait_us=0 worker_share=0
+error: test failed, to rerun pass `-p nata-pgwire --test protocol`

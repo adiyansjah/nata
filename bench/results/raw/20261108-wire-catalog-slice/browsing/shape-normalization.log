@@ -1,0 +1,58 @@
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-12f9a14d/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.50s
+     Running unittests src/lib.rs (target/debug/deps/nata_exec-a904b3d5d72c0de1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_kernels-d1974ddc6be34ba0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_objfake-0c9612e01b46cd39)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_objstore-187c58535bd06a56)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_parquet-bdd8c775fbd65995)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_pgwire-81cf18de8a5a1032)
+
+running 3 tests
+test browse::tests::shape_matching_cannot_change_semantics_or_reach_user_tables ... ok
+test browse::tests::snapshot_filters_identity_types_and_ordering ... ok
+test browse::tests::captured_shapes_are_total_and_keep_descriptors ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_scan-e8ba00613fae059e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_sched-ac2a270dc4a8030e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/nata_sql-ed73660b6dbfee54)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s

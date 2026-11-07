@@ -849,7 +849,22 @@ fn exact_adbc_bootstrap_and_unknown_catalog_refusal() {
                 Some(recv.into()),
                 Some("0".into()),
                 Some("0".into()),
-                Some("0".into())
+                Some(
+                    match oid {
+                        16 => 1000,
+                        20 => 1016,
+                        21 => 1005,
+                        23 => 1007,
+                        25 => 1009,
+                        700 => 1021,
+                        701 => 1022,
+                        1043 => 1015,
+                        1082 => 1182,
+                        1700 => 1231,
+                        _ => 0,
+                    }
+                    .to_string()
+                )
             ]
         );
     }
@@ -860,6 +875,23 @@ fn exact_adbc_bootstrap_and_unknown_catalog_refusal() {
     c.execute(0);
     let r = c.sync();
     assert_eq!(r.iter().filter(|m| m.0 == b'D').count(), 10);
+    let mut expected_binary = 6i16.to_be_bytes().to_vec();
+    for field in [
+        16i32.to_be_bytes().to_vec(),
+        b"bool".to_vec(),
+        2436i32.to_be_bytes().to_vec(),
+        0i32.to_be_bytes().to_vec(),
+        0i32.to_be_bytes().to_vec(),
+        1000i32.to_be_bytes().to_vec(),
+    ] {
+        expected_binary.extend((field.len() as i32).to_be_bytes());
+        expected_binary.extend(field);
+    }
+    assert_eq!(
+        r.iter().find(|m| m.0 == b'D').expect("binary bool type").1,
+        expected_binary
+    );
+
     for q in [
         "SELECT * FROM pg_catalog.pg_type",
         &format!("{types}; SELECT 1"),

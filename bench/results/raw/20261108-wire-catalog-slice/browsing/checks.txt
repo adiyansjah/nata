@@ -1,0 +1,17 @@
+Local x86-64; disk TMPDIR=$HOME/tmp-browse/tmp; heavy commands serial.
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: 556 passed, 0 failed/ignored, 82 summaries; includes 36 protocol tests.
+cargo deny check: PASS (inherited unmatched-license allowance warnings only).
+nata-check check/queries/scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check check/queries/sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check check/queries/sql-differences: 55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check check/queries/aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+Both complete client matrices: 76 PASS / 0 FAIL / 9 not run; exit 1 is retained.
+PostgreSQL statement comparison: 56/56 PASS; binary metadata controls: 3/3 PASS.
+Amendment additions: 36/36 classified and compared; direct refusal probes in protocol suite PASS.
+Focused mutants: 6/6 CAUGHT, passing unmutated controls, 0 SURVIVED/INVALID.
+Full 78-mutant sweep: NOT RUN locally (heavy; parent GCP command). All 78 edit anchors apply exactly once.
+Wirecapture unit tests: 3 PASS; Python compilation and shell syntax PASS; job-chain stubs PASS.
+Staged leak scan and diff whitespace: PASS.
+After template whitespace normalization: fmt/clippy PASS; 3 shape tests PASS; 56/56 statements and 3/3 binary controls PASS.

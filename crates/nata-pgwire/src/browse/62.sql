@@ -1,0 +1,1 @@
+SELECT attname, atttypid FROM pg_catalog.pg_class AS cls INNER JOIN pg_catalog.pg_attribute AS attr ON cls.oid = attr.attrelid INNER JOIN pg_catalog.pg_type AS typ ON attr.atttypid = typ.oid WHERE attr.attnum >= 0 AND cls.oid = $1::regclass::oid ORDER BY attr.attnum

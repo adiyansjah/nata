@@ -100,8 +100,8 @@ user/database are routing labels; accepted setting keys use the same allowlist.
 Startup reports server/client encoding, version, DateStyle, TimeZone,
 application_name, integer_datetimes and standard_conforming_strings.
 
-pgcli's catalog/completion queries and psql catalog backslash commands remain
-unsupported; the bounded projections below do not certify full browsing.
+The frozen default-client browsing queries use the snapshot adapter described
+below. Queries outside those shapes return 0A000.
 
 ## Bounds, cancellation and errors
 
@@ -186,9 +186,9 @@ pgjdbc/psycopg and noninteractive pgcli use the existing protocol surface; pgcli
 DATE loader deliberately returns strings. psql returns display text and SQL
 `PREPARE` remains `0A000` (wire preparation is a different interface).
 
-ADBC PostgreSQL 1.13.0 connects using two exact, read-only type-bootstrap
-answers (snapshot pg_attribute rows; built-in pg_type rows). Other catalog/completion SQL
-returns 0A000. Default Arrow fetch now uses bounded binary COPY:
+ADBC PostgreSQL 1.13.0 connects using read-only type-bootstrap answers
+(snapshot pg_attribute rows and supported built-in pg_type rows), alongside
+the frozen GetObjects and GetTableSchema snapshot operations. Default Arrow fetch now uses bounded binary COPY:
 
 ```sql
 COPY (SELECT * FROM 'data/example.parquet') TO STDOUT (FORMAT binary);
@@ -233,7 +233,7 @@ Use the recorded timings when
 choosing this interface for large exports; first rows stream and slow clients
 exert bounded backpressure, but that does not imply CLI-equivalent throughput.
 
-## Local registry and thin metadata projections (slice-10 skeleton)
+## Local registry and metadata browsing (slice 10)
 
 `nata serve --catalog registry.tsv` pins an immutable read-only snapshot for
 connections. Registry lines contain one catalog name; catalog and schema names;
@@ -258,19 +258,41 @@ SELECT table_name FROM information_schema.tables ORDER BY table_name;
 SELECT column_name, data_type, is_nullable FROM information_schema.columns;
 ```
 
-The metadata adapter accepts a single SELECT projection of identifiers and
-optional ascending ORDER BY identifiers, with no expressions, filters or joins.
-A wildcard is refused for incomplete views; only information_schema_catalog_name
-accepts *. It exposes information_schema_catalog_name(catalog_name), schemata(catalog_name,
-schema_name), tables(table_catalog, table_schema, table_name, table_type,
-is_insertable_into), and columns(table_catalog, table_schema, table_name,
-column_name, ordinal_position, is_nullable, data_type, numeric_precision,
-numeric_scale, is_updatable). Nullability is conservatively YES; locations remain
-in the snapshot, not in public metadata rows. Additional objects/columns/helpers
-fail with 0A000, including all 36 captured additions. No invented empty policy,
-key, function or publication relations are returned. ADBC's exact type bootstrap
-is retained. SHOW catalogs/tables, DESCRIBE, full metadata SQL and metadata-row
-positive fetch remain outside this thin implementation. Metadata CPU has the bounded snapshot/query surface and an elapsed deadline
-check before output; stalled metadata/session writes close after the statement
-deadline or the inherited two-second send bound, preserving frame safety. See the skeleton result record for the
-actual default-client failures and remaining gates.
+The metadata adapter recognizes the frozen psql, pgjdbc, psycopg, pgcli and
+ADBC browsing query shapes in `crates/nata-pgwire/src/browse/`. SQL tokens are
+normalized for unquoted case, whitespace and one terminal semicolon. Only
+marked predicate values vary; projections, joins, expressions and ordering
+must match. Each shape runs a typed operation over this snapshot. Parameters
+remain literal values and cannot supply SQL. The standalone user dialect is
+unchanged. The captured complex SQL does not authorize arbitrary catalog joins
+or helper calls; other shapes return 0A000 before rows.
+
+The shapes expose registered catalogs, schemas, tables, attributes and the ten
+supported scalar wire types. There are no PostgreSQL storage catalogs, hidden
+heap columns, user functions, keys, indexes, defaults, partitions, policies,
+publications, extension dependencies or statistics. The captured queries for
+those absent capabilities return correctly typed empty results; arbitrary
+queries against those objects remain explicit refusals. Built-in type OIDs,
+array identities, receive-function names and column typmods follow PostgreSQL.
+Metadata-only name/oid/char/regproc descriptors do not add user SQL types or
+array input/output support. Text arrays are accepted as parameters only for the
+recognized metadata shapes.
+
+Captured psql `\dt`, qualified/pattern `\dt`, `\d table`, `\dn`, `\df`, `\l`; the captured
+JDBC DatabaseMetaData methods; filtered information_schema tables/columns and
+the type join; pgcli completion refresh; and ADBC GetObjects/GetTableSchema use
+this path. The full captured `information_schema.tables` and `columns` star
+projections report NO for insert/update capability and conservative YES for
+nullability, with exact numeric precision/scale. Simple explicit projections
+from the original adapter remain supported. Wildcards outside the captured
+shapes remain refused for incomplete views.
+
+SHOW catalogs/tables, DESCRIBE, arbitrary metadata SQL, the remaining settings
+helpers and positive metadata-row fetch remain separate slice-10 work. The
+new adapter charges result rows, spare vector capacity, sorting and predicate
+scratch against 16 MiB and checks the inherited elapsed deadline before output.
+Stalled metadata/session writes close after the statement deadline or the
+inherited two-second send bound. This is not a loaded-resource or performance
+certification. The [slice record](../bench/results/20261108-wire-catalog-slice.md)
+gives exact versions, PostgreSQL projections, per-statement comparisons and
+remaining acceptance gaps, including actual DBeaver UI capture.
