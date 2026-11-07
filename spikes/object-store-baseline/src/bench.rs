@@ -389,7 +389,7 @@ impl Bench {
                 let remote = Remote::new(store, cfg, Mutants::default(), 1);
                 let query = remote.query();
                 let svc = MetaService::new(cache2, "gcs", "bench");
-                let scfg = ScanCfg { policy: policy2, exec: exec2, files_ahead: 8, units_ahead: (self.workers * 2).max(4) };
+                let scfg = ScanCfg { policy: policy2, exec: exec2, files_ahead: 8, units_ahead: std::env::var("NATA_UNITS_AHEAD").ok().and_then(|s| s.parse().ok()).unwrap_or((self.workers * 2).max(4)) };
                 let r = scan(&query, &svc, &paths2, &q2, &scfg).await.map_err(|e| e.to_string());
                 let st = remote.stats.snap();
                 let fb: Vec<f64> = remote.stats.recs.lock().unwrap().iter().filter(|x| x.2 != 0 && x.3).map(|x| x.0).collect();

@@ -52,6 +52,17 @@ fn main() {
             println!("RESULT faults: {} cases, {} failed", res.len(), bad);
             std::process::exit(if bad == 0 { 0 } else { 1 });
         }
+        "footer-charge" => {
+            // osb footer-charge FILE... : the footer's wire length and what the cache would charge for its parsed form (ParquetMetaData::memory_size)
+            for f in args.iter().skip(1) {
+                let b = std::fs::read(f).unwrap();
+                let n = b.len();
+                let mlen = u32::from_le_bytes(b[n - 8..n - 4].try_into().unwrap()) as usize;
+                let meta = parquet::file::metadata::ParquetMetaDataReader::decode_metadata(&b[n - 8 - mlen..n - 8]).unwrap();
+                let ms = meta.memory_size();
+                println!("footer-charge {} : row_groups={} columns={} wire_bytes={} parsed_memory_size={} ratio={:.2} entries_in_64MiB={}", std::path::Path::new(f).parent().and_then(|p| p.file_name()).unwrap().to_string_lossy(), meta.num_row_groups(), meta.file_metadata().schema_descr().num_columns(), mlen, ms, ms as f64 / mlen as f64, (64usize << 20) / (ms + 200));
+            }
+        }
         "expected" => {
             // the oracle: DuckDB on LOCAL files. osb expected --name sf1 --sf 1 --glob '<path or glob>' --out FILE (appends "name|query|text")
             let name = arg(&args, "--name").unwrap();
@@ -140,6 +151,9 @@ fn main() {
                 let fake = spike_object_store_baseline::fake::FakeS3::start(&bucket).await;
                 fn walk(d: &std::path::Path, base: &std::path::Path, f: &spike_object_store_baseline::fake::FakeS3) { for e in std::fs::read_dir(d).unwrap() { let p = e.unwrap().path(); if p.is_dir() { walk(&p, base, f) } else if p.extension().is_some_and(|x| x == "parquet") { f.put(&p.strip_prefix(base).unwrap().to_string_lossy(), std::fs::read(&p).unwrap()) } } }
                 walk(&dir, &dir, &fake);
+                if let Some(ms) = arg(&args, "--delay-ms").and_then(|s| s.parse::<u64>().ok()) {
+                    fake.set_plan(spike_object_store_baseline::fake::Plan::always(spike_object_store_baseline::fake::Fault::Delay { ms }));
+                }
                 std::fs::write(&pf, &fake.addr).unwrap();
                 std::future::pending::<()>().await;
             });
