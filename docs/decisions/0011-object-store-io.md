@@ -1,6 +1,6 @@
 # 0011: Bounded object-store reads through the async I/O bridge
 
-Status: proposed
+Status: accepted (by the assistant under the owner's delegation, 2026-11-07, with card 0006)
 Date: 2026-11-07
 
 ## Context

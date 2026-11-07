@@ -1,6 +1,6 @@
 # 0006: Object-store reads, async I/O and metadata cache
 
-Status: draft
+Status: accepted (by the assistant under the owner's delegation, 2026-11-07). New dependency `object_store` 0.14 authorized under decision rule 1: it stays only if bounded streaming, conditional and versioned range reads, both auth chains, cancel and `cargo deny` with the unsafe inventory pass behind our wrapper. Targets stay provisional until the reference run (rule 5)
 Date: 2026-11-07
 ADRs: 0001–0003, 0006–0009 (relies on); proposes [0011](../decisions/0011-object-store-io.md) and [0012](../decisions/0012-metadata-cache.md)
 
