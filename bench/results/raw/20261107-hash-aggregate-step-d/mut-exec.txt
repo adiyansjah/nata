@@ -1,0 +1,6 @@
+| mutant | suite | result | first failing tests |
+|---|---|---|---|
+| restart-cleanup-skipped | exec | CAUGHT | restart_cleanup_skips_live_and_removes_killed_owner |
+| owner-initialization-cleanup-skipped | exec | CAUGHT | owner_lock_creation_failure_leaves_no_directory |
+
+2 mutants: 2 CAUGHT, 0 SURVIVED, 0 INVALID

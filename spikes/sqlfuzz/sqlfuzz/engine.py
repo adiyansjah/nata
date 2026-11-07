@@ -59,12 +59,12 @@ class DuckDB:
                 continue
             try:
                 desc = json.loads("\n".join(t))
-                rows = json.loads("\n".join(r))
+                rows = json.loads("\n".join(r), parse_float=str)
             except json.JSONDecodeError as e:
                 out[cid] = Result(False, error=f"unparseable output: {e}")
                 continue
             cols = [d["column_name"] for d in desc]
-            out[cid] = Result(True, cols, [d["column_type"] for d in desc], [list(row.values()) for row in rows])
+            out[cid] = Result(True, cols, [d["column_type"] for d in desc], [[float(v) if v is not None and typ in ("DOUBLE", "FLOAT", "REAL") else int(v) if v is not None and typ in ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT") else v for v, typ in zip(row.values(), [d["column_type"] for d in desc])] for row in rows])
         return out
 
     @staticmethod

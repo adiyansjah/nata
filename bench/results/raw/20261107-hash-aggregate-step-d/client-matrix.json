@@ -1,0 +1,586 @@
+{
+  "versions": {
+    "psycopg": "3.3.8",
+    "adbc-driver-postgresql": "1.13.0",
+    "pgcli": "4.7.1",
+    "pyarrow": "26.0.1",
+    "psql": "psql (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1)",
+    "pgjdbc": "pgjdbc=42.7.7 java=21.0.13"
+  },
+  "results": [
+    {
+      "mode": "memory",
+      "query": "q1",
+      "client": "psql",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "q1",
+      "client": "pgjdbc",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "memory",
+      "query": "q1",
+      "client": "psycopg",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "q1",
+      "client": "pgcli",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "q1",
+      "client": "adbc",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "R22 terminal whitespace failure"
+    },
+    {
+      "mode": "memory",
+      "query": "having",
+      "client": "psql",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "having",
+      "client": "pgjdbc",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "memory",
+      "query": "having",
+      "client": "psycopg",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "having",
+      "client": "pgcli",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "having",
+      "client": "adbc",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "R22 terminal whitespace failure"
+    },
+    {
+      "mode": "memory",
+      "query": "global",
+      "client": "psql",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "global",
+      "client": "pgjdbc",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "memory",
+      "query": "global",
+      "client": "psycopg",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "global",
+      "client": "pgcli",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "global",
+      "client": "adbc",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    },
+    {
+      "mode": "memory",
+      "query": "empty",
+      "client": "psql",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "empty",
+      "client": "pgjdbc",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "memory",
+      "query": "empty",
+      "client": "psycopg",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "empty",
+      "client": "pgcli",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "empty",
+      "client": "adbc",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    },
+    {
+      "mode": "memory",
+      "query": "null-keys",
+      "client": "psql",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "null-keys",
+      "client": "pgjdbc",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "memory",
+      "query": "null-keys",
+      "client": "psycopg",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "NoneType",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "null-keys",
+      "client": "pgcli",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "NoneType",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "memory",
+      "query": "null-keys",
+      "client": "adbc",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "NoneType",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    },
+    {
+      "mode": "spill",
+      "query": "q1",
+      "client": "psql",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "q1",
+      "client": "pgjdbc",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "spill",
+      "query": "q1",
+      "client": "psycopg",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "q1",
+      "client": "pgcli",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "q1",
+      "client": "adbc",
+      "rows": 4,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "R22 terminal whitespace failure"
+    },
+    {
+      "mode": "spill",
+      "query": "having",
+      "client": "psql",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "having",
+      "client": "pgjdbc",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "spill",
+      "query": "having",
+      "client": "psycopg",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "having",
+      "client": "pgcli",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "having",
+      "client": "adbc",
+      "rows": 12758,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "R22 terminal whitespace failure"
+    },
+    {
+      "mode": "spill",
+      "query": "global",
+      "client": "psql",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "global",
+      "client": "pgjdbc",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "spill",
+      "query": "global",
+      "client": "psycopg",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "global",
+      "client": "pgcli",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "global",
+      "client": "adbc",
+      "rows": 1,
+      "values": "PASS",
+      "readback_types": [
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    },
+    {
+      "mode": "spill",
+      "query": "empty",
+      "client": "psql",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "empty",
+      "client": "pgjdbc",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "spill",
+      "query": "empty",
+      "client": "psycopg",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "empty",
+      "client": "pgcli",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "empty",
+      "client": "adbc",
+      "rows": 0,
+      "values": "PASS",
+      "readback_types": [],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    },
+    {
+      "mode": "spill",
+      "query": "null-keys",
+      "client": "psql",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "null-keys",
+      "client": "pgjdbc",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "str"
+      ],
+      "jdbc_native_assertions": true
+    },
+    {
+      "mode": "spill",
+      "query": "null-keys",
+      "client": "psycopg",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "NoneType",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "null-keys",
+      "client": "pgcli",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "Decimal",
+        "NoneType",
+        "int"
+      ],
+      "jdbc_native_assertions": false
+    },
+    {
+      "mode": "spill",
+      "query": "null-keys",
+      "client": "adbc",
+      "rows": 3,
+      "values": "PASS",
+      "readback_types": [
+        "NoneType",
+        "int",
+        "str"
+      ],
+      "jdbc_native_assertions": false,
+      "unnormalized": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+/home/dev/.t3/worktrees/nata/t3-6911ea73/spikes/sqlfuzz/tests/test_sqlfuzz.py:102: ResourceWarning: unclosed file <_io.TextIOWrapper name='/home/dev/tmp-skelD/tmpkbacslk3/diff-seed1-b0-q9.sql' mode='r' encoding='UTF-8'>
+  repro = [open(os.path.join(d, f)).read() for f in sorted(os.listdir(d)) if f.endswith(".sql")]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..........................s
+----------------------------------------------------------------------
+Ran 27 tests in 29.977s
+
+OK (skipped=1)

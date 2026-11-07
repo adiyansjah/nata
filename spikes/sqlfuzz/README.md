@@ -81,3 +81,38 @@ python3 -I tests/test_subset.py                                                 
 module doc); `adapters/nata_adapter.py` writes the tables to Parquet (row groups of 3 and 5 rows), runs each query through `nata sql --csv` (`NATA_BIN`, default `target/debug/nata`) and reads the CSV with the column
 types of the oracle's answer. The oracle runs twice, with and without DuckDB's optimizer, and either answer is accepted. Every difference is shrunk and classified from its shrunk query
 (`subset_cli.shrunk_class`): the classes that `docs/dialect.md` section 9 / 9b lists, or `BUG?`, which fails the run. Results: `bench/results/20261106-sql-execution.md`.
+
+
+### Card 0005 aggregate subset
+
+`run-subset` alternates scalar batches (even batch numbers, preserving old scalar
+seed replays) and aggregate batches (odd numbers). Aggregate batches cover
+column/expression keys, NULL keys, empty/global/grouped input, boolean HAVING,
+and COUNT/SUM/AVG/MIN/MAX. Grouped answers compare as multisets with duplicate
+multiplicity. Unordered aggregate LIMIT subsets are deliberately not generated.
+Scalar error/evaluation-order campaigns remain intact.
+
+DuckDB integer SUM metadata differs intentionally: INTEGER-family SUM is BIGINT
+here and BIGINT SUM is DECIMAL(38,0), versus DuckDB HUGEINT. Narrow metadata
+classifiers have positive and negative tests; the CLI CSV adapter cannot certify
+native Nata metadata, so wire tests and the real-client matrix supply that check.
+For generated AVG of direct numeric columns, an independent Decimal/rational
+oracle computes each group's exact sum/count and half-away-from-zero rounding.
+The fuzzer compares Nata to that answer rather than accepting a broad floating
+point tolerance. Arbitrary text/float keys are generated for other aggregates;
+AVG is restricted to keys the independent oracle supports. Decimal JSON digits
+are retained before any floating conversion, including wide SUM/MIN/MAX.
+
+Local smoke (one job; disk TMPDIR, release NATA_BIN):
+
+```sh
+cd spikes/sqlfuzz
+env -u AI_AGENT NATA_THREADS=1 NATA_BIN=/absolute/path/to/nata \
+  python3 -I fuzz.py run-subset --seed 20261107 --cases 20000 --jobs 1 \
+  --target-cmd 'python3 -I adapters/nata_adapter.py' --out "$TMPDIR/sql-smoke"
+```
+
+The complete two-seed heavy commands are in `bench/aggregate-step-d.steps`.
+
+`NATA_FORCE_AGGREGATE_SPILL=1` routes the adapter through 16 MiB forced spill.
+The second heavy seed uses it; the first retains ordinary pressure-triggered execution.

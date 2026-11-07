@@ -80,8 +80,20 @@ impl Registry {
             let directory = base.join(format!("nata-spill-{}-{id}", std::process::id()));
             match builder.create(&directory) {
                 Ok(()) => {
-                    let owner = super::cleanup::lock_file(&directory.join("owner.lock"))?;
-                    owner.lock()?;
+                    let owner = match super::cleanup::lock_file(&directory.join("owner.lock"))
+                        .and_then(|owner| {
+                            owner.lock()?;
+                            Ok(owner)
+                        }) {
+                        Ok(owner) => owner,
+                        Err(error) => {
+                            // Only this exclusively-created directory is ours.
+                            // No partition can exist before ownership succeeds.
+                            let _ = fs::remove_file(directory.join("owner.lock"));
+                            let _ = fs::remove_dir(&directory);
+                            return Err(error);
+                        }
+                    };
                     return Ok(Arc::new(Self {
                         directory,
                         _owner: owner,

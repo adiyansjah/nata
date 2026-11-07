@@ -497,3 +497,25 @@ fn restart_cleanup_rejects_unknown_files_and_symlinks() {
         assert_eq!(fs::read(target).expect("untouched"), b"keep");
     }
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn owner_lock_creation_failure_leaves_no_directory() {
+    const CHILD: &str = "NATA_OWNER_LOCK_FAILURE_CHILD";
+    if std::env::var_os(CHILD).is_some() {
+        let base = Base::new();
+        let m = memory();
+        // Three stdio FDs, then the base-directory guard takes FD 3. mkdir
+        // succeeds without an FD, but owner.lock must fail with EMFILE.
+        let result = Registry::new(&base.0, 4096, 2, Arc::clone(&m));
+        assert!(result.is_err());
+        base.empty();
+        clean(&m);
+        return;
+    }
+    let status=std::process::Command::new("sh")
+        .args(["-c","ulimit -n 4 && exec \"$1\" owner_lock_creation_failure_leaves_no_directory --exact --nocapture","owner-lock-test"])
+        .arg(std::env::current_exe().expect("test executable"))
+        .env(CHILD,"1").status().expect("limited child");
+    assert!(status.success(), "owner-lock error leaked a directory");
+}

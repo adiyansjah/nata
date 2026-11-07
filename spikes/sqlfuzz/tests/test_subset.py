@@ -22,7 +22,7 @@ class Generator(unittest.TestCase):
         self.assertNotEqual([q.sql(NO) for q in a[1]], [q.sql(NO) for q in subset_cli.build(7, 4, 40, 25)[1]])
 
     def test_the_queries_stay_inside_the_subset(self):
-        banned = [" JOIN ", " GROUP BY ", " ORDER BY ", " OVER (", " UNION ", " EXISTS ", "SELECT DISTINCT", " LIKE ", " DISTINCT FROM ", "TIMESTAMP", "COALESCE", " / "]
+        banned = [" JOIN ", " ORDER BY ", " OVER (", " UNION ", " EXISTS ", "SELECT DISTINCT", " LIKE ", " DISTINCT FROM ", "TIMESTAMP", "COALESCE", " / "]
         for batch in range(30):
             for q in subset_cli.build(1, batch, 40, 25)[1]:
                 sql = q.sql(NO)
@@ -32,7 +32,7 @@ class Generator(unittest.TestCase):
 
     def test_the_queries_cover_what_the_subset_has(self):
         text = " ".join(q.sql(NO) for b in range(40) for q in subset_cli.build(2, b, 40, 25)[1])
-        for k in ["CASE WHEN ", "CAST(", "BETWEEN ", " IN (", "IS NULL", "IS NOT NULL", "NOT ", " AND ", " OR ", " % ", " // ", "LIMIT ", "OFFSET ", "WHERE "]:
+        for k in ["CASE WHEN ", "CAST(", "BETWEEN ", " IN (", "IS NULL", "IS NOT NULL", "NOT ", " AND ", " OR ", " % ", " // ", "LIMIT ", "OFFSET ", "WHERE ", "GROUP BY ", "HAVING ", "count(", "sum(", "avg(", "min(", "max("]:
             self.assertIn(k, text)
 
 
@@ -119,8 +119,50 @@ class Runs(unittest.TestCase):
         if not os.environ.get("NATA_FUZZ_PROVE"): self.skipTest("set NATA_FUZZ_PROVE=1 (about two minutes)")
         r = fuzz("prove-subset", "--seed", "1", "--cases", "8000", "--control", "2000", "--jobs", "4")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn("6 of 6 subset faults caught; control clean", r.stdout)
+        self.assertIn("9 of 9 subset faults caught; control clean", r.stdout)
 
+
+
+class AggregateContract(unittest.TestCase):
+    def test_grouped_multisets_preserve_duplicates(self):
+        from sqlfuzz.engine import Result
+        from sqlfuzz.compare import compare
+        a = Result(True, ['x'], ['INTEGER'], [[1],[1],[2]])
+        b = Result(True, ['x'], ['INTEGER'], [[2],[1],[1]])
+        self.assertIsNone(compare(a,b,False))
+        b.rows[1] = [2]
+        self.assertIsNotNone(compare(a,b,False))
+
+    def test_integer_sum_metadata_classes(self):
+        from sqlfuzz.subset_cli import aggregate_type_class
+        self.assertIsNotNone(aggregate_type_class('sum','INTEGER','BIGINT','HUGEINT'))
+        self.assertIsNotNone(aggregate_type_class('sum','BIGINT','DECIMAL(38,0)','HUGEINT'))
+        self.assertIsNone(aggregate_type_class('sum','BIGINT','BIGINT','HUGEINT'))
+        self.assertIsNone(aggregate_type_class('min','INTEGER','BIGINT','HUGEINT'))
+
+    def test_exact_avg_class_requires_independent_answer(self):
+        from sqlfuzz.subset_cli import exact_aggregate_oracle
+        from sqlfuzz.render import Agg, Col, Item
+        from sqlfuzz.engine import Result
+        q = subset.SubsetSelect((Item(Agg('INTEGER','avg',Col('INTEGER','a')),'v0'),), subset.File('t1'))
+        rows = [['1','1'] + ['NULL']*10, ['2','0'] + ['NULL']*10, ['3','0'] + ['NULL']*10]
+        r = Result(True,['v0'],['DOUBLE'],[[1/3]])
+        self.assertTrue(exact_aggregate_oracle(q,{'t1':rows},r))
+        self.assertEqual(r.rows,[['0.333333']])
+        from sqlfuzz.compare import compare
+        self.assertIsNotNone(compare(r,Result(True,['v0'],['DOUBLE'],[['0.333334']]),False))
+
+class AggregateOracleTransport(unittest.TestCase):
+    def test_decimal_json_digits_and_hugeint_strings_survive(self):
+        from sqlfuzz.engine import DuckDB
+        result = DuckDB().run([], [(0,"SELECT CAST(12345678901234567890.12345 AS DECIMAL(25,5)), sum(CAST(1 AS INTEGER))")])[0]
+        self.assertTrue(result.ok, result.error)
+        self.assertEqual(result.rows, [['12345678901234567890.12345', 1]])
+
+    def test_shrunk_key_projection_is_not_certified(self):
+        from sqlfuzz.engine import Result
+        q = subset.SubsetSelect((Item(Agg('INTEGER','avg',Col('INTEGER','a')),'v0'),), subset.File('t1'), group=(Col('INTEGER','id'),))
+        self.assertFalse(subset_cli.exact_aggregate_oracle(q, {'t1':[]}, Result(True,['v0'],['DOUBLE'],[])))
 
 if __name__ == "__main__":
     unittest.main()

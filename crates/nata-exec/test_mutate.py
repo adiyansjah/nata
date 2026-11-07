@@ -18,6 +18,9 @@ class Outcomes(unittest.TestCase):
         original = (Path(mutate.ROOT) / relative).read_text()
         for code, output, expected in [(0,'','SURVIVED'),(99,'timeout','INVALID'),
                 (101,'error[E0000]: could not compile','INVALID'),
+                (101,'error: invalid manifest','INVALID'),
+                (101,'rustc failed: signal: 9','INVALID'),
+                (101,'Running tests/spill.rs; signal: 6 SIGABRT','CAUGHT'),
                 (101,'test cleanup ... FAILED','CAUGHT')]:
             with self.subTest(code=code, output=output), tempfile.TemporaryDirectory() as temp:
                 destination=Path(temp)/relative

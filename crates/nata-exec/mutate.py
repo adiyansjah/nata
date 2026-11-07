@@ -11,6 +11,7 @@ The unmutated copy runs first and must pass. The real tree is hashed before and 
 not break the mutants.
 usage: mutate.py [--list] [--work DIR] [--out FILE] [name ...]"""
 import argparse, hashlib, os, re, shutil, subprocess, sys, time
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -25,6 +26,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "owner-initialization-cleanup-skipped": ("exec", [(SPILL, "let _ = fs::remove_dir(&directory);", "// abandoned initialization directory")]),
  "restart-cleanup-skipped": ("exec", [("crates/nata-exec/src/spill/cleanup.rs", "let mut removed = 0;", 'return Ok(0); #[allow(unreachable_code, reason = "mutation")] let mut removed = 0;')]),
  "spill-recursion-bound-removed": ("exec", [(PIPE, "if depth >= 8 {", "if depth >= 8 && false {")]),
  "spill-partition-not-read-back": ("exec", [(IPC, "let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;", "if file.size()? > 0 { return Ok(None); } let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;")]),
@@ -166,18 +168,18 @@ def run_one(name, base, work):
     touched = {}
     for f, old, new in edits:
         p = os.path.join(base, f)
-        touched.setdefault(f, open(os.path.join(ROOT, f)).read())
-        t = open(p).read()
+        touched.setdefault(f, Path(ROOT, f).read_text())
+        t = Path(p).read_text()
         rx = re.compile(r"\s*".join(re.escape(c) for c in old if not c.isspace()))
         found = list(rx.finditer(t))
         if len(found) != 1:
             return "INVALID", "edit applies %d times: %s" % (len(found), old[:60])
         if re.sub(r"\s+", "", old) == re.sub(r"\s+", "", new):
             return "INVALID", "edit changes nothing"
-        open(p, "w").write(t[: found[0].start()] + new + t[found[0].end():])
+        Path(p).write_text(t[: found[0].start()] + new + t[found[0].end():])
     code, out = run_suite(suite, base, work)
     for f, orig in touched.items():
-        open(os.path.join(base, f), "w").write(orig)
+        Path(base, f).write_text(orig)
     if code == 99:
         return "INVALID", "test suite timed out"
     if code == 0:
@@ -187,8 +189,11 @@ def run_one(name, base, work):
         return "INVALID", "does not compile: " + first[:100]
     failed = sorted(set(re.findall(r"^test (\S+) \.\.\. FAILED", out, re.M)))
     if not failed:
-        crash = "the test process crashed" if ("SIGABRT" in out or "overflowed its stack" in out or "signal:" in out) else "a test target failed"
-        return "CAUGHT", crash
+        if "test result: FAILED" in out:
+            return "CAUGHT", "a test target failed"
+        if "Running " in out and ("SIGABRT" in out or "overflowed its stack" in out or "signal:" in out):
+            return "CAUGHT", "the test process crashed"
+        return "INVALID", "no failing test or test-process crash was recognized"
     return "CAUGHT", ", ".join(failed[:3]) + (" ..." if len(failed) > 3 else "")
 
 

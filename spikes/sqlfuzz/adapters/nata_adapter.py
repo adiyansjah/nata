@@ -19,7 +19,7 @@ ROW_GROUP = {"t1": 3, "t2": 5}
 def cell(text, typ):
     t = typ.upper()
     if text == "NULL": return None
-    if t in ("TINYINT", "SMALLINT", "INTEGER", "BIGINT"): return int(text)
+    if t in ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT"): return int(text)
     if t == "DOUBLE": return float(text)
     if t in ("REAL", "FLOAT"):      # DuckDB's JSON shows a REAL as the double of the float: the same widening here
         import struct
@@ -42,6 +42,8 @@ def main():
         for cid, sql in cases:
             q = re.sub(r"\bFROM (t1|t2)\b", lambda m: f"FROM '{d}/{m.group(1)}.parquet'", sql)
             args = [NATA, "sql", "--csv"] + (["--threads", os.environ["NATA_THREADS"]] if os.environ.get("NATA_THREADS") else []) + ["-c", q]
+            if os.environ.get("NATA_FORCE_AGGREGATE_SPILL") == "1":
+                args += ["--aggregate-memory-bytes", str(16 << 20), "--force-aggregate-spill"]
             try:
                 r = subprocess.run(args, capture_output=True, text=True, timeout=60)
             except subprocess.TimeoutExpired:
@@ -57,7 +59,9 @@ def main():
             o = oracle[cid]
             types = o.types if o.ok else [""] * len(header)
             try:
-                out[str(cid)] = {"cols": header, "types": types, "rows": [[cell(c, types[i] if i < len(types) else "") for i, c in enumerate(row)] for row in body]}
+                # Exact AVG text must survive DuckDB's DOUBLE metadata.
+                avg_columns = {int(m[1]) for m in re.finditer(r"avg\([^)]*\) AS v(\d+)", sql)}
+                out[str(cid)] = {"cols": header, "types": types, "rows": [[c if header[i].startswith("v") and int(header[i][1:]) in avg_columns and c != "NULL" else cell(c, types[i] if i < len(types) else "") for i, c in enumerate(row)] for row in body]}
             except ValueError as e:
                 out[str(cid)] = {"error": f"unparseable cell: {e}"}
     json.dump({"results": out}, open(sys.argv[2], "w"))

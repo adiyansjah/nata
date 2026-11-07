@@ -1,4 +1,4 @@
-"""The generator of the SQL subset of slice 4 (`SELECT <exprs> FROM <one table> [WHERE ...] [LIMIT n [OFFSET m]]`, no ORDER BY, no aggregates), built from the
+"""The generator of scalar and aggregate SQL (`SELECT <exprs> FROM <one table> [WHERE ...] [GROUP BY ...] [HAVING ...] [LIMIT n [OFFSET m]]`, no ORDER BY), built from the
 same node classes, pools and seeds as the main generator, so that the shrinker and the faults (`faults.py`) work on it. Everything takes a `random.Random`.
 
 What it leaves out on purpose, each a documented difference from DuckDB (docs/dialect.md section 9, docs/decimal-rules.md section 9) or `not supported yet`:
@@ -213,6 +213,8 @@ class SubsetSelect:
     def sql(self, F):
         s = "SELECT " + ", ".join(i.sql(F) for i in self.items) + f" FROM {self.frm.sql(F)}"
         if self.where is not None: s += f" WHERE {self.where.sql(F)}"
+        if self.group: s += " GROUP BY " + ", ".join(e.sql(F) for e in self.group)
+        if self.having is not None: s += f" HAVING {self.having.sql(F)}"
         if self.limit is not None:
             n = self.limit - 1 if ("limit-off-by-one" in F and self.limit > 0) else self.limit
             s += f" LIMIT {n}"
@@ -220,4 +222,24 @@ class SubsetSelect:
         return s
 
     @property
-    def ordered(self): return True        # insertion order is preserved by DuckDB and by Nata: the rows are compared by position
+    def ordered(self): return not self.group        # insertion order is preserved by DuckDB and by Nata: the rows are compared by position
+
+
+def aggregate_query(rng):
+    # Bounded keys/arguments let numeric differences be checked independently;
+    # existing scalar queries continue to exercise strict expression failures.
+    keys = [Col(t, n) for n, t in COLS]
+    keys += [Bin("INTEGER", "%", Col("INTEGER", "id"), Lit("INTEGER", "3")),
+             Cast("BIGINT", Col("INTEGER", "a"))]
+    group = tuple(rng.sample(keys, rng.randint(1, 2))) if rng.random() < 0.75 else ()
+    items = [Item(e, f"k{i}") for i, e in enumerate(group)]
+    for i in range(rng.randint(1, 5)):
+        fn = rng.choice(["count", "sum", "avg", "min", "max"])
+        if fn == "avg" and any(isinstance(e, Col) and e.t not in INTS_ALL + DEC_TYPES for e in group): fn = "sum"
+        pool = COLS if fn in ("count", "min", "max") else [(n,t) for n,t in COLS if t in INTS_ALL + DEC_TYPES]
+        n, t = rng.choice(pool)
+        arg = None if fn == "count" and rng.random() < 0.5 else Col(t, n)
+        items.append(Item(Agg("BIGINT" if fn == "count" else t, fn, arg), f"v{i}"))
+    where = Bin("BOOLEAN", ">", Col("INTEGER", "id"), Lit("INTEGER", str(rng.choice([0, 1, 5, 30])))) if rng.random() < 0.5 else None
+    having = Bin("BOOLEAN", rng.choice([">", "=", "<="]), Agg("BIGINT", "count", None), Lit("INTEGER", str(rng.randint(0, 3)))) if rng.random() < 0.6 else None
+    return SubsetSelect(tuple(items), File(rng.choice(TABLES)), where, group=group, having=having)

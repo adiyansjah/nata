@@ -1,6 +1,270 @@
-# Hash aggregate skeleton — steps B, C and C2, 2026-11-07
+# Hash aggregate skeleton — steps B, C, C2 and D, 2026-11-07
 
 
+
+## Step D — serve, clients, fuzz, resources and restart cleanup (2026-11-07)
+
+**PASS locally:** aggregates through `nata serve`; all **50 default-client
+cells**; exact SF1 HAVING multisets at 1/8 threads in memory and at 64 MiB;
+20,000-query SQL-fuzzer smoke (zero unexplained differences); independent CLI
+and concurrent-server RSS probes; real SIGKILL/restart cleanup; **five focused
+mutants CAUGHT, zero SURVIVED, zero INVALID**; required workspace/differential
+checks. **Known MISS retained:** default D=4B=256 MiB cannot complete the SF1
+HAVING query at B=64 MiB. Successful small-budget controls use explicit D=1 GiB.
+No resource target, card or accepted ADR is edited or frozen here. Both-CPU
+heavy/deep campaigns and all frozen-target timing verdicts remain for the parent.
+
+### Serve and admission
+
+The server now uses one node memory pool N, with each admitted query capped at
+floor(N / max-queries), including EXPLAIN ANALYZE and binary COPY. The query's
+admission permit lasts through task/I/O teardown. Disk caps also divide half
+the available volume among admissions; explicit per-query D above that share
+is rejected. Startup diagnostics state N, B, D and the memory source. Unknown
+physical/cgroup limits require an explicit cap, rather than a guessed default.
+The CLI keeps a single-query cap; `serve --aggregate-memory-bytes` sets **N**.
+
+Native protocol checks cover BIGINT SUM/count OID 20, numeric OID 1700 with
+DECIMAL(38,s)/exact AVG typmods, text and binary values, repeated named
+preparation (including parameters in arguments and HAVING), binary COPY,
+empty/global output, overflow **22003**, and positioned unsupported constructs
+**0A000**. A real two-query spill test observes two nonempty private spill
+owners concurrently under N=64 MiB / B=32 MiB, cancels both and requires
+released grants/files and healthy session reuse; completed grouped queries
+also agree. A lost execution cancel token is caught by this check. Aggregate
+output separately exercises bounded backpressure, cancel and disconnect;
+an injected nine-byte spill-write failure has no success trailer.
+
+The seeded aggregate server contention/delay/kill smoke passes **28 scenarios**
+with two busy contention threads and **1,801 healthy queries**; baseline/final
+FDs are 16/8 (eight healthy socket ends closed), threads 5/5, RSS 26,120/27,720
+KiB. This is finite native evidence, not a model of the new continuation adapter.
+[Record](raw/20261107-hash-aggregate-step-d/aggregate-reliability.txt).
+
+### Default client matrix
+
+SF0.01 lineitem, plus a four-row integer/BIGINT/decimal/NULL fixture; each cell
+compares values as a multiset. Its BIGINT SUM is 18,446,744,073,709,551,613,
+exceeding BIGINT, and must retain the exact numeric result in every client. Q1's three DuckDB DOUBLE AVG columns alone use
+an absolute 1e-8 tolerance; tiny AVG results use independent exact rational
+answers. Other numeric values compare exactly. JDBC calls `getObject` and
+asserts Long/BigDecimal before CSV transport; psycopg checks native int/Decimal
+and OIDs, including empty output. PGCLI returns int/Decimal; ADBC 1.13's opaque
+numeric extension reads as exact strings, with binary COPY enabled by default.
+Psql's native interface is text. CSV transport types in the raw JDBC rows are
+not a claim that JDBC returns String for numeric columns.
+
+| Query | Rows | psql | pgjdbc | psycopg 3 | pgcli | ADBC PostgreSQL |
+|---|---:|---|---|---|---|---|
+| Full Q1 body | 4 | PASS | PASS | PASS | PASS | PASS + R22 |
+| High-cardinality HAVING | 12,758 | PASS | PASS | PASS | PASS | PASS + R22 |
+| Global aggregate | 1 | PASS | PASS | PASS | PASS | PASS |
+| Empty grouped input | 0 | PASS | PASS | PASS | PASS | PASS |
+| NULL keys | 3 | PASS | PASS | PASS | PASS | PASS |
+
+Every cell passes both ordinary execution and **64 MiB forced spill**. JDBC
+and psycopg repeat preparation ten times with default driver settings; no
+prepareThreshold, binaryTransfer, use_copy or fetch-size option is changed.
+The original ADBC outcome is retained: terminal whitespace after a semicolon
+fails for Q1/HAVING under R22, then `rstrip()` normalization passes. This known
+driver-wrapper spelling deviation is not reclassified as an unnormalized pass.
+Versions and all 50 outcomes: [matrix JSON](raw/20261107-hash-aggregate-step-d/client-matrix.json).
+Local versions include pgjdbc 42.7.7 / OpenJDK 21.0.13, psycopg 3.3.8 and ADBC
+1.13.0; the exact Python package inventory is in that record. The heavy setup
+pins JDBC and ADBC to those versions and records the others on each CPU.
+
+### SQL fuzzer
+
+The subset alternates unchanged scalar seed batches and new aggregate batches:
+column/expression GROUP BY, boolean HAVING, COUNT/SUM/AVG/MIN/MAX, global and
+empty input, NULLs and all supported key/extreme families. Grouped results
+compare as multisets, preserving multiplicity; unordered LIMIT subsets are not
+generated. New narrowly typed SUM metadata classifiers have positive/negative
+tests; the CSV adapter itself cannot certify wire metadata. Direct-column AVG
+uses an independent exact sum/count and half-away-from-zero Decimal oracle,
+with guards against unsupported shrink rewrites. Decimal JSON digits and
+DuckDB's HUGEINT-as-string transport are normalized without a float conversion.
+
+**Seed 20261107: 20,000 queries (10,000 aggregate), 49,316 oracle rows,
+zero unexplained differences**, 1,725 oracle errors and 270 optimizer-dependent
+DuckDB answers. Seven inherited scalar CASE precision constructs are explicit
+coverage skips; **no aggregate coverage skips**. Five differences classify by
+message and seven after shrinking, all existing documented scalar differences.
+The exact AVG oracle checks 2,953 query shapes in both optimizer modes.
+[Smoke](raw/20261107-hash-aggregate-step-d/fuzz-smoke.txt).
+An additional **400 queries**, seed 22014202119, at 16 MiB forced spill have
+zero differences/skips. [Forced control](raw/20261107-hash-aggregate-step-d/fuzz-forced.txt).
+The planted-fault control is clean and **9/9 faults are caught**, including
+COUNT ignoring validity, AVG dividing by all rows and empty SUM returning zero.
+The older string fault needs 3,238 queries and therefore survives a preliminary
+2,000-query trial; the 8,000-query proof catches it.
+[Proof](raw/20261107-hash-aggregate-step-d/fuzz-prove.txt).
+Python tests: 26 pass, one optional longer proof test skipped (27 total); that proof was
+run separately as above. [Tests](raw/20261107-hash-aggregate-step-d/python-tests.txt).
+
+### Independent RSS and proposed defaults
+
+Local x86-64 Core i3-1220P KVM guest, eight visible logical CPUs, 16,382,784 KiB
+physical memory. Fresh release processes, warm data, stdout discarded for CLI;
+OS `wait4` peak RSS, independent of grants. All **65 aggregate gate queries**
+(including checked expected errors), plus SF1 HAVING, run at default/64/256 MiB
+and requested 1/8 threads. The table reports maximum RSS over the whole set;
+in every cell the maximum is SF1 HAVING. One valid final sample per cell is
+indicative evidence, not a timing comparison or a noise/scaling claim.
+
+CLI no-data baselines (1 / 8 requested threads): **13.03 MiB** / **12.92 MiB**. Rule checked:
+baseline + B + 32 MiB. All **264 explicit-budget observations PASS**; default
+controls are far below the shared default-pool getter's 7,999.4 MiB budget.
+All successful nonempty SF1 small-budget runs actually spill and retain exact
+results. Registered reservations stay within B.
+
+| Requested threads | B | Peak RSS MiB | SF1 peak reservation MiB | SF1 written / read bytes | Depth |
+|---:|---|---:|---:|---|---:|
+| 1 | default (7,999.4 MiB) | 587.32 | 1478.47 | 0 / 0 | 0 |
+| 1 | 64 MiB | 40.24 | 64.00 | 603,884,584 / 692,151,432 | 1 |
+| 1 | 256 MiB | 129.22 | 256.00 | 250,657,912 / 250,657,912 | 0 |
+| 8 | default (7,999.4 MiB) | 683.56 | 2515.85 | 0 / 0 | 0 |
+| 8 | 64 MiB | 48.61 | 64.00 | 960,196,632 / 1,219,526,664 | 2 |
+| 8 | 256 MiB | 74.74 | 256.00 | 666,587,736 / 723,016,432 | 1 |
+
+The server probes run **two simultaneous SF1 HAVING queries**, drain real text
+DataRows without retaining results, and require 1,273,748 rows from each and
+zero remaining spill files. N is the sum of the admitted caps; the tested
+process allowance is its no-data baseline + N + 32 MiB.
+
+| Per-query B MiB | Node N MiB | Baseline MiB | Peak RSS MiB | Allowance MiB | Verdict |
+|---:|---:|---:|---:|---:|---|
+| 3,999.7 | 7,999.4 | 7.00 | 1,153.29 | 8,038.40 | PASS |
+| 64.0 | 128.0 | 6.93 | 54.83 | 166.93 | PASS |
+| 256.0 | 512.0 | 6.97 | 187.46 | 550.97 | PASS |
+
+All three server controls observed actual nonempty spill files, including the
+default 3,999.7 MiB per-query share; the CLI default controls did not spill.
+That observation is retained without a performance diagnosis. Native admission
+checks independently inspect per-query peak/held/cancelled reservation snapshots.
+[CLI 1](raw/20261107-hash-aggregate-step-d/rss-1.json),
+[CLI 8](raw/20261107-hash-aggregate-step-d/rss-8.json),
+[server](raw/20261107-hash-aggregate-step-d/server-rss.json).
+
+Stack candidates are sampled every 20 ms from main/guarded no-huge-page native
+stack mappings: maximum sampled resident totals **92 / 396 KiB** at
+requested 1/8 threads; the server has at most 18 sampled threads. These samples
+can miss short-lived stacks and are not an exhaustive stack proof. Code bounds
+planner/coordinator stacks at 64 MiB virtual each and bounds worker counts by
+admission; all stack RSS remains INCLUDED in the process gate. An early
+adjacency-only selector counted allocator arenas and was corrected; those
+stack numbers are excluded. Outcome validation also caught a CLI invocation
+bug for comment-prefixed SQL; `--command=...` fixes it. Earlier full-suite RSS
+runs with rejected SQL are excluded, and all final outcomes/grants are checked.
+
+**Proposals for the parent, not frozen defaults:** retain baseline + B + **32
+MiB** allocator allowance (server: sum of admitted B), subject to the three
+repeats on both clean CPU types. Retain owner decision 4: N=half the smaller
+physical/cgroup limit, B=floor(N/admissions). Here N=8,387,985,408 bytes; CLI B=N,
+server Q=2 B=4,193,992,704 bytes. With Q=8 the rule would give 1,048,498,176 bytes
+per query; eight-way admission RSS is not measured here.
+
+The current D=min(4B, volume share) still **MISSES** SF1 at 64 MiB / 8 threads:
+quota error, exit 1, cleanup complete. Explicit **D=1 GiB** succeeds at 64 and
+256 MiB, including the concurrent server probes. Propose a small-budget floor:
+**D=min(max(4B, 1 GiB), half available volume divided by admissions)**. This is
+1 GiB at B=64/256 MiB and retains 4B at larger caps when space permits. It needs
+parent acceptance/an ADR 0009 amendment and both-CPU confirmation; the running
+default is unchanged. [Current default miss](raw/20261107-hash-aggregate-step-d/default-disk.txt).
+Spill volume/read amplification and hundreds of thousands of file opens remain
+visible in the counters above; no effort to reduce them was made in Step D.
+
+### Restart cleanup and mutants
+
+`nata cleanup-spill <trusted-spill-directory>` is the documented restart
+command. Ownership uses a held file lock, not a PID-existence guess; creation
+and cleanup serialize against the base directory. Live owners are skipped,
+unknown files/links are skipped, and spill contents are never read as data.
+The owner lock consumes one of the 32 spill descriptors (at most 31 data handles).
+A real child at FD limit four also forces ownership-marker creation to fail
+after mkdir and requires the private directory and grant to disappear. Its fifth mutant is caught. The final matrix and all RSS probes above were
+rerun after this fix; a separate 8-thread / 64 MiB SF1 probe also passes at
+**46.49 MiB**, below B + 32 MiB even without adding a baseline.
+[Post-fix probe](raw/20261107-hash-aggregate-step-d/post-owner-fix-rss.json).
+Native tests SIGKILL a child with actual IPC bytes, skip its live registry,
+remove it after death, and check idempotence/unknown files/symlink refusal.
+The real-server test SIGKILLs during observed spill, restarts, executes a fresh
+zero-count query, then removes **16 abandoned files / one directory** with the
+command. [Restart record](raw/20261107-hash-aggregate-step-d/restart.json).
+
+| Focused mutant | Verdict | Failing check |
+|---|---|---|
+| aggregate-numeric-wrong-oid | CAUGHT | Aggregate metadata/binary/default scalar/COPY checks |
+| aggregate-cancel-token-lost | CAUGHT | Two observed spilling queries fail the wire-read deadline |
+| aggregate-admission-pool-multiplied | CAUGHT | Two-query budget snapshot invariant |
+| restart-cleanup-skipped | CAUGHT | SIGKILL/restart cleanup test |
+| owner-initialization-cleanup-skipped | CAUGHT | Real EMFILE child leaves no directory |
+
+Passing private-copy controls precede the mutants; compile/edit failures and
+whole-suite timeouts are INVALID. The executor runner now also refuses unknown
+non-test failures as catches, with outcome-classifier tests.
+[Wire results](raw/20261107-hash-aggregate-step-d/mut-wire.txt),
+[executor result](raw/20261107-hash-aggregate-step-d/mut-exec.txt),
+[failing tests](raw/20261107-hash-aggregate-step-d/mutant-failures.txt).
+Full package sweeps are estimated to exceed the 15-minute local time box and
+are prepared for the parent.
+Every executor/wire edit anchor was checked to apply exactly once; that static
+check is not a substitute for a sweep. No crate, lockfile change or own unsafe
+block is added; C2's two statvfs unsafe blocks remain the only own-code ones.
+
+### Checks and exact heavy commands
+
+Required pre-commit commands pass sequentially with disk TMPDIR and two test
+threads: fmt; workspace/all-target clippy with warnings denied; workspace tests;
+cargo-deny; scan **5/5**, SQL **252/252**, differences **54/54**, aggregate
+**65/65**, forced aggregate **65/65**; staged leak scan. The job-chain stub suite
+also passes. The SQL-fuzzer smoke and first SF1 multiset controls used runtime `8775bcb`.
+The final matrix and RSS probes also include the subsequent owner-lock
+initialization error cleanup; aggregate arithmetic and spill data paths are
+unchanged. Binary hashes are in [runtime identity](raw/20261107-hash-aggregate-step-d/runtime.txt). No GCP, push or merge was performed.
+
+The complete, versioned, directly copyable **[heavy.steps content](../aggregate-step-d.steps)**
+contains both bound-3 memory/spill models, two 100,000-query seeds (second forced
+spill), the 30,000-case-per-shape spill and inherited Parquet campaigns, one
+million wire decoder cases per corpus, 4,000 live scenarios / 20,000 wire cases,
+full executor/SQL/wire/memory/
+kernel mutant sweeps, native aggregate contention, restart, client setup/matrix,
+and three-repeat CLI/concurrent-server RSS probes. Models cover the real memory
+service and its spill interactions; they do not instrument the native disk
+continuation adapter. The corruption campaign is the inherited physical IPC
+boundary campaign, not an exhaustive arbitrary typed-state proof.
+
+```sh
+cp bench/aggregate-step-d.steps heavy.steps
+# Parent ships this exact file separately to an ARM64 n4a and an x86-64 c3d
+# heavy job, sizes the VM for --jobs 4, and supplies cloud approval/budget.
+```
+
+Local reproduction uses `TMPDIR=$HOME/tmp-skelD`, a release build, DATA containing
+TPC-H SF0.01 plus `scripts/gen-sql-check-data.sh` fixtures, and DATA_SF1 with the
+standard SF1 fixture. Each command is a separate sequential run:
+
+```sh
+env -u AI_AGENT python3 scripts/check-aggregate-clients.py --candidate target/release/nata --data "$DATA" --out "$TMPDIR/clients"
+env -u AI_AGENT python3 scripts/check-aggregate-spill.py --candidate target/release/nata --data "$DATA_SF1" --rounds 0 --out "$TMPDIR/sf1"
+env -u AI_AGENT python3 scripts/check-aggregate-rss.py --candidate target/release/nata --data "$DATA" --sf1 "$DATA_SF1" --threads 1 --rounds 1 --out "$TMPDIR/rss-1"
+env -u AI_AGENT python3 scripts/check-aggregate-rss.py --candidate target/release/nata --data "$DATA" --sf1 "$DATA_SF1" --threads 8 --rounds 1 --out "$TMPDIR/rss-8"
+env -u AI_AGENT python3 scripts/check-aggregate-rss.py --server --candidate target/release/nata --data "$DATA" --sf1 "$DATA_SF1" --threads 8 --rounds 1 --out "$TMPDIR/server-rss"
+env -u AI_AGENT python3 scripts/check-aggregate-restart.py --candidate target/release/nata --data "$DATA" --out "$TMPDIR/restart"
+```
+
+Clients need the item35 Python dependencies, psql/Java on PATH and PGJDBC_JAR;
+`aggregate-client-setup.sh` prepares those in a parent heavy job. Fuzzer smoke
+and replay commands are in `spikes/sqlfuzz/README.md`; all large commands are in
+the single heavy file above. Scratch is removed at handback; raw evidence is
+retained here.
+
+**SKELETON COMPLETE — check paths, not card closeout.** Closeout still runs the
+prepared heavy/deep checks on both CPUs, freezes RSS/default proposals with the
+parent, measures timing verdicts against the frozen targets on clean VMs, and
+delivers the performance work of **R12/P11/P4/P5 and spill volume** (plus actual
+pool affinity evidence). No clean-VM performance or full native-adapter formal
+coverage is claimed by this step.
 
 ## Step C2 — spill integration (2026-11-07)
 

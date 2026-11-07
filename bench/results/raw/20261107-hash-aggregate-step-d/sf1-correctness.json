@@ -1,0 +1,90 @@
+[
+  {
+    "kind": "gate",
+    "threads": 1,
+    "mode": "memory",
+    "rows": 1273748,
+    "counters": {
+      "partial_ns": 2821368621,
+      "merge_ns": 233355293,
+      "partial_groups": 1493405,
+      "largest_partial": 1493405,
+      "rehashes": 256,
+      "reservation_calls": 1340,
+      "reservation_releases": 1340,
+      "memory_lock_wait_ns": 141722,
+      "peak_reservation": 1550285867,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "gate",
+    "threads": 1,
+    "mode": "64MiB",
+    "rows": 1273748,
+    "counters": {
+      "partial_ns": 2239524393,
+      "merge_ns": 2312742039,
+      "partial_groups": 1493405,
+      "largest_partial": 31863,
+      "rehashes": 7687,
+      "reservation_calls": 14376,
+      "reservation_releases": 14329,
+      "memory_lock_wait_ns": 1603639,
+      "peak_reservation": 67108864,
+      "spill_bytes_written": 603884584,
+      "spill_bytes_read": 692151432,
+      "partitions_spilled": 272,
+      "recursion_depth": 1,
+      "spill_files_opened": 143642
+    }
+  },
+  {
+    "kind": "gate",
+    "threads": 8,
+    "mode": "memory",
+    "rows": 1273748,
+    "counters": {
+      "partial_ns": 10457042150,
+      "merge_ns": 4889555542,
+      "partial_groups": 1493439,
+      "largest_partial": 212250,
+      "rehashes": 1664,
+      "reservation_calls": 2590,
+      "reservation_releases": 2590,
+      "memory_lock_wait_ns": 365690,
+      "peak_reservation": 2626563442,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "gate",
+    "threads": 8,
+    "mode": "64MiB",
+    "rows": 1273748,
+    "counters": {
+      "partial_ns": 2947052405,
+      "merge_ns": 3682784476,
+      "partial_groups": 1493523,
+      "largest_partial": 6137,
+      "rehashes": 41508,
+      "reservation_calls": 30706,
+      "reservation_releases": 30471,
+      "memory_lock_wait_ns": 4119662,
+      "peak_reservation": 67108864,
+      "spill_bytes_written": 960155880,
+      "spill_bytes_read": 1219426784,
+      "partitions_spilled": 4368,
+      "recursion_depth": 2,
+      "spill_files_opened": 300612
+    }
+  }
+]

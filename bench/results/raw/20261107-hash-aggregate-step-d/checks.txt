@@ -1,0 +1,11 @@
+All commands sequential, TMPDIR on disk, RUST_TEST_THREADS=2.
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: PASS
+cargo deny check: advisories ok, bans ok, licenses ok, sources ok
+scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+sql-differences: 54 queries: 54 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+forced: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+scripts/check-leaks.sh --staged: PASS

@@ -1,0 +1,15 @@
+seed 20261107  queries 20000  oracle-errors 1725 (8%)  rows-compared 49316  optimizer-dependent-in-duckdb 270  nata-not-supported 7  listed-by-message 5  differences-to-classify 7  [348s]
+  class (by message) listed: CASE of decimals beyond 38 digits is a bind error (decimal-rules 9): 2
+  class (by message) listed: exact AVG versus DuckDB DOUBLE (dialect 10): 5906
+  class (by message) listed: negating a minimum signed literal overflows its value-based INTEGER/BIGINT type; DuckDB folds a wider literal (dialect 8b.10, 9): 3
+  class (by message) nata-error: execution error: 1
+  class (by message) oracle-error-nata-answered: 6
+  not supported:     7  error: not supported yet: a CASE whose results
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261107 batch=80 query=16: SELECT (- CAST('9999999999' AS INTEGER)) AS c2 FROM t2 WHERE NULL
+  e.g. [listed: a select list of literals that fails (a CAST, an ove...] seed=20261107 batch=168 query=16: SELECT (- CAST(-12345678901234567890.12345 AS INTEGER)) AS c2 FROM t2 WHERE NULL
+  e.g. [listed: Nata raised an error in an operand next to a NULL; D...] seed=20261107 batch=216 query=24: SELECT (NULL // CAST('9999999999' AS INTEGER)) AS c0 FROM t2
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261107 batch=222 query=27: SELECT ((sm < sm) AND (2147483647 <> CAST('9999999999' AS INTEGER))) AS c1 FROM t2
+  e.g. [listed: DuckDB evaluates every operand of AND/OR in a projec...] seed=20261107 batch=458 query=31: SELECT (sm BETWEEN 1 AND (- sm)) AS c2 FROM t1
+  FINAL CLASS listed: DuckDB evaluates every operand of AND/OR in a projection; Nata only the rows the earlier operands left undecided (dialect 9b): 2
+  FINAL CLASS listed: Nata raised an error in an operand next to a NULL; DuckDB did not evaluate it (dialect 9b): 1
+  FINAL CLASS listed: a select list of literals that fails (a CAST, an overflow) is an error in DuckDB over its in-memory tables even when no row is selected (planning folds it); Nata raises it only for a selected row (dialect 9b): 4

@@ -1,0 +1,11 @@
+control (faithful rendering vs oracle): 400 queries, 0 differences -> ok
+caught   nan-is-ieee                        after    33 queries: SELECT d AS c0 FROM t2 WHERE ((w <= w) AND ((c > CAST('-2.5' AS DOUBLE)) AND NOT isnan(c) AND NOT is
+caught   between-exclusive                  after     7 queries: SELECT ti AS c0 FROM t2 WHERE (((r IS NOT NULL) OR f) AND (s > 'é' AND s < 'true'))
+caught   limit-off-by-one                   after     2 queries: SELECT CAST(NULL AS DECIMAL(10,2)) AS c0, CAST('2024-02-29' AS DATE) AS c1, s AS c2 FROM t2 LIMIT 4
+caught   int-overflow-yields-null           after   109 queries: SELECT TRY_CAST((CAST(TRY_CAST((CAST(a AS BIGINT) - CAST(-2147483648 AS BIGINT)) AS INTEGER) AS BIGI
+caught   decimal-via-double                 after    32 queries: SELECT CAST((CAST(w AS DOUBLE) + CAST((CASE WHEN (b IS NULL) THEN d ELSE 0.10 END) AS DOUBLE)) AS DE
+caught   string-compare-case-insensitive    after  3238 queries: SELECT r AS c0, r AS c1, (d % d) AS c2, s AS c3 FROM t2 WHERE (lower(s) = lower('Ab'))
+caught   count-col-counts-nulls             after    41 queries: SELECT dt AS k0, min(a) AS v0, min(b) AS v1, min(dt) AS v2, count(*) AS v3 FROM t1 GROUP BY dt
+caught   avg-divides-by-rows                after   149 queries: SELECT count(a) AS v0, (CAST(sum(sm) AS DOUBLE) / count(*)) AS v1, max(s) AS v2, max(s) AS v3, sum(i
+caught   sum-null-is-zero                   after    60 queries: SELECT f AS k0, s AS k1, count(w) AS v0, COALESCE(sum(id), 0) AS v1, COALESCE(sum(w), 0) AS v2, coun
+9 of 9 subset faults caught; control clean
