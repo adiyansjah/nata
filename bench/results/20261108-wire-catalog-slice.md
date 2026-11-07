@@ -829,3 +829,102 @@ is a dynamic dependency declaration, not evidence of an installed UI's shipped
 JAR. R24 remains OPEN; this source replay does not complete shipped-driver/UI or
 optional keys/indexes/properties certification. Matrix/checker must retain these
 as FAIL; the parent's nine deviations cannot waive new DBeaver failures.
+
+### Closeout preparation F and resource-policy stop, 2026-11-08
+
+**STOP under the brief's ADR/frozen-target rule; slice remains OPEN.** The
+stronger local resource smoke retains all sessions, parks every worker admission,
+then requires every remaining healthy client to progress under CPU contention.
+Both repetitions fail with `53300 query admission timeout`, including the
+PostgreSQL-context run. ADR 0015 requires suspended work to retain admission;
+the five-second portal lease and five-second admission timeout race. The card
+requires healthy completion within that existing deadline. This is not a choice
+of RSS budget. No lease, timeout, admission-retention rule or frozen target was
+changed. Parent must resolve the fairness policy before resource acceptance.
+
+**Correction to the initial B smoke:** the first harness checked one newly
+connected healthy client and allowed lease + admission (10 s); its 5.004 s
+numbers establish RSS/FD cleanup only, not the card's five-second healthy-query
+completion target. The final gate uses the existing **5 s**, keeps all sessions
+and fails rather than widening it. The later loaded single-client numbers in
+`resource-loaded-*.json` are likewise superseded for fairness by the failure
+logs. RSS formula and cleanup allowances are unchanged.
+
+Prepared heavy commands now cover explicit PG15 and PG16 oracles, official PGDG
+installation, native slow-reader/contention tests, independent scratch tests,
+portal/scheduler/memory/bridge loom at bound 3, full **98** registered mutants,
+actual snapshot-cap removal, resources and reference-first P16. `/usr/bin/time`
+is explicitly installed (`sudo apt-get install -y time linux-perf`); machine type
+comes from metadata. P16 misses collect server perf profiles while the server is
+alive. These are prepared commands, not a claim that all acceptance gates pass.
+DBeaver source failures and fairness failure remain failing gates. Full cloud
+execution and deep checks have NOT RUN. No GCP, push, merge or new dependency.
+
+GCP uploads exclude `.git`: `package-close.sh` packages the stated starting main
+`a3e8e3b` as a source-only archive plus SHA-256 manifest in ignored `.slice-close/`,
+then copies the template. Baseline/current release builds use four jobs serially;
+the cap mutant copies source files, requiring no VM Git repository. Matrix exit
+1 is retained in `matrix.exit`; the separate deviation checker rejects every
+unapproved non-PASS row and now rejects changed client versions. PG16 behavior
+has no additional unmeasured normalization.
+
+Sizing, **reasoned, NOT RUN**: n4a-highcpu-16 and c3d-highcpu-16 preserve the
+frozen ARM/x86 classes, accommodate eight engine workers, four build jobs and
+load actors. **100 GB disk** gives separate native/loom/mutant/baseline targets
+headroom. **4 hours per CPU** is a ceiling allowing release builds, 98 mutants,
+bound-3 explorations, fresh PG installations, catalog DDL and all per-client
+primary/twin pairs; it is not a measured completion-time prediction. Obtain the
+spend bound from `plan`. These commands spend nothing until explicitly approved
+`run` is executed by the parent; do not launch as acceptance while policy is open.
+
+```sh
+bash scripts/wire-browse/package-close.sh
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 100 --max-vm-hours 4
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 100 --max-vm-hours 4
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 100 --max-vm-hours 4 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 100 --max-vm-hours 4 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
+```
+
+Remaining beyond the policy stop: real DBeaver UI/resolved shipped driver and
+optional property/key/index replay; resource full-size adequacy and PostgreSQL
+loaded-memory context (current script records only a catalog backend, not the
+same loaded server workload); long-stream first-row/source-completion and
+wide/NULL/decimal P16 controls; full-size cap-removal control, both-CPU medians,
+R25 full timeout-fixture decision and closing-commit deep/fuzz/sanitizer evidence.
+No preparation script or tiny smoke closes R24/R25/P14/P16.
+
+### Final local checks and handoff commits
+
+| Item | Rule | Numbers / verdict | Command |
+|---|---|---|---|
+| A / deviations | Exactly nine parent decisions; reject every unexplained not-run or FAIL | **PASS** coverage/version checker; matrix **81 PASS / 0 FAIL / 9 not run**, original exit **1** | `WORK=... RESULTS=... bash scripts/wire-skeleton/run.sh`; `python3 scripts/wire-skeleton/check-deviations.py <matrix.json>` |
+| B / resources | Frozen printed RSS terms; cleanup idle + 64 MiB within 10 s; idle FDs; healthy completion within existing 5 s | Initial RSS/FD controls PASS (peaks 19.7–20.0 MB; idle FDs 7). **Final fairness FAIL / policy STOP**, reproduced against fresh current binary. Full-size cap-removal and loaded PostgreSQL context unmeasured | `resources.py --nata <binary> --work <scratch> --smoke`; failure logs in raw gates directory |
+| C / PG16 | Official PGDG bookworm-pgdg, verified major; no unmeasured PG16 handling | Installer/oracle **prepared, NOT RUN**; local **PG17** only | `PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh` after installer |
+| D / P16 | Reference first, same VM; ≤1.10x streaming, ≤1.20x paired small query; >5% PG twin noise UNRESOLVED | **14 tiny smoke arms** (7 clients/formats × stream/small), no performance verdict; 3 verdict mutants CAUGHT. Full first-row/wide controls remain | `p16.py --smoke --nata ... --baseline ... --jar ... --postgres ... --work ...` |
+| E / R24 | Source replay exposes native navigator limits; installed-driver/UI certification remains separate | Fallback 42.7.2 / DBeaver source 25.2.0: **1 PASS / 5 FAIL**, **R24 OPEN**; no shipped-driver claim | `DBEAVER_JAR=... matrix.py --nata ... --jar ... --work ...` |
+| F / heavy | Every exit gated, both CPU classes, source-only baseline packaging | Commands prepared; **not complete acceptance / not launched**, policy stop and stated remaining controls | `bash scripts/wire-browse/package-close.sh`; plan/run commands above |
+
+Final Rust tests: **68 PASS**, 0 failed/ignored; fmt and all-target pgwire clippy
+with warnings denied PASS. Python/shell syntax and diff whitespace PASS. Fresh
+local PG17 oracle: **56 browse / 3 binary / 95 helpers / 36 inventory PASS**.
+Focused new source-gate mutants: **7 Python + 2 native scratch CAUGHT**, **0
+MISSED / 0 INVALID**, restored native scratch control PASS. All 98 full-sweep
+anchors apply once; sweep NOT RUN. No new Cargo.lock package or production Rust
+behavior change. Rust changes are two private scratch-boundary tests only.
+All builds/tests serialized at four jobs. Stale inactive pgwire package artifacts
+were reclaimed with `cargo clean` when free space reached 19.84 GiB, restoring
+21.75 GiB; active cache untouched. The first matrix-script attempt found local
+system Python lacked ensurepip; final script used installed Python 3.12 and JDK
+17.0.21. The earlier JDBC timeout failures during exploratory concurrent runs
+were not accepted: final fresh-binary matrix passes every supported cell.
+
+Small evidence: [raw gates](raw/20261108-wire-catalog-close/gates/), including
+checks JSON, original final matrix JSON, unchanged failure controls and smoke
+numbers. The final staged leak scan is required before the handoff commit.
+
+Per-item commits: A `1a8e3d6`; B `98a7c5b`; C `6973bbd`; D `1d28f3e`;
+E `37c4ffb`. Final preparation/check/policy-stop commit SHA is supplied in the
+handoff rather than self-referenced. No push or merge.
+
+Final code-content SHA-256: `73f10a2722e9e9a20117a0c38c741af10a0b6ffa4388a55a9549577a5d0cacbb`.
+Staged leak scan PASS before the final preparation/stop commit.

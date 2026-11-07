@@ -28,7 +28,10 @@ with (a.work/'bounded.log').open('w') as out:
     good=subprocess.run([str(a.nata.resolve()),'serve','--catalog',str(registry),'--listen','127.0.0.1:55439'],stdout=out,stderr=out,timeout=60)
 assert good.returncode!=0,'bounded control accepted oversized snapshot'
 private=a.work/'source'
-subprocess.run(['git','clone','--quiet','--shared',str(root),str(private)],check=True)
+private.mkdir()
+for filename in ['Cargo.toml','Cargo.lock','rust-toolchain.toml']:
+    shutil.copy(root/filename,private/filename)
+shutil.copytree(root/'crates',private/'crates',ignore=shutil.ignore_patterns('target','__pycache__'))
 p=private/'crates/nata-pgwire/src/catalog.rs'
 s=p.read_text();old='pub const MAX_SNAPSHOT_BYTES: usize = 16 * 1024 * 1024;'
 assert s.count(old)==1;p.write_text(s.replace(old,'pub const MAX_SNAPSHOT_BYTES: usize = 1usize << 40;'))

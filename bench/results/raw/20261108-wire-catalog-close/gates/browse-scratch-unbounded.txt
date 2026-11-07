@@ -1,0 +1,20 @@
+
+running 2 tests
+test metadata::tests::metadata_scratch_cap ... ok
+test browse::tests::metadata_scratch_cap ... FAILED
+
+failures:
+
+failures:
+    browse::tests::metadata_scratch_cap
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-9e375183/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.26s
+     Running unittests src/lib.rs (/home/dev/tmp-s10-api/target/debug/deps/nata_pgwire-fc1e69ef8cad2ee7)
+
+thread 'browse::tests::metadata_scratch_cap' (2433861) panicked at crates/nata-pgwire/src/browse.rs:821:9:
+assertion failed: rows.exceeded
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `-p nata-pgwire --lib`

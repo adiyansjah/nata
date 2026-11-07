@@ -1,4 +1,12 @@
 import unittest
+import os
+from pathlib import Path
+import p16
+if os.environ.get('P16_MUTANT'):
+    old,new=os.environ['P16_MUTANT'].split('|||')
+    source=Path(p16.__file__).read_text()
+    assert source.count(old)==1
+    exec(compile(source.replace(old,new),p16.__file__,'exec'),p16.__dict__)
 from p16 import verdict,summary
 class Gates(unittest.TestCase):
     def test_limits(self):

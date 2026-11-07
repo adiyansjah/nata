@@ -16,6 +16,8 @@ SESSION = 'crates/nata-pgwire/src/session.rs'
 EXTENDED = 'crates/nata-pgwire/src/extended.rs'
 SQLERROR = 'crates/nata-sql/src/error.rs'
 MUTANTS = {
+ 'metadata-scratch-unbounded': ('crates/nata-pgwire/src/metadata.rs', 'if self.bytes > crate::catalog::MAX_SNAPSHOT_BYTES {', 'if false {', 'lib'),
+ 'browse-scratch-unbounded': ('crates/nata-pgwire/src/browse.rs', 'if self.bytes > crate::catalog::MAX_SNAPSHOT_BYTES {', 'if false {', 'lib'),
  'aggregate-numeric-wrong-oid': (CODEC, 'Decimal { precision, scale } => (\n            1700,', 'Decimal { precision, scale } => (\n            25,', 'protocol'),
  'aggregate-cancel-token-lost': (SERVER, 'self.token.cancel();', '// lost executor cancellation', 'protocol'),
  'aggregate-admission-pool-multiplied': (SERVER, 'Some(pool / config.max_queries)', 'Some(pool)', 'protocol'),

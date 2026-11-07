@@ -1,0 +1,19 @@
+{
+  "rule": "Healthy-query completion within existing 5 s admission deadline; parked portals retain admission with 5 s idle expiry",
+  "source": [
+    "crates/nata-pgwire/src/server.rs:962",
+    "crates/nata-pgwire/src/server/fetch.rs:100",
+    "docs/decisions/0015-bounded-portals-and-session-settings.md"
+  ],
+  "smoke": {
+    "sessions": 4,
+    "workers": 1,
+    "tables": 4,
+    "columns": 2,
+    "CPU_contention_actors": 1
+  },
+  "observed": "53300 query admission timeout in both the all-session smoke and PostgreSQL-context smoke",
+  "verdict": "FAIL; parent policy decision required; no target or ADR changed",
+  "command": "resources.py --nata <binary> --work <scratch> --smoke [--postgres <local DSN>]",
+  "current_build_replay": "Same failure after cargo build --locked -p nata -j 4 from this worktree; see fairness-current-build.txt"
+}

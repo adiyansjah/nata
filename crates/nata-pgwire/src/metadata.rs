@@ -289,6 +289,19 @@ pub(crate) fn query_with(
 mod tests {
     use super::*;
     #[test]
+    fn metadata_scratch_cap() {
+        let charge =
+            std::mem::size_of::<Vec<Option<String>>>() + std::mem::size_of::<Option<String>>();
+        let mut rows = BoundedRows {
+            bytes: crate::catalog::MAX_SNAPSHOT_BYTES - charge,
+            ..BoundedRows::default()
+        };
+        assert!(rows.push(vec![None]).is_ok(), "exact cap allowed");
+        assert_eq!(rows.rows.len(), 1);
+        assert!(rows.push(vec![None]).is_err(), "cap excess");
+        assert_eq!(rows.rows.len(), 1, "excess row not retained");
+    }
+    #[test]
     fn snapshot_columns_preserve_every_field_in_order() {
         use nata_sql::source::{SourceColumn, SourceInfo};
         let columns = [

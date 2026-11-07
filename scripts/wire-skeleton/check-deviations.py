@@ -28,5 +28,11 @@ if __name__ == '__main__':
     ap.add_argument('matrix', type=Path)
     a = ap.parse_args()
     here = Path(__file__).resolve().parent
+    versions=json.loads(a.matrix.with_name('versions.json').read_text())
+    for package,expected in [('psycopg','3.3.8'),('pgcli','4.7.1'),('adbc-driver-postgresql','1.13.0')]:
+        assert versions[package]==expected, ('deviation version changed',package)
+    import subprocess
+    assert subprocess.check_output(['psql','--version'],text=True).split()[2]=='17.11', 'psql deviation must be revisited'
+    assert 'connect: PASS driver=42.7.14' in a.matrix.with_name('jdbc.txt').read_text().splitlines(), 'pgjdbc deviation must be revisited'
     print(check(json.loads(a.matrix.read_text()), json.loads((here/'deviations.json').read_text()),
                 json.loads((here/'api-limits.json').read_text())))

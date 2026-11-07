@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import time
+import statistics as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'wirecapture'))
 from protocol import Conn, i
@@ -20,6 +21,12 @@ MiB=1024**2
 FORMULA='idle RSS + S × (16 MiB snapshot cap + 512 KiB wire buffers) + the engine query budget configured for the run + 64 MiB fixed allowance'
 def budget(idle,sessions,engine):
     return idle+sessions*(16*MiB+512*1024)+engine+64*MiB
+
+def peak_ok(peak, ceiling):
+    return peak <= ceiling
+
+def cleanup_ok(rss, idle, fds, idle_fds):
+    return rss <= idle + 64*MiB and fds == idle_fds
 
 def proc(pid):
     lines=Path(f'/proc/{pid}/status').read_text().splitlines()
@@ -37,6 +44,16 @@ def run(a, count, width, workers, fd_limit):
     work=a.work/f'{count}-{width}-{workers}-{fd_limit}'
     work.mkdir(parents=True,exist_ok=True)
     pq.write_table(pa.table({f'c{j}':pa.array(range(a.rows),type=pa.int64()) for j in range(width)}),work/'data.parquet')
+    pg_context=None
+    if a.postgres:
+        with psycopg.connect(a.postgres,autocommit=True) as pg:
+            pg.execute('DROP SCHEMA IF EXISTS resource_scale CASCADE')
+            pg.execute('CREATE SCHEMA resource_scale')
+            for j in range(count):
+                columns=width if width==1 or j%16==0 else 1
+                pg.execute(f'CREATE TABLE resource_scale.t{j} ('+','.join(f'c{k} bigint' for k in range(columns))+')')
+            pid=pg.execute('SELECT pg_backend_pid()').fetchone()[0]
+            pg_context=dict(version=pg.execute('SELECT version()').fetchone()[0],backend_RSS=proc(pid)[0],backend_peak=proc(pid)[1],scope='backend only; shared PostgreSQL memory not aggregated; catalog metadata context')
     registry=work/'catalog.tsv'
     pq.write_table(pa.table({'c0':pa.array(range(a.rows),type=pa.int64())}),work/'narrow.parquet')
     registry.write_text(''.join(f'nata\tpublic\tt{j}\t{work.resolve()}/{"data.parquet" if width==1 or j%16==0 else "narrow.parquet"}\n' for j in range(count)))
@@ -61,6 +78,28 @@ def run(a, count, width, workers, fd_limit):
             print(json.dumps(dict(formula=FORMULA,idle_RSS=idle,S=a.sessions,snapshot_cap=16*MiB,wire_buffers=512*1024,engine_query_budget=engine,fixed_allowance=64*MiB,budget=ceiling,fd_idle=fds,fd_limit=fd_limit)),flush=True)
             dsn=f'host=127.0.0.1 port={port} user=nata dbname=nata connect_timeout=10'
             for _ in range(a.sessions): clients.append(psycopg.connect(dsn,autocommit=True))
+            browse_gate=None
+            if a.postgres:
+                # Scope projection removes unrelated PostgreSQL system/fixture tables.
+                # Nata has only this registered fixture in its snapshot.
+                nq=["SELECT table_name FROM information_schema.tables ORDER BY table_name",
+                    "SELECT table_name,column_name,data_type,is_nullable,ordinal_position FROM information_schema.columns ORDER BY table_name,ordinal_position"]
+                pq_queries=[q.replace(' ORDER BY', " WHERE table_schema='resource_scale' ORDER BY") for q in nq]
+                def materialize(c,queries):return [c.execute(q).fetchall() for q in queries]
+                with psycopg.connect(a.postgres,autocommit=True) as pg:
+                    expected=materialize(pg,pq_queries)
+                    assert materialize(clients[0],nq)==expected, 'large-catalog typed values differ'
+                    samples={'postgres':[],'nata':[]}
+                    for rnd in range(1 if a.smoke else 5):
+                        for name in (['postgres','nata'] if rnd%2==0 else ['nata','postgres']):
+                            started=time.perf_counter()
+                            got=materialize(pg,pq_queries) if name=='postgres' else materialize(clients[0],nq)
+                            elapsed=time.perf_counter()-started
+                            assert got==expected
+                            samples[name].append(elapsed)
+                    ratio=st.median(samples['nata'])/st.median(samples['postgres'])
+                    browse_gate=dict(samples=samples,ratio=ratio,budget=1.20,verdict='SMOKE ONLY' if a.smoke else ('PASS' if ratio<=1.20 else 'FAIL'))
+                    assert a.smoke or ratio<=1.20, ('large catalog browse budget exceeded',browse_gate)
             def browse(c):
                 rows=c.execute('SHOW TABLES FROM public').fetchall()
                 assert len(rows)==count
@@ -69,9 +108,9 @@ def run(a, count, width, workers, fd_limit):
             with concurrent.futures.ThreadPoolExecutor(max_workers=a.sessions) as pool:
                 list(pool.map(browse,clients))
             # Occupy every admission with positive-fetch portals; healthy client must
-            # progress within the existing five-second admission + five-second lease.
-            for c in clients: c.close()
-            clients=[]
+            # progress within the existing five-second admission deadline.
+            for c in clients[:workers]: c.close()
+            clients=clients[workers:]
             parked=[]
             for _ in range(workers):
                 c=Conn(port);parked.append(c)
@@ -81,16 +120,18 @@ def run(a, count, width, workers, fd_limit):
                 c.send('E',b'p\0'+i(1));c.send('H')
                 assert c.until(('s','E'))[-1][0]=='s'
             started=time.monotonic()
-            with psycopg.connect(dsn,autocommit=True) as healthy:
-                assert healthy.execute('SELECT c0 FROM public.t0 LIMIT 3').fetchall()==[(0,),(1,),(2,)]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(clients)) as pool:
+                list(pool.map(browse,clients))
             elapsed=time.monotonic()-started
-            assert elapsed<=10, ('admission starvation',elapsed)
+            assert elapsed<=5, ('admission deadline exceeded',elapsed)
             for c in parked:c.close()
+            for c in clients:c.close()
+            clients=[]
             rss,hwm,_=proc(server.pid)
-            assert hwm<=ceiling, ('peak RSS excess',hwm,ceiling)
-            wait(lambda:proc(server.pid)[0]<=idle+64*MiB and proc(server.pid)[2]==fds)
+            assert peak_ok(hwm,ceiling), ('peak RSS excess',hwm,ceiling)
+            wait(lambda:cleanup_ok(proc(server.pid)[0],idle,proc(server.pid)[2],fds))
             final=proc(server.pid)
-            result=dict(tables=count,width=width,workers=workers,sessions=a.sessions,peak=hwm,budget=ceiling,idle=idle,final=final,admission_seconds=elapsed,verdict='PASS')
+            result=dict(browse_gate=browse_gate,postgres_context=pg_context,tables=count,width=width,workers=workers,sessions=a.sessions,peak=hwm,budget=ceiling,idle=idle,final=final,admission_seconds=elapsed,verdict='PASS')
             (work/'result.json').write_text(json.dumps(result,indent=2)+'\n')
             print(json.dumps(result),flush=True)
         finally:
@@ -102,7 +143,7 @@ def run(a, count, width, workers, fd_limit):
 if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--nata',type=Path,required=True);ap.add_argument('--work',type=Path,required=True)
-    ap.add_argument('--smoke',action='store_true');a=ap.parse_args()
+    ap.add_argument('--postgres');ap.add_argument('--smoke',action='store_true');a=ap.parse_args()
     a.sessions=4 if a.smoke else 64;a.rows=100 if a.smoke else 1000000
     for count in ([4] if a.smoke else [64,1024,10000]):
         for width in ([2] if a.smoke else [1,64]):

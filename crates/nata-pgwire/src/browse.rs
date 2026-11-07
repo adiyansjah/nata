@@ -807,6 +807,20 @@ pub(crate) fn query(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn metadata_scratch_cap() {
+        let charge =
+            4 * std::mem::size_of::<Vec<Option<String>>>() + std::mem::size_of::<Option<String>>();
+        let mut rows = Rows {
+            bytes: crate::catalog::MAX_SNAPSHOT_BYTES - charge,
+            ..Rows::default()
+        };
+        rows.push(vec![None]);
+        assert!(!rows.exceeded);
+        rows.push(vec![None]);
+        assert!(rows.exceeded);
+        assert_eq!(rows.rows.len(), 1, "excess row not retained");
+    }
     fn snapshot() -> Snapshot {
         use nata_sql::source::{SourceColumn, SourceInfo};
         let mut snapshot = Snapshot::default();

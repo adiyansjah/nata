@@ -68,10 +68,10 @@ def main(a):
     with psycopg.connect(a.postgres,autocommit=True) as c:
         c.execute('DROP TABLE IF EXISTS million');c.execute('CREATE TABLE million(v bigint)')
         c.execute(f'INSERT INTO million SELECT generate_series(0,{a.rows-1})::bigint')
-        context=dict(postgres=c.execute('SELECT version()').fetchone()[0],source=sp.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),rows=a.rows,smoke=a.smoke,limits='warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim')
+        context=dict(postgres=c.execute('SELECT version()').fetchone()[0],source=sp.check_output(['bash','scripts/code-tree.sh'],cwd=ROOT,text=True).strip(),rows=a.rows,smoke=a.smoke,limits='warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim')
     (a.work/'context.json').write_text(json.dumps(context,indent=2)+'\n')
     samples={};rounds=1 if a.smoke else 5
-    def measure(label,port,workers,peer_port=None):
+    def measure(label,port,workers,peer_port=None,server_pid=None):
         dsn=a.postgres if label=='postgres' else f'host=127.0.0.1 port={port} user=nata dbname=nata'
         for name in clients:
             for kind in ['stream','small']:
@@ -94,6 +94,15 @@ def main(a):
                 samples[f'{label}/{workers}/{name}/{kind}']=dict(**summary(**values),samples=values)
                 if baseline:samples[f'baseline/{workers}/{name}/{kind}']=dict(**summary(baseline[::2],baseline[1::2]),samples=baseline)
                 (a.work/f'{label}-timings.json').write_text(json.dumps(samples,indent=2)+'\n')
+                if label=='nata' and not a.smoke:
+                    key=f'{workers}/{name}/{kind}'
+                    state=verdict(samples['postgres/'+key],samples['nata/'+key],samples['baseline/'+key],kind)
+                    if state=='NOT MET':
+                        profile=a.work/f'profile-{workers}-{name}-{kind}.data'
+                        sp.run(['sudo','perf','record','-q','-g','-o',str(profile),'-p',str(server_pid),'--',*cmd],check=True,timeout=180)
+                        with (profile.with_suffix('.txt')).open('w') as output:
+                            sp.run(['sudo','perf','report','--stdio','-i',str(profile)],stdout=output,check=True,timeout=60)
+
     workers_list=[1] if a.smoke else [1,8]
     # Finish and persist ALL PostgreSQL reference arms before any Nata timing.
     pgport=int(psycopg.conninfo.conninfo_to_dict(a.postgres).get('port',5432))
@@ -113,7 +122,7 @@ def main(a):
                     try:
                         with socket.create_connection(('127.0.0.1',port),timeout=.1):break
                     except OSError:time.sleep(.02)
-            measure('nata',ports[1],workers,ports[0])
+            measure('nata',ports[1],workers,ports[0],processes[1].pid)
         finally:
             for server in processes:server.terminate()
             for server in processes:server.wait(timeout=10)

@@ -1,0 +1,44 @@
+{
+  "cargo_test": {
+    "command": "CARGO_TARGET_DIR=<local-cache> cargo test --locked -p nata-pgwire -j 4",
+    "passed": 68,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy": {
+    "command": "cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings",
+    "exit": 0
+  },
+  "fmt": {
+    "command": "cargo fmt --all --check",
+    "exit": 0
+  },
+  "matrix": {
+    "command": "PATH=<JDK17>:<Python3.12>:$PATH WORK=<scratch> RESULTS=<scratch> CARGO_TARGET_DIR=<local-cache> bash scripts/wire-skeleton/run.sh",
+    "passed": 81,
+    "failed": 0,
+    "not_run": 9,
+    "exit": 1,
+    "separate_deviation_check_exit": 0
+  },
+  "python_gate_mutants": {
+    "caught": 7,
+    "missed": 0,
+    "invalid": 0
+  },
+  "native_scratch_mutants": {
+    "caught": 2,
+    "missed": 0,
+    "invalid": 0,
+    "restored_control": "PASS"
+  },
+  "versions": {
+    "rustc": "1.99.1",
+    "jdk": "17.0.21",
+    "postgres": "17.11",
+    "psql": "17.11",
+    "architecture": "x86-64"
+  },
+  "full_mutant_sweep": "NOT RUN; 98 anchors each apply exactly once",
+  "gcp": "NOT RUN"
+}

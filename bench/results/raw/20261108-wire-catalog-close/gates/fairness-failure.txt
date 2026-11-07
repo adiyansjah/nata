@@ -1,0 +1,29 @@
+{"formula": "idle RSS + S \u00d7 (16 MiB snapshot cap + 512 KiB wire buffers) + the engine query budget configured for the run + 64 MiB fixed allowance", "idle_RSS": 15863808, "S": 4, "snapshot_cap": 16777216, "wire_buffers": 524288, "engine_query_budget": 67108864, "fixed_allowance": 67108864, "budget": 219287552, "fd_idle": 7, "fd_limit": 0}
+{"browse_gate": null, "postgres_context": null, "tables": 4, "width": 2, "workers": 1, "sessions": 4, "peak": 19939328, "budget": 219287552, "idle": 15863808, "final": [19890176, 19939328, 7], "admission_seconds": 5.010085306945257, "verdict": "PASS"}
+{"formula": "idle RSS + S \u00d7 (16 MiB snapshot cap + 512 KiB wire buffers) + the engine query budget configured for the run + 64 MiB fixed allowance", "idle_RSS": 16003072, "S": 4, "snapshot_cap": 16777216, "wire_buffers": 524288, "engine_query_budget": 67108864, "fixed_allowance": 67108864, "budget": 219426816, "fd_idle": 7, "fd_limit": 256}
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-9e375183/scripts/wire-browse/resources.py", line 151, in <module>
+    for fd in [0,256]:run(a,count,width,workers,fd)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-9e375183/scripts/wire-browse/resources.py", line 124, in run
+    list(pool.map(browse,clients))
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-9e375183/scripts/wire-browse/resources.py", line 107, in browse
+    assert c.execute('SELECT c0 FROM public.t0 LIMIT 3').fetchall()==[(0,),(1,),(2,)]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-s10-api/oracle-work/wire-skeleton-venv/lib/python3.12/site-packages/psycopg/connection.py", line 304, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.TooManyConnections: query admission timeout
