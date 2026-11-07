@@ -14,6 +14,8 @@ One file per architecture decision, `NNNN-title.md`, copied from `0000-template.
 | [0008](0008-client-protocol.md) | Client protocol (Postgres wire 3.0; checked hand codec by R1) | accepted 2026-11-07 (by the assistant under the owner's delegation) |
 | [0009](0009-query-memory-manager.md) | Query memory budgets, fair shares and spill requests | accepted 2026-11-07 |
 | [0010](0010-hash-aggregation.md) | Parallel exact hash aggregation and partitioned spill | accepted 2026-11-07 |
+| [0011](0011-object-store-io.md) | Bounded object-store reads through the async I/O bridge | proposed 2026-11-07 |
+| [0012](0012-metadata-cache.md) | Identity-validated bounded Parquet metadata cache | proposed 2026-11-07 |
 
 0001-0003 and 0006 were accepted on 2026-11-05 with checks still open, and 0005 in part (rules 1-7); each ADR's revision note of that date lists them. 0004 was accepted on 2026-11-06 by the assistant under the owner's delegation, when stage B of plan item 28 passed (its acceptance condition). The table below is kept as it stood at acceptance.
 
