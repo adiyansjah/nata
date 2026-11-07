@@ -56,6 +56,21 @@ impl Atom {
             v.to_bits()
         })
     }
+    fn matches_column(&self, col: &Col, i: usize) -> bool {
+        if !col.valid[i] {
+            return matches!(self, Self::Null);
+        }
+        match (self, &col.data) {
+            (Self::Bool(a), Data::Bool(v)) => *a == v[i],
+            (Self::Int(a), Data::Int(v)) => *a == v[i],
+            (Self::Dec(a), Data::Dec(v)) => *a == v[i],
+            (Self::Date(a), Data::Date(v)) => *a == v[i],
+            (Self::Str(a), Data::Str(v)) => a == v.get(i),
+            (a @ Self::Float(_), Data::F32(v)) => *a == Self::float(f64::from(v[i])),
+            (a @ Self::Float(_), Data::F64(v)) => *a == Self::float(v[i]),
+            _ => false,
+        }
+    }
     fn compare(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (Self::Bool(a), Self::Bool(b)) => a.cmp(b),
@@ -248,6 +263,18 @@ impl Groups {
         let i = *self.index.find(hash, |&i| self.entries[i].0 == key)?;
         Some(&mut self.entries[i].1)
     }
+    fn find_row(&self, hash: u64, columns: &[Col], row: usize) -> Option<usize> {
+        self.index
+            .find(hash, |&id| {
+                let key = &self.entries[id].0;
+                key.len() == columns.len()
+                    && key
+                        .iter()
+                        .zip(columns)
+                        .all(|(v, c)| v.matches_column(c, row))
+            })
+            .copied()
+    }
     fn insert(&mut self, key: Vec<Atom>, states: Vec<State>) {
         self.index
             .insert_unique((self.hash)(&key), self.entries.len(), |&i| {
@@ -300,14 +327,23 @@ impl Table {
         }
     }
     fn reserve(&mut self, manager: &Arc<MemoryManager>, key: &[Atom], a: &Aggregate) -> R<()> {
+        let strings = key
+            .iter()
+            .map(|v| if let Atom::Str(s) = v { s.len() } else { 0 })
+            .sum();
+        self.reserve_entry(manager, key.len(), strings, a)
+    }
+    fn reserve_entry(
+        &mut self,
+        manager: &Arc<MemoryManager>,
+        keys: usize,
+        strings: usize,
+        a: &Aggregate,
+    ) -> R<()> {
         let bytes = 256usize
-            .saturating_add(key.len().saturating_mul(64))
+            .saturating_add(keys.saturating_mul(64))
             .saturating_add(a.aggregates.len().saturating_mul(128))
-            .saturating_add(
-                key.iter()
-                    .map(|v| if let Atom::Str(s) = v { s.len() } else { 0 })
-                    .sum::<usize>(),
-            );
+            .saturating_add(strings);
         // Charge table growth (including rehash overlap), per-entry allocations,
         // and reservation metadata before allocating them. Conservative retained
         // charges retain capacity credit until the owning table is freed.
@@ -401,7 +437,6 @@ impl Partial {
                 return Err(EvalError::at(nata_sql::Pos::NONE, "aggregate cancelled"));
             }
             let i = r as usize;
-            let key: Vec<_> = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
             let hash = evaluated.hashes[evaluated.next];
             let partition = if self.shared.force_collisions {
                 0
@@ -410,7 +445,8 @@ impl Partial {
             };
             let p = usize::try_from(partition & 15).map_err(|_| resource())?;
             let table = &mut self.tables[p];
-            let old = table.groups.get_hashed(&key, hash);
+            let found = table.groups.find_row(hash, &evaluated.keys, i);
+            let old = found.map(|id| table.groups.entries[id].1.as_slice());
             let extra = evaluated
                 .args
                 .iter()
@@ -437,19 +473,40 @@ impl Partial {
             if table.reserve_bytes(&self.shared.manager, extra).is_err() {
                 return Ok(false);
             }
-            if table.groups.get_hashed(&key, hash).is_none() {
-                if table.reserve(&self.shared.manager, &key, a).is_err() {
+            let id = if let Some(id) = found {
+                id
+            } else {
+                let strings = evaluated
+                    .keys
+                    .iter()
+                    .map(|c| {
+                        if c.valid[i]
+                            && let Data::Str(text) = &c.data
+                        {
+                            text.get(i).len()
+                        } else {
+                            0
+                        }
+                    })
+                    .sum();
+                if table
+                    .reserve_entry(&self.shared.manager, evaluated.keys.len(), strings, a)
+                    .is_err()
+                {
                     return Ok(false);
                 }
+                // Only a new group owns a key. Lookups borrow column values;
+                // reservation precedes key/state allocation and table growth.
+                let key = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
+                let id = table.groups.len();
                 table
                     .groups
-                    .insert(key.clone(), a.aggregates.iter().map(State::new).collect());
-            }
-            if let Some(states) = table.groups.get_mut_hashed(&key, hash) {
-                for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&evaluated.args)
-                {
-                    state.add(arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i)), agg)?;
-                }
+                    .insert(key, a.aggregates.iter().map(State::new).collect());
+                id
+            };
+            let states = &mut table.groups.entries[id].1;
+            for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&evaluated.args) {
+                state.add(arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i)), agg)?;
             }
             evaluated.next += 1;
         }
@@ -911,6 +968,35 @@ mod tests {
         assert_eq!(calls.get(), 5, "bounded finalization polling");
         drop(out);
         assert_eq!(manager.snapshot().held, 0);
+    }
+    #[test]
+    fn borrowed_lookup_resolves_collisions_and_never_reads_null_junk() {
+        let mut text = Col::empty(SqlType::Varchar, 4);
+        text.valid = vec![true, true, false, true];
+        text.data = Data::Str(StrData::Dict {
+            values: Arc::new(arrow_array::StringArray::from(vec!["", "雪", "other"])),
+            keys: vec![1, 0, u32::MAX, 2],
+        });
+        let mut floats = Col::empty(SqlType::Double, 4);
+        floats.valid = vec![true; 4];
+        floats.data = Data::F64(vec![-0.0, -f64::NAN, 1.0, 2.0]);
+        let columns = [text, floats];
+        let mut groups = Groups::new();
+        groups.hash = |_| 0;
+        for i in 0..3 {
+            groups.insert(columns.iter().map(|c| Atom::get(c, i)).collect(), vec![]);
+        }
+        for i in 0..3 {
+            assert_eq!(groups.find_row(0, &columns, i), Some(i));
+        }
+        assert_eq!(groups.find_row(0, &columns, 3), None);
+        assert_eq!(groups.find_row(0, &columns[..1], 0), None);
+        // Hash values do not establish equality, including in a forced-collision
+        // bucket containing NULL/empty strings and canonical floating keys.
+        assert!(!Atom::Str("雪".into()).matches_column(&columns[0], 3));
+        assert!(Atom::Null.matches_column(&columns[0], 2));
+        assert!(Atom::float(0.0).matches_column(&columns[1], 0));
+        assert!(Atom::float(f64::NAN).matches_column(&columns[1], 1));
     }
     #[test]
     fn collision_equality_and_canonical_float_keys() {

@@ -1,0 +1,45 @@
+{
+  "stage": "borrow",
+  "binary_sha256": "82e463762e49cddc9626f7f67dd965d8415185fe3ed1ccf8384cda74efb806d9",
+  "observations": [
+    {
+      "query": "q1",
+      "spill": false,
+      "load": [
+        2.33349609375,
+        3.51953125,
+        4.87109375
+      ],
+      "lost_samples": 0,
+      "samples": 637,
+      "profiled_seconds": 2.2438162350154016,
+      "counters": "aggregate: partial_ns=3259126062 merge_ns=39019 partial_groups=32 largest_partial=4 rehashes=24 reservation_calls=23499 reservation_releases=23499 memory_lock_wait_ns=4621488 peak_reservation=152135208 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16"
+    },
+    {
+      "query": "high_cardinality_tpch",
+      "spill": false,
+      "load": [
+        2.38720703125,
+        3.5107421875,
+        4.86083984375
+      ],
+      "lost_samples": 0,
+      "samples": 971,
+      "profiled_seconds": 3.1795260639919434,
+      "counters": "aggregate: partial_ns=3126961525 merge_ns=1165104228 partial_groups=1493439 largest_partial=212250 rehashes=1664 reservation_calls=2592 reservation_releases=2592 memory_lock_wait_ns=298561 peak_reservation=2838031984 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16"
+    },
+    {
+      "query": "high_cardinality_tpch",
+      "spill": true,
+      "load": [
+        2.27587890625,
+        3.46875,
+        4.83984375
+      ],
+      "lost_samples": 0,
+      "samples": 2227,
+      "profiled_seconds": 16.20357686697389,
+      "counters": "aggregate: partial_ns=1506707935 merge_ns=3122032746 partial_groups=1493515 largest_partial=6912 rehashes=41487 reservation_calls=30681 reservation_releases=30438 memory_lock_wait_ns=3951738 peak_reservation=67108864 spill_bytes_written=960218472 spill_bytes_read=1219505232 partitions_spilled=4368 recursion_depth=2 spill_files_opened=300670"
+    }
+  ]
+}

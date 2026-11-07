@@ -169,3 +169,37 @@ Current local profiling reproduction (no timing rounds):
 ```sh
 python3 scripts/profile-aggregate-perf1.py STAGE --sanity --candidate target/release/nata --data DATA_SF1 --out "$HOME/tmp-perf1/profiles"
 ```
+
+## Fix 3 — borrowed column lookup and a single probe
+
+Existing groups are found with the batch's cached hash and value comparison
+against borrowed columns. The returned group ID drives state updates directly,
+replacing three probes and an owned `Vec<Atom>`/string key per row. Only a new
+group allocates its owned key and states, after its entry/string capacity and
+any table growth have been reserved. The per-entry reservation formula is
+unchanged; merge/replay still own keys and use the same canonical hash.
+
+A forced-collision test checks dictionary strings, NULL with an invalid junk
+dictionary index, empty text, canonical zero/NaN, missing keys and key-arity
+mismatches. Scalar arithmetic, aggregate state updates and argument evaluation
+are unchanged. This removes group-key allocations for existing groups; it does
+not implement step 2's shared/vectorized arithmetic kernels.
+
+| Q1 user self symbol | Before (bounded polls) | After (borrowed lookup) |
+|---|---:|---:|
+| Owned-key Vec collection in Partial::resume | 2.26% | no samples |
+| Atom slice equality | 3.38% | no samples |
+| malloc | 4.27% | 2.67% |
+| cfree | 4.59% | 1.73% |
+| Atom::get (also used for aggregate arguments) | 6.53% | 4.08% |
+
+Scalar `eval::arith` / `num::fits` lead at 15.38% / 8.48%; allocations for
+batch evaluation and new groups remain. The one sanity run is 1.084 s at load
+2.33, **not an attributed gain**. Q1 still makes 23,499 reservation requests;
+fix 4 addresses those independently.
+[Profiles](raw/20261107-hash-aggregate-perf1/borrow-profiles.json),
+[all Q1 symbols](raw/20261107-hash-aggregate-perf1/borrow-q1.json),
+[sanity](raw/20261107-hash-aggregate-perf1/borrow-sanity.json).
+The borrowed-equality mutant is **CAUGHT**, with a passing private control and
+zero invalid: [result](raw/20261107-hash-aggregate-perf1/mutants-borrow.md).
+All [required checks](raw/20261107-hash-aggregate-perf1/checks-borrow.txt) pass.

@@ -26,6 +26,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "borrowed-key-equality-skipped": ("exec", [(AG, "a == v.get(i)", "a == v.get(i) || true")]),
  "aggregate-cancel-poll-removed": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && false && cancelled()")]),
  "aggregate-cancel-poll-per-row": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(1) && cancelled()")]),
  "canonical-hash-recursion-seed-lost": ("exec", [("crates/nata-exec/src/aggregate/hashing.rs", "SEED ^ u64::from(depth)", "SEED ^ u64::from(depth).min(0)")]),
