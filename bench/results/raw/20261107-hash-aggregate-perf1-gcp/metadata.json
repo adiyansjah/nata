@@ -1,0 +1,397 @@
+{
+  "queries": {
+    "q1": "-- tolerance: 1e-8\nSELECT l_returnflag, l_linestatus,\n sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,\n avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price,\n avg(l_discount) AS avg_disc, count(*) AS count_order\nFROM '{data}/lineitem.parquet'\nWHERE l_shipdate <= DATE '1998-09-02'\nGROUP BY l_returnflag, l_linestatus;\n",
+    "high_cardinality_tpch": "SELECT l_orderkey, count(*) AS n, sum(l_extendedprice) AS price, sum(l_extendedprice * (1 - l_discount)) AS net FROM '{data}/lineitem.parquet' WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_orderkey HAVING count(*) > 1;\n"
+  },
+  "expected_machine": "c3d-highcpu-8",
+  "architecture": "x86_64",
+  "logical_cpus": 8,
+  "cpu_model": "AMD EPYC 9B14",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "duckdb": "v2.0.0 (Cyanoptera) d54cbbe3df",
+  "data_bytes": 205482956,
+  "data_sha256": "c87ad8d103896e33436e3430058dc8503900e828f37dc1ce3393d964a1a99f5e",
+  "revisions": [
+    {
+      "label": "baseline",
+      "commit": "490d1162305956750fd92b49bd0aa03b4e0fc5c2",
+      "archive": "baseline-490d1162305956750fd92b49bd0aa03b4e0fc5c2.tar.gz",
+      "archive_sha256": "63e255554d01de997de5ae28b7c4c3feccbabb9fdefc4b93f15b00becf4bad7f",
+      "binary_sha256": "b6e5f3c3b606307ecec9d505f8fdeb9fee0085798433e241e8ec210a014eced4"
+    },
+    {
+      "label": "xxh3-hash",
+      "commit": "037c8ee13e9d5ac0767c37c13289707760d53929",
+      "archive": "xxh3-hash-037c8ee13e9d5ac0767c37c13289707760d53929.tar.gz",
+      "archive_sha256": "5a47c5712aa24006119f75ae4f13bb6cf74e99026e75c1e0e8813a40d96ac119",
+      "binary_sha256": "9167a4dde268a9904deb9f1ebac031660c2e60e687f92bc08902e00c01a69bff"
+    },
+    {
+      "label": "batch-cancel",
+      "commit": "f76d0412e96b02cf237ae58df9075fd052302862",
+      "archive": "batch-cancel-f76d0412e96b02cf237ae58df9075fd052302862.tar.gz",
+      "archive_sha256": "0b34a2ab8e0afd33d5717545e1783f5f6796e8b3f7980fbfe0cd5d1363c4acea",
+      "binary_sha256": "ca8e990555c5b27c800da033fad1963cc2663dbd317639d9c0c485fa65f54649"
+    },
+    {
+      "label": "borrowed-keys",
+      "commit": "8b5ac87967a7e463da9651a328a6023e7fa7d6de",
+      "archive": "borrowed-keys-8b5ac87967a7e463da9651a328a6023e7fa7d6de.tar.gz",
+      "archive_sha256": "18a0241468b1460219ded6215d4d6054370e91d2e958ff6d067fc56c3871accd",
+      "binary_sha256": "b98836e2f45d92fffe6f5c13029622c7bcd976e5c9d5920b906ede21d7eb36fb"
+    },
+    {
+      "label": "chunk-reserve",
+      "commit": "908af5e30c157b1f0aaa285419be7cd99a72cac8",
+      "archive": "chunk-reserve-908af5e30c157b1f0aaa285419be7cd99a72cac8.tar.gz",
+      "archive_sha256": "f78d14625ac0655f916f458087bfddf672fb5258cd24b294676700074d7dc7e8",
+      "binary_sha256": "9d53aa88930d0bd4a0adbebe12b13dcfc0262cc99afc96524818b0234aacdf1d"
+    }
+  ],
+  "plan": {
+    "builds": [
+      {
+        "variant": "baseline",
+        "commit": "490d1162305956750fd92b49bd0aa03b4e0fc5c2",
+        "source": "/mnt/work/perf1-work/source/baseline-490d1162305956750fd92b49bd0aa03b4e0fc5c2",
+        "target": "/mnt/work/perf1-work/target/baseline-490d1162305956750fd92b49bd0aa03b4e0fc5c2",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--release",
+          "-p",
+          "nata"
+        ]
+      },
+      {
+        "variant": "xxh3-hash",
+        "commit": "037c8ee13e9d5ac0767c37c13289707760d53929",
+        "source": "/mnt/work/perf1-work/source/xxh3-hash-037c8ee13e9d5ac0767c37c13289707760d53929",
+        "target": "/mnt/work/perf1-work/target/xxh3-hash-037c8ee13e9d5ac0767c37c13289707760d53929",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--release",
+          "-p",
+          "nata"
+        ]
+      },
+      {
+        "variant": "batch-cancel",
+        "commit": "f76d0412e96b02cf237ae58df9075fd052302862",
+        "source": "/mnt/work/perf1-work/source/batch-cancel-f76d0412e96b02cf237ae58df9075fd052302862",
+        "target": "/mnt/work/perf1-work/target/batch-cancel-f76d0412e96b02cf237ae58df9075fd052302862",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--release",
+          "-p",
+          "nata"
+        ]
+      },
+      {
+        "variant": "borrowed-keys",
+        "commit": "8b5ac87967a7e463da9651a328a6023e7fa7d6de",
+        "source": "/mnt/work/perf1-work/source/borrowed-keys-8b5ac87967a7e463da9651a328a6023e7fa7d6de",
+        "target": "/mnt/work/perf1-work/target/borrowed-keys-8b5ac87967a7e463da9651a328a6023e7fa7d6de",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--release",
+          "-p",
+          "nata"
+        ]
+      },
+      {
+        "variant": "chunk-reserve",
+        "commit": "908af5e30c157b1f0aaa285419be7cd99a72cac8",
+        "source": "/mnt/work/perf1-work/source/chunk-reserve-908af5e30c157b1f0aaa285419be7cd99a72cac8",
+        "target": "/mnt/work/perf1-work/target/chunk-reserve-908af5e30c157b1f0aaa285419be7cd99a72cac8",
+        "command": [
+          "cargo",
+          "build",
+          "--locked",
+          "--release",
+          "-p",
+          "nata"
+        ]
+      }
+    ],
+    "queries": [
+      "q1",
+      "high_cardinality_tpch"
+    ],
+    "threads": [
+      1,
+      8
+    ],
+    "budgets": [
+      8589934592,
+      67108864
+    ],
+    "rounds": 5,
+    "roles": [
+      "primary",
+      "twin"
+    ],
+    "timed_processes": 480,
+    "order": [
+      [
+        [
+          "baseline",
+          "primary"
+        ],
+        [
+          "baseline",
+          "twin"
+        ],
+        [
+          "xxh3-hash",
+          "primary"
+        ],
+        [
+          "xxh3-hash",
+          "twin"
+        ],
+        [
+          "batch-cancel",
+          "primary"
+        ],
+        [
+          "batch-cancel",
+          "twin"
+        ],
+        [
+          "borrowed-keys",
+          "primary"
+        ],
+        [
+          "borrowed-keys",
+          "twin"
+        ],
+        [
+          "chunk-reserve",
+          "primary"
+        ],
+        [
+          "chunk-reserve",
+          "twin"
+        ],
+        [
+          "duckdb",
+          "primary"
+        ],
+        [
+          "duckdb",
+          "twin"
+        ]
+      ],
+      [
+        [
+          "duckdb",
+          "twin"
+        ],
+        [
+          "duckdb",
+          "primary"
+        ],
+        [
+          "chunk-reserve",
+          "twin"
+        ],
+        [
+          "chunk-reserve",
+          "primary"
+        ],
+        [
+          "borrowed-keys",
+          "twin"
+        ],
+        [
+          "borrowed-keys",
+          "primary"
+        ],
+        [
+          "batch-cancel",
+          "twin"
+        ],
+        [
+          "batch-cancel",
+          "primary"
+        ],
+        [
+          "xxh3-hash",
+          "twin"
+        ],
+        [
+          "xxh3-hash",
+          "primary"
+        ],
+        [
+          "baseline",
+          "twin"
+        ],
+        [
+          "baseline",
+          "primary"
+        ]
+      ],
+      [
+        [
+          "baseline",
+          "primary"
+        ],
+        [
+          "baseline",
+          "twin"
+        ],
+        [
+          "xxh3-hash",
+          "primary"
+        ],
+        [
+          "xxh3-hash",
+          "twin"
+        ],
+        [
+          "batch-cancel",
+          "primary"
+        ],
+        [
+          "batch-cancel",
+          "twin"
+        ],
+        [
+          "borrowed-keys",
+          "primary"
+        ],
+        [
+          "borrowed-keys",
+          "twin"
+        ],
+        [
+          "chunk-reserve",
+          "primary"
+        ],
+        [
+          "chunk-reserve",
+          "twin"
+        ],
+        [
+          "duckdb",
+          "primary"
+        ],
+        [
+          "duckdb",
+          "twin"
+        ]
+      ],
+      [
+        [
+          "duckdb",
+          "twin"
+        ],
+        [
+          "duckdb",
+          "primary"
+        ],
+        [
+          "chunk-reserve",
+          "twin"
+        ],
+        [
+          "chunk-reserve",
+          "primary"
+        ],
+        [
+          "borrowed-keys",
+          "twin"
+        ],
+        [
+          "borrowed-keys",
+          "primary"
+        ],
+        [
+          "batch-cancel",
+          "twin"
+        ],
+        [
+          "batch-cancel",
+          "primary"
+        ],
+        [
+          "xxh3-hash",
+          "twin"
+        ],
+        [
+          "xxh3-hash",
+          "primary"
+        ],
+        [
+          "baseline",
+          "twin"
+        ],
+        [
+          "baseline",
+          "primary"
+        ]
+      ],
+      [
+        [
+          "baseline",
+          "primary"
+        ],
+        [
+          "baseline",
+          "twin"
+        ],
+        [
+          "xxh3-hash",
+          "primary"
+        ],
+        [
+          "xxh3-hash",
+          "twin"
+        ],
+        [
+          "batch-cancel",
+          "primary"
+        ],
+        [
+          "batch-cancel",
+          "twin"
+        ],
+        [
+          "borrowed-keys",
+          "primary"
+        ],
+        [
+          "borrowed-keys",
+          "twin"
+        ],
+        [
+          "chunk-reserve",
+          "primary"
+        ],
+        [
+          "chunk-reserve",
+          "twin"
+        ],
+        [
+          "duckdb",
+          "primary"
+        ],
+        [
+          "duckdb",
+          "twin"
+        ]
+      ]
+    ]
+  },
+  "verdict": "measurements only; parent judges attribution against twin noise and frozen targets",
+  "input_rows": 6001215
+}

@@ -449,3 +449,26 @@ The existing heavy-job chain test also passes using its local inert runner,
 without a VM or cloud calls. The source bundle/plan and full simulated harness
 trial pass. The parent runs the real settled-machine job and adds attribution;
 no frozen target is judged here, and step 2 implementation is not started.
+
+## Step 1 attributed timing on a settled machine (run `perf1-x86-r2`, added by the parent, 2026-11-07)
+
+One settled Spot c3d-highcpu-8 (x86-64), five revisions built from committed archives (baseline `490d116`, then the four fixes
+cumulatively), 5 alternating rounds with a twin per arm, DuckDB 2.0.0 alongside, SF1. VM compute $0.078. Raw: `raw/20261107-hash-aggregate-perf1-gcp/`.
+A first attempt (`perf1-x86`) failed in two minutes on Python 3.11.2's missing `extractall(filter=)`; fixed in `eb17021`.
+
+Medians in seconds (min/quartiles/max and twins are in `summary.json`):
+
+| Query, threads, budget | baseline | +XXH3 hash | +batch cancel | +borrowed keys | +chunked reservations | DuckDB | final / DuckDB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Q1, 1, in memory | 4.071 | 3.236 | 3.230 | 2.822 | 2.854 | 0.254 | 11.2x |
+| Q1, 1, 64 MiB | 4.298 | 3.433 | 3.345 | 2.907 | 2.846 | 0.263 | 10.8x |
+| Q1, 8, in memory | 1.625 | 1.431 | 1.394 | 1.184 | 1.190 | 0.116 | 10.3x |
+| Q1, 8, 64 MiB | 1.927 | 1.862 | 1.610 | 1.498 | 1.440 | 0.116 | 12.4x |
+| high cardinality, 1, in memory | 5.923 | 5.020 | 4.830 | 4.756 | 4.659 | 1.171 | 4.0x |
+| high cardinality, 1, 64 MiB | 15.398 | 14.378 | 14.178 | 13.582 | 13.501 | 1.318 | 10.2x |
+| high cardinality, 8, in memory | 3.859 | 3.586 | 3.376 | 3.327 | 3.353 | 0.931 | 3.6x |
+| high cardinality, 8, 64 MiB | 18.296 | 17.564 | 17.378 | 17.328 | 17.633 | 1.251 | 14.1x |
+
+**Verdict against the frozen targets: NOT MET in every cell** (Q1 ≤1.5x, hash queries ≤2x, spill ≤2x). Step 1 removed its overheads
+(about 25-30% on Q1, 13-21% on the high-cardinality query) but leaves the row-at-a-time computation (step 2a) and the spill volume
+(step 2d, almost untouched by step 1: -4% at 8 threads) as the gap.
