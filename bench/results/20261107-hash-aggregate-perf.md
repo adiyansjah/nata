@@ -1362,3 +1362,43 @@ scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id per
 
 No GCP plan, VM or API was invoked; no push or merge. Staged leak scanning is
 required and run before each continuation commit.
+
+## Step 2b timing on settled machines (runs `perf2b-c3d`, `perf2b-n4a`, added by the parent, 2026-11-08)
+
+Baseline `838e394` and three cumulative candidates built from committed archives on the same VM: `morsel` = `bc13ccd` (2b/1),
+`smallgroup` = `c1eafb2` (2b/3; this commit's parent also carries track B's `c1c2966` scan change), `fusion` = `4905e37` (2b/4 and
+its addendum). SF1, every Nata cell value-gated against DuckDB 2.0.0 first, five alternating rounds with a twin of each arm, settled
+load before each cell. c3d-highcpu-8 and n4a-highcpu-8, Spot; the ARM64 VM was preempted once and the job resumed on a new VM
+(only the resumed directory's complete timings are used). Approved $0.18 + $0.26. Raw: `raw/20261108-hash-aggregate-perf2b-gcp/`
+(timings, gates, `medians.py`, per-CPU summaries). Medians of the primary arm, seconds.
+
+| CPU | Query | Threads | Budget | baseline | morsel | smallgroup | fusion | DuckDB | fusion / baseline | **fusion / DuckDB** |
+|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| x86-64 | q1 | 1 | in memory | 2.118 | 1.410 | 1.434 | 1.234 | 0.226 | 0.58 | **5.5x** |
+| x86-64 | q1 | 1 | 64 MiB | 2.158 | 1.436 | 1.470 | 1.272 | 0.236 | 0.59 | 5.4x |
+| x86-64 | q1 | 8 | in memory | 0.910 | 0.340 | 0.354 | 0.300 | 0.107 | 0.33 | **2.8x** |
+| x86-64 | q1 | 8 | 64 MiB | 1.200 | 0.516 | 0.515 | 0.462 | 0.108 | 0.38 | 4.3x |
+| x86-64 | high_cardinality_tpch | 1 | in memory | 4.142 | 3.371 | 3.415 | 3.359 | 1.107 | 0.81 | **3.0x** |
+| x86-64 | high_cardinality_tpch | 1 | 64 MiB | 13.924 | 13.023 | 13.094 | 12.926 | 1.369 | 0.93 | 9.4x |
+| x86-64 | high_cardinality_tpch | 8 | in memory | 3.180 | 2.563 | 2.546 | 2.475 | 0.872 | 0.78 | 2.8x |
+| x86-64 | high_cardinality_tpch | 8 | 64 MiB | 16.684 | 16.031 | 15.927 | 16.095 | 1.174 | 0.96 | **13.7x** |
+| ARM64 | q1 | 1 | in memory | 1.800 | 1.102 | 1.121 | 0.993 | 0.217 | 0.55 | **4.6x** |
+| ARM64 | q1 | 1 | 64 MiB | 1.805 | 1.103 | 1.119 | 0.994 | 0.224 | 0.55 | 4.4x |
+| ARM64 | q1 | 8 | in memory | 0.644 | 0.172 | 0.173 | 0.160 | 0.072 | 0.25 | **2.2x** |
+| ARM64 | q1 | 8 | 64 MiB | 0.914 | 0.398 | 0.403 | 0.366 | 0.069 | 0.40 | 5.3x |
+| ARM64 | high_cardinality_tpch | 1 | in memory | 3.449 | 2.710 | 2.715 | 2.668 | 0.925 | 0.77 | **2.9x** |
+| ARM64 | high_cardinality_tpch | 1 | 64 MiB | 11.009 | 10.293 | 9.993 | 10.221 | 1.069 | 0.93 | 9.6x |
+| ARM64 | high_cardinality_tpch | 8 | in memory | 2.452 | 1.931 | 1.965 | 1.964 | 0.708 | 0.80 | 2.8x |
+| ARM64 | high_cardinality_tpch | 8 | 64 MiB | 13.006 | 12.338 | 12.372 | 12.319 | 0.908 | 0.95 | **13.6x** |
+
+**Verdicts.**
+- 2b/1 morsel: **kept, settled win** on both CPUs: Q1 0.61-0.67x at one thread, 0.27-0.43x at eight; high cardinality 0.79-0.81x
+  in memory.
+- 2b/3 smallgroup: **no settled gain.** Q1 is 1.5-4% slower than `morsel` on every cell, the other cells within twin noise.
+  Decision: remove the small-group lookup in the next aggregate change (step 2e replaces it with grouping on Parquet dictionary codes).
+  The step 2c retry was branched before this verdict and keeps it until then.
+- 2b/4 fusion: **kept, settled win:** Q1 0.86-0.90x of `smallgroup` on both CPUs; other cells within noise.
+- Frozen targets: **NOT MET.** Q1 4.6-5.5x DuckDB at one thread and 2.2-2.8x at eight (target 1.5x); high cardinality in memory
+  2.8-3.0x (target 2x); spill 9.4-13.7x (target 2x), almost untouched by step 2b (0.93-0.96x).
+- The same jobs reran the browse oracle with the PG15 fixes (`a956048`, `ba2df5a`): **59/59 PASS on both CPUs** against PostgreSQL
+  15.19 (`browse-oracle-pg15-*.txt`).

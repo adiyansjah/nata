@@ -1,0 +1,9 @@
+roles {'primary': 200, 'twin': 200}
+high  1t 64M  baseline=11.009 morsel=10.293 smallgroup=9.993 fusion=10.221 duckdb=1.069 | fusion/base=0.93 fusion/duck=9.6x
+high  1t mem  baseline=3.449 morsel=2.710 smallgroup=2.715 fusion=2.668 duckdb=0.925 | fusion/base=0.77 fusion/duck=2.9x
+high  8t 64M  baseline=13.006 morsel=12.338 smallgroup=12.372 fusion=12.319 duckdb=0.908 | fusion/base=0.95 fusion/duck=13.6x
+high  8t mem  baseline=2.452 morsel=1.931 smallgroup=1.965 fusion=1.964 duckdb=0.708 | fusion/base=0.80 fusion/duck=2.8x
+q1    1t 64M  baseline=1.805 morsel=1.103 smallgroup=1.119 fusion=0.994 duckdb=0.224 | fusion/base=0.55 fusion/duck=4.4x
+q1    1t mem  baseline=1.800 morsel=1.102 smallgroup=1.121 fusion=0.993 duckdb=0.217 | fusion/base=0.55 fusion/duck=4.6x
+q1    8t 64M  baseline=0.914 morsel=0.398 smallgroup=0.403 fusion=0.366 duckdb=0.069 | fusion/base=0.40 fusion/duck=5.3x
+q1    8t mem  baseline=0.644 morsel=0.172 smallgroup=0.173 fusion=0.160 duckdb=0.072 | fusion/base=0.25 fusion/duck=2.2x
