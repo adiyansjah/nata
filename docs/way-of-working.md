@@ -159,6 +159,10 @@ Since 2026-11-04 the main Claude Code session works as an **orchestrator**: it p
 - **Parallel children get disjoint scope.** Where scopes could overlap, a child works in its own worktree. Nothing is committed while a child is mid-edit in the shared checkout.
 - **Brief rules, added 2026-11-07** (children went beyond their brief in slice 4b: unrequested binary format support, a third GCP attempt where one rerun was allowed, a verdict that did not follow the card's rule):
   - **Not in scope.** Every brief has an explicit "not in scope" list next to the scope. Work outside the brief stops and is reported as a proposal; it is not done.
+  - **Dependencies in the brief** (added 2026-11-07; the slice 5 skeleton stopped twice over crates its own ADRs had chosen). A brief that
+    builds a slice names the new direct dependencies the card's ADRs select, and says that a crate already in `Cargo.lock` may become a
+    direct dependency at its locked version, with `cargo deny` passing and its unsafe code recorded. Only a crate that is not in the lockfile
+    yet is a stop-and-report.
   - **Stop and report.** A child stops and reports before anything the brief does not name: a rerun beyond the count allowed, a new dependency, a change to a threshold or a default.
   - **Fixed report form.** Each verdict is reported as: the card's rule as written, the measured numbers, the verdict the rule gives, and the command that reproduces it. A verdict that does not follow from the rule is a finding, not a result.
   - **Own worktree by default.** A child that edits code works in its own worktree (`isolation: worktree`), not in the shared checkout, so the orchestrator can test and fix in the main tree at any time.
