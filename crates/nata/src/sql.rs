@@ -36,6 +36,10 @@ pub struct SqlArgs {
     pub late: bool,
     pub footers_ahead: usize,
     pub bind_all_footers: bool,
+    pub aggregate_memory_bytes: Option<usize>,
+    pub spill_disk_bytes: Option<u64>,
+    pub spill_directory: Option<PathBuf>,
+    pub force_aggregate_spill: bool,
 }
 
 /// Wraps stdout and remembers that the reader went away.
@@ -199,6 +203,10 @@ fn run_query(
     if let Some(w) = a.window {
         cfg.window = w;
     }
+    cfg.aggregate_memory_bytes = a.aggregate_memory_bytes;
+    cfg.aggregate_spill_disk_bytes = a.spill_disk_bytes;
+    cfg.aggregate_spill_directory = a.spill_directory.clone();
+    cfg.aggregate_force_spill = a.force_aggregate_spill;
     cfg.ordered = !a.unordered;
     cfg.late_materialization = a.late;
     cfg.footers_ahead = a.footers_ahead;

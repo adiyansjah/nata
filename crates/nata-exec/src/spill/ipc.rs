@@ -246,6 +246,10 @@ fn named(file: &SpillHandle, e: io::Error) -> io::Error {
             match e.kind() {
                 io::ErrorKind::InvalidData | io::ErrorKind::UnexpectedEof =>
                     "bounded spill rejection",
+                io::ErrorKind::StorageFull if e.raw_os_error() == Some(28) =>
+                    "spill write failed: ENOSPC",
+                io::ErrorKind::StorageFull => "spill disk quota exceeded",
+                io::ErrorKind::Interrupted => "spill cancelled",
                 _ => "spill I/O or resource error",
             }
         ),

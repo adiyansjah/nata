@@ -59,6 +59,9 @@ struct Args {
     /// Nata binary. Defaults to the `nata` next to this executable.
     #[arg(long)]
     candidate: Option<PathBuf>,
+    /// Run SQL aggregates at 16 MiB and force every input batch through spill.
+    #[arg(long)]
+    force_aggregate_spill: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -257,7 +260,13 @@ fn run(args: Args) -> Result<bool> {
             }
         }
         let sql = substitute_data(&sql, &data);
-        let outcome = check_query(&args.reference, &candidate, &sql, &directives);
+        let outcome = check_query(
+            &args.reference,
+            &candidate,
+            &sql,
+            &directives,
+            args.force_aggregate_spill,
+        );
 
         if pending.contains(&name) {
             match &outcome {
@@ -364,7 +373,36 @@ fn run_engine(program: &Path, args: &[&str]) -> Run {
     }
 }
 
-fn check_query(reference: &Path, candidate: &Path, sql: &str, d: &Directives) -> Outcome {
+fn run_spilling_engine(program: &Path, args: &[&str]) -> Run {
+    match exec(program, args) {
+        Ok(out) if out.status.success() => {
+            let rows = String::from_utf8_lossy(&out.stdout).into_owned();
+            let report = String::from_utf8_lossy(&out.stderr);
+            let written = report.split_whitespace().find_map(|s| {
+                s.strip_prefix("spill_bytes_written=")
+                    .and_then(|n| n.parse::<u64>().ok())
+            });
+            // Empty grouped input has no partial state to write. Every successful
+            // nonempty result in this mode must demonstrate actual disk replay.
+            if rows.lines().count() > 1 && written.is_none_or(|n| n == 0) {
+                return Run::Failed(
+                    "forced-spill query returned rows without nonzero spill counters".into(),
+                );
+            }
+            Run::Rows(rows)
+        }
+        Ok(out) => Run::Failed(first_line(&out.stderr)),
+        Err(e) => Run::Launch(format!("{e:#}")),
+    }
+}
+
+fn check_query(
+    reference: &Path,
+    candidate: &Path,
+    sql: &str,
+    d: &Directives,
+    force_spill: bool,
+) -> Outcome {
     let run_candidate = || match &d.scan {
         Some(scan_args) => {
             let mut args: Vec<&str> = vec!["scan"];
@@ -372,6 +410,19 @@ fn check_query(reference: &Path, candidate: &Path, sql: &str, d: &Directives) ->
             args.push("--csv");
             run_engine(candidate, &args)
         }
+        None if force_spill => run_spilling_engine(
+            candidate,
+            &[
+                "sql",
+                "--csv",
+                "--force-aggregate-spill",
+                "--report",
+                "--aggregate-memory-bytes",
+                "16777216",
+                "-c",
+                sql,
+            ],
+        ),
         None => run_engine(candidate, &["sql", "--csv", "-c", sql]),
     };
 

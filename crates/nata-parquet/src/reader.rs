@@ -95,6 +95,7 @@ pub struct FileScan {
     ctx: Arc<Ctx>,
     /// Counts this footer as held in memory until the file is dropped (the last of its tasks is gone).
     _held: Counted,
+    _memory: Option<nata_sched::memory::Grant>,
 }
 
 impl FileScan {
@@ -138,6 +139,7 @@ pub struct Ctx {
     pub map: Option<BatchMap>,
     pub sink: Option<TaskSinkFactory>,
     pub stats: Arc<ScanStats>,
+    pub memory: Option<Arc<nata_sched::memory::MemoryManager>>,
 }
 
 impl std::fmt::Debug for Ctx {
@@ -383,6 +385,18 @@ impl ScanPlan {
         map: Option<BatchMap>,
         sink: Option<TaskSinkFactory>,
     ) -> Result<ScanPlan, ScanError> {
+        Self::open_budgeted(paths, options, opener, map, sink, None)
+    }
+    /// Blocking operators supply the query's shared memory service. Footer
+    /// metadata is charged before Arrow/Thrift parsing and retained with it.
+    pub fn open_budgeted(
+        paths: &[PathBuf],
+        options: &ScanOptions,
+        opener: Arc<dyn Opener>,
+        map: Option<BatchMap>,
+        sink: Option<TaskSinkFactory>,
+        memory: Option<Arc<nata_sched::memory::MemoryManager>>,
+    ) -> Result<ScanPlan, ScanError> {
         let Some(first_path) = paths.first() else {
             return Err(ScanError::usage("no file given"));
         };
@@ -391,6 +405,7 @@ impl ScanPlan {
             map,
             sink,
             stats: Arc::new(ScanStats::default()),
+            memory,
         });
         let mut spec: Option<Spec> = None;
         let (first, pushed) = guarded(first_path, None, || {
@@ -415,7 +430,7 @@ impl ScanPlan {
     }
 
     /// Drop the first file's footer if the scan never reached it (a scan that ends before it, `limit` 0, an error).
-    pub(crate) fn release_first_footer(&self) {
+    pub fn release_first_footer(&self) {
         let _ = self
             .first
             .lock()
@@ -595,6 +610,7 @@ fn read_file(
     spec: &mut Option<Spec>,
     ctx: &Arc<Ctx>,
 ) -> Result<(FileScan, usize), ScanError> {
+    let mut metadata_grant = None;
     let plain = {
         let OpenFile {
             mut file, _guard, ..
@@ -604,6 +620,46 @@ fn read_file(
             .map_err(|e| io_error(&e, path))?;
         let _count = Counted::new(&ctx.stats.handles);
         check_magic(&mut file, path)?;
+        if let Some(memory) = &ctx.memory {
+            use std::io::{Seek, SeekFrom};
+            let mut tail = [0u8; 8];
+            file.seek(SeekFrom::End(-8))
+                .and_then(|_| file.read_exact(&mut tail))
+                .map_err(|e| io_error(&e, path))?;
+            let encoded = u64::from(u32::from_le_bytes(
+                tail[..4]
+                    .try_into()
+                    .map_err(|_| ScanError::usage("footer length"))?,
+            ));
+            let file_size = file.metadata().map_err(|e| io_error(&e, path))?.len();
+            if encoded > file_size.saturating_sub(12) {
+                return Err(ScanError::new(ErrorKind::Corrupt(
+                    "footer length exceeds file".into(),
+                ))
+                .in_file(path));
+            }
+            // Capacity bound includes parser structures, Arrow schema/metadata,
+            // pruning vectors and the row-group continuation descriptors.
+            let bytes = usize::try_from(encoded)
+                .ok()
+                .and_then(|n| n.checked_mul(128))
+                .and_then(|n| n.checked_add(4096))
+                .ok_or_else(|| ScanError::usage("footer memory bound overflow"))?;
+            metadata_grant =
+                Some(
+                    match nata_sched::memory::MemoryManager::request(memory, 0, bytes) {
+                        Ok(nata_sched::memory::Reservation::Granted(g)) => g,
+                        _ => return Err(ScanError::new(ErrorKind::Eval {
+                            message:
+                                "resource error: aggregate footer metadata exceeds memory budget"
+                                    .into(),
+                            line: 0,
+                            column: 0,
+                        })
+                        .in_file(path)),
+                    },
+                );
+        }
         ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
             .map_err(|e| parquet_error(&e, path, None))?
         // the handle is closed here
@@ -750,6 +806,7 @@ fn read_file(
             row_groups,
             ctx: Arc::clone(ctx),
             _held: Counted::new(&ctx.stats.footers),
+            _memory: metadata_grant,
         },
         pushed,
     ))
@@ -1054,6 +1111,160 @@ impl RowGroupTask {
     }
 }
 
+/// A row-group continuation for blocking sinks. The caller reserves
+/// `cursor_bytes` before construction and keeps that grant until this is dropped.
+pub struct RowGroupCursor {
+    reader: parquet::arrow::arrow_reader::ParquetRecordBatchReader,
+    task: RowGroupTask,
+    rows: u64,
+    bytes: Arc<AtomicU64>,
+    _open: Counted,
+    _guard: Option<Box<dyn Send + Sync>>,
+    done: bool,
+}
+impl RowGroupTask {
+    /// Conservative compressed/decode/evaluation allowance, checked before the
+    /// reader is built. Includes whole column chunks retained by parquet-rs,
+    /// decode overlap, and fixed-width selection/expression storage.
+    pub fn cursor_bytes(&self, batch_rows: usize) -> Option<usize> {
+        let rg = self.file.meta.metadata().row_group(self.row_group);
+        let mut compressed = 0usize;
+        let mut decoded = 0usize;
+        for (i, col) in rg.columns().iter().enumerate() {
+            if self.file.mask.leaf_included(i) {
+                compressed =
+                    compressed.checked_add(usize::try_from(col.compressed_size()).ok()?)?;
+                decoded = decoded.checked_add(usize::try_from(col.uncompressed_size()).ok()?)?;
+            }
+        }
+        compressed
+            .checked_add(decoded.checked_mul(8)?)?
+            .checked_add(
+                usize::try_from(self.rows())
+                    .ok()?
+                    .min(batch_rows)
+                    .checked_mul(
+                        self.file
+                            .read_columns
+                            .len()
+                            .checked_add(1)?
+                            .checked_mul(128)?,
+                    )?,
+            )?
+            .checked_add(64 << 10)
+    }
+    pub fn cursor(&self, batch_rows: usize) -> Result<RowGroupCursor, ScanError> {
+        guarded(&self.file.path, Some(self.row_group), || {
+            let f = &self.file;
+            if f.ctx.map.is_some() || f.ctx.sink.is_some() {
+                return Err(ScanError::new(ErrorKind::Internal(
+                    "cursor cannot own a batch map or sink".into(),
+                )));
+            }
+            let OpenFile {
+                file,
+                fail_reads_after,
+                read_delay,
+                _guard,
+            } = f
+                .ctx
+                .opener
+                .open(&f.path, OpenFor::RowGroup(self.row_group))
+                .map_err(|e| io_error(&e, &f.path).in_row_group(self.row_group))?;
+            let bytes = Arc::new(AtomicU64::new(0));
+            let source = SharedFile(Arc::new(CountingFile {
+                file,
+                bytes: Arc::clone(&bytes),
+                fail_after: fail_reads_after,
+                delay: read_delay,
+            }));
+            let reader = ParquetRecordBatchReaderBuilder::new_with_metadata(source, f.meta.clone())
+                .with_projection(f.mask.clone())
+                .with_row_groups(vec![self.row_group])
+                .with_batch_size(batch_rows.max(1))
+                .build()
+                .map_err(|e| parquet_error(&e, &f.path, Some(self.row_group)))?;
+            Ok(RowGroupCursor {
+                reader,
+                task: self.clone(),
+                rows: 0,
+                bytes,
+                _open: Counted::new(&f.ctx.stats.handles),
+                _guard,
+                done: false,
+            })
+        })
+    }
+}
+impl RowGroupCursor {
+    /// The caller checks cancellation between turns. Every decoding error and
+    /// panic keeps its file/row-group position and excludes cell values.
+    pub fn next_batch(&mut self) -> Result<Option<RecordBatch>, ScanError> {
+        let task = self.task.clone();
+        guarded(&task.file.path, Some(task.row_group), || {
+            let f = &task.file;
+            let Some(batch) = self.reader.next() else {
+                if self.rows != task.rows() {
+                    return Err(ScanError::new(ErrorKind::Corrupt(
+                        "cursor row count differs from footer".into(),
+                    ))
+                    .in_file(&f.path)
+                    .in_row_group(task.row_group));
+                }
+                if !self.done {
+                    ScanStats::add(&f.ctx.stats.row_groups_read, 1);
+                }
+                self.done = true;
+                return Ok(None);
+            };
+            let batch = batch.map_err(|e| {
+                ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
+                    .in_file(&f.path)
+                    .in_row_group(task.row_group)
+            })?;
+            self.rows += batch.num_rows() as u64;
+            if !column_types_are_as_requested(&batch, &f.read_columns) {
+                return Err(ScanError::new(ErrorKind::Internal(
+                    "cursor returned an unexpected Arrow type".into(),
+                )));
+            }
+            let batch = if f.terms.is_empty() {
+                batch
+            } else {
+                let mask = filter::evaluate(&f.terms, &batch)
+                    .map_err(|m| ScanError::new(ErrorKind::Internal(redact(&m))))?;
+                filter_record_batch(&batch, &BooleanArray::from(mask)).map_err(|e| {
+                    ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
+                        .in_file(&f.path)
+                        .in_row_group(task.row_group)
+                })?
+            };
+            let indices = f
+                .out_columns
+                .iter()
+                .map(|n| batch.schema().index_of(n))
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|_| {
+                    ScanError::new(ErrorKind::Internal("cursor output column missing".into()))
+                })?;
+            batch
+                .project(&indices)
+                .map(Some)
+                .map_err(|_| ScanError::new(ErrorKind::Internal("cursor projection failed".into())))
+        })
+    }
+}
+impl Drop for RowGroupCursor {
+    fn drop(&mut self) {
+        let stats = &self.task.file.ctx.stats;
+        ScanStats::add(&stats.rows_read, self.rows);
+        ScanStats::add(&stats.bytes_read, self.bytes.load(Ordering::Relaxed));
+        if !self.done {
+            ScanStats::add(&stats.row_groups_abandoned, 1);
+        }
+    }
+}
+
 /// How the reading half of a task ended.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Step {
@@ -1317,7 +1528,7 @@ pub struct ScanReport {
 }
 
 impl ScanReport {
-    pub(crate) fn from_stats(
+    pub fn from_stats(
         plan: &ScanPlan,
         rows_returned: u64,
         threads: usize,

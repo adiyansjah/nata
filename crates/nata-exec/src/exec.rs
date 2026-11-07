@@ -33,9 +33,19 @@ use crate::eval::Evaluator;
 /// How to run a plan.
 #[derive(Clone, Debug)]
 pub struct ExecConfig {
-    /// Optional aggregate-state budget; None uses half the physical/cgroup limit.
-    /// Scan/decode budget integration and spilling follow in step C.
+    /// Query-wide aggregate execution cap; None uses half the physical/cgroup limit.
+    /// Includes decode, evaluation, state, merge, spill and output reservations.
     pub aggregate_memory_bytes: Option<usize>,
+    /// Bounded disk allowance and disk-backed private directory for aggregates.
+    pub aggregate_spill_disk_bytes: Option<u64>,
+    pub aggregate_spill_directory: Option<std::path::PathBuf>,
+    /// Test/differential mode: flush every grouped input batch through IPC.
+    pub aggregate_force_spill: bool,
+    /// Query-local injected spill-write error after this many bytes.
+    pub aggregate_spill_fail_after: Option<u64>,
+    /// Native fault tests: force collisions and a small partition allowance.
+    pub aggregate_spill_force_collisions: bool,
+    pub aggregate_merge_partition_bytes: Option<usize>,
     /// Worker threads of the scan (and so of the expression evaluation).
     pub threads: usize,
     /// Row groups in flight (the scan's window).
@@ -57,6 +67,12 @@ impl ExecConfig {
         let threads = threads.max(1);
         ExecConfig {
             aggregate_memory_bytes: None,
+            aggregate_spill_disk_bytes: None,
+            aggregate_spill_directory: None,
+            aggregate_force_spill: false,
+            aggregate_spill_fail_after: None,
+            aggregate_spill_force_collisions: false,
+            aggregate_merge_partition_bytes: None,
             threads,
             window: threads.saturating_mul(2),
             ordered: true,
@@ -120,11 +136,16 @@ pub struct AggregateStats {
     pub reservation_releases: usize,
     pub memory_lock_wait_nanos: u64,
     pub peak_reservation: usize,
+    pub spill_bytes_written: u64,
+    pub spill_bytes_read: u64,
+    pub partitions_spilled: usize,
+    pub recursion_depth: u8,
+    pub spill_files_opened: u64,
 }
 impl AggregateStats {
     pub fn line(&self) -> String {
         format!(
-            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={}",
+            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={} spill_bytes_written={} spill_bytes_read={} partitions_spilled={} recursion_depth={} spill_files_opened={}",
             self.partial_nanos,
             self.merge_nanos,
             self.partial_groups,
@@ -133,7 +154,12 @@ impl AggregateStats {
             self.reservation_calls,
             self.reservation_releases,
             self.memory_lock_wait_nanos,
-            self.peak_reservation
+            self.peak_reservation,
+            self.spill_bytes_written,
+            self.spill_bytes_read,
+            self.partitions_spilled,
+            self.recursion_depth,
+            self.spill_files_opened
         )
     }
 }

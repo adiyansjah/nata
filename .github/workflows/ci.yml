@@ -136,6 +136,10 @@ jobs:
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/scan
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/sql
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/aggregate
+      - name: Check forced aggregate spill
+        run: |
+          mkdir -p "$RUNNER_TEMP/nata-spill"
+          TMPDIR="$RUNNER_TEMP/nata-spill" cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/aggregate --force-aggregate-spill
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/sql-differences
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/smoke
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/decimal

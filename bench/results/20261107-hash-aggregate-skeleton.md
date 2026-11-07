@@ -1,4 +1,218 @@
-# Hash aggregate skeleton — step B, 2026-11-07
+# Hash aggregate skeleton — steps B, C and C2, 2026-11-07
+
+
+
+## Step C2 — spill integration (2026-11-07)
+
+**C2 spill gates PASS; slice/card closeout remains open.** The implementation adds
+resumable pressure-triggered partial spill and independent partition merge,
+typed key/state replay, seeded recursive repartition with an eight-level bound,
+query-local disk/descriptor admission, and spill diagnostics. Native checks are
+local x86-64 only. Earlier sections remain historical checkpoint records.
+No GCP, push, merge-to-main or frozen-target timing verdict is part of C2.
+
+The native spill SQL tests cover all supported scalar key/extreme types,
+NULLs and dictionary changes, SUM/AVG counts and wide cancellation, pressure and
+recursive readback, ENOSPC, quota, cancellation, hot-string coalescing, source
+error precedence, and forced depth under a 15-second child-process deadline.
+The aggregate differential mode uses 16 MiB and flushes every nonempty partial;
+CI's gating differential job runs it on both configured architectures.
+
+Preallocation allowances cover runtime/metadata/output, footer parsing and
+retained metadata, selected-column decode overlap, evaluator columns and
+possible dictionary-text expansion, table/rehash/key/state capacities, partial
+ownership transfers, merge state, and the IPC service/workspaces. Capacity
+credit stays charged until its allocation owner is freed. Final extrema move
+without copying. Native gauges assert held/live grants return to zero and peak
+reservations never exceed B. These conservative allowances are not an allocator
+quota or independent whole-process RSS certification. The inherited Parquet
+trust-boundary limitations remain; C2 does not certify that parser fixed.
+
+One I/O worker owns synchronous syscalls. CPU continuations register sticky
+completion callbacks and return their CPU slots while blocked; grant pressure
+can reclaim finished as well as active local partials. Scan task concurrency
+shrinks to fit the query-wide decode allowance. Recursive children become
+visible only after all replacement writes succeed; parent and child live bytes
+both count against D. The coordinator publishes bounded output, never an
+all-groups final table. Native synchronization uses the scheduler facade; this
+new continuation adapter is outside loom instrumentation, so the inherited 16
+memory models do not certify it.
+
+C2 adds **two own-code unsafe blocks**, confined to `spill/admission.rs`, using
+already-locked libc: statvfs with a checked CString/aligned output pointer, and
+success-only initialization of the output. The crate lint changes from forbid
+to deny with this single named function exception; operator/codec code remains
+safe. No crate or version is added. Disk defaults implement min(4B, half the
+volume's available bytes); descriptor admission subtracts existing handles,
+bounded scan workers and headroom from the process soft limit before the query
+cap of 32. Explicit disk overrides remain bounded by their supplied D.
+
+### Gate status and native failures
+
+(a) **PASS:** the card's SF1 HAVING query returns DuckDB's exact numeric row
+multiset, **1,273,748 rows**, at requested **1 and 8 threads**, both in memory
+and at **64 MiB**. Multiplicities are preserved; no numeric tolerance is used
+for this query. The successful small-memory cells use **explicit D=1 GiB**.
+The default **D=4B=256 MiB fails** cleanly during recursive overlap; the final
+release default-quota probe confirms the quota error and no files remaining.
+This resource miss stays visible; neither B nor the default D was enlarged.
+
+(b) **PASS:** release `nata-check`: scan **5/5**, SQL **252/252**, SQL differences
+**54/54**, aggregate **65/65**, forced-spill aggregate **65/65**, all with zero
+mismatches, unsupported queries, unexpected errors and reference errors.
+The forced mode adds `--report`, requires a nonzero write counter for nonempty
+successful results, and uses 16 MiB; truly empty grouped input has no state to
+write. As in step B, declared AVG tolerances against DuckDB's DOUBLE are not an
+exact AVG oracle; inherited independent rational vectors, exact SQL metadata
+and native wide-state replay checks supply that separate evidence.
+(c) **PASS:** `cargo test -p nata-exec --test aggregate_spill injected_write_failure_returns_error_and_removes_every_file`.
+A query-local ENOSPC after nine bytes returns a clean named error; its private
+files and directory disappear and held memory returns to zero. A separate
+nine-byte disk-quota test requires the explicit quota-error text and cleanup.
+(d) **PASS:** `cargo test -p nata-exec --test aggregate_spill cancel_during_spill_joins_io_and_removes_every_file`.
+A watcher cancels only after observing a nonempty spill file, with a 15-second
+watcher deadline. Execution joins I/O; directory and grant gauges return to zero.
+
+### Spill counters and indicative timings
+
+Counters below are from the correctness runs, not timing medians. File opens
+are cumulative successful descriptor admissions, including the 16 up-front
+progress files even for an in-memory query. Nonempty spill files, including
+recursive children, count as partitions. Read bytes exceed write bytes because
+an oversized partition is partly read for merge and then reread to repartition.
+
+| Requested threads | Memory | Written bytes | Read bytes | Partitions | Depth | Peak reservation bytes | File opens |
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 1 | default, in memory | 0 | 0 | 0 | 0 | 1,550,285,901 | 16 |
+| 8 | default, in memory | 0 | 0 | 0 | 0 | 2,654,986,484 | 16 |
+| 1 | 64 MiB | 603,884,584 | 692,151,432 | 272 | 1 | 67,108,864 | 143,642 |
+| 8 | 64 MiB | 960,182,104 | 1,219,485,376 | 4,368 | 2 | 67,108,864 | 300,617 |
+
+Release, warm SF1, shared local KVM guest: x86-64 Core i3-1220P, eight visible
+logical CPUs (one visible thread per core), 16 GB RAM, no affinity. Three
+alternating in-memory/spill rounds per requested thread count, full CLI CSV to
+`/dev/null`, including startup/planning/decoding/output. Results were checked
+before timing. All four correctness cells and all twelve timed observations
+are in [the raw observations](raw/20261107-hash-aggregate-step-c2/observations.json).
+These are **indicative Nata controls**, not a paired DuckDB timing comparison,
+not a cross-session before/after claim, and not a frozen-target verdict.
+
+| Requested threads | Memory | Seconds min / median / max | Range / median |
+|---:|---|---|---:|
+| 1 | in memory | 5.059 / 5.145 / 5.177 | 2.3% |
+| 1 | 64 MiB | 14.454 / 14.729 / 15.091 | 4.3% |
+| 8 | in memory | 4.464 / 4.837 / 5.066 | 12.5% |
+| 8 | 64 MiB | 17.280 / 17.986 / 18.184 | 5.0% |
+
+The eight-thread spill cell does more recursive work: depth two versus one,
+more bytes and roughly twice the file opens. A single bounded I/O worker also
+executes the IPC codec and streaming repartition routing. These measured
+counters and that code path explain additional work; they are not a CPU
+self-time profile. `partial_ns`/`merge_ns` sum CPU-continuation wall time;
+parked waits and I/O-worker time are excluded. Admission may reduce scan
+concurrency to fit B; the table labels requested threads. The merge was not
+redesigned for performance here, and these observations stay for that later
+performance step.
+
+### Mutants
+
+**Five CAUGHT, zero SURVIVED, zero INVALID**, after a passing private-copy
+executor control. Control 20 seconds; mutants 16/28/20/23/25 seconds, about
+132 seconds total, below the brief's approximate 15-minute local limit.
+[Results](raw/20261107-hash-aggregate-step-c2/mutants.txt).
+
+| Mutant | Result | Failing check |
+|---|---|---|
+| spill-partition-not-read-back | CAUGHT | SQL typed/hot-string/readback and physical IPC checks |
+| spill-reservation-not-released | CAUGHT | Real table grants retained after spill; cancel/pressure cleanup gauges |
+| spill-cleanup-skipped-on-error | CAUGHT | Injected query ENOSPC and primitive cleanup |
+| spill-recursion-bound-removed | CAUGHT | Forced collisions plus a one-byte partition threshold, with a 15-second child-process deadline; requires the explicit depth-eight error |
+| spill-descriptor-cap-removed | CAUGHT | Real descriptor cap and released-slot test |
+
+The recursion trial reaches the bound without relying on a random skew. A hot
+single string group is tested separately and must coalesce at depth zero.
+Removed recursion checking can also reach the physical IPC depth rejection;
+that does not satisfy the test's required bounded-recursion error. Build/edit
+failures would be INVALID and would fail the sweep.
+
+### Checks, inventory and remaining work
+
+**PASS:** final `cargo fmt --check`, workspace/all-target clippy with `-D
+warnings`, `cargo test --workspace` (disk TMPDIR, two test threads), cargo-deny,
+all five differential runs, and staged leak scan. The native ten-test SQL spill
+suite and two typed-record tests pass. No C2 build dependency or lockfile edit.
+An initial workspace run caught a direct-channel facade bypass; it was fixed.
+An early deny invocation overlapped a test run; all final pre-commit checks
+were rerun sequentially. CI itself and ARM64 execution remain unrun here. The current textual unsafe inventory
+has **83 packages / 8,836 keywords in 64 packages**, including **two workspace
+keywords**. It includes inactive/test dependency code and is not an audit or a
+macro-expanded count. [Inventory](raw/20261107-hash-aggregate-step-c2/unsafe-exec.txt).
+
+Step D must verify serve/admission and the five default clients, preparation
+and binary COPY, cancellation/disconnect/slow consumers; extend the SQL fuzzer
+grammar and documented difference classes before its aggregate campaigns;
+run the full package mutant sweeps and inherited damaged-spill campaign;
+exercise the new native adapter with contention/delays and the remaining deep
+checks on ARM64 and x86-64; and measure independent RSS, stacks, default/admission
+budgets and affinity. Those are not certified by C2's reservation gauges.
+Restart cleanup after process death remains open. Performance redesign of the
+merge and timing verdicts against the frozen targets stay outside this work.
+No serve/client or SQL-fuzzer grammar implementation is changed here.
+
+
+### Reproduce and parent heavy commands
+
+Run local checks one at a time; DATA is the existing SF0.01/sqlcheck directory
+and DATA_SF1 is the standard SF1 directory. Unset AI_AGENT in every DuckDB child.
+
+```sh
+mkdir -p "$HOME/tmp-skelC2"
+export TMPDIR="$HOME/tmp-skelC2" CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0
+export CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+env -u AI_AGENT RUST_TEST_THREADS=2 cargo test --workspace
+cargo deny check
+cargo build --release -p nata -p nata-check
+for suite in scan sql sql-differences aggregate; do
+  env -u AI_AGENT target/release/nata-check --data "$DATA" \
+    --queries "check/queries/$suite" --candidate "$PWD/target/release/nata"
+done
+env -u AI_AGENT target/release/nata-check --data "$DATA" \
+  --queries check/queries/aggregate --candidate "$PWD/target/release/nata" \
+  --force-aggregate-spill
+env -u AI_AGENT python3 scripts/check-aggregate-spill.py \
+  --candidate target/release/nata --data "$DATA_SF1" --rounds 3 \
+  --out "$TMPDIR/sf1"
+env -u AI_AGENT python3 crates/nata-exec/mutate.py --work "$TMPDIR/mutants" \
+  --out "$TMPDIR/mutants.txt" spill-partition-not-read-back \
+  spill-reservation-not-released spill-cleanup-skipped-on-error \
+  spill-recursion-bound-removed spill-descriptor-cap-removed
+scripts/check-leaks.sh --staged
+```
+
+Exact sequential `heavy.steps` commands for the parent, **not run on GCP here**
+and not cloud cost approval. Use an on-disk TMPDIR before all steps. Full sweeps,
+bound-three loom, architecture/resource runs and larger campaigns remain heavy:
+
+```sh
+aggregate-build cargo build --release -p nata -p nata-check
+aggregate-forced env -u AI_AGENT target/release/nata-check --data "$DATA" --queries check/queries/aggregate --candidate "$SRC/target/release/nata" --force-aggregate-spill
+aggregate-sf1 env -u AI_AGENT python3 scripts/check-aggregate-spill.py --candidate "$SRC/target/release/nata" --data "$DATA_SF1" --out "$RESULTS/aggregate-sf1" --rounds 5
+aggregate-exec-mutants env -u AI_AGENT CARGO_BUILD_JOBS=2 python3 crates/nata-exec/mutate.py --work "$RESULTS/mut-exec" --out "$RESULTS/mut-exec.txt"
+aggregate-sql-mutants env -u AI_AGENT CARGO_BUILD_JOBS=2 python3 crates/nata-sql/mutate.py --work "$RESULTS/mut-sql" --out "$RESULTS/mut-sql.txt"
+aggregate-kernel-mutants python3 crates/nata-kernels/mutate.py --jobs 1
+aggregate-memory-mutants CARGO_BUILD_JOBS=2 LOOM_MAX_PREEMPTIONS=3 python3 crates/nata-sched/mutants/mutate.py --only '^memory-' --jobs 1 --out "$RESULTS/mut-memory.txt"
+aggregate-memory-loom LOOM_MAX_PREEMPTIONS=3 MEMORY_MODEL_TIMEOUT=3000 crates/nata-sched/run_memory_loom.sh
+spill-build cargo test --locked -p nata-exec --test spill --no-run --message-format=json | python3 -c 'import json,sys; r=[json.loads(s) for s in sys.stdin]; print(next(x["executable"] for x in r if x.get("reason")=="compiler-artifact" and x.get("target",{}).get("name")=="spill" and x.get("executable")))' > "$RESULTS/spill-test-bin"
+spill-corruption TASK_SPILL_BINARY=$(cat "$RESULTS/spill-test-bin"); (ulimit -v 262144; NATA_SPILL_CASES=30000 NATA_SPILL_SEED=22014202119 "$TASK_SPILL_BINARY" seeded_corruption_rejected_before_arrow_allocation --exact --nocapture --test-threads=1)
+```
+
+The final corruption command exercises the physical IPC envelope/schema, not
+an implemented aggregate SQL grammar or exhaustive typed-state campaign. Do
+not treat the old scalar SQL fuzzer as an aggregate campaign before step D
+extends its grammar and difference classes. No absent campaign is given a
+fabricated passing command.
 
 
 ## Step C — incomplete checkpoint

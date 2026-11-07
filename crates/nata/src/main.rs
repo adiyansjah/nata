@@ -81,6 +81,18 @@ enum Command {
         /// file's footer and letting the scan check the others as it reaches them. Developer option, for the benchmark.
         #[arg(long)]
         bind_all_footers: bool,
+        /// Query-wide aggregate memory cap, in bytes.
+        #[arg(long)]
+        aggregate_memory_bytes: Option<usize>,
+        /// Explicit bounded aggregate spill quota, in bytes.
+        #[arg(long)]
+        spill_disk_bytes: Option<u64>,
+        /// Existing disk directory for private query spill files.
+        #[arg(long)]
+        spill_directory: Option<PathBuf>,
+        /// Differential-test mode: route aggregate states through spill IPC.
+        #[arg(long, hide = true)]
+        force_aggregate_spill: bool,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -312,6 +324,10 @@ fn main() -> ExitCode {
             late_materialization: late,
             footers_ahead,
             bind_all_footers,
+            aggregate_memory_bytes,
+            spill_disk_bytes,
+            spill_directory,
+            force_aggregate_spill,
         } => {
             return sql::run(sql::SqlArgs {
                 command,
@@ -323,6 +339,10 @@ fn main() -> ExitCode {
                 late: late_materialization(late),
                 footers_ahead: footers_ahead_of(footers_ahead),
                 bind_all_footers,
+                aggregate_memory_bytes,
+                spill_disk_bytes,
+                spill_directory,
+                force_aggregate_spill,
             });
         }
         Command::Scan {

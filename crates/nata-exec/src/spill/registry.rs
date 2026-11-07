@@ -19,6 +19,8 @@ pub struct SpillStats {
     pub files: usize,
     pub open: usize,
     pub peak_open: usize,
+    pub opened: u64,
+    pub partitions: usize,
 }
 struct Ledger {
     stats: SpillStats,
@@ -149,6 +151,7 @@ impl Registry {
             return Err(io::Error::other("spill descriptor limit"));
         }
         s.stats.open += 1;
+        s.stats.opened += 1;
         s.stats.peak_open = s.stats.peak_open.max(s.stats.open);
         Ok(Descriptor(Arc::clone(self)))
     }
@@ -248,10 +251,16 @@ impl SpillHandle {
         let mut s = registry.lock();
         let next = s.stats.live_bytes.checked_add(amount).ok_or_else(invalid)?;
         if next > registry.quota {
-            return Err(io::Error::other("spill disk quota exceeded"));
+            return Err(io::Error::new(
+                io::ErrorKind::StorageFull,
+                "spill disk quota exceeded",
+            ));
         }
         s.stats.live_bytes = next;
         s.stats.peak_bytes = s.stats.peak_bytes.max(next);
+        if *own == 0 {
+            s.stats.partitions += 1;
+        }
         *own += amount;
         let allowed = s.fail_after.map_or(amount, |limit| {
             limit.saturating_sub(s.fault_reserved).min(amount)

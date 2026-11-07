@@ -3,8 +3,10 @@
 //! Disk methods are synchronous and must be invoked by the bounded I/O service,
 //! never by an operator on a CPU worker. `Workspace` owns a reservation for all
 //! simultaneous codec buffers; callers cannot decode without that reservation.
+mod admission;
 #[path = "io.rs"]
 mod disk_io;
+pub(crate) use admission::{available_bytes, descriptor_allowance};
 mod ipc;
 mod registry;
 

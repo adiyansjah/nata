@@ -38,6 +38,8 @@
 
 use std::collections::{BTreeMap, VecDeque};
 
+#[cfg(not(nata_loom))]
+pub mod cooperative;
 pub mod memory;
 pub mod sync;
 #[cfg(not(nata_loom))]

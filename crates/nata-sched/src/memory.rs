@@ -84,6 +84,7 @@ pub struct MemoryManager {
 
 /// A unique, transferable capacity reservation. Drop releases it exactly once.
 /// Keep it until the charged allocation has been freed, including during I/O.
+#[derive(Debug)]
 pub struct Grant {
     manager: Arc<MemoryManager>,
     id: u64,

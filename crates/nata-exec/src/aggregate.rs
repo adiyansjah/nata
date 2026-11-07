@@ -1,5 +1,5 @@
-//! In-memory breaker: one partial sink per morsel, disjoint hash partitions,
-//! then independent final tasks. State grants move with their allocations.
+//! Resumable partial aggregation and disjoint final partitions, with exact
+//! typed state spill. State grants move with their allocations and disk jobs.
 use crate::error::{EvalError, R};
 use crate::eval::Evaluator;
 use crate::exec::{AggregateStats, ExecConfig, ExecReport, Observed, OperatorStats};
@@ -7,11 +7,11 @@ use crate::value::{Col, Data, StrData};
 use arrow_array::RecordBatch;
 use hashbrown::HashTable;
 use nata_kernels::aggregate::ExactSum;
-use nata_parquet::{
-    ErrorKind, ParallelConfig, ScanCancel, ScanError, ScanPlan, TaskSink, TaskSinkFactory,
-    run_parallel_with,
-};
+use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
+mod pipeline;
+mod replay;
+mod storage;
 use nata_sql::bind::{Aggregate, AggregateExpr};
 use nata_sql::plan::LogicalPlan;
 use nata_sql::types::SqlType;
@@ -144,6 +144,19 @@ impl State {
         }
         Ok(())
     }
+    fn finalize(&mut self, a: &AggregateExpr) -> R<()> {
+        // Move extrema into final storage; cloning a large string here would
+        // allocate another copy while the old partial's capacity is still live.
+        if matches!(self, Self::Extreme(_) | Self::Final(_)) {
+            let old = std::mem::replace(self, Self::Count(0));
+            if let Self::Extreme(value) | Self::Final(value) = old {
+                *self = Self::Final(value);
+            }
+        } else {
+            *self = Self::Final(self.finish(a)?);
+        }
+        Ok(())
+    }
     fn finish(&self, a: &AggregateExpr) -> R<Atom> {
         Ok(match self {
             Self::Count(n) => Atom::Int(i64::try_from(*n).map_err(|_| overflow(a))?),
@@ -172,16 +185,19 @@ impl State {
 fn resource() -> EvalError {
     EvalError::at(
         nata_sql::Pos::NONE,
-        "resource error: aggregate memory budget exceeded; in-memory step B has no spill (step C)",
+        "resource error: aggregate minimum working set exceeds memory budget",
     )
 }
 fn grant(manager: &Arc<MemoryManager>, bytes: usize) -> R<Grant> {
     match MemoryManager::request(manager, 0, bytes.max(1)) {
         Ok(Reservation::Granted(g)) => Ok(g),
-        _ => {
-            manager.cancel();
-            Err(resource())
-        }
+        _ => Err(EvalError::at(
+            nata_sql::Pos::NONE,
+            format!(
+                "resource error: aggregate minimum working set exceeds memory budget (request {bytes} bytes, budget {} bytes)",
+                manager.snapshot().budget
+            ),
+        )),
     }
 }
 fn key_hash(key: &[Atom]) -> u64 {
@@ -218,6 +234,12 @@ impl Groups {
         self.index
             .find((self.hash)(key), |&i| self.entries[i].0 == key)
             .is_some()
+    }
+    fn get(&self, key: &[Atom]) -> Option<&[State]> {
+        let i = *self
+            .index
+            .find((self.hash)(key), |&i| self.entries[i].0 == key)?;
+        Some(&self.entries[i].1)
     }
     fn get_mut(&mut self, key: &[Atom]) -> Option<&mut Vec<State>> {
         let i = *self
@@ -273,10 +295,7 @@ impl Table {
         }
         match self.grants.reserve(manager, 0, bytes, self.chunk_bytes) {
             Ok(true) => Ok(()),
-            _ => {
-                manager.cancel();
-                Err(resource())
-            }
+            _ => Err(resource()),
         }
     }
     fn reserve(&mut self, manager: &Arc<MemoryManager>, key: &[Atom], a: &Aggregate) -> R<()> {
@@ -290,7 +309,7 @@ impl Table {
             );
         // Charge table growth (including rehash overlap), per-entry allocations,
         // and reservation metadata before allocating them. Conservative retained
-        // charges are intentional until step C's reusable allocation ledger.
+        // charges retain capacity credit until the owning table is freed.
         self.reserve_bytes(manager, bytes)?;
         if self.groups.len() == self.groups.capacity() {
             let capacity = self.groups.capacity().max(4);
@@ -304,137 +323,153 @@ impl Table {
 struct Shared {
     plan: Arc<LogicalPlan>,
     manager: Arc<MemoryManager>,
-    partials: Mutex<Vec<Vec<Table>>>,
     metrics: Mutex<AggregateStats>,
+    hash: fn(&[Atom], u8) -> u64,
 }
 struct Partial {
     shared: Arc<Shared>,
     tables: Vec<Table>,
-    partial_nanos: u64,
 }
-impl TaskSink for Partial {
-    fn push(&mut self, batch: RecordBatch) -> Result<(), ErrorKind> {
-        let start = Instant::now();
-        let result = self.batch(batch).map_err(EvalError::into_kind);
-        self.partial_nanos = self
-            .partial_nanos
-            .saturating_add(u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX));
-        result
-    }
-    fn finish(self: Box<Self>) -> Result<(), ErrorKind> {
-        let tables = self.tables;
-        {
-            let mut m = self
-                .shared
-                .metrics
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            m.partial_nanos = m.partial_nanos.saturating_add(self.partial_nanos);
-            m.largest_partial = m
-                .largest_partial
-                .max(tables.iter().map(|t| t.groups.len()).sum());
-        }
-        self.shared
-            .partials
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .push(tables);
-        Ok(())
-    }
+struct Evaluated {
+    rows: Vec<u32>,
+    keys: Vec<Col>,
+    args: Vec<Option<Col>>,
+    next: usize,
+    _strings: Option<Grant>,
 }
 impl Partial {
-    fn batch(&mut self, batch: RecordBatch) -> R<()> {
-        let depth = crate::exec::max_depth(&self.shared.plan);
-        if depth <= 64 {
-            return self.batch_here(batch);
-        }
-        std::thread::scope(|scope| {
-            std::thread::Builder::new()
-                .name("nata-aggregate-eval".into())
-                .stack_size(depth.saturating_mul(32 * 1024).saturating_add(8 << 20))
-                .spawn_scoped(scope, || self.batch_here(batch))
-                .map_err(|_| resource())?
-                .join()
-                .unwrap_or_else(|_| Err(EvalError::internal("aggregate evaluation panic")))
-        })
-    }
-    fn batch_here(&mut self, batch: RecordBatch) -> R<()> {
+    fn evaluate(&self, batch: &RecordBatch) -> R<Evaluated> {
         let plan = &self.shared.plan;
         let a = plan
             .aggregate
             .as_ref()
             .ok_or_else(|| EvalError::internal("aggregate missing"))?;
-        // Evaluator scratch is granted before evaluation; scan decode remains
-        // covered by the existing scan window until step C.
-        let scratch_bytes =
-            batch
-                .get_array_memory_size()
-                .saturating_mul(4)
-                .saturating_add(batch.num_rows().saturating_mul(128).saturating_mul(
-                    a.keys.len() + a.aggregates.len() + plan.scan.columns.len() + 1,
-                ));
-        let _scratch = grant(&self.shared.manager, scratch_bytes)?;
-        let types: Vec<_> = plan.scan.columns.iter().map(|c| c.ty).collect();
-        let ev = Evaluator::new(&batch, &types);
-        let rows = if let Some(f) = &plan.filter {
-            ev.keep_mask(&f.predicate)?
-                .into_iter()
-                .enumerate()
-                .filter(|(_, k)| *k)
-                .map(|(i, _)| u32::try_from(i).map_err(|_| resource()))
-                .collect::<R<Vec<_>>>()?
-        } else {
-            ev.all_rows()
-        };
-        let keys = a
-            .keys
-            .iter()
-            .map(|e| ev.eval(e, &rows))
-            .collect::<R<Vec<_>>>()?;
-        let args = a
-            .aggregates
-            .iter()
-            .map(|a| a.arg.as_ref().map(|e| ev.eval(e, &rows)).transpose())
-            .collect::<R<Vec<_>>>()?;
-        for r in rows {
+        eval_on_stack(crate::exec::max_depth(plan), || {
+            let types: Vec<_> = plan.scan.columns.iter().map(|c| c.ty).collect();
+            let ev = Evaluator::new(batch, &types);
+            let rows = if let Some(f) = &plan.filter {
+                ev.keep_mask(&f.predicate)?
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(_, k)| *k)
+                    .map(|(i, _)| u32::try_from(i).map_err(|_| resource()))
+                    .collect::<R<Vec<_>>>()?
+            } else {
+                ev.all_rows()
+            };
+            let keys = a
+                .keys
+                .iter()
+                .map(|e| ev.eval(e, &rows).map(|c| (*c).clone()))
+                .collect::<R<Vec<_>>>()?;
+            let args = a
+                .aggregates
+                .iter()
+                .map(|a| {
+                    a.arg
+                        .as_ref()
+                        .map(|e| ev.eval(e, &rows).map(|c| (*c).clone()))
+                        .transpose()
+                })
+                .collect::<R<Vec<_>>>()?;
+            Ok(Evaluated {
+                rows,
+                keys,
+                args,
+                next: 0,
+                _strings: None,
+            })
+        })
+    }
+    // No state changes until *all* capacity for this row has been granted.
+    // Returning false leaves the row cursor in place for replay after the spill.
+    fn resume(&mut self, evaluated: &mut Evaluated, cancelled: &dyn Fn() -> bool) -> R<bool> {
+        let a = self
+            .shared
+            .plan
+            .aggregate
+            .as_ref()
+            .ok_or_else(|| EvalError::internal("aggregate missing"))?;
+        while let Some(&r) = evaluated.rows.get(evaluated.next) {
+            if cancelled() {
+                return Err(EvalError::at(nata_sql::Pos::NONE, "aggregate cancelled"));
+            }
             let i = r as usize;
-            let key: Vec<_> = keys.iter().map(|c| Atom::get(c, i)).collect();
-            let mut hash = std::collections::hash_map::DefaultHasher::new();
-            key.hash(&mut hash);
-            let p = usize::try_from(hash.finish() & 15).map_err(|_| resource())?;
+            let key: Vec<_> = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
+            let p = usize::try_from((self.shared.hash)(&key, 0) & 15).map_err(|_| resource())?;
             let table = &mut self.tables[p];
+            let old = table.groups.get(&key);
+            let extra = evaluated
+                .args
+                .iter()
+                .zip(&a.aggregates)
+                .enumerate()
+                .map(|(slot, (arg, agg))| {
+                    if (agg.name == "min" || agg.name == "max")
+                        && let Some(col) = arg
+                        && col.valid[i]
+                        && let Data::Str(text) = &col.data
+                    {
+                        let previous = old.and_then(|s| s.get(slot)).map_or(0, |s| {
+                            if let State::Extreme(Atom::Str(s)) = s {
+                                s.len()
+                            } else {
+                                0
+                            }
+                        });
+                        return text.get(i).len().saturating_sub(previous);
+                    }
+                    0
+                })
+                .sum();
+            if table.reserve_bytes(&self.shared.manager, extra).is_err() {
+                return Ok(false);
+            }
             if !table.groups.contains_key(&key) {
-                table.reserve(&self.shared.manager, &key, a)?;
+                if table.reserve(&self.shared.manager, &key, a).is_err() {
+                    return Ok(false);
+                }
                 table
                     .groups
                     .insert(key.clone(), a.aggregates.iter().map(State::new).collect());
             }
             if let Some(states) = table.groups.get_mut(&key) {
-                for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&args) {
-                    let value = arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i));
-                    if let (State::Extreme(old), Atom::Str(new)) = (&*state, &value) {
-                        let previous = if let Atom::Str(s) = old { s.len() } else { 0 };
-                        if new.len() > previous {
-                            match table.grants.reserve(
-                                &self.shared.manager,
-                                0,
-                                new.len() - previous + 64,
-                                table.chunk_bytes,
-                            ) {
-                                Ok(true) => (),
-                                _ => {
-                                    self.shared.manager.cancel();
-                                    return Err(resource());
-                                }
-                            }
-                        }
+                for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&evaluated.args)
+                {
+                    state.add(arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i)), agg)?;
+                }
+            }
+            evaluated.next += 1;
+        }
+        Ok(true)
+    }
+}
+fn string_scratch(batch: &RecordBatch, plan: &LogicalPlan) -> R<usize> {
+    let mut bytes = 0usize;
+    for (column, input) in batch.columns().iter().zip(&plan.scan.columns) {
+        if input.ty == SqlType::Varchar {
+            // The fixed-width dictionary key copy is covered by the decode
+            // allowance; text is still shared here, before any expansion.
+            let col = Col::from_arrow(column, input.ty)?;
+            if let Data::Str(text) = &col.data {
+                for i in 0..col.len() {
+                    if col.valid[i] {
+                        bytes = bytes.checked_add(text.get(i).len()).ok_or_else(resource)?;
                     }
-                    state.add(value, agg)?;
                 }
             }
         }
-        Ok(())
     }
+    bytes
+        .checked_mul(expression_slots(plan))
+        .and_then(|n| n.checked_mul(4))
+        .ok_or_else(resource)
+}
+fn partition_hash(key: &[Atom], depth: u8) -> u64 {
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    depth.hash(&mut h);
+    key.hash(&mut h);
+    h.finish()
 }
 fn merge(
     mut tables: Vec<Table>,
@@ -465,7 +500,7 @@ fn merge(
             return Err(EvalError::at(nata_sql::Pos::NONE, "cancelled"));
         }
         for (s, a) in states.iter_mut().zip(&a.aggregates) {
-            *s = State::Final(s.finish(a)?);
+            s.finalize(a)?;
         }
     }
     Ok(out)
@@ -497,6 +532,26 @@ fn batch(rows: &[(Vec<Atom>, Vec<State>)], a: &Aggregate) -> R<RecordBatch> {
         .map_err(|_| EvalError::internal("aggregate output"));
     }
     RecordBatch::try_from_iter(columns).map_err(|_| EvalError::internal("aggregate output"))
+}
+fn expression_slots(plan: &LogicalPlan) -> usize {
+    let mut nodes = Vec::new();
+    if let Some(filter) = &plan.filter {
+        nodes.push(&filter.predicate);
+    }
+    if let Some(a) = &plan.aggregate {
+        nodes.extend(&a.keys);
+        nodes.extend(a.aggregates.iter().filter_map(|a| a.arg.as_ref()));
+        if let Some(h) = &a.having {
+            nodes.push(h);
+        }
+    }
+    nodes.extend(plan.project.exprs.iter().map(|p| &p.expr));
+    let mut count = 1usize;
+    while let Some(e) = nodes.pop() {
+        count = count.saturating_add(1);
+        nodes.extend(e.children());
+    }
+    count
 }
 fn default_budget() -> usize {
     let physical = std::fs::read_to_string("/proc/meminfo")
@@ -561,6 +616,16 @@ fn eval_on_stack<T: Send>(depth: usize, f: impl FnOnce() -> R<T> + Send) -> R<T>
             .unwrap_or_else(|_| Err(EvalError::internal("aggregate output evaluation panic")))
     })
 }
+struct FinishMemory(Arc<MemoryManager>, Option<ScanCancel>);
+impl Drop for FinishMemory {
+    fn drop(&mut self) {
+        if self.1.as_ref().is_some_and(ScanCancel::is_cancelled) {
+            self.0.cancel();
+        } else {
+            let _ = self.0.finish(0);
+        }
+    }
+}
 pub(crate) fn execute(
     plan: Arc<LogicalPlan>,
     cfg: &ExecConfig,
@@ -576,90 +641,22 @@ pub(crate) fn execute(
     )
     .map_err(|_| ScanError::new(resource().into_kind()))?;
     observed.aggregate_memory = Some(Arc::clone(&manager));
+    let _finished = FinishMemory(Arc::clone(&manager), cancel.cloned());
     let shared = Arc::new(Shared {
         plan: Arc::clone(&plan),
         manager: Arc::clone(&manager),
-        partials: Mutex::new(Vec::new()),
         metrics: Mutex::new(AggregateStats::default()),
-    });
-    let factory: TaskSinkFactory = {
-        let shared = Arc::clone(&shared);
-        Arc::new(move || {
-            Box::new(Partial {
-                shared: Arc::clone(&shared),
-                partial_nanos: 0,
-                tables: shared
-                    .partials
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .pop()
-                    .unwrap_or_else(|| (0..PARTITIONS).map(|_| Table::new()).collect()),
-            })
-        })
-    };
-    let mut options = plan.scan.scan_options();
-    options.late_materialization = cfg.late_materialization;
-    if plan.scan.columns.is_empty() {
-        options.columns = Some(vec![crate::exec::first_readable_column(&plan)?]);
-    }
-    let scan = Arc::new(ScanPlan::open_with_operators(
-        &plan.scan.files,
-        &options,
-        cfg.opener
-            .clone()
-            .unwrap_or_else(|| Arc::new(nata_parquet::FsOpener)),
-        None,
-        Some(factory),
-    )?);
-    observed.stats = Some(Arc::clone(scan.stats()));
-    let report = run_parallel_with(
-        scan,
-        ParallelConfig {
-            threads: cfg.threads,
-            window: cfg.window,
-            ordered: cfg.ordered,
-            footers_ahead: cfg.footers_ahead,
+        hash: if cfg.aggregate_spill_force_collisions {
+            |_, _| 0
+        } else {
+            partition_hash
         },
-        None,
-        cancel,
-        |_| Ok(()),
-    )?;
+    });
+    let (report, partitions, storage, io) = pipeline::accumulate(&shared, cfg, cancel, observed)?;
     let a = plan
         .aggregate
         .as_ref()
         .ok_or_else(|| ScanError::new(ErrorKind::Internal("aggregate missing".into())))?;
-    let partials = std::mem::take(
-        &mut *shared
-            .partials
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner),
-    );
-    let mut partitions: Vec<Vec<Table>> = (0..PARTITIONS).map(|_| Vec::new()).collect();
-    for tables in partials {
-        {
-            let mut m = shared
-                .metrics
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            m.partial_groups += tables.iter().map(|t| t.groups.len()).sum::<usize>();
-            m.rehashes += tables.iter().map(|t| t.groups.rehashes).sum::<usize>();
-        }
-        for (i, t) in tables.into_iter().enumerate() {
-            if !t.groups.is_empty() {
-                partitions[i].push(t);
-            }
-        }
-    }
-    if a.keys.is_empty() && partitions.iter().all(Vec::is_empty) {
-        let mut table = Table::new();
-        table
-            .reserve(&manager, &[], a)
-            .map_err(|e| ScanError::new(e.into_kind()))?;
-        table
-            .groups
-            .insert(vec![], a.aggregates.iter().map(State::new).collect());
-        partitions[0].push(table);
-    }
     let types: Vec<_> = a
         .keys
         .iter()
@@ -675,112 +672,113 @@ pub(crate) fn execute(
             l.offset.saturating_add(l.n)
         }
     });
-    nata_sched::unordered::run(
-        partitions,
-        cfg.threads,
-        || cancel.is_some_and(ScanCancel::is_cancelled),
-        |tables, cancelled| {
-            let start = Instant::now();
-            let result = merge(tables, a, &manager, cancelled);
-            {
-                let mut m = shared
-                    .metrics
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                m.merge_nanos = m
-                    .merge_nanos
-                    .saturating_add(u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX));
+    pipeline::finalize(partitions, &shared, cfg, cancel, &storage, &io, |table| {
+        let mut iter = table.groups.into_iter();
+        loop {
+            let rows: Vec<_> = iter
+                .by_ref()
+                .take(
+                    32.min((1 << 20) / expression_slots(&plan).saturating_mul(128))
+                        .max(1),
+                )
+                .collect();
+            if rows.is_empty() {
+                break;
             }
-            result.map_err(|e| {
-                if cancel.is_some_and(ScanCancel::is_cancelled) {
-                    ScanError::new(ErrorKind::Cancelled("aggregate cancelled".into()))
+            if cancel.is_some_and(ScanCancel::is_cancelled) {
+                return Err(ScanError::new(ErrorKind::Cancelled(
+                    "aggregate cancelled".into(),
+                )));
+            }
+            let b = batch(&rows, a).map_err(|e| ScanError::new(e.into_kind()))?;
+            let evaluated = eval_on_stack(crate::exec::max_depth(&plan), || {
+                let ev = Evaluator::new(&b, &types);
+                let keep = if let Some(h) = &a.having {
+                    ev.keep_mask(h)?
                 } else {
-                    ScanError::new(e.into_kind())
-                }
-            })
-        },
-        |table| {
-            let mut iter = table.groups.into_iter();
-            loop {
-                let rows: Vec<_> = iter.by_ref().take(1024).collect();
-                if rows.is_empty() {
-                    break;
-                }
-                if cancel.is_some_and(ScanCancel::is_cancelled) {
-                    return Err(ScanError::new(ErrorKind::Cancelled(
-                        "aggregate cancelled".into(),
-                    )));
-                }
-                let b = batch(&rows, a).map_err(|e| ScanError::new(e.into_kind()))?;
-                let evaluated = eval_on_stack(crate::exec::max_depth(&plan), || {
-                    let ev = Evaluator::new(&b, &types);
-                    let keep = if let Some(h) = &a.having {
-                        ev.keep_mask(h)?
-                    } else {
-                        vec![true; b.num_rows()]
-                    };
-                    let admitted: Vec<_> = keep
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(i, k)| {
-                            if !k {
-                                return None;
-                            }
-                            let n = seen;
-                            seen = seen.saturating_add(1);
-                            (n < limit).then(|| u32::try_from(i).map_err(|_| resource()))
-                        })
-                        .collect::<R<Vec<_>>>()?;
-                    if admitted.is_empty() {
-                        return Ok(None);
-                    }
-                    let arrays = plan
-                        .project
-                        .exprs
-                        .iter()
-                        .map(|p| {
-                            ev.eval(&p.expr, &admitted)
-                                .and_then(|c| c.to_arrow())
-                                .map(|a| (p.name.clone(), a))
-                        })
-                        .collect::<R<Vec<_>>>()?;
-                    let projected = RecordBatch::try_from_iter(arrays)
-                        .map_err(|_| EvalError::internal("aggregate projection"))?;
-                    let offset = plan.limit.map_or(0, |l| l.offset);
-                    let before = seen.saturating_sub(keep.iter().filter(|k| **k).count() as u64);
-                    let select: Vec<_> = admitted
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(j, _)| {
-                            (before + j as u64 >= offset).then_some(*admitted.get(j)? as usize)
-                        })
-                        .collect();
-                    Ok(Some((projected, select)))
-                })
-                .map_err(|e| ScanError::new(e.into_kind()))?;
-                let Some((projected, select)) = evaluated else {
-                    continue;
+                    vec![true; b.num_rows()]
                 };
-                for i in select {
-                    sink(&projected.slice(i, 1))?;
-                    output += 1;
+                let admitted: Vec<_> = keep
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, k)| {
+                        if !k {
+                            return None;
+                        }
+                        let n = seen;
+                        seen = seen.saturating_add(1);
+                        (n < limit).then(|| u32::try_from(i).map_err(|_| resource()))
+                    })
+                    .collect::<R<Vec<_>>>()?;
+                if admitted.is_empty() {
+                    return Ok(None);
                 }
+                let arrays = plan
+                    .project
+                    .exprs
+                    .iter()
+                    .map(|p| {
+                        ev.eval(&p.expr, &admitted)
+                            .and_then(|c| c.to_arrow())
+                            .map(|a| (p.name.clone(), a))
+                    })
+                    .collect::<R<Vec<_>>>()?;
+                let projected = RecordBatch::try_from_iter(arrays)
+                    .map_err(|_| EvalError::internal("aggregate projection"))?;
+                let offset = plan.limit.map_or(0, |l| l.offset);
+                let before = seen.saturating_sub(keep.iter().filter(|k| **k).count() as u64);
+                let select: Vec<_> = admitted
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(j, _)| {
+                        (before + j as u64 >= offset).then_some(*admitted.get(j)? as usize)
+                    })
+                    .collect();
+                Ok(Some((projected, select)))
+            })
+            .map_err(|e| ScanError::new(e.into_kind()))?;
+            let Some((projected, select)) = evaluated else {
+                continue;
+            };
+            for i in select {
+                sink(&projected.slice(i, 1))?;
+                output += 1;
             }
-            drop(iter);
-            drop(table.grants);
-            Ok(())
-        },
-    )?;
+        }
+        drop(iter);
+        drop(table.grants);
+        Ok(())
+    })?;
     if cancel.is_some_and(ScanCancel::is_cancelled) {
         return Err(ScanError::new(ErrorKind::Cancelled(
             "aggregate cancelled".into(),
         )));
     }
+    let spill = storage.registry.snapshot();
+    if spill.bytes_written > 0 {
+        let mut m = shared
+            .metrics
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        m.partial_groups = storage
+            .partial_rows
+            .load(std::sync::atomic::Ordering::SeqCst);
+        m.largest_partial = storage
+            .largest_partial
+            .load(std::sync::atomic::Ordering::SeqCst);
+        m.rehashes = storage.rehashes.load(std::sync::atomic::Ordering::SeqCst);
+    }
+    drop(io);
+    drop(storage);
     let mut metrics = shared
         .metrics
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
+    metrics.spill_bytes_written = spill.bytes_written;
+    metrics.spill_bytes_read = spill.bytes_read;
+    metrics.spill_files_opened = spill.opened;
+    metrics.partitions_spilled = spill.partitions;
     let memory = manager.snapshot();
     metrics.reservation_calls = memory.requests;
     metrics.reservation_releases = memory.releases;

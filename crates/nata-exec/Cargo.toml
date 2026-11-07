@@ -30,7 +30,8 @@ parquet = "60"
 # ADR 0003 decision 6 (clippy.toml is a copy of nata-kernels'): every conversion goes through `nata_kernels::strict_cast` or our own checked code.
 # `arithmetic_side_effects` is not enabled (index arithmetic is everywhere); value arithmetic is written with checked operations and tested.
 [lints.rust]
-unsafe_code = "forbid"
+# Only spill/admission.rs permits the two audited statvfs ABI operations.
+unsafe_code = "deny"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
 
 [lints.clippy]

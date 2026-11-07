@@ -1,4 +1,4 @@
-# The Nata SQL dialect (slice 4 and in-memory aggregates)
+# The Nata SQL dialect (slice 4 and spilling aggregates)
 
 Status: written 2026-11-06 before the parser work (feature map B1, slice 4 card 0002); decided in ADR 0007. Grows with each slice.
 Rule for everything here: **strict**. If a query's meaning is not stated on this page, Nata answers `not supported yet: <what>` at the
@@ -151,7 +151,7 @@ an explicit conversion error; ADBC Date32 and JDBC LocalDate preserve these
 finite dates. Full client display caveats and oracle evidence:
 `bench/results/20261107-debt-a.md`, R19.
 
-## 10. In-memory aggregates (card 0005 step B)
+## 10. Aggregates with spill (card 0005 steps B–C2)
 
 `GROUP BY` accepts source columns and expressions. `HAVING` accepts boolean
 expressions over group keys and aggregates; it keeps TRUE only. Ungrouped
@@ -180,13 +180,24 @@ in WHERE/GROUP BY, GROUP BY ALL/ordinals/aliases, grouping extensions and window
 functions return positioned `not supported yet` errors. SELECT aliases do not
 resolve in GROUP BY or HAVING. Scalar expression output names remain section 8b.
 
-The temporary step-B executor reserves aggregate state and evaluator scratch
-through the query memory service. Budget pressure fails with `resource error:
-aggregate memory budget exceeded; in-memory step B has no spill (step C)`.
-The execution configuration can supply an aggregate-state budget; otherwise it
-uses half the smaller physical/cgroup memory limit for this single CLI query.
-This is not yet a bound on total query RSS: scan decode, output buffers,
-admission sharing, accurate allocator accounting and spill are step C.
+Aggregate state spills by hash partition when the shared memory service
+refuses a grant or requests reclamation. IPC stores typed keys and exact partial
+states; independent final tasks merge partitions before HAVING. Oversized
+partitions use new hash seeds, up to eight recursive levels. Disk quota,
+descriptor admission, an oversized minimum record or the recursion bound fail
+clearly; files and grants are released on success, error and cancellation.
+
+`nata sql --aggregate-memory-bytes 67108864 --spill-directory <disk-directory>`
+sets a 64 MiB cap. `--spill-disk-bytes` supplies an explicit bounded disk
+allowance when the default (the smaller of four times memory and half the
+volume's free bytes) cannot cover recursive parent/child overlap. The directory
+must already exist. Otherwise the single-query CLI budget is half the smaller
+physical/cgroup memory limit, with private spill directories under TMPDIR.
+`--report` and EXPLAIN ANALYZE include spill bytes read/written, partitions,
+maximum recursion depth, peak reservations and cumulative spill-file opens.
+Reservations are conservative capacity allowances; they do not certify process
+RSS or server admission sharing. Serve/default-client verification remains
+step D.
 
 ### Deliberate DuckDB differences (section 9 additions)
 

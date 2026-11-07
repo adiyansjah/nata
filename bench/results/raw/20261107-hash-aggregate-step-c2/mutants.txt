@@ -1,0 +1,9 @@
+| mutant | suite | result | first failing tests |
+|---|---|---|---|
+| spill-partition-not-read-back | exec | CAUGHT | a_hot_string_group_coalesces_without_recursive_repartition, altered_inner_offsets_rejected_even_with_repaired_checksum, decoded_buffers_retain_reservation_and_cannot_multiply_workspace ... |
+| spill-reservation-not-released | exec | CAUGHT | cancel_during_spill_joins_io_and_removes_every_file, pressure_releases_reservations_and_recursive_merge_reads_every_partition |
+| spill-cleanup-skipped-on-error | exec | CAUGHT | injected_write_failure_returns_error_and_removes_every_file, quota_short_write_error_cancel_and_panic_leave_no_files |
+| spill-recursion-bound-removed | exec | CAUGHT | recursion_bound_is_enforced_under_a_process_deadline |
+| spill-descriptor-cap-removed | exec | CAUGHT | descriptors_are_capped_and_release_on_drop |
+
+5 mutants: 5 CAUGHT, 0 SURVIVED, 0 INVALID

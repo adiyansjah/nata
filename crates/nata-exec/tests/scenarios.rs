@@ -362,6 +362,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 opener: Some(opener),
                 late_materialization: false,
                 footers_ahead: 1,
+                ..ExecConfig::new(1)
             };
             run_one(&sql, &cfg, sink_fails, None)
         };
@@ -377,6 +378,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 opener: Some(FaultOpener::new(&files, vec![])),
                 late_materialization: false,
                 footers_ahead: 1,
+                ..ExecConfig::new(1)
             };
             run_one(&clean_sql, &cfg, None, None)
         };
@@ -397,6 +399,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 opener: Some(FaultOpener::new(&files, vec![])),
                 late_materialization: false,
                 footers_ahead: 1,
+                ..ExecConfig::new(1)
             };
             lines(&run_one(&unlimited, &cfg, None, None).csv)
         } else {
@@ -425,6 +428,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
             opener: Some(opener.clone()),
             late_materialization: false,
             footers_ahead: 1,
+            ..ExecConfig::new(1)
         };
         let got = run_one(&sql, &cfg, sink_fails, Some(&cancel));
         if let Some(c) = canceller {
