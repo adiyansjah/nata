@@ -12,5 +12,6 @@ are in `docs/way-of-working.md`, section 2 ("The slice verification card"). Copy
 | [0005](0005-hash-aggregate.md) | Hash aggregate with spill; GROUP BY, HAVING, common aggregates; slice 5 of the feature map | accepted 2026-11-07 | 0001–0004, 0006–0008; creates 0009, 0010 (accepted 2026-11-07) |
 | [0006](0006-object-store-io.md) | Object-store reads, async I/O and metadata cache; feature-map slice 11, Track B (owner parallel-track decision 2026-11-07) | accepted 2026-11-07 | 0001–0003, 0006–0009; proposes 0011, 0012 |
 | [0007](0007-wire-protocol-and-catalog-views.md) | Wire protocol completion and read-only catalog views; track C, remainder of slice 10 | accepted 2026-11-07 | 0001, 0002, 0004–0009; proposes 0013–0015 |
+| [0008](0008-engine-performance.md) | Engine performance after slice 5 closes in Track A, before slice 6; shared proved/vectorized kernels, scaling and regression gate | draft | 0001–0003, 0006–0010 |
 
 Order decided by the owner on 2026-11-05: slice 3 (card 0001), then slice 4 (parser and binder). The engineering checks of verification-plan item 34 (`cargo-deny`, `audit`, `geiger`, sanitizers, Miri) are introduced on the card of slice 4, when real code exists to run them on.
