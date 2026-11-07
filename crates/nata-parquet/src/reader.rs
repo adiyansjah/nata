@@ -825,6 +825,12 @@ struct CountingRead<R> {
     bytes: Arc<AtomicU64>,
     fail_after: Option<u64>,
     delay: Option<std::time::Duration>,
+    /// The reader has returned end of file once. parquet-rs 60.1.0's streaming Thrift reader (`ThriftReadInputProtocol::skip_bytes` and
+    /// `read_bytes_owned`) does not check that `io::copy` copied the length a damaged page header claims, and its list skip loops over a count
+    /// read from the file: a corrupt header then reads past the end billions of times (a hang no cancel can reach, found by the nightly
+    /// damaged-file fuzz, seed 20261107, shape tiny_and_empty_groups, case 10072). A correct decoder never reads again after `Ok(0)`, so a
+    /// second read at end of file is an `UnexpectedEof` error, which the scan reports as a corrupt file naming the file and row group.
+    at_eof: bool,
 }
 
 fn injected_error() -> std::io::Error {
@@ -841,7 +847,16 @@ impl<R: Read> Read for CountingRead<R> {
         if let Some(d) = self.delay {
             std::thread::sleep(d);
         }
+        if self.at_eof && !buf.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "read past the end of the file (a damaged page header claims more bytes than the file holds)",
+            ));
+        }
         let n = self.inner.read(buf)?;
+        if n == 0 && !buf.is_empty() {
+            self.at_eof = true;
+        }
         self.bytes.fetch_add(n as u64, Ordering::Relaxed);
         Ok(n)
     }
@@ -862,6 +877,7 @@ impl ChunkReader for CountingFile {
             bytes: Arc::clone(&self.bytes),
             fail_after: self.fail_after,
             delay: self.delay,
+            at_eof: false,
         })
     }
 
