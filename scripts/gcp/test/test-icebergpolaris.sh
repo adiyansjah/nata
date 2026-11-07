@@ -124,6 +124,6 @@ check "pyiceberg reading a different table is a FAIL" "[ $RC -eq 1 ] && grep -q 
 run_check leak FAKE_LEAK=1
 check "the client secret in the results makes the run FAIL, and says so" "[ $RC -eq 1 ] && grep -q 'THE POLARIS CLIENT SECRET IS IN THE RESULTS' '$SUM' && grep -q '^VERDICT FAIL' '$SUM'"
 run_check badmode IC_MODE=nonsense
-check "an unknown IC_MODE is refused (exit 2) and the message lists polaris" "[ $RC -eq 2 ] && grep -q 'full, model, spikes or polaris' '$T/out$n.txt'"
+check "an unknown IC_MODE is refused (exit 2) and the message lists polaris" "[ $RC -eq 2 ] && grep -q 'full, model, spikes, polaris or gcs' '$T/out$n.txt'"
 
 [ "$fails" = 0 ] && echo "all icebergpolaris tests passed" || { echo "ICEBERGPOLARIS TESTS FAILED ($fails)"; exit 1; }
