@@ -11,5 +11,8 @@ rust-version.workspace = true
 [target.'cfg(nata_loom)'.dependencies]
 loom = "0.7"
 
+[dependencies]
+crossbeam-deque = "=0.8.6"
+
 [lints]
 workspace = true

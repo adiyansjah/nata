@@ -1,6 +1,7 @@
 //! Bind: resolve the names of a parsed query against the schema of its source and give every expression its exact type (dialect sections 2 to 7,
 //! `decimal-rules.md`). The result is a [`Bound`] query whose expressions are typed trees over the source's columns; nothing is evaluated here.
 
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 
 use nata_parquet::civil;
@@ -20,15 +21,32 @@ pub struct OutItem {
     pub expr: Expr,
 }
 
-/// A bound query. Column references in `items` and `where_` index `source.columns` (file order).
+/// A bound query. Input references index `source.columns`; with aggregation,
+/// output/HAVING references index group keys followed by finalized states.
 #[derive(Debug, PartialEq)]
 pub struct Bound {
+    pub aggregate: Option<Aggregate>,
     pub explain: ExplainMode,
     pub source: SourceInfo,
     pub items: Vec<OutItem>,
     pub where_: Option<Expr>,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
+}
+
+/// Input keys and states; output columns are keys followed by finalized aggregates.
+#[derive(Debug, PartialEq)]
+pub struct Aggregate {
+    pub keys: Vec<Expr>,
+    pub aggregates: Vec<AggregateExpr>,
+    pub having: Option<Expr>,
+}
+#[derive(Debug, PartialEq)]
+pub struct AggregateExpr {
+    pub name: String,
+    pub arg: Option<Expr>,
+    pub ty: SqlType,
+    pub pos: Pos,
 }
 
 pub fn bind(q: &ast::Query, provider: &dyn SourceProvider) -> Result<Bound> {
@@ -42,11 +60,30 @@ pub fn bind_with(
     options: BindOptions,
 ) -> Result<Bound> {
     let source = resolve_with(provider, &q.from, q.from_pos.0, options)?;
-    let b = Binder::new(&source, q);
+    let mut b = Binder::new(&source, q);
+    let aggregate_mode = !q.group_by.is_empty()
+        || q.having.is_some()
+        || q.items
+            .iter()
+            .any(|it| matches!(it, SelectItem::Expr {expr, ..} if expr.has_aggregate()));
+    for key in &q.group_by {
+        if let A::Ident(id) = &key.kind {
+            let name = fold(id);
+            if !b.by_name.contains_key(name.as_str()) && b.aliases.contains(&name) {
+                return Err(SqlError::not_supported(key.pos(), "GROUP BY aliases"));
+            }
+        }
+        b.keys
+            .push((key.clone(), Binder::new(&source, q).expr(key, None)?));
+    }
+    b.aggregate_mode = aggregate_mode;
     let mut items = Vec::new();
     for it in &q.items {
         match it {
             SelectItem::Star(span) => {
+                if aggregate_mode {
+                    return Err(SqlError::bind(span.0, "ungrouped columns in SELECT *"));
+                }
                 for (i, c) in source.columns.iter().enumerate() {
                     let ty = c.ty.clone().map_err(|why| {
                         SqlError::not_supported(span.0, format!("column {:?}: {why}", c.name))
@@ -76,7 +113,7 @@ pub fn bind_with(
     let where_ = match &q.where_ {
         None => None,
         Some(w) => {
-            let mut e = b.expr(w, Some(SqlType::Boolean))?;
+            let mut e = Binder::new(&source, q).expr(w, Some(SqlType::Boolean))?;
             retype_null(&mut e, SqlType::Boolean);
             if e.ty != SqlType::Boolean {
                 return Err(SqlError::bind(
@@ -87,7 +124,23 @@ pub fn bind_with(
             Some(e)
         }
     };
+    let having = q
+        .having
+        .as_ref()
+        .map(|h| {
+            let mut e = b.expr(h, Some(SqlType::Boolean))?;
+            retype_null(&mut e, SqlType::Boolean);
+            b.need_boolean(&e, "HAVING")?;
+            Ok(e)
+        })
+        .transpose()?;
+    let aggregate = aggregate_mode.then(|| Aggregate {
+        keys: b.keys.into_iter().map(|(_, e)| e).collect(),
+        aggregates: b.aggregates.into_inner(),
+        having,
+    });
     Ok(Bound {
+        aggregate,
         explain: q.explain,
         source,
         items,
@@ -95,6 +148,94 @@ pub fn bind_with(
         limit: q.limit,
         offset: q.offset,
     })
+}
+
+// Group expression identity follows identifier resolution, including unquoted
+// folding; it does not infer algebraic equivalence or functional dependencies.
+fn same_group(a: &ast::Expr, b: &ast::Expr) -> bool {
+    let same_option = |a: &Option<Box<ast::Expr>>, b: &Option<Box<ast::Expr>>| match (a, b) {
+        (Some(a), Some(b)) => same_group(a, b),
+        (None, None) => true,
+        _ => false,
+    };
+    match (&a.kind, &b.kind) {
+        (A::Ident(a), A::Ident(b)) => fold(a) == fold(b),
+        (A::Unary { op: a, expr: x }, A::Unary { op: b, expr: y }) => a == b && same_group(x, y),
+        (
+            A::Binary {
+                op: a,
+                left: x,
+                right: y,
+            },
+            A::Binary {
+                op: b,
+                left: u,
+                right: v,
+            },
+        ) => a == b && same_group(x, u) && same_group(y, v),
+        (A::Cast { expr: a, ty: x }, A::Cast { expr: b, ty: y }) => x == y && same_group(a, b),
+        (
+            A::IsNull {
+                expr: a,
+                negated: x,
+            },
+            A::IsNull {
+                expr: b,
+                negated: y,
+            },
+        ) => x == y && same_group(a, b),
+        (
+            A::Between {
+                expr: a,
+                low: x,
+                high: y,
+                negated: n,
+            },
+            A::Between {
+                expr: b,
+                low: u,
+                high: v,
+                negated: m,
+            },
+        ) => n == m && same_group(a, b) && same_group(x, u) && same_group(y, v),
+        (
+            A::InList {
+                expr: a,
+                list: x,
+                negated: n,
+            },
+            A::InList {
+                expr: b,
+                list: y,
+                negated: m,
+            },
+        ) => {
+            n == m
+                && same_group(a, b)
+                && x.len() == y.len()
+                && x.iter().zip(y).all(|(a, b)| same_group(a, b))
+        }
+        (
+            A::Case {
+                operand: a,
+                whens: x,
+                else_: u,
+            },
+            A::Case {
+                operand: b,
+                whens: y,
+                else_: v,
+            },
+        ) => {
+            same_option(a, b)
+                && same_option(u, v)
+                && x.len() == y.len()
+                && x.iter()
+                    .zip(y)
+                    .all(|((a, b), (c, d))| same_group(a, c) && same_group(b, d))
+        }
+        _ => a == b,
+    }
 }
 
 /// The name of an identifier: folded to lower case unless quoted.
@@ -371,6 +512,9 @@ pub fn edit_distance(a: &str, b: &str, max: usize) -> Option<usize> {
 // ---------------------------------------------------------------------------------------------------------------------------------- the binder
 
 struct Binder<'a> {
+    aggregate_mode: bool,
+    keys: Vec<(ast::Expr, Expr)>,
+    aggregates: RefCell<Vec<AggregateExpr>>,
     cols: &'a [crate::source::SourceColumn],
     by_name: HashMap<&'a str, usize>,
     aliases: HashSet<String>,
@@ -399,6 +543,9 @@ impl<'a> Binder<'a> {
             })
             .collect();
         Binder {
+            aggregate_mode: false,
+            keys: Vec::new(),
+            aggregates: RefCell::new(Vec::new()),
             cols: &source.columns,
             by_name,
             aliases,
@@ -411,6 +558,9 @@ impl<'a> Binder<'a> {
         let Some(&i) = self.by_name.get(name.as_str()) else {
             return Err(self.unknown_column(&name, pos));
         };
+        if self.aggregate_mode {
+            return Err(SqlError::bind(pos, format!("ungrouped column {name:?}")));
+        }
         let col = &self.cols[i];
         let ty = col
             .ty
@@ -453,7 +603,70 @@ impl<'a> Binder<'a> {
     /// Bind an expression. `hint` is the type the context needs for a NULL literal; an expression that is not a NULL literal ignores it.
     fn expr(&self, e: &ast::Expr, hint: Option<SqlType>) -> Result<Expr> {
         let pos = e.pos();
+        if self.aggregate_mode
+            && let Some(i) = self.keys.iter().position(|(a, _)| same_group(a, e))
+        {
+            return Ok(Expr::new(ExprKind::Column(i), self.keys[i].1.ty, pos));
+        }
         match &e.kind {
+            A::Aggregate { name, arg } => {
+                if !self.aggregate_mode {
+                    return Err(SqlError::not_supported(
+                        pos,
+                        "aggregates in WHERE, GROUP BY or nested aggregates",
+                    ));
+                }
+                let plain = Binder {
+                    aggregate_mode: false,
+                    keys: Vec::new(),
+                    aggregates: RefCell::new(Vec::new()),
+                    cols: self.cols,
+                    by_name: self.by_name.clone(),
+                    aliases: self.aliases.clone(),
+                };
+                let arg = arg.as_ref().map(|a| plain.expr(a, None)).transpose()?;
+                let input = arg.as_ref().map_or(SqlType::Null, |a| a.ty);
+                let ty = match name.as_str() {
+                    "count" => SqlType::BigInt,
+                    "min" | "max" if input != SqlType::Null => input,
+                    "sum"
+                        if matches!(
+                            input,
+                            SqlType::TinyInt | SqlType::SmallInt | SqlType::Integer
+                        ) =>
+                    {
+                        SqlType::BigInt
+                    }
+                    "sum" if input == SqlType::BigInt => SqlType::Decimal {
+                        precision: 38,
+                        scale: 0,
+                    },
+                    "sum" if matches!(input, SqlType::Decimal { .. }) => SqlType::Decimal {
+                        precision: 38,
+                        scale: input.as_decimal().map_or(0, |(_, s)| s),
+                    },
+                    "avg" if input.as_decimal().is_some() => {
+                        let (p, s) = input
+                            .as_decimal()
+                            .ok_or_else(|| SqlError::bind(pos, "AVG type"))?;
+                        let scale = (s + 6).min(38 - (p - s));
+                        SqlType::Decimal {
+                            precision: p - s + scale,
+                            scale,
+                        }
+                    }
+                    _ => return Err(SqlError::not_supported(pos, format!("{name}({input})"))),
+                };
+                let mut aggs = self.aggregates.borrow_mut();
+                let idx = aggs.len();
+                aggs.push(AggregateExpr {
+                    name: name.clone(),
+                    arg,
+                    ty,
+                    pos,
+                });
+                Ok(Expr::new(ExprKind::Column(self.keys.len() + idx), ty, pos))
+            }
             A::Ident(id) => self.column(id),
             A::Number(t) => number_literal(t, false, pos).map_err(|m| SqlError::bind(pos, m)),
             A::Str(s) => Ok(Expr::literal(Value::Str(s.clone()), SqlType::Varchar, pos)),
@@ -527,6 +740,9 @@ impl<'a> Binder<'a> {
         let mut steps: Vec<Step<'_>> = Vec::new();
         let mut cur = top;
         loop {
+            if self.aggregate_mode && self.keys.iter().any(|(a, _)| same_group(a, cur)) {
+                break;
+            }
             match &cur.kind {
                 A::Binary { op, left, right } => {
                     steps.push(Step::Bin(*op, right));

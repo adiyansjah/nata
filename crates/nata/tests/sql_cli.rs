@@ -147,7 +147,7 @@ fn exit_codes_and_the_rendering_of_errors() {
             "not supported yet",
         ),
         (
-            format!("SELECT id FROM '{p}' GROUP BY id"),
+            format!("SELECT id FROM '{p}' GROUP BY ALL"),
             2,
             "not supported yet",
         ),
@@ -497,8 +497,8 @@ fn a_closed_stdout_ends_the_query_quietly_with_exit_code_zero() {
 fn every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet() {
     let (_d, p) = std_file("unsupported");
     for q in [
-        format!("SELECT count(*) FROM '{p}'"),
-        format!("SELECT id FROM '{p}' GROUP BY id"),
+        format!("SELECT count(DISTINCT id) FROM '{p}'"),
+        format!("SELECT id FROM '{p}' GROUP BY ALL"),
         format!("SELECT id FROM '{p}' ORDER BY id"),
         "SELECT 1".to_string(),
         format!("SELECT x.id FROM '{p}' x JOIN '{p}' y ON x.id = y.id"),

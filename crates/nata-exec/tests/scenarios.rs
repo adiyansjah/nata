@@ -355,6 +355,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
         };
         let serial = |opener: Arc<FaultOpener>, sink_fails: Option<usize>| {
             let cfg = ExecConfig {
+                aggregate_memory_bytes: None,
                 threads: 1,
                 window: 1,
                 ordered: true,
@@ -369,6 +370,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
         let clean_sql = sql.replace(&e, "");
         let clean = {
             let cfg = ExecConfig {
+                aggregate_memory_bytes: None,
                 threads: 1,
                 window: 1,
                 ordered: true,
@@ -388,6 +390,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
                 .unwrap_or(&clean_sql)
                 .to_string();
             let cfg = ExecConfig {
+                aggregate_memory_bytes: None,
                 threads: 1,
                 window: 1,
                 ordered: true,
@@ -415,6 +418,7 @@ fn random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind() {
             None
         };
         let cfg = ExecConfig {
+            aggregate_memory_bytes: None,
             threads: s.threads,
             window: s.window,
             ordered: s.ordered,

@@ -15,6 +15,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 P, B, T, X, S, PA = "src/plan.rs", "src/bind.rs", "src/types.rs", "src/texpr.rs", "src/source.rs", "src/parse.rs"
 
 M = {
+ "aggregate-wrong-sum-type": (B, '"sum" if input == SqlType::BigInt => SqlType::Decimal { precision: 38, scale: 0, },', '"sum" if input == SqlType::BigInt => SqlType::BigInt,'),
  # ---- pushdown (rule R2)
  "push-through-or": (P, "Some(vec![lo, hi]) } _ => None,", "Some(vec![lo, hi]) } ExprKind::Or(v) => { let mut all = Vec::new(); for x in v { all.extend(try_push(x, cols)?); } Some(all) } _ => None,"),
  "not-lost-in-pushdown": (P, "Some(vec![lo, hi]) } _ => None,", "Some(vec![lo, hi]) } ExprKind::Not(x) => try_push(x, cols), _ => None,"),

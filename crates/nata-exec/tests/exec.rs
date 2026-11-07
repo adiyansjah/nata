@@ -38,6 +38,7 @@ fn rows_come_in_file_order_for_any_thread_count_and_window() {
     for threads in [1, 2, 3, 8] {
         for window in [1, 2, 7] {
             let cfg = ExecConfig {
+                aggregate_memory_bytes: None,
                 threads,
                 window,
                 ordered: true,
@@ -486,6 +487,7 @@ fn strings_dates_and_booleans() {
 fn a_limit_stops_the_scan_and_the_report_says_how_far_it_got() {
     let p = fixture("limit");
     let cfg = ExecConfig {
+        aggregate_memory_bytes: None,
         threads: 1,
         window: 1,
         ordered: true,

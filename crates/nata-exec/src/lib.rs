@@ -16,3 +16,5 @@ pub mod value;
 
 pub use error::EvalError;
 pub use exec::{ExecConfig, ExecReport, Observed, OperatorStats, execute, execute_observed};
+
+mod aggregate;

@@ -33,6 +33,9 @@ use crate::eval::Evaluator;
 /// How to run a plan.
 #[derive(Clone, Debug)]
 pub struct ExecConfig {
+    /// Optional aggregate-state budget; None uses half the physical/cgroup limit.
+    /// Scan/decode budget integration and spilling follow in step C.
+    pub aggregate_memory_bytes: Option<usize>,
     /// Worker threads of the scan (and so of the expression evaluation).
     pub threads: usize,
     /// Row groups in flight (the scan's window).
@@ -53,6 +56,7 @@ impl ExecConfig {
     pub fn new(threads: usize) -> ExecConfig {
         let threads = threads.max(1);
         ExecConfig {
+            aggregate_memory_bytes: None,
             threads,
             window: threads.saturating_mul(2),
             ordered: true,
@@ -123,6 +127,16 @@ pub fn max_depth(plan: &LogicalPlan) -> usize {
     let mut best = 0;
     if let Some(f) = &plan.filter {
         best = best.max(depth(&f.predicate));
+    }
+    if let Some(a) = &plan.aggregate {
+        for e in a
+            .keys
+            .iter()
+            .chain(a.aggregates.iter().filter_map(|a| a.arg.as_ref()))
+            .chain(a.having.iter())
+        {
+            best = best.max(depth(e));
+        }
     }
     for p in &plan.project.exprs {
         best = best.max(depth(&p.expr));
@@ -273,6 +287,7 @@ impl Run {
 /// reliability tests read after the run.
 #[derive(Debug, Default)]
 pub struct Observed {
+    pub aggregate_memory: Option<Arc<nata_sched::memory::MemoryManager>>,
     pub stats: Option<Arc<nata_parquet::ScanStats>>,
 }
 
@@ -294,6 +309,9 @@ pub fn execute_observed(
     observed: &mut Observed,
     mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
 ) -> Result<ExecReport, ScanError> {
+    if plan.aggregate.is_some() {
+        return crate::aggregate::execute(plan, cfg, cancel, observed, sink);
+    }
     let started = Instant::now();
     let mut options = plan.scan.scan_options();
     options.late_materialization = cfg.late_materialization;
@@ -385,7 +403,7 @@ pub fn execute_observed(
 }
 
 /// The name of the first column of the first file that the scan can read.
-fn first_readable_column(plan: &LogicalPlan) -> Result<String, ScanError> {
+pub(crate) fn first_readable_column(plan: &LogicalPlan) -> Result<String, ScanError> {
     let first = plan
         .scan
         .files

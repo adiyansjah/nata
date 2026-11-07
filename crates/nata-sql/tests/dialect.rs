@@ -66,8 +66,12 @@ fn s1_statement_forms_and_the_explain_modes() {
 #[test]
 fn s1_what_is_not_yet_supported_names_the_construct_at_its_position() {
     for (q, what, col) in [
-        ("SELECT a FROM 't.parquet' GROUP BY a", "GROUP BY", 27),
-        ("SELECT a FROM 't.parquet' HAVING a > 1", "HAVING", 27),
+        ("SELECT a FROM 't.parquet' GROUP BY ALL", "GROUP BY", 27),
+        (
+            "SELECT a FROM 't.parquet' HAVING count(DISTINCT a) > 1",
+            "DISTINCT aggregates",
+            34,
+        ),
         ("SELECT a FROM 't.parquet' ORDER BY a", "ORDER BY", 27),
         (
             "SELECT a FROM 't.parquet' JOIN 'u.parquet' ON a = b",
@@ -88,7 +92,7 @@ fn s1_what_is_not_yet_supported_names_the_construct_at_its_position() {
             26,
         ),
         ("SELECT a FROM t", "table names", 15),
-        ("SELECT sum(a) FROM 't.parquet'", "function calls", 8),
+        ("SELECT abs(a) FROM 't.parquet'", "function calls", 8),
     ] {
         let e = err(q);
         assert_eq!(e.class, ErrorClass::NotSupported, "{q}: {e}");
@@ -1046,7 +1050,7 @@ fn s8_every_error_has_a_class_a_message_and_a_one_based_position() {
             7,
         ),
         (
-            "SELECT sum(a) FROM 't.parquet'",
+            "SELECT abs(a) FROM 't.parquet'",
             ErrorClass::NotSupported,
             1,
             8,

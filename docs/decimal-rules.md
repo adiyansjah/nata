@@ -109,7 +109,10 @@ Bind-time errors reject the query. Run-time errors apply to selected, valid rows
 | `AVG(DECIMAL(p,s))` | scale `min(s + 6, 38 - (p - s))`, precision `(p - s) + scale`; computed from an exact wide sum; never a bind error, because an average cannot need more integer digits than its inputs |
 | `MIN`, `MAX`, `MEDIAN`, `QUANTILE_DISC` | the input type |
 | `STDDEV`, `VAR_*` | `DOUBLE` (so `(x - AVG(x)) / STDDEV(x)` needs an explicit cast, and the error says so) |
-| `COUNT` | not decimal-specific |
+| `SUM(TINYINT/SMALLINT/INTEGER)` | `BIGINT`, checked once after exact merging |
+| `SUM(BIGINT)` | `DECIMAL(38,0)`, checked once after exact merging |
+| `AVG(integer)` | the decimal AVG formula with input precision 3/5/10/19 and scale zero; INTEGER is DECIMAL(16,6), BIGINT is DECIMAL(25,6) |
+| `COUNT` | non-NULL BIGINT; COUNT(*) counts rows, COUNT(x) counts non-NULL values |
 
 `AVG` rounds half away from zero, like every other rounding in this document (section 6). Checked in `bench/results/20261104-decimal-verification.md` against 441 groups computed with DuckDB's HUGEINT arithmetic and 24 exact ties.
 
@@ -124,7 +127,7 @@ Bind-time errors reject the query. Run-time errors apply to selected, valid rows
 | `DECIMAL(38,0)` | `DECIMAL(38,0)` |
 | `DECIMAL(5,5)` | `DECIMAL(11,11)` |
 
-Anything else (`SQRT`, `POWER`, `LN`, `QUANTILE_CONT`, `SUM` of integers, window `RANGE` offsets on decimals, unbounded `numeric` from federated sources) is `not supported yet` until specified.
+Anything else (`SQRT`, `POWER`, `LN`, `QUANTILE_CONT`, window `RANGE` offsets on decimals, unbounded `numeric` from federated sources) is `not supported yet` until specified.
 
 ## 9. Where this differs from DuckDB 2.0.0
 

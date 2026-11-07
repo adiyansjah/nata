@@ -75,6 +75,7 @@ pub struct Limit {
 #[derive(Debug, PartialEq)]
 pub struct LogicalPlan {
     pub scan: Scan,
+    pub aggregate: Option<crate::bind::Aggregate>,
     pub filter: Option<Filter>,
     pub project: Project,
     pub limit: Option<Limit>,
@@ -100,6 +101,7 @@ pub struct OutputColumn {
 pub fn plan(b: Bound) -> Result<Planned> {
     let Bound {
         explain,
+        mut aggregate,
         source,
         items,
         where_,
@@ -128,8 +130,16 @@ pub fn plan(b: Bound) -> Result<Planned> {
     }
     // 2. the columns the operators above the scan read: projected first (in order of first use), then those only the remaining filter needs
     let mut used: Vec<usize> = Vec::new();
-    for it in &items {
-        for i in it.expr.columns() {
+    let inputs: Vec<&Expr> = match &aggregate {
+        Some(a) => a
+            .keys
+            .iter()
+            .chain(a.aggregates.iter().filter_map(|a| a.arg.as_ref()))
+            .collect(),
+        None => items.iter().map(|it| &it.expr).collect(),
+    };
+    for expr in inputs {
+        for i in expr.columns() {
             if !used.contains(&i) {
                 used.push(i);
             }
@@ -178,7 +188,9 @@ pub fn plan(b: Bound) -> Result<Planned> {
     let mut output = Vec::with_capacity(items.len());
     for it in items {
         let mut e = it.expr;
-        e.remap_columns(remap);
+        if aggregate.is_none() {
+            e.remap_columns(remap);
+        }
         output.push(OutputColumn {
             name: it.name.clone(),
             ty: e.ty,
@@ -188,9 +200,19 @@ pub fn plan(b: Bound) -> Result<Planned> {
             expr: e,
         });
     }
+    if let Some(a) = &mut aggregate {
+        for e in a
+            .keys
+            .iter_mut()
+            .chain(a.aggregates.iter_mut().filter_map(|a| a.arg.as_mut()))
+        {
+            e.remap_columns(remap);
+        }
+    }
     Ok(Planned {
         mode: explain,
         plan: LogicalPlan {
+            aggregate,
             scan: Scan {
                 pattern: source.pattern,
                 files: source.files,
@@ -626,12 +648,27 @@ impl LogicalPlan {
             line(depth, format!("Limit {} offset {}", l.n, l.offset));
             depth += 1;
         }
+        let output_names = self.aggregate.as_ref().map(|a| {
+            a.keys
+                .iter()
+                .map(|e| render_expr(e, &names))
+                .chain(a.aggregates.iter().map(|a| {
+                    format!(
+                        "{}({})",
+                        a.name,
+                        a.arg
+                            .as_ref()
+                            .map_or("*".into(), |e| render_expr(e, &names))
+                    )
+                }))
+                .collect::<Vec<_>>()
+        });
         let exprs: Vec<String> = self
             .project
             .exprs
             .iter()
             .map(|p| {
-                let text = render_expr(&p.expr, &names);
+                let text = render_expr(&p.expr, output_names.as_ref().unwrap_or(&names));
                 let shown = if text == quote_ident(&p.name) {
                     text
                 } else {
@@ -642,6 +679,42 @@ impl LogicalPlan {
             .collect();
         line(depth, format!("Project {}", exprs.join(", ")));
         depth += 1;
+        if let Some(a) = &self.aggregate {
+            if let Some(h) = &a.having {
+                line(
+                    depth,
+                    format!(
+                        "Having {}",
+                        render_expr(h, output_names.as_ref().unwrap_or(&names))
+                    ),
+                );
+                depth += 1;
+            }
+            line(
+                depth,
+                format!(
+                    "Aggregate keys=[{}] aggregates=[{}] phases=partial -> hash partition -> final (unordered)",
+                    a.keys
+                        .iter()
+                        .map(|e| render_expr(e, &names))
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                    a.aggregates
+                        .iter()
+                        .map(|a| format!(
+                            "{}({}): {}",
+                            a.name,
+                            a.arg
+                                .as_ref()
+                                .map_or("*".into(), |e| render_expr(e, &names)),
+                            a.ty
+                        ))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+            );
+            depth += 1;
+        }
         if let Some(f) = &self.filter {
             line(
                 depth,

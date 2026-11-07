@@ -40,6 +40,8 @@ use std::collections::{BTreeMap, VecDeque};
 
 pub mod memory;
 pub mod sync;
+#[cfg(not(nata_loom))]
+pub mod unordered;
 use sync::{Arc, AtomicU64, Condvar, JoinHandle, Mutex, Ordering, lock, wait};
 
 /// The work: a list of files, each of which expands (lazily, on a worker) into an ordered list of tasks.

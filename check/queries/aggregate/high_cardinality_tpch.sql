@@ -1,0 +1,1 @@
+SELECT l_orderkey, count(*) AS n, sum(l_extendedprice) AS price, sum(l_extendedprice * (1 - l_discount)) AS net FROM '{data}/lineitem.parquet' WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_orderkey HAVING count(*) > 1;

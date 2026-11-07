@@ -136,6 +136,7 @@ pub struct Ctx {
     pub opener: Arc<dyn Opener>,
     /// What each task does with every batch it produced, inside the task (the filter and the projection of `nata sql`), if anything.
     pub map: Option<BatchMap>,
+    pub sink: Option<TaskSinkFactory>,
     pub stats: Arc<ScanStats>,
 }
 
@@ -176,6 +177,13 @@ pub struct ScanPlan {
 /// A function applied by each task to each batch it produced; see [`ScanPlan::open_with_map`].
 pub type BatchMap =
     Arc<dyn Fn(RecordBatch) -> Result<Option<RecordBatch>, ErrorKind> + Send + Sync>;
+
+/// Task-local breaker state. Dropping an unfinished task drops all its state.
+pub trait TaskSink: Send {
+    fn push(&mut self, batch: RecordBatch) -> Result<(), ErrorKind>;
+    fn finish(self: Box<Self>) -> Result<(), ErrorKind>;
+}
+pub type TaskSinkFactory = Arc<dyn Fn() -> Box<dyn TaskSink> + Send + Sync>;
 
 /// One row group to read: the unit of work (the morsel of ADR 0001).
 #[derive(Clone, Debug)]
@@ -364,12 +372,24 @@ impl ScanPlan {
         opener: Arc<dyn Opener>,
         map: Option<BatchMap>,
     ) -> Result<ScanPlan, ScanError> {
+        Self::open_with_operators(paths, options, opener, map, None)
+    }
+
+    /// As `open_with_map`, with a per-morsel sink finalized only after successful input.
+    pub fn open_with_operators(
+        paths: &[PathBuf],
+        options: &ScanOptions,
+        opener: Arc<dyn Opener>,
+        map: Option<BatchMap>,
+        sink: Option<TaskSinkFactory>,
+    ) -> Result<ScanPlan, ScanError> {
         let Some(first_path) = paths.first() else {
             return Err(ScanError::usage("no file given"));
         };
         let ctx = Arc::new(Ctx {
             opener,
             map,
+            sink,
             stats: Arc::new(ScanStats::default()),
         });
         let mut spec: Option<Spec> = None;
@@ -1003,6 +1023,7 @@ impl RowGroupTask {
         }));
         let mut run = TaskRun {
             task: self,
+            sink: f.ctx.sink.as_ref().map(|factory| factory()),
             cancel,
             out: TaskOutput {
                 batches: Vec::new(),
@@ -1019,6 +1040,9 @@ impl RowGroupTask {
         };
         if step == Step::Cancelled {
             return abandoned();
+        }
+        if let Some(sink) = run.sink.take() {
+            sink.finish().map_err(|kind| run.at(kind))?;
         }
         let TaskRun {
             mut out, task_peak, ..
@@ -1039,6 +1063,7 @@ enum Step {
 
 /// A task while it runs: what it has produced so far, and the memory high-water mark.
 struct TaskRun<'a> {
+    sink: Option<Box<dyn TaskSink>>,
     task: &'a RowGroupTask,
     cancel: &'a dyn Fn() -> bool,
     out: TaskOutput,
@@ -1241,6 +1266,10 @@ impl TaskRun<'_> {
             None => Some(projected),
         };
         if let Some(projected) = mapped {
+            if let Some(sink) = &mut self.sink {
+                sink.push(projected).map_err(|kind| self.at(kind))?;
+                return Ok(());
+            }
             self.out.mem.grow(projected.get_array_memory_size() as u64);
             self.task_peak = self.task_peak.max(self.out.mem.bytes() + transient);
             self.out.rows_returned += projected.num_rows() as u64;

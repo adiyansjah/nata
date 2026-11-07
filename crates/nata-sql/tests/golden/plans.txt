@@ -466,7 +466,12 @@ bind error: cannot compare DATE and VARCHAR: there is no implicit conversion bet
 ### 49
 SELECT l_orderkey FROM 'lineitem.parquet' GROUP BY l_orderkey
 ---
-not supported yet: GROUP BY (line 1, column 43)
+mode: No
+Project l_orderkey: BIGINT
+  Aggregate keys=[l_orderkey] aggregates=[] phases=partial -> hash partition -> final (unordered)
+    Scan 'lineitem.parquet' (1 file)
+      columns: l_orderkey
+      pushed: (none)
 
 ### 50
 SELECT d_15_2 / d_15_2 * d_38_2 FROM 't.parquet'

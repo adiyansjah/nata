@@ -35,6 +35,8 @@ pub struct Query {
     pub from: String,
     pub from_pos: Span,
     pub where_: Option<Expr>,
+    pub group_by: Vec<Expr>,
+    pub having: Option<Expr>,
     pub limit: Option<u64>,
     pub limit_pos: Span,
     pub offset: Option<u64>,
@@ -105,6 +107,10 @@ impl PartialEq for Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExprKind {
+    Aggregate {
+        name: String,
+        arg: Option<Box<Expr>>,
+    },
     Ident(Ident),
     /// The exact source text of the number: digits, optional `.digits`, optional exponent. The sign is a `Unary(Neg)` above it.
     Number(String),
@@ -148,6 +154,43 @@ pub enum ExprKind {
 }
 
 impl Expr {
+    pub fn has_aggregate(&self) -> bool {
+        let mut stack = vec![self];
+        while let Some(e) = stack.pop() {
+            match &e.kind {
+                ExprKind::Aggregate { .. } => return true,
+                ExprKind::Unary { expr, .. }
+                | ExprKind::Cast { expr, .. }
+                | ExprKind::IsNull { expr, .. } => stack.push(expr),
+                ExprKind::Binary { left, right, .. } => {
+                    stack.push(left);
+                    stack.push(right);
+                }
+                ExprKind::Between {
+                    expr, low, high, ..
+                } => {
+                    stack.extend([expr.as_ref(), low.as_ref(), high.as_ref()]);
+                }
+                ExprKind::InList { expr, list, .. } => {
+                    stack.push(expr);
+                    stack.extend(list);
+                }
+                ExprKind::Case {
+                    operand,
+                    whens,
+                    else_,
+                } => {
+                    stack.extend(operand.iter().map(Box::as_ref));
+                    stack.extend(else_.iter().map(Box::as_ref));
+                    for (c, v) in whens {
+                        stack.extend([c, v]);
+                    }
+                }
+                _ => {}
+            }
+        }
+        false
+    }
     pub fn new(kind: ExprKind, span: Span) -> Expr {
         Expr { kind, span }
     }
@@ -166,6 +209,15 @@ impl Expr {
     fn write_sexp(&self, s: &mut String) {
         use std::fmt::Write;
         match &self.kind {
+            ExprKind::Aggregate { name, arg } => {
+                s.push_str(&format!("({name} "));
+                if let Some(arg) = arg {
+                    arg.write_sexp(s);
+                } else {
+                    s.push('*');
+                }
+                s.push(')');
+            }
             ExprKind::Ident(i) => {
                 let _ = write!(s, "(id{} {})", if i.quoted { "q" } else { "" }, i.name);
             }
@@ -332,6 +384,17 @@ impl Query {
         if let Some(w) = &self.where_ {
             s.push_str(" where ");
             s.push_str(&w.sexp());
+        }
+        if !self.group_by.is_empty() {
+            s.push_str(" group-by");
+            for key in &self.group_by {
+                s.push(' ');
+                s.push_str(&key.sexp());
+            }
+        }
+        if let Some(h) = &self.having {
+            s.push_str(" having ");
+            s.push_str(&h.sexp());
         }
         if let Some(l) = self.limit {
             s.push_str(&format!(" limit {l}"));

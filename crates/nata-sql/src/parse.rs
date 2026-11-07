@@ -678,13 +678,32 @@ impl Conv<'_> {
         {
             return ns(tok, end, "SELECT modifiers");
         }
-        match group_by {
-            sp::GroupByExpr::Expressions(e, m) if e.is_empty() && m.is_empty() => {}
-            _ => return ns(self.kw_pos(Keyword::GROUP).or(tok), end, "GROUP BY"),
-        }
-        if having.is_some() {
-            return ns(self.kw_pos(Keyword::HAVING).or(tok), end, "HAVING");
-        }
+        let group_by = match group_by {
+            sp::GroupByExpr::Expressions(e, m) if m.is_empty() => e
+                .iter()
+                .map(|e| {
+                    let key = self.expr(e, 0)?;
+                    let ordinal = match &key.kind {
+                        ExprKind::Number(n) => n.bytes().all(|c| c.is_ascii_digit()),
+                        ExprKind::Unary { op: UnOp::Neg, expr } => matches!(&expr.kind, ExprKind::Number(n) if n.bytes().all(|c| c.is_ascii_digit())),
+                        _ => false,
+                    };
+                    if ordinal { return ns(Some(e.span()), end, "GROUP BY ordinals"); }
+                    if matches!(key.kind, ExprKind::Null) {
+                        return ns(Some(e.span()), end, "GROUP BY NULL without a type (write CAST(NULL AS type))");
+                    }
+                    Ok(key)
+                })
+                .collect::<Result<Vec<_>>>()?,
+            _ => {
+                return ns(
+                    self.kw_pos(Keyword::GROUP).or(tok),
+                    end,
+                    "GROUP BY extensions",
+                );
+            }
+        };
+        let having = having.as_ref().map(|e| self.expr(e, 0)).transpose()?;
         if !named_window.is_empty() || qualify.is_some() {
             return ns(
                 self.kw_pos(Keyword::QUALIFY)
@@ -711,6 +730,8 @@ impl Conv<'_> {
             from,
             from_pos,
             where_,
+            group_by,
+            having,
             limit,
             limit_pos,
             offset,
@@ -1395,11 +1416,48 @@ impl Conv<'_> {
                 mk(ExprKind::Cast { expr: inner, ty }, pos)
             }
             sp::Expr::Function(f) => {
-                return ns(
-                    Some(e.span()),
-                    end,
-                    &format!("function calls ({}(...))", f.name),
-                );
+                let name = f.name.to_string().to_lowercase();
+                if !["count", "sum", "avg", "min", "max"].contains(&name.as_str()) {
+                    return ns(
+                        Some(e.span()),
+                        end,
+                        &format!("function calls ({}(...))", f.name),
+                    );
+                }
+                if f.over.is_some() {
+                    return ns(Some(e.span()), end, "window functions");
+                }
+                if f.filter.is_some() {
+                    return ns(Some(e.span()), end, "aggregate FILTER");
+                }
+                if !f.within_group.is_empty()
+                    || f.null_treatment.is_some()
+                    || f.uses_odbc_syntax
+                    || !matches!(f.parameters, sp::FunctionArguments::None)
+                {
+                    return ns(Some(e.span()), end, "aggregate modifiers");
+                }
+                let sp::FunctionArguments::List(args) = &f.args else {
+                    return ns(Some(e.span()), end, "aggregate arguments");
+                };
+                if args.duplicate_treatment == Some(sp::DuplicateTreatment::Distinct) {
+                    return ns(Some(e.span()), end, "DISTINCT aggregates");
+                }
+                if !args.clauses.is_empty() {
+                    return ns(Some(e.span()), end, "aggregate ORDER BY or modifiers");
+                }
+                let arg = match args.args.as_slice() {
+                    [sp::FunctionArg::Unnamed(sp::FunctionArgExpr::Wildcard)]
+                        if name == "count" =>
+                    {
+                        None
+                    }
+                    [sp::FunctionArg::Unnamed(sp::FunctionArgExpr::Expr(arg))] => {
+                        Some(self.bx(arg, d)?)
+                    }
+                    _ => return ns(Some(e.span()), end, "aggregate arguments"),
+                };
+                mk(ExprKind::Aggregate { name, arg }, sp_pos(e.span()))
             }
             sp::Expr::Subquery(_) | sp::Expr::Exists { .. } | sp::Expr::InSubquery { .. } => {
                 return ns(Some(e.span()), end, "subqueries");

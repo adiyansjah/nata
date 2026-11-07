@@ -342,3 +342,9 @@ impl Drop for Grant {
         self.manager.release(self.id);
     }
 }
+
+impl std::fmt::Debug for MemoryManager {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.snapshot().fmt(f)
+    }
+}

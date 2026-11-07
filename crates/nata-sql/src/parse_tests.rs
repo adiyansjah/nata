@@ -203,7 +203,7 @@ fn constructs_the_crate_hides_are_refused() {
     assert!(parse("SELECT 'LIMIT ALL' AS x FROM 'f'").is_ok());
     assert!(parse("SELECT a FROM 'f' LIMIT 1 -- LIMIT ALL").is_ok());
     // an error earlier in the text wins over the hidden construct
-    let e = err("SELECT sum(a) FROM 'f' LIMIT ALL");
+    let e = err("SELECT abs(a) FROM 'f' LIMIT ALL");
     assert!(e.message.contains("function calls"), "{e}");
     for q in [
         "SELECT ALL a FROM 'f'",
@@ -249,9 +249,9 @@ fn positions_are_one_based_lines_and_characters() {
 #[test]
 fn not_supported_errors_name_the_construct_at_its_position() {
     for (q, what, line, col) in [
-        ("SELECT sum(a) FROM 'f'", "function calls", 1, 8),
+        ("SELECT abs(a) FROM 'f'", "function calls", 1, 8),
         ("SELECT a FROM 'f' ORDER BY a", "ORDER BY", 1, 19),
-        ("SELECT a FROM 'f' GROUP BY a", "GROUP BY", 1, 19),
+        ("SELECT a FROM 'f' GROUP BY ALL", "GROUP BY", 1, 19),
         ("SELECT a FROM t", "table names", 1, 15),
         ("SELECT a b FROM 'f'", "an alias without AS", 1, 10),
         ("SELECT * FROM 'f' WHERE a LIKE 'x'", "LIKE", 1, 25),

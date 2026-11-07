@@ -447,6 +447,7 @@ fn check_query(reference: &Path, candidate: &Path, sql: &str, d: &Directives) ->
 
 fn exec(program: &Path, args: &[&str]) -> Result<Output> {
     Command::new(program)
+        .env_remove("AI_AGENT")
         .args(args)
         .output()
         .with_context(|| format!("running {}", program.display()))
@@ -597,6 +598,12 @@ mod tests {
             compare("a,b\n1,2\n3,4\n", "a,b\n1,2\n3,4\n", true, None),
             None
         );
+    }
+
+    #[test]
+    fn unordered_multisets_preserve_multiplicity() {
+        assert!(compare("a\n1\n1\n", "a\n1\n2\n", false, None).is_some());
+        assert_eq!(compare("a\n1\n2\n1\n", "a\n1\n1\n2\n", false, None), None);
     }
 
     #[test]

@@ -3,14 +3,14 @@
 //! the code that runs. `Arc` is here too: loom fails an execution in which a loom `Arc` is still alive at its end, which is the leak check of the models.
 
 #[cfg(not(nata_loom))]
-pub use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+pub use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 #[cfg(not(nata_loom))]
 pub use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 #[cfg(not(nata_loom))]
 pub use std::thread::JoinHandle;
 
 #[cfg(nata_loom)]
-pub use loom::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+pub use loom::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 #[cfg(nata_loom)]
 pub use loom::sync::{Arc, Condvar, Mutex, MutexGuard};
 #[cfg(nata_loom)]
@@ -60,3 +60,10 @@ pub fn yield_now() {
 pub fn yield_now() {
     loom::thread::yield_now();
 }
+
+// The native deque path is excluded from loom: crossbeam and scoped std
+// channels are not instrumented by loom. Its concurrency checks are native.
+#[cfg(not(nata_loom))]
+pub use std::sync::mpsc::sync_channel;
+#[cfg(not(nata_loom))]
+pub use std::thread::scope;

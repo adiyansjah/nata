@@ -19,7 +19,24 @@ CSV = "crates/nata-parquet/src/csv.rs"
 SQL = "crates/nata/src/sql.rs"
 
 # name: (suite, [(file, old, new), ...])
+AG = "crates/nata-exec/src/aggregate.rs"
 M = {
+ "aggregate-partition-double-counted": ("exec", [(AG, 'for ((dest, source), a) in dest.iter_mut().zip(states).zip(&a.aggregates) { dest.merge(source, a)?; }', 'for ((dest, source), a) in dest.iter_mut().zip(states).zip(&a.aggregates) { dest.merge(source.clone(), a)?; dest.merge(source, a)?; }')]),
+ "aggregate-having-before-merge": ("exec", [(AG, 'let tables = self.tables;', r'''let mut tables = self.tables;
+    let a = self.shared.plan.aggregate.as_ref().expect("aggregate");
+    if let Some(h) = &a.having {
+        let types: Vec<_> = a.keys.iter().map(|e| e.ty).chain(a.aggregates.iter().map(|e| e.ty)).collect();
+        for t in &mut tables {
+            let entries = std::mem::take(&mut t.groups.entries);
+            t.groups = Groups::new();
+            for (key, states) in entries {
+                let finalized = states.iter().zip(&a.aggregates).map(|(s,a)| State::Final(s.finish(a).expect("final"))).collect();
+                let b = batch(&[(key.clone(), finalized)], a).expect("batch");
+                if Evaluator::new(&b, &types).keep_mask(h).expect("having")[0] { t.groups.insert(key, states); }
+            }
+        }
+    }
+''')]),
  "bare-projection-allocates-selection": ("exec", [(EX, "let mut all = None;", "let mut all = Some(ev.all_rows());")]),
  # ---- the mutants the card asks for
  "case-evaluates-every-branch": ("exec", [(EV, "let rv = self.eval(result, &taken)?;", "let _all = self.eval(result, sel)?; let rv = self.eval(result, &taken)?;")]),

@@ -121,7 +121,7 @@ def prepare(slot, name):
     shutil.copy(os.path.join(ROOT, "Cargo.lock"), d)
     with open(os.path.join(d, "Cargo.toml"), "w") as f:
         f.write('[package]\nname = "nata-sched"\nversion = "0.0.0"\nedition = "2024"\npublish = false\n\n[workspace]\n\n'
-                '[target.\'cfg(nata_loom)\'.dependencies]\nloom = "0.7"\n\n[lints.rust]\nunexpected_cfgs = { level = "warn", check-cfg = [\'cfg(nata_loom)\'] }\n')
+                '[dependencies]\ncrossbeam-deque = \"=0.8.6\"\n\n[target.\'cfg(nata_loom)\'.dependencies]\nloom = "0.7"\n\n[lints.rust]\nunexpected_cfgs = { level = "warn", check-cfg = [\'cfg(nata_loom)\'] }\n')
     if name is None:
         return d, None
     why, edits = M[name]

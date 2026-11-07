@@ -1,4 +1,4 @@
-# The Nata SQL dialect (the subset of slice 4)
+# The Nata SQL dialect (slice 4 and in-memory aggregates)
 
 Status: written 2026-11-06 before the parser work (feature map B1, slice 4 card 0002); decided in ADR 0007. Grows with each slice.
 Rule for everything here: **strict**. If a query's meaning is not stated on this page, Nata answers `not supported yet: <what>` at the
@@ -7,9 +7,9 @@ which this page does not repeat. "DuckDB" below means DuckDB 2.0.0, checked by h
 
 ## 1. Statements
 
-`SELECT <select list> FROM <source> [WHERE <expr>] [LIMIT <n> [OFFSET <m>]]`, `EXPLAIN <select>`, `EXPLAIN ANALYZE <select>`. One
+`SELECT <select list> FROM <source> [WHERE <expr>] [GROUP BY <expressions>] [HAVING <boolean>] [LIMIT <n> [OFFSET <m>]]`, `EXPLAIN <select>`, `EXPLAIN ANALYZE <select>`. One
 statement per call; a trailing `;` is allowed. `<source>` is a single-quoted path or glob of Parquet files: `FROM 'lineitem.parquet'`,
-`FROM 'data/*.parquet'` (all files must have the same schema: the same top-level columns, in the same order, with the same types). The binder reads the footer of the FIRST file only, for the names and types the query binds against; the scan checks the schema of every other file when it reaches the file, and a file that differs is an error that names it (a failure of the data: exit code 1, after the rows of the files before it were printed, if the query printed any). `EXPLAIN` reads the first footer only. Not yet: `GROUP BY`, `HAVING`, `ORDER BY`, joins, subqueries, `WITH`,
+`FROM 'data/*.parquet'` (all files must have the same schema: the same top-level columns, in the same order, with the same types). The binder reads the footer of the FIRST file only, for the names and types the query binds against; the scan checks the schema of every other file when it reaches the file, and a file that differs is an error that names it (a failure of the data: exit code 1, after the rows of the files before it were printed, if the query printed any). `EXPLAIN` reads the first footer only. Not yet: `ORDER BY`, joins, subqueries, `WITH`,
 `DISTINCT`, set operations, more than one source, a table name.
 
 ## 2. Names
@@ -63,8 +63,7 @@ by zero and out-of-range results are errors, for selected rows only: `WHERE b <>
 
 ## 7. LIMIT and OFFSET
 
-`LIMIT n` and `OFFSET m` take non-negative integer literals (a negative or non-literal value is an error, as in DuckDB). Without
-`ORDER BY` (not yet supported) the rows are those of the files in file order, row-group order and row order, so `LIMIT` is deterministic.
+`LIMIT n` and `OFFSET m` take non-negative integer literals (a negative or non-literal value is an error, as in DuckDB). For scan-only queries, rows follow file, row-group and row order. Grouped output is unordered, including with LIMIT. `ORDER BY` is not yet supported.
 
 ## 8. Errors
 
@@ -151,3 +150,61 @@ Default Python datetime clients cannot load BC or years above 9999 and raise
 an explicit conversion error; ADBC Date32 and JDBC LocalDate preserve these
 finite dates. Full client display caveats and oracle evidence:
 `bench/results/20261107-debt-a.md`, R19.
+
+## 10. In-memory aggregates (card 0005 step B)
+
+`GROUP BY` accepts source columns and expressions. `HAVING` accepts boolean
+expressions over group keys and aggregates; it keeps TRUE only. Ungrouped
+column references are positioned bind errors. Group keys use SQL equality:
+NULLs group together, NaNs group together, and signed zeros share one group.
+String dictionaries are grouped by their values, never by dictionary IDs.
+
+`COUNT(*)` counts rows; `COUNT(x)` counts non-NULL arguments. Both return
+non-NULL BIGINT. SUM, AVG, MIN and MAX skip NULLs. Empty global input produces
+one row (counts zero, other results NULL); empty grouped input produces none.
+MIN/MAX preserve the argument type, including strings, dates, booleans and
+floats. SUM/AVG accept integers and decimals only. SUM of TINYINT, SMALLINT or
+INTEGER returns BIGINT; SUM(BIGINT) returns DECIMAL(38,0); SUM(DECIMAL(p,s))
+returns DECIMAL(38,s). AVG follows decimal-rules section 8, with integer input
+precisions 3/5/10/19 and scale zero. All overflow is an error. Wide partial sums
+are merged exactly before checking the result, so cancellation is independent
+of merge order. AVG never narrows through a potentially overflowing SUM.
+
+Phase order: WHERE, key/argument evaluation, all partial accumulation and final
+merges, final aggregate checks, HAVING, admitted output projection, OFFSET and
+LIMIT. Neither HAVING false nor LIMIT 0 hides aggregate argument/result errors.
+EXPLAIN displays keys, result types and the partial/partition/final phases.
+
+DISTINCT aggregates, aggregate FILTER/ORDER BY, nested aggregates, aggregates
+in WHERE/GROUP BY, GROUP BY ALL/ordinals/aliases, grouping extensions and window
+functions return positioned `not supported yet` errors. SELECT aliases do not
+resolve in GROUP BY or HAVING. Scalar expression output names remain section 8b.
+
+The temporary step-B executor reserves aggregate state and evaluator scratch
+through the query memory service. Budget pressure fails with `resource error:
+aggregate memory budget exceeded; in-memory step B has no spill (step C)`.
+The execution configuration can supply an aggregate-state budget; otherwise it
+uses half the smaller physical/cgroup memory limit for this single CLI query.
+This is not yet a bound on total query RSS: scan decode, output buffers,
+admission sharing, accurate allocator accounting and spill are step C.
+
+### Deliberate DuckDB differences (section 9 additions)
+
+- **D10 integer SUM metadata:** DuckDB returns HUGEINT; Nata uses the owner's
+  BIGINT/DECIMAL types above. `sql-differences/d10_sum_integer_type.sql` and
+  `d10_sum_bigint_decimal.sql` hold exact values; binder tests assert metadata.
+- **D10 exact AVG:** DuckDB returns DOUBLE; Nata returns exact decimal rounded
+  half away from zero. `sql-differences/d10_avg_exact.sql` holds the rounded
+  result; the wide kernel's independent integer/rational vectors test rounding
+  beyond DOUBLE precision. Shared AVG differential queries use a stated
+  tolerance for DuckDB's floating result; they are not the exactness oracle.
+- **D10 aggregate scope:** DuckDB accepts DISTINCT/FILTER and grouping aliases
+  or ordinals; Nata rejects them as documented above. Existing D9 strict
+  arithmetic and output-name differences also apply inside aggregates.
+
+- **D10 aggregate evaluation strictness:** DuckDB can eliminate aggregation
+  under HAVING false or LIMIT 0, and rewrite SUM(i + 1) into wide arithmetic
+  that avoids the argument's INTEGER overflow. Nata evaluates retained-row
+  arguments in their bound types and checks final aggregates before HAVING
+  or LIMIT. `d10_having_overflow.sql`, `d10_limit_overflow.sql` and
+  `d10_sum_argument_overflow.sql` require those errors.

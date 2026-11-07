@@ -99,8 +99,8 @@ jobs:
 
   differential:
     # GATING since slice 4 (card 0002): `nata sql` against DuckDB 2.0.0 on both CPU types. What it runs, exactly:
-    #   1. nata-check on check/queries/scan, sql, sql-differences, smoke, decimal and decimal-differences (TPC-H SF 0.01 plus the edge-case files of
-    #      scripts/gen-sql-check-data.sh). Every query must PASS. The queries that need SQL beyond slice 4 (aggregates, ORDER BY, VALUES, SELECT without
+    #   1. nata-check on check/queries/scan, sql, sql-differences, aggregate, smoke, decimal and decimal-differences (TPC-H SF 0.01 plus the edge-case files of
+    #      scripts/gen-sql-check-data.sh). Every query must PASS. The queries that need SQL beyond slice 5 step B (ORDER BY, VALUES, SELECT without
     #      FROM) are listed in the PENDING file of their directory: each must still answer `not supported yet`, and one that starts to pass fails the run
     #      until it is removed from the list.
     #   2. the tests of the fuzzer of the subset (a planted failure is found and replays from its seed) and 20,000 random queries of the subset, seed
@@ -135,6 +135,7 @@ jobs:
       - run: cargo build -p nata -p nata-check
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/scan
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/sql
+      - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/aggregate
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/sql-differences
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/smoke
       - run: cargo run -p nata-check -- --data data/tpch-sf0.01 --queries check/queries/decimal

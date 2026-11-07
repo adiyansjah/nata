@@ -8,6 +8,8 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+hashbrown = { version = "=0.17.1", default-features = false }
+nata-sched = { path = "../nata-sched" }
 nata-sql = { path = "../nata-sql" }
 nata-parquet = { path = "../nata-parquet", default-features = false }
 # `strict_cast` unpacks the scan's dictionary strings (the one sanctioned caller of arrow's cast)

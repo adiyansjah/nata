@@ -102,6 +102,13 @@ impl ScanCancel {
         ScanCancel::default()
     }
 
+    pub fn is_cancelled(&self) -> bool {
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .cancelled
+    }
+
     pub fn cancel(&self) {
         let mut g = self
             .0
