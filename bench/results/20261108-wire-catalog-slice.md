@@ -754,3 +754,14 @@ Closeout still requires approved API deviations (or supported probes for all
 cells), item 3's reference freeze and loaded gates, items 5/7/6, real DBeaver UI,
 R25's full timeout-fixture decision, both-CPU and closing-commit deep evidence.
 Commit SHA is supplied in the handoff, avoiding self-reference.
+
+## Parent decisions, 2026-11-08 (after item 4)
+
+- **The nine client-API cells are accepted as recorded deviations**, with the mechanism proposed above: one record per cell (client,
+  version, action, the API reason with its source link, the substitute evidence and its limits, decision owner and date, tested
+  commit, revisit trigger) in `scripts/wire-skeleton/deviations.json`. Substitutes: the byte-exact pgjdbc and raw-wire positive-fetch
+  fixtures for the four positive-fetch cells; the raw codec, fuzz and malformed-frame protocol tests for the five malformed-frame
+  cells. The matrix JSON keeps "not run" and the matrix still exits 1; only the closeout verdict cites the deviations. Revisit
+  trigger: any listed client version change, or a client API that exposes the action.
+- **Item 3's RSS budget is frozen** in the card (part 3, dated amendment): derived from the card's own caps before measuring.
+- **P16** is made runnable as reference-first on the same VM (card part 3).
