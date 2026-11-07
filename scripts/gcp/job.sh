@@ -386,6 +386,8 @@ case "$JOB" in
     run ec-miri-exec bash -c 'cd "$SRC" && { CARGO_TARGET_DIR="$WORK/target-miri" cargo +'"$NIGHTLY"' miri test -p nata-exec --lib 2>&1 | tail -n 30; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-miri-exec.txt"; tail -1 "$RESULTS/eng-miri-exec.txt" > "$RESULTS/eng-miri-exec-exit.txt"'
     run ec-leaks bash -c 'cd "$SRC" && git init --bare "$WORK/leak-index" >/dev/null && export GIT_DIR="$WORK/leak-index" GIT_WORK_TREE="$SRC" && git add --all && scripts/check-leaks.sh --tree > "$RESULTS/eng-leaks.txt" 2>&1'
     run ec-summary bash -c 'cd "$RESULTS" || exit; failed=0; for f in eng-*-exit.txt; do echo "${f%-exit.txt}: $(cat "$f")"; grep -qx "exit status: 0" "$f" || failed=1; done > eng-summary.txt; cat eng-summary.txt; exit "$failed"' ;;
+  aggref|aggref-scale)
+    run ar-reference bash -c 'cd "$SRC" && if [ "$(cat "$WORK/JOBNAME")" = aggref-scale ]; then python3 crates/nata-bench/aggref.py --scales 100 --threads "8,16,$(nproc)" --out "$RESULTS/aggref"; else python3 crates/nata-bench/aggref.py --out "$RESULTS/aggref"; fi' ;;
   heavy)
     # Generic heavy run (owner, 2026-11-07: heavy runs go to GCP Spot VMs sized to the workload). The caller writes heavy.steps at the root
     # of the tree it ships (never committed; .gitignore), one step per line: NAME COMMAND... Each line is its own resumable step, run from

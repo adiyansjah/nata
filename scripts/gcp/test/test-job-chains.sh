@@ -27,6 +27,10 @@ for j in $jobs; do
   [ -z "$dup" ] || bad "job $j runs a step twice: $dup"
 done
 has() { echo "$2" | grep -q "^STEP $1\$"; }
+for j in aggref aggref-scale; do
+  ar=$(steps "$j" | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-tree)' | tr '\n' ' ')
+  [ "$ar" = "STEP ar-reference " ] && ok "$j runs only its reference script" || bad "$j: $ar"
+done
 hv=$(steps heavy); has h-fuzz-a "$hv" && has h-mut-b "$hv" && [ "$(echo "$hv" | grep -c '^STEP h-')" = 2 ] && ok "heavy runs one step per heavy.steps line, skipping comments and blanks" || bad "heavy: $(echo "$hv" | grep STEP | tr '\n' ' ')"
 mv "$T/w/src/heavy.steps" "$T/w/src/heavy.off"; hv=$(steps heavy); echo "$hv" | grep -q 'FAILJOB heavy: no heavy.steps' && ok "heavy without heavy.steps fails" || bad "heavy without heavy.steps: $(echo "$hv" | tail -2 | tr '\n' ' ')"
 printf 'Bad_Name echo x\n' > "$T/w/src/heavy.steps"; hv=$(steps heavy); echo "$hv" | grep -q "FAILJOB heavy: bad step name" && ok "heavy refuses a bad step name" || bad "heavy bad name"
