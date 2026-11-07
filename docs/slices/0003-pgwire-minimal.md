@@ -1,6 +1,6 @@
 # 0003: A minimal Postgres-wire server for slice 4's queries ("4b"), and real-client compatibility (plan item 35)
 
-Status: re-closed with deviations, 2026-11-07 (Rust raw streaming budget, default ADBC COPY, literal text and carried-in certification gaps recorded below)
+Status: re-closed with deviations, 2026-11-07 after the second fix step (`bench/results/20261107-pgwire-fixes2.md`: default ADBC now passes 221/221 through binary COPY, wire float text matches PostgreSQL). Remaining deviations, recorded below: the raw/CLI streaming budget (PostgreSQL itself measures 2.3-2.6x), literal text parity with the CLI, and the carried-in certification gaps (R15, R16, R19)
 Date: 2026-11-06
 ADRs: 0001, 0002, 0007 (relies on); creates ADR 0008 "client protocol" (which protocol first, and how types map)
 

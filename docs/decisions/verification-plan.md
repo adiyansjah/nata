@@ -122,5 +122,5 @@ spikes (the earlier runs needed one), so budget about $8 and still approve each 
 
 - ADRs for table format and catalog, distributed execution and its failure model, and the testing strategy are written locally. The
   failure-model ADR comes with step 1, the table-format ADR after steps 5 and 6, the testing-strategy ADR after step 3.
-- Historical scheduling note: item 35 originally awaited a server. Slice 4b now supplies it and records clean-VM characterization in `bench/results/20261107-pgwire-close.md`; ADBC remains a measured compatibility miss.
+- Historical scheduling note: item 35 originally awaited a server. Slice 4b now supplies it and records clean-VM characterization in `bench/results/20261107-pgwire-close.md`. ADBC was a measured miss at first close; after the two fix steps (`bench/results/20261107-pgwire-fixes.md`, `-fixes2.md`), default ADBC 1.13.0 passes 221/221 typed queries on both CPUs.
 - Steps 1 and 2 are the ones that can still change the protocol; steps 4 to 8 are expected to confirm or tune.
