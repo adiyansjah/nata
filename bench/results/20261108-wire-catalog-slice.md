@@ -765,3 +765,12 @@ Commit SHA is supplied in the handoff, avoiding self-reference.
   trigger: any listed client version change, or a client API that exposes the action.
 - **Item 3's RSS budget is frozen** in the card (part 3, dated amendment): derived from the card's own caps before measuring.
 - **P16** is made runnable as reference-first on the same VM (card part 3).
+
+## Closeout preparation A, 2026-11-08
+
+Parent's nine accepted API deviations are now individual records in
+`scripts/wire-skeleton/deviations.json`, bound to the starting tested commit.
+`python3 scripts/wire-skeleton/test_deviations.py` PASS: all nine missing-record
+and failed-row controls reject; an unknown not-run row rejects. The separate
+`check-deviations.py matrix.json` verdict never rewrites the matrix or its exit 1.
+Client-version changes require revisiting these decisions. No GCP run.
