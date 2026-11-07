@@ -256,17 +256,24 @@ impl Groups {
         Some(&mut self.entries[i].1)
     }
     fn find_row(&self, hash: u64, columns: &[Col], row: usize) -> Option<usize> {
-        self.index
-            .find(hash, |&id| {
-                let key = &self.entries[id].0;
-                key.len() == columns.len()
-                    && key
-                        .iter()
-                        .zip(columns)
-                        .all(|(v, c)| v.matches_column(c, row))
-            })
-            .copied()
+        let matches = |id: usize| {
+            let key = &self.entries[id].0;
+            key.len() == columns.len()
+                && key
+                    .iter()
+                    .zip(columns)
+                    .all(|(v, c)| v.matches_column(c, row))
+        };
+        // A bounded scan of the existing arena avoids probing for tiny groups.
+        // Keep the reused index populated so crossing the cap needs neither a
+        // migration allocation nor a new grant; collisions still use full keys.
+        if self.entries.len() <= 8 {
+            (0..self.entries.len()).find(|&id| matches(id))
+        } else {
+            self.index.find(hash, |&id| matches(id)).copied()
+        }
     }
+
     fn insert(&mut self, key: Vec<Atom>, states: Vec<State>) {
         self.index
             .insert_unique((self.hash)(&key), self.entries.len(), |&i| {
@@ -1096,6 +1103,25 @@ mod tests {
         assert!(Atom::Null.matches_column(&columns[0], 2));
         assert!(Atom::float(0.0).matches_column(&columns[1], 0));
         assert!(Atom::float(f64::NAN).matches_column(&columns[1], 1));
+    }
+    #[test]
+    fn small_lookup_falls_back_without_losing_groups() {
+        let col = Col {
+            ty: SqlType::BigInt,
+            data: Data::Int((0..20).collect()),
+            valid: vec![true; 20],
+        };
+        let mut groups = Groups::new();
+        groups.hash = |_| 0;
+        for n in 0..20 {
+            groups.insert(vec![Atom::get(&col, n)], vec![State::Count(1)]);
+            for i in 0..20 {
+                assert_eq!(
+                    groups.find_row(0, std::slice::from_ref(&col), i),
+                    (i <= n).then_some(i)
+                );
+            }
+        }
     }
     #[test]
     fn collision_equality_and_canonical_float_keys() {

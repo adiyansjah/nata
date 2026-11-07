@@ -1060,3 +1060,60 @@ fusion/buffer reuse remain for a new brief, together with the frozen targets.
 
 Staged leak scanning passes (`scripts/check-leaks.sh --staged`). Text logs have
 only trailing whitespace/extra final blank lines normalized for repository checks.
+
+### 2b/3 — bounded small-group lookup (continuation, 2026-11-08)
+
+**Rule:** Use the existing owned arena for at most eight groups per partition, then fall back to the still-populated hashbrown index. Keep full canonical key equality, collision handling, partition hashes, grant-before-allocation and spill replay unchanged. No extra table or uncharged capacity.
+
+Local shared x86-64 VM; **unsettled**, warm SF1, whole CLI, 8 GiB,
+five alternating rounds and identical-before generic control. Frozen targets and
+ADRs remain unchanged; no both-architecture or settled target claim.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 3.579 | 2.846 | 3.475 | 0.849 | 1.012 |
+| q1 | 8 | 1.198 | 1.220 | 1.064 | 1.099 | 0.836 |
+| high_cardinality_tpch | 1 | 4.661 | 4.521 | 5.540 | 0.964 | 1.190 |
+| high_cardinality_tpch | 8 | 2.727 | 2.702 | 2.683 | 1.008 | 1.000 |
+
+**Verdict:** Retain provisionally for parent measurement, not a settled win. One-thread Q1 improves 15.1% paired, compensating the eight-thread Q1 +9.9% cell; the identical-before eight-thread control drifts -16.4%, so that cell is unresolved rather than certified regression-free. High-cardinality ratios are 0.964/1.008. No ADR/table replacement claim: hashbrown remains populated and is the general path.
+
+One-thread whole-process Q1 self shares (inclusive shares are not additive):
+
+| Symbol | Before % | After % |
+|---|---:|---:|
+| Partial::resume | 20.22 | 15.86 |
+| Decimal::column | 18.78 | 15.64 |
+| ExactSum::add | 5.50 | 5.71 |
+| Col::from_arrow | 4.00 | 3.79 |
+
+[Samples](raw/20261108-hash-aggregate-perf2b/small-samples.json),
+[distributions, paired controls and immutable binary hashes](raw/20261108-hash-aggregate-perf2b/small-summary.json),
+[DuckDB value gates](raw/20261108-hash-aggregate-perf2b/small-gates.json).
+Full per-cell profiles are adjacent `small-QUERY-THREADS-ARM.txt` files.
+Commands use external immutable copies, never an in-place rebuilt binary:
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py small --before /home/dev/perf2b-next/before --after /home/dev/perf2b-next/small --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2b --profile
+```
+
+The owner explicitly resumed after the earlier 2b/2 stop; the earlier handoff is
+historical. This continuation does not retry the rejected i64 lane.
+
+Validation: `cargo test --locked --release -j 4 -p nata-exec -- --test-threads=1`
+passes ([log](raw/20261108-hash-aggregate-perf2b/small-tests.txt)). Fresh data:
+`scripts/gen-tpch.sh 0.01 /home/dev/perf2b-next/data && scripts/gen-sql-check-data.sh /home/dev/perf2b-next/data`.
+The locked release build and aggregate gates pass **65/65 normal, 65/65 forced
+spill** ([log](raw/20261108-hash-aggregate-perf2b/small-checks.txt)).
+No proved arithmetic kernel changed; Kani is not applicable to this lookup.
+
+Focused cargo-mutants: **5 caught, 1 missed, 0 invalid**, after a passing control.
+The missed `len <= 8` → `len > 8` swaps two semantically equivalent lookup
+paths; full equality and the populated hash table make it a performance-only
+mutant, not a lost-group gap. Returning None/Some(0)/Some(1), weakening key
+arity conjunction, and reversing arity equality are all caught.
+[Outcomes](raw/20261108-hash-aggregate-perf2b/small-mutants-outcomes.json).
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2b/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --profile release --output /home/dev/perf2b-next/mutants-small -p nata-exec -f crates/nata-exec/src/aggregate.rs -F 'Groups::find_row' --timeout 180 -- --lib aggregate::tests::
+```

@@ -1,0 +1,4 @@
+Found 6 mutants to test
+ok       Unmutated baseline in 0s build + 0s test
+MISSED   crates/nata-exec/src/aggregate.rs:270:31: replace <= with > in Groups::find_row in 33s build + 0s test
+6 mutants tested in 4m: 1 missed, 5 caught
