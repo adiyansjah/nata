@@ -774,3 +774,32 @@ Parent's nine accepted API deviations are now individual records in
 and failed-row controls reject; an unknown not-run row rejects. The separate
 `check-deviations.py matrix.json` verdict never rewrites the matrix or its exit 1.
 Client-version changes require revisiting these decisions. No GCP run.
+
+### Closeout preparation C: PG16 oracle mode
+
+Official PGDG Debian 12 installer pins signing-key fingerprint and bookworm-pgdg
+package provenance, verifies major 16 and retains package/version evidence.
+`PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh` replays `compare.py` in a
+fresh cluster; PG15 remains an explicit separate arm. Shell syntax PASS.
+No PG16 behavior normalization added without a measurement. Installer NOT RUN
+locally (heavy only); local PG17 and both-CPU PG16 certification remain distinct.
+
+### Closeout preparation B: loaded resource scripts
+
+`resources.py` prints the frozen formula verbatim and each term, checks VmHWM,
+RSS within idle + 64 MiB and exact idle FD count within ten seconds of close.
+Default heavy grid: 64 sessions; 1/8 workers with competing CPU actors;
+64/1,024/10,000 tables, narrow and the reference's 64-column-every-sixteenth
+wide distribution; native and forced 256 FD limits. Park every admission with
+positive Execute then demand healthy progress within lease + admission deadline.
+Snapshot adequacy/startup failure is a gate, never silently reduced fixture size.
+`snapshot-mutant.py` privately removes the actual cap, checks the bounded control
+rejects, and demands VmHWM exceed the same S=1 frozen budget. An early exit,
+build failure or timeout cannot count as a catch. Heavy mutant NOT RUN locally.
+
+Tiny local smoke: 4 sessions, 4 tables, 2 columns, 1 worker, default/256 FD;
+peak 19,750,912 / 20,041,728 bytes against 219,369,472 bytes; final FDs 7/7,
+healthy completion 5.0043 / 5.0049 s: PASS. This first smoke preceded adding CPU
+actors; loaded/full-size certification is NOT RUN. Arithmetic boundaries PASS
+(`test_resource_gates.py`). Resource smoke command:
+`python resources.py --nata <binary> --work <scratch> --smoke` using matrix venv.
