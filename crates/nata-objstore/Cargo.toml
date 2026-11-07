@@ -1,0 +1,57 @@
+[package]
+name = "nata-objstore"
+description = "Bounded object-store reads (S3, GCS, MinIO) for the Parquet scan: ADR 0011 request policy, ADR 0012 footer cache, ADR 0009 grants"
+version.workspace = true
+publish.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+# Card 0006 decision rule 1 authorizes `object_store` 0.14 with only the features the two providers need (`aws`, `gcp`; no `fs`, `azure`, `http`).
+# Everything else is a crate already in the lockfile or object_store's own dependency closure (`futures-util` is the same crate object_store uses).
+[dependencies]
+nata-parquet = { path = "../nata-parquet", default-features = false }
+nata-sched = { path = "../nata-sched" }
+nata-sql = { path = "../nata-sql" }
+object_store = { version = "0.14", default-features = false, features = ["aws", "gcp"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "macros"] }
+futures-util = "0.3"
+bytes = "1"
+parquet = "60"
+
+# Mutation switches of the wrapper (a known-bad version each) exist only for the test suites and the mutant sweep; a shipped binary cannot enable them.
+[features]
+default = []
+mutants = ["dep:nata-objfake", "dep:arrow-array", "dep:arrow-schema", "dep:nata-exec"]
+
+# The sweep binary and the cases need the fake endpoint, a Parquet writer and the engine (for the scan rig); the library does not.
+[dependencies.nata-exec]
+path = "../nata-exec"
+optional = true
+
+[dependencies.nata-objfake]
+path = "../nata-objfake"
+optional = true
+
+[dependencies.arrow-array]
+version = "60"
+optional = true
+
+[dependencies.arrow-schema]
+version = "60"
+optional = true
+
+[[bin]]
+name = "objstore-sweep"
+path = "src/bin/sweep.rs"
+required-features = ["mutants"]
+
+[dev-dependencies]
+nata-objfake = { path = "../nata-objfake" }
+arrow-array = "60"
+arrow-schema = "60"
+nata-exec = { path = "../nata-exec" }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync", "macros", "net"] }
+
+[lints]
+workspace = true

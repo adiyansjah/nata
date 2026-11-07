@@ -9,6 +9,13 @@ allow = ["Apache-2.0", "Apache-2.0 WITH LLVM-exception", "MIT", "BSD-2-Clause", 
          "Zlib", "CC0-1.0", "BSL-1.0", "0BSD", "MPL-2.0", "bzip2-1.0.6"]
 confidence-threshold = 0.9
 
+# Decided case by case (card 0006, walking skeleton): `object_store` 0.14 -> `reqwest` -> `rustls-platform-verifier` -> `webpki-root-certs`, which is the Mozilla CA
+# root list as data under the Community Data License Agreement Permissive 2.0 (permissive: attribution only, no copyleft). Allowed for this one crate; the
+# parent/owner confirms or removes the exception when the card is accepted.
+[[licenses.exceptions]]
+crate = "webpki-root-certs"
+allow = ["CDLA-Permissive-2.0"]
+
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
