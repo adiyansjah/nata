@@ -47,3 +47,7 @@ Scan windows may shrink to fit B; an oversize row group/record may fail clearly.
 ## Revisit when
 
 The two-operator experiment fails progress, measured RSS exceeds the declared envelope, fixed caps waste memory in a real multi-query workload, or slices 6–8 need unequal fair shares. Freeze default sizes only with the baseline and owner/parent decision; changes after acceptance require a dated amendment.
+
+## Amendments
+
+- 2026-11-07, after the card 0005 baseline spike (`bench/results/20261107-hash-aggregate-baseline.md`): the scheduler adapter uses a **sticky notification** handshake. A wake that arrives before the waiter parks is kept and consumed, so a release can never be lost between checking the budget and parking. The spike's counterexamples (cap removed, wake dropped, release twice) become models of the real service. This clarifies the design and changes no budget default.
