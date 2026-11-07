@@ -1,0 +1,12 @@
+# Tokio passes the ScheduledIo address to the kernel with epoll_ctl and gets it
+# back from epoll_wait. The kernel orders that handoff; TSan does not model it.
+# The Tokio-only program reproduces these reports without any Nata code:
+# bench/results/raw/20261107-debt-a/tokio-repro/
+# Related report: https://github.com/tokio-rs/tokio/discussions/4746
+# Accepted trust point (0004 F), not an upstream proof of absence of races.
+# All seven historical reports contain this exact readiness dispatch frame;
+# their other access is RegistrationSet::allocate -> Handle::add_source ->
+# Registration::new_with_interest_and_handle. dispatch_event calls ScheduledIo's
+# set_readiness and wake. One frame covers them without suppressing allocation,
+# registration in general, other Tokio subsystems, std, or any Nata frame.
+race:tokio::runtime::io::driver::dispatch_event

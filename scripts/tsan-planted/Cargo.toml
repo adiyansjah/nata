@@ -1,0 +1,12 @@
+[package]
+name = "nata-tsan-planted"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Test-only crate: the real workspace forbids unsafe_code. Never a dependency.
+[workspace]
+
+[lib]
+path = "planted.rs"
+doctest = false

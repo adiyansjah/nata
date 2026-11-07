@@ -376,7 +376,7 @@ case "$JOB" in
     run ec-fixtures bash -c 'cd "$SRC" && scripts/gen-tpch.sh 0.01 data/tpch-sf0.01'
     run ec-native bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-rss" cargo build --release -p nata'
     for san in address thread; do
-      run "ec-$san" bash -c 'cd "$SRC" && { NATA_INSTRUMENTED=1 NATA_RSS_BINARY="$WORK/target-rss/release/nata" RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' --workspace --lib --tests --no-fail-fast 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
+      run "ec-$san" bash -c 'cd "$SRC" && if [ "'"$san"'" = thread ]; then export TSAN_OPTIONS="${TSAN_OPTIONS:+$TSAN_OPTIONS:}suppressions=$SRC/scripts/tsan-suppressions.txt"; fi; { NATA_INSTRUMENTED=1 NATA_RSS_BINARY="$WORK/target-rss/release/nata" RUSTFLAGS="-Zsanitizer='"$san"'" RUSTDOCFLAGS="-Zsanitizer='"$san"'" CARGO_TARGET_DIR="$WORK/target-'"$san"'" cargo +'"$NIGHTLY"' test -Zbuild-std --target '"$T"' --workspace --lib --tests --no-fail-fast 2>&1 | grep -vE "^(   Compiling|    Finished|     Running)"; echo "exit status: ${PIPESTATUS[0]}"; } > "$RESULTS/eng-'"$san"'.txt"; tail -1 "$RESULTS/eng-'"$san"'.txt" > "$RESULTS/eng-'"$san"'-exit.txt"; true'
     done
     # RSS budgets describe the normal allocator, not sanitizer quarantine/shadow metadata.
     # Keep default sanitizer detection settings; execute both RSS tests without instrumentation.
