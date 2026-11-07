@@ -318,6 +318,9 @@ impl Table {
         }
     }
     fn reserve_bytes(&mut self, manager: &Arc<MemoryManager>, bytes: usize) -> R<()> {
+        if bytes == 0 {
+            return Ok(());
+        }
         if self.chunk_bytes == 0 {
             self.chunk_bytes = (manager.snapshot().budget / 256).clamp(4096, 1 << 20);
         }
@@ -374,7 +377,6 @@ struct Evaluated {
     keys: Vec<Col>,
     args: Vec<Option<Col>>,
     next: usize,
-    _strings: Option<Grant>,
 }
 impl Partial {
     fn evaluate(&self, batch: &RecordBatch) -> R<Evaluated> {
@@ -418,7 +420,6 @@ impl Partial {
                 keys,
                 args,
                 next: 0,
-                _strings: None,
             })
         })
     }
@@ -907,7 +908,6 @@ mod tests {
             keys: vec![],
             args: vec![None],
             next: 0,
-            _strings: None,
         }
     }
     #[test]

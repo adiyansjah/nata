@@ -203,3 +203,45 @@ fix 4 addresses those independently.
 The borrowed-equality mutant is **CAUGHT**, with a passing private control and
 zero invalid: [result](raw/20261107-hash-aggregate-perf1/mutants-borrow.md).
 All [required checks](raw/20261107-hash-aggregate-perf1/checks-borrow.txt) pass.
+
+## Fix 4 — task-owned scratch reservation chunks
+
+The 23,499 Q1 requests were predominantly the string-expression scratch grant
+created and released for every 256-row batch, rather than table growth. Each
+scan task now retains a charged high-water capacity in the existing `Chunks`
+service. Chunks are sized from the batch requirement (at least 64 KiB, clipped
+to available capacity by the manager); only growth consumes new credit.
+Existing table chunks stay charged and zero-byte table reservations return
+immediately. No budget, progress reserve, ledger, gauge, debug assertion or
+memory-manager synchronization changes.
+
+`ScanState` drops evaluated/input allocations before scratch chunks and the
+decode grant; chunks release on every task exit. The native test repeats 100
+batches with one request, grows within spare credit, grows to another chunk,
+and requires held bytes/live grants/pending requests to return to zero.
+
+A second test exposed an initial-draft error: another task's differently sized
+pending request was propagated as a minimum-set error. The negative control
+fails at that exact path; the final cache treats denial/conflict as pressure,
+preserving the previous caller's spill/retry and minimum-set error behavior.
+After release/pressure cleanup, the test retries successfully and checks the
+budget/cleanup invariants. [Negative control](raw/20261107-hash-aggregate-perf1/scratch-pressure-negative.txt),
+[fixed control](raw/20261107-hash-aggregate-perf1/scratch-pressure-positive.txt).
+All [required checks](raw/20261107-hash-aggregate-perf1/checks-chunks.txt)
+pass on that final implementation. The new chunk-release mutant is CAUGHT
+by both scratch tests, with passing unmutated controls; it is among the
+[first 15 completed catches](raw/20261107-hash-aggregate-perf1/mutants-first-segment.txt).
+The final profile and cumulative sweep follow after the sequential sweep completes.
+
+### Cumulative mutation verification
+
+The initial full-set sweep completed 15 real catches, including all five new
+mutants and every existing aggregate/spill mutant, then the old
+`case-evaluates-every-branch` mutant ran the newer deep aggregate CASE fixture
+exponentially before reaching its original guard check. That incomplete run
+was terminated and **is not counted as a catch or a timeout catch**. The CASE
+mutant now runs its existing `case_evaluates_only_the_branch_a_row_takes` test;
+full unmutated exec/CLI controls still run, and other mutants retain their full
+suites. The remaining 48 mutants are rerun with that bounded test selection.
+The outcome-classifier self-test passes; compile failures/global timeouts
+remain INVALID.

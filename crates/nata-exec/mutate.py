@@ -26,6 +26,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "scratch-reservation-not-released": ("exec", [(PIPE, "struct ScanState {", "impl Drop for Scratch { fn drop(&mut self) { std::mem::forget(std::mem::take(&mut self.grants)); } } struct ScanState {")]),
  "borrowed-key-equality-skipped": ("exec", [(AG, "a == v.get(i)", "a == v.get(i) || true")]),
  "aggregate-cancel-poll-removed": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && false && cancelled()")]),
  "aggregate-cancel-poll-per-row": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(1) && cancelled()")]),
@@ -55,7 +56,7 @@ M = {
 ''')]),
  "bare-projection-allocates-selection": ("exec", [(EX, "let mut all = None;", "let mut all = Some(ev.all_rows());")]),
  # ---- the mutants the card asks for
- "case-evaluates-every-branch": ("exec", [(EV, "let rv = self.eval(result, &taken)?;", "let _all = self.eval(result, sel)?; let rv = self.eval(result, &taken)?;")]),
+ "case-evaluates-every-branch": ("exec-case", [(EV, "let rv = self.eval(result, &taken)?;", "let _all = self.eval(result, sel)?; let rv = self.eval(result, &taken)?;")]),
  "error-raised-for-an-unselected-row": ("exec", [(EV, "for &row in sel { let i = row as usize; if !(l.valid[i] && r.valid[i]) { continue; } let (x, y) = (a[i], b[i]);",
                                                       "for row in 0..n as u32 { let i = row as usize; if !(l.valid[i] && r.valid[i]) { continue; } let (x, y) = (a[i], b[i]);")]),
  "null-treated-as-false-inside-not": ("exec", [(EV, "out.valid[i] = c.valid[i]; d[i] = !v[i];", "out.valid[i] = true; d[i] = !(c.valid[i] && v[i]);")]),
@@ -154,7 +155,11 @@ def cargo(base, work, args, timeout=1500):
     return p.returncode, p.stdout + p.stderr
 
 
-SUITES = {"exec": [["-p", "nata-exec"]], "cli": [["-p", "nata", "--test", "sql_cli", "--test", "sql_reliability"]]}
+# The known-bad CASE evaluates both sides of every nested expression, so the
+# later deep-aggregate fixture becomes exponential before its guard test runs.
+# The full unmutated exec suite still runs; this mutant uses its original,
+# independently failing selected-branch test rather than a global timeout.
+SUITES = {"exec-case": [["-p", "nata-exec", "--test", "exec", "case_evaluates_only_the_branch_a_row_takes", "--", "--exact"]], "exec": [["-p", "nata-exec"]], "cli": [["-p", "nata", "--test", "sql_cli", "--test", "sql_reliability"]]}
 
 
 def run_suite(suite, base, work):

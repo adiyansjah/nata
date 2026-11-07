@@ -24,6 +24,33 @@ pub(super) enum Partitions {
     Resident(Vec<Vec<Table>>),
     Spilled(Files),
 }
+/// Reusable task scratch. Every byte of capacity stays charged until the
+/// task's evaluated/input allocations have been freed, including spare credit.
+#[derive(Default)]
+struct Scratch {
+    capacity: usize,
+    grants: Chunks,
+}
+impl Scratch {
+    fn reserve(&mut self, manager: &Arc<MemoryManager>, bytes: usize) -> bool {
+        let extra = bytes.saturating_sub(self.capacity);
+        if extra == 0 {
+            return true;
+        }
+        // As with the old per-batch request, pending/conflicting requests are
+        // pressure: the caller spills and retries, or reports a minimum-set
+        // error when it owns no reclaimable state. No allocation on failure.
+        if !matches!(
+            self.grants.reserve(manager, 0, extra, bytes.max(64 << 10)),
+            Ok(true)
+        ) {
+            return false;
+        }
+        self.capacity = bytes;
+        true
+    }
+}
+
 struct ScanState {
     partial: Partial,
     cursor: Option<RowGroupCursor>,
@@ -34,6 +61,7 @@ struct ScanState {
     pressure_since: Option<Instant>,
     source: Option<(usize, std::path::PathBuf, usize)>,
     // Reader and evaluation allocations above are freed before the grant.
+    strings: Scratch,
     _decode: Grant,
 }
 fn empty_tables() -> Vec<Table> {
@@ -190,6 +218,7 @@ pub(super) fn accumulate(
             finishing: false,
             pressure_since: None,
             source: None,
+            strings: Scratch::default(),
             _decode: decode,
         });
     }
@@ -291,27 +320,19 @@ pub(super) fn accumulate(
                 if let Some(batch) = &state.input {
                     let bytes = string_scratch(batch, &shared.plan)
                         .map_err(|e| ScanError::new(e.into_kind()))?;
-                    let strings = if bytes == 0 {
-                        None
-                    } else {
-                        match MemoryManager::request(&shared.manager, 0, bytes) {
-                            Ok(Reservation::Granted(g)) => Some(g),
-                            _ if state.partial.tables.iter().any(|t| !t.groups.is_empty()) => {
-                                submit_write(state, &storage, &targets, &io, wake.clone())?;
-                                return Ok(Step::Yield);
-                            }
-                            _ => {
-                                return Err(scan_error(
-                                    "resource error: aggregate string expression minimum working set exceeds budget",
-                                ));
-                            }
+                    if !state.strings.reserve(&shared.manager, bytes) {
+                        if state.partial.tables.iter().any(|t| !t.groups.is_empty()) {
+                            submit_write(state, &storage, &targets, &io, wake.clone())?;
+                            return Ok(Step::Yield);
                         }
-                    };
-                    let mut evaluated = state
+                        return Err(scan_error(
+                            "resource error: aggregate string expression minimum working set exceeds budget",
+                        ));
+                    }
+                    let evaluated = state
                         .partial
                         .evaluate(batch)
                         .map_err(|e| ScanError::new(e.into_kind()))?;
-                    evaluated._strings = strings;
                     state.evaluated = Some(evaluated);
                     state.input = None;
                     return Ok(Step::Yield);
@@ -802,4 +823,50 @@ fn files_for_repartition(
         |_| Ok(()),
     )?;
     Ok(children)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn competing_scratch_requests_remain_retriable_pressure() {
+        let manager = MemoryManager::new(1024, 128, 1).expect("manager");
+        let occupied = grant(&manager, 700).expect("occupied");
+        assert!(matches!(
+            MemoryManager::request(&manager, 0, 512).expect("queued"),
+            Reservation::Pending { .. }
+        ));
+        let mut scratch = Scratch::default();
+        // Another task of this operator has a different pending request. As
+        // before caching, this is pressure: let the caller spill and retry.
+        assert!(!scratch.reserve(&manager, 128));
+        drop(occupied);
+        manager.finish(0).expect("pressure cleanup");
+        assert!(scratch.reserve(&manager, 128));
+        drop(scratch);
+        let snapshot = manager.snapshot();
+        assert_eq!(
+            (snapshot.held, snapshot.live_grants, snapshot.pending),
+            (0, 0, 0)
+        );
+        assert!(snapshot.peak <= snapshot.budget);
+    }
+    #[test]
+    fn reusable_scratch_charges_capacity_once_and_releases_every_chunk() {
+        let manager = MemoryManager::new(1 << 20, 4096, 1).expect("manager");
+        let mut scratch = Scratch::default();
+        for _ in 0..100 {
+            assert!(scratch.reserve(&manager, 1024));
+        }
+        assert_eq!(manager.snapshot().requests, 1);
+        assert!(manager.snapshot().held >= 64 << 10);
+        assert!(scratch.reserve(&manager, 4096));
+        assert_eq!(manager.snapshot().requests, 1);
+        assert!(scratch.reserve(&manager, 128 << 10));
+        assert_eq!(manager.snapshot().requests, 2);
+        assert!(manager.snapshot().peak <= manager.snapshot().budget);
+        drop(scratch);
+        let s = manager.snapshot();
+        assert_eq!((s.held, s.live_grants, s.pending), (0, 0, 0));
+    }
 }

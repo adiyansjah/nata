@@ -1,0 +1,22 @@
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-b41e9191/crates/nata-exec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.46s
+     Running unittests src/lib.rs (target/debug/deps/nata_exec-d339223497a7e636)
+
+running 1 test
+test aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure ... FAILED
+
+failures:
+
+---- aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure stdout ----
+
+thread 'aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure' (197034) panicked at crates/nata-exec/src/aggregate/pipeline.rs:840:18:
+pressure is retriable: ScanError { file: None, row_group: None, kind: Internal("aggregate spill: resource error: aggregate string expression minimum working set exceeds budget") }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nata-exec --lib`
