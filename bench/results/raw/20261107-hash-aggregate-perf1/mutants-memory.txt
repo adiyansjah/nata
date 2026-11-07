@@ -1,0 +1,5 @@
+memory-budget-cap-removed                      CAUGHT    loom:abandoned: budget cap removed || std:memory: callbacks_run_outside_manager_lock, abandoned_fifo_head_cannot_starve_successor [loom]  (10s)
+memory-chunk-credit-inflated                   CAUGHT    loom:chunked: assertion `left == right` failed: chunk credit inflated || std:memory: chunked_allocations_keep_capacity_charged_until_spill_completes [loom]  (44s)
+memory-grant-released-twice                    CAUGHT    loom:abandoned: reservation released twice || std:memory: abandoned_fifo_head_cannot_starve_successor, callbacks_run_outside_manager_lock [loom]  (8s)
+memory-reservation-not-released                CAUGHT    loom:abandoned: deadlock || std:memory: TIMEOUT callbacks_run_outside_manager_lock, cancellation_wakes_every_operator_and_is_sticky [loom]  (70s)
+memory-sticky-wake-dropped                     CAUGHT    loom:chunked: deadlock || std:memory: TIMEOUT  [loom]  (70s)

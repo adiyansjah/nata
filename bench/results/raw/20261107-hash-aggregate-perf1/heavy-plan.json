@@ -1,0 +1,344 @@
+{
+  "builds": [
+    {
+      "variant": "baseline",
+      "commit": "e198d0873b00ca944326fa5ceb2a89882ef9f355",
+      "source": "/home/dev/tmp-perf1/heavy-work/source/baseline-e198d0873b00ca944326fa5ceb2a89882ef9f355",
+      "target": "/home/dev/tmp-perf1/heavy-work/target/baseline-e198d0873b00ca944326fa5ceb2a89882ef9f355",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "hash",
+      "commit": "94a783450ebe6d9e1a303772e0c0d3bcc59d2652",
+      "source": "/home/dev/tmp-perf1/heavy-work/source/hash-94a783450ebe6d9e1a303772e0c0d3bcc59d2652",
+      "target": "/home/dev/tmp-perf1/heavy-work/target/hash-94a783450ebe6d9e1a303772e0c0d3bcc59d2652",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "polls",
+      "commit": "3748b568dccdfa75a650231035e47bc860fb3f62",
+      "source": "/home/dev/tmp-perf1/heavy-work/source/polls-3748b568dccdfa75a650231035e47bc860fb3f62",
+      "target": "/home/dev/tmp-perf1/heavy-work/target/polls-3748b568dccdfa75a650231035e47bc860fb3f62",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "borrow",
+      "commit": "8b8873bacf94cb27b26eb00bebbc1e93d683ae53",
+      "source": "/home/dev/tmp-perf1/heavy-work/source/borrow-8b8873bacf94cb27b26eb00bebbc1e93d683ae53",
+      "target": "/home/dev/tmp-perf1/heavy-work/target/borrow-8b8873bacf94cb27b26eb00bebbc1e93d683ae53",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "chunks",
+      "commit": "135fd7daf11de7077ea017805d6f48a9245d3c95",
+      "source": "/home/dev/tmp-perf1/heavy-work/source/chunks-135fd7daf11de7077ea017805d6f48a9245d3c95",
+      "target": "/home/dev/tmp-perf1/heavy-work/target/chunks-135fd7daf11de7077ea017805d6f48a9245d3c95",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    }
+  ],
+  "queries": [
+    "q1",
+    "high_cardinality_tpch"
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "budgets": [
+    8589934592,
+    67108864
+  ],
+  "rounds": 5,
+  "roles": [
+    "primary",
+    "twin"
+  ],
+  "timed_processes": 480,
+  "order": [
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "hash",
+        "primary"
+      ],
+      [
+        "hash",
+        "twin"
+      ],
+      [
+        "polls",
+        "primary"
+      ],
+      [
+        "polls",
+        "twin"
+      ],
+      [
+        "borrow",
+        "primary"
+      ],
+      [
+        "borrow",
+        "twin"
+      ],
+      [
+        "chunks",
+        "primary"
+      ],
+      [
+        "chunks",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "chunks",
+        "twin"
+      ],
+      [
+        "chunks",
+        "primary"
+      ],
+      [
+        "borrow",
+        "twin"
+      ],
+      [
+        "borrow",
+        "primary"
+      ],
+      [
+        "polls",
+        "twin"
+      ],
+      [
+        "polls",
+        "primary"
+      ],
+      [
+        "hash",
+        "twin"
+      ],
+      [
+        "hash",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "hash",
+        "primary"
+      ],
+      [
+        "hash",
+        "twin"
+      ],
+      [
+        "polls",
+        "primary"
+      ],
+      [
+        "polls",
+        "twin"
+      ],
+      [
+        "borrow",
+        "primary"
+      ],
+      [
+        "borrow",
+        "twin"
+      ],
+      [
+        "chunks",
+        "primary"
+      ],
+      [
+        "chunks",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "chunks",
+        "twin"
+      ],
+      [
+        "chunks",
+        "primary"
+      ],
+      [
+        "borrow",
+        "twin"
+      ],
+      [
+        "borrow",
+        "primary"
+      ],
+      [
+        "polls",
+        "twin"
+      ],
+      [
+        "polls",
+        "primary"
+      ],
+      [
+        "hash",
+        "twin"
+      ],
+      [
+        "hash",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "hash",
+        "primary"
+      ],
+      [
+        "hash",
+        "twin"
+      ],
+      [
+        "polls",
+        "primary"
+      ],
+      [
+        "polls",
+        "twin"
+      ],
+      [
+        "borrow",
+        "primary"
+      ],
+      [
+        "borrow",
+        "twin"
+      ],
+      [
+        "chunks",
+        "primary"
+      ],
+      [
+        "chunks",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ]
+  ]
+}

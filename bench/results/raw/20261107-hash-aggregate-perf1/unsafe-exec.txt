@@ -1,3 +1,7 @@
+Newly direct for nata-exec: twox-hash =2.1.5 (already locked/transitive), defaults disabled, xxhash3_64 only.
+Parent choice: cross-CPU canonical hashes take precedence over aHash output that varies with AES target features.
+The generated textual inventory below counts all crate source, including disabled features and tests.
+
 package nata-exec: 83 packages in its normal+build dependency tree (cargo metadata, this machine's feature resolution)
 package                     version     source      unsafe  files  root declares
 libc                        0.2.191     registry      1599    886

@@ -1,0 +1,5 @@
+# Parent-only heavy recipe, c3d-highcpu-8; prepare the git-free bundle first.
+# Copy this file to the ignored root heavy.steps before the parent ships it.
+prepare mkdir -p "$WORK/aggregate-perf1/tmp"
+fixtures rm -rf "$WORK/aggregate-perf1-sf1" && TMPDIR="$WORK/aggregate-perf1/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf1-sf1"
+timings TMPDIR="$WORK/aggregate-perf1/tmp" python3 scripts/bench-aggregate-perf1-heavy.py run --bundle "$SRC/.aggregate-perf1-inputs" --work "$WORK/aggregate-perf1" --data "$WORK/aggregate-perf1-sf1" --out "$RESULTS/aggregate-perf1-$(date -u +%Y%m%dT%H%M%SZ)"

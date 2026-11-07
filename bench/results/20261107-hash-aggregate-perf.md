@@ -15,8 +15,8 @@ high-cardinality HAVING query, 1/8 requested threads. Existing memory admission
 can reduce task concurrency at small budgets. Memory controls explicitly use 8 GiB
 for both engines; spill controls use 64 MiB for both, with an explicit 4 GiB
 Nata disk quota so the already-documented small default disk cap cannot obscure
-CPU work. The quota is a measurement override, not a changed default. Each
-stage validates values before timing (exact numeric multisets; only Q1's three
+CPU work. The quota is a measurement override, not a changed default. The historical baseline/hash
+stages validate values before timing (exact numeric multisets; only Q1's three
 AVG columns use absolute 1e-8 tolerance). Each cell has five alternating
 Nata/DuckDB process pairs, switching which engine goes first between rounds.
 Startup, planning, decode and CSV rendering are included; timed CSV goes to
@@ -96,7 +96,7 @@ range across Nata and DuckDB samples; raw JSON also retains 5/15-minute loads.
 
 Raw: [baseline](raw/20261107-hash-aggregate-perf1/baseline.json), [hash](raw/20261107-hash-aggregate-perf1/hash.json).
 
-Observed Q1 at eight threads improved from 4.670 to 3.496 s. The one-thread
+Historical Q1 medians at eight threads were 4.670 and 3.496 s. The one-thread
 Q1 cell is unresolved (both Nata and DuckDB slowed); baseline HAVING has very
 large load/noise drift. These historical samples cannot attribute gains, even though only one source
 fix changed between stages. No both-CPU or frozen-target
@@ -105,6 +105,12 @@ performance claim follows.
 ### Local profile comparison (CPU-clock user self samples)
 
 Eight requested threads, same SF1 input; CPU shares, **not elapsed gains**.
+
+| Q1 hash-related user self symbols | Before | After |
+|---|---:|---:|
+| SipHash write + owned-key hashing + Atom::hash_slice | 17.18% | no samples |
+| Column hashes + value helper | absent | 2.41% |
+
 Baseline Q1 has SipHash write **10.86%**, owned-key hashing **3.20%**, and
 `Atom::hash_slice` **3.12%**. Hash-only Q1 has no sampled SipHash/Atom hash-slice
 symbol; column hashing is **1.55%** plus **0.86%** in its value helper. Cancellation (**14.91%**) and contended
@@ -231,7 +237,22 @@ All [required checks](raw/20261107-hash-aggregate-perf1/checks-chunks.txt)
 pass on that final implementation. The new chunk-release mutant is CAUGHT
 by both scratch tests, with passing unmutated controls; it is among the
 [first 15 completed catches](raw/20261107-hash-aggregate-perf1/mutants-first-segment.txt).
-The final profile and cumulative sweep follow after the sequential sweep completes.
+The final profile is recorded below after the sequential sweep.
+
+| Q1 counter / self symbol | Before (borrowed lookup) | After (task chunks) |
+|---|---:|---:|
+| Reservation requests | 23,499 | 67 |
+| Reservation releases | 23,499 | 67 |
+| MemoryManager::request self samples | 0.31% | no samples |
+| Mutex::lock_contended | 1.26% | 0.93% |
+| Peak reservation (bytes; B = 8 GiB) | 152,135,208 | 152,530,216 |
+
+The request count is down by a deterministic workload count, not a local
+elapsed-time claim. Numeric-key HAVING's memory control stays at 2,592 requests:
+it did not have per-batch string scratch. The one Q1 sanity run is **1.344 s**
+at load **1.64**, not an attributed gain. The small mutex share change is
+sampling/noise-limited. [Profiles and counters](raw/20261107-hash-aggregate-perf1/chunks-profiles.json),
+[Q1 sanity](raw/20261107-hash-aggregate-perf1/chunks-sanity.json).
 
 ### Cumulative mutation verification
 
@@ -242,6 +263,189 @@ exponentially before reaching its original guard check. That incomplete run
 was terminated and **is not counted as a catch or a timeout catch**. The CASE
 mutant now runs its existing `case_evaluates_only_the_branch_a_row_takes` test;
 full unmutated exec/CLI controls still run, and other mutants retain their full
-suites. The remaining 48 mutants are rerun with that bounded test selection.
-The outcome-classifier self-test passes; compile failures/global timeouts
-remain INVALID.
+suites. The remaining 48 mutants passed with that bounded test selection.
+**All 63 executor/CLI mutants are CAUGHT (58 existing, five new), zero
+SURVIVED, zero INVALID**, with passing private unmutated exec/CLI controls.
+[Combined results](raw/20261107-hash-aggregate-perf1/mutants-all.md),
+[remaining 48](raw/20261107-hash-aggregate-perf1/mutants-remaining.md).
+The [outcome-classifier self-test](raw/20261107-hash-aggregate-perf1/mutant-classifier.txt)
+passes; compile failures/global timeouts remain INVALID.
+All [five memory mutants](raw/20261107-hash-aggregate-perf1/mutants-memory.txt)
+are **CAUGHT by loom** at bound 2 (including explicit budget/credit/double-release
+assertions and lost-wakeup/release deadlocks); unmutated native memory checks
+and all 16 bound-2 memory models pass. The two existing wire-bound mutants
+remain CAUGHT as recorded under fix 2.
+
+## Final profile and step 2
+
+**Local, indicative, NOT a target verdict.** CPU-clock user self shares, eight
+requested threads, SF1. Q1 / HAVING memory / HAVING 64 MiB have
+756 / 1,126 / 2,450 samples and zero reported lost samples. Starting
+1-minute loads are 1.64 / 1.64 / 1.67. No elapsed attribution follows.
+Full demangled names and the long tail are retained in the linked raw JSON.
+[Per-fix evidence chart](raw/20261107-hash-aggregate-perf1/profile-summary.html).
+
+### Q1 memory
+
+[All symbols](raw/20261107-hash-aggregate-perf1/chunks-q1.json).
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 11.77% | `nata_exec::eval::arith` |
+| 2 | 11.24% | `<nata_exec::aggregate::Partial>::resume` |
+| 3 | 10.71% | `nata_exec::num::fits` |
+| 4 | 5.82% | `<nata_exec::aggregate::State>::add` |
+| 5 | 4.37% | `<nata_kernels::aggregate::ExactSum>::add` |
+| 6 | 4.37% | `<nata_exec::aggregate::Atom>::get` |
+| 7 | 3.44% | `<nata_exec::value::Col>::from_arrow` |
+| 8 | 2.25% | `nata_exec::aggregate::hashing::columns` |
+| 9 | 2.25% | `_int_malloc` |
+| 10 | 1.98% | `nata_exec::aggregate::hashing::value` |
+| 11 | 1.98% | `cfree@GLIBC_2.2.5` |
+| 12 | 1.85% | `<nata_exec::eval::Evaluator>::eval` |
+| 13 | 1.85% | `malloc` |
+| 14 | 1.72% | `nata_exec::num::pow10` |
+| 15 | 1.59% | `_int_free_chunk` |
+
+### HAVING memory
+
+[All symbols](raw/20261107-hash-aggregate-perf1/chunks-high_cardinality_tpch.json).
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 12.08% | `nata_exec::aggregate::hashing::key` |
+| 2 | 6.93% | `<nata_exec::aggregate::Partial>::resume` |
+| 3 | 4.53% | `<nata_exec::aggregate::State>::finalize` |
+| 4 | 3.55% | `malloc` |
+| 5 | 3.55% | `unlink_chunk.isra.0` |
+| 6 | 3.46% | `hashbrown::RawTable<usize>::reserve_rehash` |
+| 7 | 3.02% | `nata_exec::eval::arith` |
+| 8 | 2.75% | `_int_free_chunk` |
+| 9 | 2.31% | `__memmove_avx_unaligned_erms` |
+| 10 | 2.22% | `_int_malloc` |
+| 11 | 2.13% | `nata_exec::num::fits` |
+| 12 | 1.87% | `<nata_exec::aggregate::State>::add` |
+| 13 | 1.78% | `<arrow_buffer::buffer::scalar::ScalarBuffer<f64>>::slice` |
+| 14 | 1.69% | `<nata_exec::aggregate::Groups>::insert` |
+| 15 | 1.69% | `<alloc::sync::Arc<dyn arrow_array::array::Array>>::drop_slow` |
+
+### HAVING 64 MiB
+
+[All symbols](raw/20261107-hash-aggregate-perf1/chunks-high_cardinality_tpch-64MiB.json).
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 6.49% | `_int_malloc` |
+| 2 | 4.90% | `malloc` |
+| 3 | 4.29% | `malloc_consolidate` |
+| 4 | 3.92% | `_int_free_chunk` |
+| 5 | 3.31% | `__memmove_avx_unaligned_erms` |
+| 6 | 3.31% | `cfree@GLIBC_2.2.5` |
+| 7 | 2.08% | `replay::decode state collection (Iterator::try_fold)` |
+| 8 | 2.08% | `nata_exec::aggregate::replay::encode` |
+| 9 | 1.76% | `nata_exec::eval::arith` |
+| 10 | 1.71% | `realloc` |
+| 11 | 1.67% | `unlink_chunk.isra.0` |
+| 12 | 1.63% | `flatbuffers::TableVerifier::visit_field (IPC schema fields)` |
+| 13 | 1.59% | `<nata_exec::aggregate::Partial>::resume` |
+| 14 | 1.55% | `flatbuffers::verifier::append_trace::<()>` |
+| 15 | 1.55% | `<flatbuffers::verifier::TableVerifier>::deref` |
+
+Step 2 must address the following measured remaining work; none is implemented here:
+
+- **R12/P11 kernels:** scalar `eval::arith` (11.77%) and decimal `num::fits`
+  (10.71%) lead Q1. Move evaluation onto shared selected-valid strict kernels
+  and vectorized loops while preserving errors, NULL masking and exact types.
+- **P4 fusion:** Q1 still spends 11.24% in `Partial::resume`, 5.82% in
+  `State::add`, 4.37% each in `ExactSum::add` and `Atom::get`. Fuse evaluation
+  and accumulation, including repeated Q1 expressions, against a measured control.
+- **P5 overflow elision:** only remove repeated checks where a proof establishes
+  the same accepted bounds and failure behavior. No elision occurs in this step.
+- **Spill volume:** allocation/free, replay encode/decode and checked IPC
+  metadata dominate the spill profile. HAVING at 64 MiB writes 960,268,264
+  bytes, reads 1,219,572,960 bytes and opens 300,682 spill files (4,368 spilled
+  partitions, recursion depth 2). Reduce partial/frame/open volume; preserve
+  envelope verification, reservations and quotas. Resident HAVING also exposes
+  canonical owned-key hashing (12.08%), state finalization (4.53%) and rehash
+  (3.46%): track those costs when assessing fusion/volume changes.
+
+Frozen targets, SF10 scaling and both-architecture certification remain open.
+Local elapsed times and these self-share profiles cannot close them.
+
+## Parent timing job — attribution pending
+
+The four cumulative fixes are `94a7834` (hash), `3748b56` (polls), `8b8873b`
+(borrowed lookup), and `135fd7d` (chunks). The parent will add the attributed
+before/after table after the settled-machine run; no local timing ratio is
+used to claim a gain.
+
+[Harness](../../scripts/bench-aggregate-perf1-heavy.py) and
+[heavy recipe](../aggregate-perf1.steps). Prepare the source bundle locally
+before shipping the tree, since the existing uploader excludes `.git`:
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline e198d08 --fix hash=94a7834 --fix polls=3748b56 --fix borrow=8b8873b --fix chunks=135fd7d --bundle .aggregate-perf1-inputs
+cp bench/aggregate-perf1.steps heavy.steps
+```
+
+Only the parent launches the existing `heavy` job, on **c3d-highcpu-8**.
+The bundle and `heavy.steps` are ignored locally; the existing tree uploader
+includes them. Five SHA-256-checked committed source archives build sequentially
+with `--locked --release`, each in a distinct target directory. The run refuses
+a CPU count/architecture other than x86-64/eight logical CPUs. It records input
+and binary identities, toolchain, CPU model, all 1/5/15-minute loads, exits and
+aggregate counters, without host/network identifiers.
+
+The matrix is Q1 and HAVING × 1/8 threads × 8 GiB/64 MiB, five alternating
+rounds of baseline, each cumulative fix and DuckDB, with an identical-binary
+primary/twin arm for each: **480 timed processes**. Reverse the entire arm
+order on alternate rounds. Match engine budgets/threads; include startup,
+planning, metadata, decode and CSV-to-`/dev/null`. Correctness-gate all 40 Nata
+cells against DuckDB before **any** timing; require peak ≤ B, no memory-control
+spill and real HAVING spill at 64 MiB. Q1 AVG alone has the card's 1e-8 tolerance;
+all other numbers/multiplicities match exactly. Settle below load 0.5 before
+each cell and refuse an unsettled cell. No correctness/build job overlaps a
+timed cell. Each restarted heavy timing step creates a new session directory;
+incomplete sessions never mix.
+
+`summary.json` reports min/quartiles/median/max for five primary and five twin
+samples per variant/cell, paired candidate/baseline, candidate/previous-fix
+and candidate/DuckDB latency ratios, and twin/primary ratios. A failed DuckDB
+cell has no denominator. The parent compares each change with its twins/noise
+and adds the attributed table here; the harness makes no target verdict.
+SF10 scaling and ARM64 remain outside this SF1 job.
+
+[Local harness checks](raw/20261107-hash-aggregate-perf1/heavy-self-test.txt)
+launch no engines: self-test covers exact numeric
+multisets/multiplicity, Q1 AVG tolerance versus exact SUM, truncated CSV,
+archive tampering, alternating twins, distinct targets, matched budgets,
+paired ratios and missing DuckDB denominators. An inert end-to-end run also checks five builds, all 40 gates before any
+timed arm, and the complete 480-arm schedule. Preparing all five actual
+archives and checking both queries in each archive, then `run --plan`, passed; the [saved plan](raw/20261107-hash-aggregate-perf1/heavy-plan.json)
+contains five separate targets and all 480 planned processes.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$HOME/tmp-perf1/self-test"
+python3 scripts/bench-aggregate-perf1-heavy.py run --bundle .aggregate-perf1-inputs --work "$HOME/tmp-perf1/heavy" --data DATA_SF1 --out "$HOME/tmp-perf1/heavy-results" --plan
+```
+
+## Validation and handoff
+
+Before each production fix commit: `cargo fmt --check`, workspace/all-target
+clippy with `-D warnings`, `cargo test --workspace`, `cargo deny check`, query
+gates (scan 5, SQL 252, SQL differences 54, aggregate 65, forced-spill aggregate
+65), all 16 memory loom models at bound 2, and staged leak scan **pass**.
+Disk TMPDIR/spill storage and two build/test workers are used; checks run
+sequentially. The final tooling commit repeats that entire sequence:
+[check record](raw/20261107-hash-aggregate-perf1/checks-harness.txt).
+
+Cumulative relevant mutation checks: **63 executor/CLI + five memory + two
+wire-bound = 70 CAUGHT**, zero survivors/invalids. The five new mutants cover
+recursion seed, removed/row-wise cancel polls, borrowed equality and chunk
+release. The independent negative/positive pressure regression is retained.
+The one interrupted exponential CASE attempt is excluded, as explained above.
+
+The existing heavy-job chain test also passes using its local inert runner,
+without a VM or cloud calls. The source bundle/plan and full simulated harness
+trial pass. The parent runs the real settled-machine job and adds attribution;
+no frozen target is judged here, and step 2 implementation is not started.

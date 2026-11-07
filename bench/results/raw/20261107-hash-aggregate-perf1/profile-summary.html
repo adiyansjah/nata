@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hash aggregate performance step 1 evidence</title><style>
+body { margin:0; font-family:var(--font-sans,system-ui); color:var(--foreground); font-size:14px; }
+p { line-height:1.5; margin:8px 0 16px; } .muted { color:var(--muted-foreground); font-size:12px; }
+.legend { display:flex; gap:18px; margin:12px 0; font-size:12px; } .legend b { display:inline-block; width:14px; height:9px; background:currentColor; margin-right:6px; }
+.before { color:var(--chart-1); } .after { color:var(--chart-2); }
+.chart { display:grid; grid-template-columns:minmax(110px,1.05fr) minmax(160px,2fr); gap:18px 12px; align-items:center; margin:12px 0; }
+.metric { font-size:13px; line-height:1.4; } .bars { min-width:0; }
+.track { display:flex; align-items:center; gap:5px; height:22px; padding-right:50px; } .track i { display:block; height:9px; background:currentColor; flex-shrink:0; min-width:0; } .track span { font-size:12px; white-space:nowrap; color:var(--foreground); font-variant-numeric:tabular-nums; }
+.axis { display:flex; justify-content:space-between; color:var(--muted-foreground); font-size:11px; padding-right:50px; }
+hr { border:0; border-top:1px solid var(--border); margin:18px 0; }
+</style><body>
+<p><strong>Local profile evidence — NOT a target verdict</strong><br><span class="muted">SF1 Q1, 8 requested threads. Each row compares the adjacent fix stages. CPU self shares are not elapsed speed gains.</span></p>
+<div class="legend"><span class="before"><b></b>Before this fix</span><span class="after"><b></b>After this fix</span></div>
+<div class="chart"><div class="muted">CPU-clock user self share</div><div class="axis"><span>0%</span><span>5%</span><span>10%</span><span>15%</span><span>20%</span></div><div class="metric">1. Canonical hashing</div><div class="bars"><div class="track before"><i style="width:85.90%"></i><span>17.18%</span></div><div class="track after"><i style="width:12.05%"></i><span>2.41%</span></div></div><div class="metric">2. Cancellation polling</div><div class="bars"><div class="track before"><i style="width:74.55%"></i><span>14.91%</span></div><div class="track after"><i style="width:1.20%"></i><span>0.24%</span></div></div><div class="metric">3. Owned-key Vec collection</div><div class="bars"><div class="track before"><i style="width:11.30%"></i><span>2.26%</span></div><div class="track after"><i style="width:0.00%"></i><span>no samples</span></div></div></div><hr>
+<div class="chart"><div class="metric">4. Reservation requests<br><span class="muted">Workload counter, separate scale</span></div><div class="bars"><div class="track before"><i style="width:78.33%"></i><span>23,499</span></div><div class="track after"><i style="width:0.223%"></i><span>67</span></div></div></div>
+<p class="muted">Hashing sums the sampled SipHash/owned-key functions before and the column/value functions after. “No samples” means below this profile’s sampling resolution. Loaded development VM; attributed timings await the parent’s settled-machine job.</p></body></html>
