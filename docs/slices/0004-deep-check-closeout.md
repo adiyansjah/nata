@@ -56,4 +56,4 @@ register items, so the "growth triggers payback" rule applies.
 - Nightly run on the closing commit:
 - Cards 0002 and 0003 part-6 lines added:
 - Register updated:
-- Upstream reports posted (with the owner's yes):
+- Upstream reports posted (with the owner's yes): ADBC: apache/arrow-adbc#4999 (2026-11-07). parquet-rs: none needed. The loop is fixed on `main` by apache/arrow-rs#11923 (not yet released), and the unchecked reservation is already open as apache/arrow-rs#12100 (register R6d).
