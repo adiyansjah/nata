@@ -928,3 +928,112 @@ handoff rather than self-referenced. No push or merge.
 
 Final code-content SHA-256: `73f10a2722e9e9a20117a0c38c741af10a0b6ffa4388a55a9549577a5d0cacbb`.
 Staged leak scan PASS before the final preparation/stop commit.
+
+## ADR 0015 admission-pressure yield implementation, 2026-11-08
+
+**Measured verdict: the local fairness policy stop is resolved; slice closeout remains OPEN.**
+Implementation commit **`84f93dc84260c5204ed55852c317978aa8b1b494`**, based on main
+`72edc6f`. No dependency, Cargo.lock, lifetime, admission wait, RSS formula or
+frozen target changed. No GCP plan/run, push or merge was executed.
+Small evidence: [yield gates](raw/20261108-wire-catalog-close/yield/).
+
+**Rule implemented:** with admission exhausted, a waiting query expires the
+oldest suspended portal eligible at 250 ms after its PortalSuspended flush.
+Each acquisition can expire one portal; executing work is excluded. Both query
+admission paths use the same helper. Suspension publication wakes waiters; an
+eligible-time timer avoids polling or waiting for the five-second lease. A
+shared production/loom lease lock arbitrates resume versus expiry. Selection
+rechecks the captured suspension time under that lock; a winning resume survives
+and the waiter reselects. Close invalidates a candidate before releasing its
+producer. Timer and pressure expiry use the same pinned cancel/credit-wake/join
+path and terminal state; the existing once-only join owner releases reservations
+and admission. Next Execute reports `34000 suspended portal expired`; Sync and
+ROLLBACK permit normal session reuse. Weak registry entries are pruned to the
+admission count and never retain a separate parked-work pool. CancelRequest
+selection and statement deadline tokens retain their existing rules.
+
+Local scope: x86-64 KVM, eight visible CPUs (Intel i3-1220P), debug builds;
+all Cargo builds/tests serial at `-j 4`, alongside the other child's independent
+work. Frozen-budget checks use Linux VmHWM. Fairness uses 64 retained sessions,
+100 source rows, four two-column tables, every admission parked, and one CPU
+actor per worker. Catalog smoke uses 16 retained sessions, 100 source rows,
+64/1,024 tables, widths 1/64 (wide every sixteenth table), 1/8 workers and native/
+256 FD limits. These are local smoke measurements, not both-CPU certification.
+
+| Check / rule | Numbers and verdict | Command |
+|---|---|---|
+| Every admission parked; every remaining healthy client completes within existing 5 s | **PASS 12/12 arms**: three repetitions × 1/8 workers × native/256 FD. 1-worker min/median/max **0.342868 / 0.354629 / 0.373944 s**; 8-worker **0.251680 / 0.293180 / 0.327030 s** | `$PY scripts/wire-browse/resources.py --nata "$CARGO_TARGET_DIR/debug/nata" --work "$RESULTS/fairness" --smoke --sessions 64 --workers 1 8 --repeat 3` |
+| Frozen RSS formula; return to idle + 64 MiB and idle FD count within 10 s | **PASS 12/12** fairness arms. VmHWM **22,724,608–24,203,264 bytes**, individual budgets **1,257,848,832–1,258,360,832 bytes**. Final FDs **7/7** in every arm. Each raw arm prints all unchanged formula terms | Same fairness command; `fairness.jsonl` |
+| Portal protocol: under-250 ms survives; oldest only; expiry explanation and healthy reuse; executing work survives and waiter gets 53300 after 5 s | **PASS 2 new tests**, included in **73 total PASS** (18 lib / 3 codec / 10 model-native / 38 protocol / 4 reliability). Young test uses 100 ms statement deadline then successfully resumes both portals; mature check waits 275 ms. Executing test holds both producers before suspension, asserts **5 ≤ wait < 6 s**, 53300 and both producers' later success | `cargo test --locked -p nata-pgwire -j 4` |
+| Real lease arbitration under loom: waiter/resume, waiter/close, two waiters/one portal | **PASS all 10 cases, bound 2, 340 executions total**; each of the three new cases explores **4** executions. Bound 3 remains heavy | `LOOM_MAX_PREEMPTIONS=2 bash crates/nata-pgwire/run_portal_loom.sh` |
+| Metadata scratch boundary, including unbounded controls already in the suite | **PASS 2 metadata_scratch_cap tests** in the 18 lib tests; no cap change | `cargo test --locked -p nata-pgwire -j 4` |
+| Loaded native lifecycle / no leaks or hangs under competing CPU work | **PASS 4/4**, 8 CPU actors | `NATA_PGWIRE_CONTENTION=8 cargo test --locked -p nata-pgwire -j 4 --test reliability` |
+| Large catalog correctness, RSS, FD cleanup | **PASS 16/16 resource smoke arms**, PostgreSQL typed tables/columns equality; peak **22,446,080–32,858,112 bytes**, budgets **427,499,520–429,084,672 bytes**, final FDs **7/7**; healthy completion **0.171888–0.291538 s** | `PG_MAJOR=17 ORACLE_EXTRA=resources-smoke bash scripts/wire-browse/run-oracle.sh` |
+| Large catalog browse ≤1.20× PostgreSQL | **NOT CERTIFIED**: one round per smoke arm, ratios **0.321635–2.973248×**, **8/16 above 1.20×**. Raw verdict remains `SMOKE ONLY`; resource PASS does not waive the timing target | Same PG17/resource smoke command |
+| Client matrix plus exact nine deviations | Original matrix **81 PASS / 0 FAIL / 9 not run**, original exit **1** preserved; separate deviation checker **PASS** | `bash scripts/wire-skeleton/run.sh`; `python3 scripts/wire-skeleton/check-deviations.py "$RESULTS/wire-skeleton/matrix.json"` |
+| PG17 browse oracle | **PASS 56 browse / 3 binary / 95 helpers / 36 inventory**, PostgreSQL **17.11**; advertised compatibility major 16 remains a separate arm | Same PG17 oracle command |
+| DBeaver source replay (out of implementation scope) | Reproduced **1 PASS / 5 FAIL**: current_database **42883**; database/schema/table/column navigators **0A000**. Source 25.2.0 / fallback pgjdbc **42.7.2**, original exit **1**; R24 stays OPEN | `bash scripts/wire-browse/dbeaver-gate.sh` |
+| Clean / harness controls | **PASS** fmt, all-target pgwire clippy with warnings denied, Python/shell syntax, 2 resource arithmetic tests, deviation controls, local fake-provider job-chain tests, diff whitespace; all **98** full-sweep anchors still apply once. Full 98-mutant sweep **NOT RUN** | `cargo fmt --all -- --check`; `cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings`; `$PY scripts/wire-browse/test_resource_gates.py`; `python3 scripts/wire-skeleton/test_deviations.py`; `bash scripts/gcp/test/test-job-chains.sh`; `git diff --check` |
+
+Focused mutants, **4 CAUGHT / 0 MISSED / 0 INVALID**, private source copy,
+serial four-job builds; unmutated protocol and fairness controls pass, and the
+restored fairness control passes. Build errors/timeouts cannot count as catches.
+Reproduce: `$PY scripts/wire-browse/yield-mutants.py --target "$CARGO_TARGET_DIR" --work "$RESULTS/yield-mutants"`
+(use a fresh work directory).
+
+| Mutant | Failure observed / verdict |
+|---|---|
+| skip yield | Loaded fairness rejects `53300 query admission timeout`: **CAUGHT** |
+| yield idle under 250 ms | Healthy query succeeds instead of its 100 ms timeout: protocol expected-error assertion fails: **CAUGHT** |
+| yield two portals per waiter | Second old portal returns ErrorResponse instead of DataRow + PortalSuspended: **CAUGHT** |
+| yield executing work | Publishes the running producer as idle before PortalSuspended; executing portal returns ErrorResponse after release instead of rows/suspension: **CAUGHT** |
+
+Reproduction environment: the matrix script needs Python with venv support and
+JDK 17 on PATH (local run used CPython 3.12.16 and JDK 17.0.21), plus installed
+PostgreSQL 17 tools for the oracle. Export `CARGO_TARGET_DIR` to a build cache,
+`WORK` and `RESULTS` to scratch directories, and after matrix setup set
+`PY="$WORK/wire-skeleton-venv/bin/python"`. Oracle clusters and mutant-copy work
+directories must be fresh. Local raw evidence omits startup/socket/key logs.
+The initial loaded attempt exposed a harness-only bytes-versus-hex-string error
+in the new expiry explanation assertion; fixed before all twelve accepted arms.
+The first clippy run requested collapsing a nested if; final clippy passes.
+Inactive stale Parquet mutant build outputs were reclaimed for disk headroom;
+free disk was **24.78 GiB** at final validation (above the 20 GB cleanup floor). No active cache removed.
+
+### Prepared heavy handoff, not executed
+
+`scripts/wire-browse/slice-close.steps.example` now includes all ten portal loom
+cases at **bound 3**, the four focused yield mutants, and the repeated loaded
+fairness gate with **64 sessions / 1 and 8 workers / three repetitions**. It also
+retains the full resource grid, 98 existing mutants and all prior closing checks.
+The gate script's full-size defaults and every frozen threshold are unchanged.
+
+**Reasoned sizing:** retain **n4a-highcpu-16** (ARM64) and **c3d-highcpu-16**
+(x86-64), 100 GB scratch disk and **4 VM-hours per CPU** as ceilings. Sixteen
+vCPUs accommodate eight engine workers plus load actors; four-job builds remain
+serial. Disk accommodates separate native/loom/mutant/baseline targets. The
+four-hour cap allows clean builds, 98 + 4 mutants, bound-3 models, catalog DDL,
+reference installation and per-client primary/twin timing pairs. The new fairness
+smoke adds seconds locally; the cap is a conservative allowance, **not a measured
+heavy duration**. Obtain the current spend bound from each plan before approval.
+Exact commands (prepared only; no project identifiers or credentials):
+
+```sh
+bash scripts/wire-browse/package-close.sh
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 100 --max-vm-hours 4
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 100 --max-vm-hours 4
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 100 --max-vm-hours 4 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 100 --max-vm-hours 4 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
+```
+
+Remaining closeout: both-CPU heavy/full-size evidence (including 10,000 tables,
+actual snapshot-cap removal, all mutants, bound-3 models, deep/fuzz/sanitizers),
+PG15/PG16 parity, the full loaded PostgreSQL memory context (this smoke records a
+catalog backend only), and reference-first P16 including long-stream first-row,
+wide/NULL/decimal controls. The **8 above-budget catalog smoke timings** require
+full paired investigation; no performance acceptance or target relaxation is
+inferred. DBeaver shipped-driver/UI and optional property/key/index evidence,
+and R25's timeout fixture decision, remain open. This implementation resolves the
+admission fairness failure only. The evidence commit SHA is provided in the
+handoff to avoid a self-referential commit hash. Staged leak scans pass before
+both commits.

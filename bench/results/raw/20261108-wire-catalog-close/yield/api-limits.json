@@ -1,0 +1,38 @@
+{
+  "psql positive-fetch": {
+    "reason": "psql 17 FETCH_COUNT uses PQsetChunkedRowsMode after PQsendQuery/PQsendQueryParams; this is client-side libpq chunk delivery, not Execute.max_rows. Older psql FETCH_COUNT used SQL DECLARE/FETCH, excluded by ADR 0015. No psql wire portal-size option.",
+    "source": "https://github.com/postgres/postgres/blob/REL_17_STABLE/src/bin/psql/common.c"
+  },
+  "psycopg positive-fetch": {
+    "reason": "psycopg 3.3.8 Cursor.fetchmany slices a client-side PGresult; stream uses libpq row delivery, not Execute.max_rows. ServerCursor emits SQL DECLARE/FETCH (explicit 0A000 boundary); pq.PGconn send_query_params/send_query_prepared expose no max_rows.",
+    "source": "https://github.com/psycopg/psycopg/blob/3.3.8/psycopg/psycopg/_server_cursor_base.py"
+  },
+  "pgcli positive-fetch": {
+    "reason": "pgcli 4.7.1 PGExecute uses psycopg ProtocolSafeCursor and libpq; completion/output paging does not set Execute.max_rows. No public portal-fetch size API; SQL DECLARE/FETCH remains outside ADR 0015.",
+    "source": "https://github.com/dbcli/pgcli/blob/v4.7.1/pgcli/pgexecute.py"
+  },
+  "ADBC positive-fetch": {
+    "reason": "ADBC PostgreSQL 1.13.0 default SELECT uses COPY TO STDOUT; Arrow batch size controls Arrow delivery, not Execute.max_rows. use_copy=false uses libpq query results and exposes no wire portal max_rows option.",
+    "source": "https://github.com/apache/arrow-adbc/tree/apache-arrow-adbc-25/c/driver/postgresql"
+  },
+  "psql malformed-frame": {
+    "reason": "psql SQL/meta-command API accepts SQL and COPY data; libpq encodes framing. No API for an invalid message tag/length. Invalid SQL or COPY payload is not a malformed frontend frame; proxy/raw socket corruption is separate evidence.",
+    "source": "https://www.postgresql.org/docs/17/app-psql.html"
+  },
+  "pgjdbc malformed-frame": {
+    "reason": "pgjdbc 42.7.14 JDBC/PGConnection public APIs encode protocol frames internally. No public API sets message tag/declared length; using internal PGStream or an injecting socket factory replaces the transport and is separate fault-injection evidence.",
+    "source": "https://jdbc.postgresql.org/documentation/publicapi/"
+  },
+  "psycopg malformed-frame": {
+    "reason": "psycopg 3.3.8 Cursor and pq.PGconn query/COPY APIs delegate frame encoding to libpq. PGconn.socket exposes a descriptor, but writing fabricated bytes to it is raw protocol injection, not a psycopg emission API.",
+    "source": "https://github.com/psycopg/psycopg/blob/3.3.8/psycopg/psycopg/pq/abc.py"
+  },
+  "pgcli malformed-frame": {
+    "reason": "pgcli 4.7.1 PGExecute uses psycopg/libpq encoders; its SQL, special-command and completion APIs cannot specify frontend frame lengths/tags. Writing to the underlying psycopg socket would be a separate raw injection probe.",
+    "source": "https://github.com/dbcli/pgcli/blob/v4.7.1/pgcli/pgexecute.py"
+  },
+  "ADBC malformed-frame": {
+    "reason": "ADBC PostgreSQL 1.13.0 database/connection/statement and Arrow stream APIs do not expose frontend frame bytes, lengths or a connection socket. Malformed SQL/COPY contents do not exercise malformed frame headers; a proxy/raw probe is separate evidence.",
+    "source": "https://github.com/apache/arrow-adbc/tree/apache-arrow-adbc-25/c/driver/postgresql"
+  }
+}

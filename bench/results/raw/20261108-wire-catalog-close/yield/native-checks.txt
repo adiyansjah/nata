@@ -1,0 +1,88 @@
+running 18 tests
+test binary::tests::helpers_name_arrays_match_pg17_send_bytes ... ok
+test browse::tests::metadata_scratch_cap ... ok
+test copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded ... ok
+test date::tests::exceptional_dates_and_postgres_endpoints ... ok
+test metadata::tests::metadata_scratch_cap ... ok
+test metadata::tests::snapshot_columns_preserve_every_field_in_order ... ok
+test server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling ... ok
+test server::resource_error_tests::memory_limit_preserves_sqlstate_message_and_position ... ok
+test browse::tests::shape_matching_cannot_change_semantics_or_reach_user_tables ... ok
+test session::helpers::tests::settings_registry_reset_helpers_and_refusals ... ok
+test browse::tests::snapshot_filters_identity_types_and_ordering ... ok
+test copy::tests::seeded_copy_fuzz ... ok
+test session::tests::quoted_search_path_preserves_case_and_empty_path_is_valid ... ok
+test session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing ... ok
+test browse::tests::captured_shapes_are_total_and_keep_descriptors ... ok
+test server::fetch::tests::deadline_is_pinned_to_its_execution_not_a_replacement ... ok
+test copy::tests::text_csv_escapes_match_postgres_and_reject_zero ... ok
+test metadata::tests::seeded_metadata_fuzz ... ok
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+running 3 tests
+test backend_metadata_null_empty_and_character_position ... ok
+test every_frontend_message_and_every_truncation ... ok
+test seeded_decoder_fuzz ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+running 10 tests
+test admission_yield_races_close ... ok
+test expiry_credit_before_or_after_park_cannot_lose_wake ... ok
+test pinned_timer_and_cancel_do_not_follow_replacement ... ok
+test timeout_across_suspension_error_drain_until_sync_and_rollback ... ok
+test cancel_selection_linearizes_before_suspension_publication ... ok
+test admission_yield_races_resume ... ok
+test two_admission_waiters_one_idle_portal ... ok
+test resume_races_expiry_and_cleanup_wakes_once ... ok
+test close_before_or_after_park_cannot_lose_wake ... ok
+test execute_limit_suspend_inert_cancel_resume_and_exact_end ... ok
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+running 38 tests
+test bounded_explain_refuses_instead_of_ignoring_the_row_limit ... ok
+test bounded_aggregate_keeps_admitted_spill_configuration ... ok
+test binary_default_driver_scalars_and_descriptions ... ok
+test aggregates_named_prepare_text_binary_copy_and_positioned_errors ... ok
+test copy_binary_framing_types_nulls_extended_and_refusals ... ok
+test copy_text_csv_null_empty_escaping_header_and_empty_results ... ok
+test exact_adbc_bootstrap_and_unknown_catalog_refusal ... ok
+test exceptional_date_domains_and_zero_bytes_are_explicit_conversion_errors ... ok
+test exceptional_dates_text_binary_copy_and_range_errors ... ok
+test extended_all_types_match_simple_and_parameter_metadata_is_stable ... ok
+test extended_parameters_are_nodes_and_never_error_values ... ok
+test extended_recorded_sequences_and_sync_recovery ... ok
+test cancel_inside_a_wide_row_closes_instead_of_appending_an_error ... ok
+test limited_rowless_commands_allow_jdbc_rollback_recovery ... ok
+test malformed_lengths_startup_ssl_and_max_connections ... ok
+test aggregate_cancel_before_output_and_injected_spill_error_recover ... ok
+test admission_pressure_preserves_young_portals_and_yields_only_oldest_once ... ok
+test output_buffers_are_batched_byte_bounded_and_nodelay_is_set ... ok
+test postgres_float_text_boundaries_and_legacy_setting_refusal ... ok
+test recorded_simple_error_empty_types_nulls_and_terminate ... ok
+test extended_timeout_covers_parse_flush_idle_until_sync_then_restarts ... ok
+test session_chatter_status_and_transaction_markers ... ok
+test skeleton_all_36_inventory_additions_refuse_before_rows ... ok
+test psql_when_installed ... ok
+test aggregate_output_backpressure_disconnect_and_cancel_join ... ok
+test skeleton_snapshot_named_scan_and_metadata ... ok
+test sqlstate_table_preserves_nata_diagnostics_and_hints ... ok
+test cancel_wrong_key_disconnect_backpressure_and_session_isolation ... ok
+test startup_chatter_and_binary_payload_refusals ... ok
+test two_spilling_queries_share_pool_cancel_and_release ... ok
+test unsafe_listen_requires_explicit_flag ... ok
+test skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope ... ok
+test named_lifecycle_duplicates_lookup_sync_and_budgets ... ok
+test stalled_reader_does_not_starve_eight_other_sessions ... ok
+test copy_shares_bounded_backpressure_cancel_disconnect_and_timeout ... ok
+test admission_pressure_never_yields_executing_work_and_keeps_five_second_wait ... ok
+test reserved_socket_cap_and_startup_deadline ... ok
+test skeleton_portal_expiry_and_close_release_admission ... ok
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.82s
+running 4 tests
+test seeded_live_protocol_fuzz ... ok
+test seeded_disconnect_cancel_kill_under_contention ... ok
+test sixty_four_sessions_and_reserved_sockets ... ok
+test one_byte_per_millisecond_reader_is_bounded ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.17s
+   Doc-tests nata_pgwire
+running 0 tests
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+    Checking nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-03a01593/crates/nata-pgwire)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.91s

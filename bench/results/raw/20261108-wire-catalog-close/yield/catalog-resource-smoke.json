@@ -1,0 +1,578 @@
+[
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.01626693399157375
+        ],
+        "nata": [
+          0.025108247995376587
+        ]
+      },
+      "ratio": 1.5435144698062109,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 28282880,
+      "backend_peak": 28282880,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 1,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 25686016,
+    "budget": 428744704,
+    "idle": 17702912,
+    "final": [
+      25542656,
+      25686016,
+      7
+    ],
+    "admission_seconds": 0.2790140339639038,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.01915384898893535
+        ],
+        "nata": [
+          0.026895438961219043
+        ]
+      },
+      "ratio": 1.4041793363180317,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 37306368,
+      "backend_peak": 37306368,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 1,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 25174016,
+    "budget": 428552192,
+    "idle": 17510400,
+    "final": [
+      25174016,
+      25174016,
+      7
+    ],
+    "admission_seconds": 0.28218107199063525,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.021383874001912773
+        ],
+        "nata": [
+          0.059816433989908546
+        ]
+      },
+      "ratio": 2.7972683520562276,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 38330368,
+      "backend_peak": 38330368,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 1,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 26271744,
+    "budget": 428625920,
+    "idle": 17584128,
+    "final": [
+      25759744,
+      26271744,
+      7
+    ],
+    "admission_seconds": 0.19364739098818973,
+    "yielded_portals": 3,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.02200854499824345
+        ],
+        "nata": [
+          0.054512498958501965
+        ]
+      },
+      "ratio": 2.4768788196972005,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 38809600,
+      "backend_peak": 38809600,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 1,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 26382336,
+    "budget": 428597248,
+    "idle": 17555456,
+    "final": [
+      25980928,
+      26382336,
+      7
+    ],
+    "admission_seconds": 0.20879401301499456,
+    "yielded_portals": 4,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.045271487964782864
+        ],
+        "nata": [
+          0.08491599897388369
+        ]
+      },
+      "ratio": 1.875705941893067,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 40538112,
+      "backend_peak": 40538112,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 64,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 30912512,
+    "budget": 428920832,
+    "idle": 17879040,
+    "final": [
+      30912512,
+      30912512,
+      7
+    ],
+    "admission_seconds": 0.28250768000725657,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.04655586398439482
+        ],
+        "nata": [
+          0.05531452503055334
+        ]
+      },
+      "ratio": 1.1881322844549584,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 41684992,
+      "backend_peak": 41684992,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 64,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 30617600,
+    "budget": 428908544,
+    "idle": 17866752,
+    "final": [
+      30593024,
+      30617600,
+      7
+    ],
+    "admission_seconds": 0.28510306403040886,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.0654020740184933
+        ],
+        "nata": [
+          0.19445657898904756
+        ]
+      },
+      "ratio": 2.9732478962985547,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 42754048,
+      "backend_peak": 42754048,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 64,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 32858112,
+    "budget": 429084672,
+    "idle": 18042880,
+    "final": [
+      32231424,
+      32858112,
+      7
+    ],
+    "admission_seconds": 0.20133553096093237,
+    "yielded_portals": 2,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.055371235008351505
+        ],
+        "nata": [
+          0.11389926896663383
+        ]
+      },
+      "ratio": 2.0570115322415092,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 43462656,
+      "backend_peak": 43462656,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 1024,
+    "width": 64,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 32833536,
+    "budget": 428859392,
+    "idle": 17817600,
+    "final": [
+      32182272,
+      32833536,
+      7
+    ],
+    "admission_seconds": 0.22751268598949537,
+    "yielded_portals": 2,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.0033815339556895196
+        ],
+        "nata": [
+          0.0021668070112355053
+        ]
+      },
+      "ratio": 0.640776357602382,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 19406848,
+      "backend_peak": 19406848,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 1,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 22577152,
+    "budget": 427499520,
+    "idle": 16457728,
+    "final": [
+      22577152,
+      22577152,
+      7
+    ],
+    "admission_seconds": 0.2721932199783623,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.003954272018745542
+        ],
+        "nata": [
+          0.0017953460337594151
+        ]
+      },
+      "ratio": 0.45402694231667273,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21508096,
+      "backend_peak": 21508096,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 1,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 22446080,
+    "budget": 427663360,
+    "idle": 16621568,
+    "final": [
+      22429696,
+      22446080,
+      7
+    ],
+    "admission_seconds": 0.27714065596228465,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.004462445038370788
+        ],
+        "nata": [
+          0.00787970400415361
+        ]
+      },
+      "ratio": 1.7657817488841143,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21450752,
+      "backend_peak": 21450752,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 1,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 23527424,
+    "budget": 427700224,
+    "idle": 16658432,
+    "final": [
+      22994944,
+      23527424,
+      7
+    ],
+    "admission_seconds": 0.1760053570033051,
+    "yielded_portals": 2,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.015019803016912192
+        ],
+        "nata": [
+          0.0048308929544873536
+        ]
+      },
+      "ratio": 0.32163490753159696,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21536768,
+      "backend_peak": 21536768,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 1,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 23601152,
+    "budget": 427847680,
+    "idle": 16805888,
+    "final": [
+      23224320,
+      23601152,
+      7
+    ],
+    "admission_seconds": 0.1718875030055642,
+    "yielded_portals": 2,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.005979041045065969
+        ],
+        "nata": [
+          0.0057989199995063245
+        ]
+      },
+      "ratio": 0.969874592898424,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21594112,
+      "backend_peak": 21594112,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 64,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 23003136,
+    "budget": 427806720,
+    "idle": 16764928,
+    "final": [
+      23003136,
+      23003136,
+      7
+    ],
+    "admission_seconds": 0.27721884002676234,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.005916752037592232
+        ],
+        "nata": [
+          0.006082910986151546
+        ]
+      },
+      "ratio": 1.0280827973698439,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21872640,
+      "backend_peak": 21872640,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 64,
+    "workers": 1,
+    "sessions": 16,
+    "peak": 23265280,
+    "budget": 427937792,
+    "idle": 16896000,
+    "final": [
+      23265280,
+      23265280,
+      7
+    ],
+    "admission_seconds": 0.29153779498301446,
+    "yielded_portals": 1,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.012638690997846425
+        ],
+        "nata": [
+          0.00421484699472785
+        ]
+      },
+      "ratio": 0.33348762110301144,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 21987328,
+      "backend_peak": 21987328,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 64,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 24993792,
+    "budget": 427773952,
+    "idle": 16732160,
+    "final": [
+      24342528,
+      24993792,
+      7
+    ],
+    "admission_seconds": 0.19273776095360518,
+    "yielded_portals": 3,
+    "verdict": "PASS"
+  },
+  {
+    "browse_gate": {
+      "samples": {
+        "postgres": [
+          0.009596178017091006
+        ],
+        "nata": [
+          0.003654266009107232
+        ]
+      },
+      "ratio": 0.3808043163224883,
+      "budget": 1.2,
+      "verdict": "SMOKE ONLY"
+    },
+    "postgres_context": {
+      "version": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "backend_RSS": 22138880,
+      "backend_peak": 22138880,
+      "scope": "backend only; shared PostgreSQL memory not aggregated; catalog metadata context"
+    },
+    "tables": 64,
+    "width": 64,
+    "workers": 8,
+    "sessions": 16,
+    "peak": 24788992,
+    "budget": 427933696,
+    "idle": 16891904,
+    "final": [
+      24219648,
+      24788992,
+      7
+    ],
+    "admission_seconds": 0.18869698798516765,
+    "yielded_portals": 2,
+    "verdict": "PASS"
+  }
+]

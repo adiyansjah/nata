@@ -1,0 +1,15 @@
+thread 'admission_pressure_never_yields_executing_work_and_keeps_five_second_wait' (2743959) panicked at crates/nata-pgwire/tests/protocol.rs:2146:9:
+assertion `left == right` failed: executing portal must survive pressure
+  left: [49, 50, 69]
+ right: [49, 50, 68, 115]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test admission_pressure_never_yields_executing_work_and_keeps_five_second_wait ... FAILED
+
+failures:
+
+failures:
+    admission_pressure_never_yields_executing_work_and_keeps_five_second_wait
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 37 filtered out; finished in 5.02s
+
+error: test failed, to rerun pass `-p nata-pgwire --test protocol`
