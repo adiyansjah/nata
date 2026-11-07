@@ -18,6 +18,7 @@ p.add_argument('--scales', default='1,10')
 p.add_argument('--threads', default='1,4,8')
 p.add_argument('--rounds', type=int, default=5)
 p.add_argument('--trial', action='store_true')
+p.add_argument('--scaling', action='store_true', help='Prioritize Q1 thread scaling, then one HAVING budget block')
 a = p.parse_args()
 assert a.rounds > 0
 scratch = Path(os.environ['TMPDIR']).resolve() / 'aggref'
@@ -69,11 +70,15 @@ for sf in a.scales.split(','):
         inp.write(f'SF{sf} lineitem.parquet {input_bytes} bytes sha256={hashlib.file_digest(path.open("rb"), "sha256").hexdigest()}\n')
     budgets = ['4GiB', '64MiB', '256MiB'] if float(sf) < 100 else ['32GiB', '4GiB']
     expected = {}
-    for threads in map(int, a.threads.split(',')):
+    blocks = [(t, queries, budgets) for t in map(int, a.threads.split(','))]
+    if a.scaling:
+        blocks = [(t, {'q1': queries['q1']}, ['32GiB']) for t in map(int, a.threads.split(','))]
+        blocks.append((8, {'having': queries['having']}, ['32GiB', '4GiB']))
+    for threads, block_queries, block_budgets in blocks:
         # Warm cache and verify every budget/thread before the timed block.
         valid = {}
-        for name, body in queries.items():
-            for memory in budgets:
+        for name, body in block_queries.items():
+            for memory in block_budgets:
                 setup = f"SET threads={threads}; SET memory_limit='{memory}'; SET temp_directory='{scratch}/spill'; CREATE VIEW lineitem AS SELECT * FROM '{path}';"
                 probe = duck(setup + f'SELECT count(*), sum(hash(t)) FROM ({body}) t;', capture_output=True, text=True)
                 key = (name, memory)
@@ -90,8 +95,8 @@ for sf in a.scales.split(','):
         with (a.out / 'settle.txt').open('a') as log:
             log.write(settle.stdout)
         settled = settle.returncode == 0
-        for name, body in queries.items():
-            for memory in budgets:
+        for name, body in block_queries.items():
+            for memory in block_budgets:
                 if not valid[name, memory]:
                     failed += 1
                     continue  # OOM is a measured unsupported cell, never a timing.
