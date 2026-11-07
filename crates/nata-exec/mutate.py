@@ -26,6 +26,8 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "aggregate-cancel-poll-removed": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && false && cancelled()")]),
+ "aggregate-cancel-poll-per-row": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(1) && cancelled()")]),
  "canonical-hash-recursion-seed-lost": ("exec", [("crates/nata-exec/src/aggregate/hashing.rs", "SEED ^ u64::from(depth)", "SEED ^ u64::from(depth).min(0)")]),
  "owner-initialization-cleanup-skipped": ("exec", [(SPILL, "let _ = fs::remove_dir(&directory);", "// abandoned initialization directory")]),
  "restart-cleanup-skipped": ("exec", [("crates/nata-exec/src/spill/cleanup.rs", "let mut removed = 0;", 'return Ok(0); #[allow(unreachable_code, reason = "mutation")] let mut removed = 0;')]),

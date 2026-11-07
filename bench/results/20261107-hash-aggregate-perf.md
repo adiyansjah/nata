@@ -35,7 +35,8 @@ descriptive sanity evidence only. Subsequent fixes use local CPU-clock symbol
 profiles and one sanity timing; an attributed timing table awaits the parent’s
 settled c3d-highcpu-8 heavy job. ARM64 is unmeasured here.
 
-Reproduce each stage, sequentially, from the repository root:
+Historical baseline/hash timing reproduction only (superseded; do not spend
+more local rounds on it):
 
 ```sh
 mkdir -p "$HOME/tmp-perf1/spill"
@@ -120,3 +121,51 @@ The new recursion-seed mutant is **CAUGHT**, with the unmutated private-copy
 control passing: fixed vectors fail and the recursive-pressure replay test also
 fails. [Mutant](raw/20261107-hash-aggregate-perf1/mutants-hash.md).
 [Required checks](raw/20261107-hash-aggregate-perf1/checks-hash.txt) all pass.
+
+## Fix 2 — bounded cancellation polling
+
+Partial accumulation polls at each batch/resume entry and at most 1,024 selected
+rows apart in a larger batch. Ordinary production batches are capped at 256.
+Resident merge/finalization and spill writes use the same bounded interval;
+repartition polls once per already bounded IPC frame. ScanCancel's mutex,
+registration/cancel handshake and memory-manager wakes are unchanged. Tests
+count polls, trigger cancellation after an arbitrary resume cursor and during a
+large batch, and require cleanup; they do not depend on wall-clock scheduling.
+
+**Validation repair:** the first workspace run failed the existing wire
+aggregate-backpressure test's assumption that socket buffers finish filling in
+200 ms: produced-row snapshots were 1,958/2,825; an isolated run also failed at
+2,771/2,797. The test now waits for an observed stall within its existing
+10-second helper deadline, then keeps the unchanged-count, incomplete-output,
+cancel/disconnect and released-grant assertions. No wire production code or
+resource bound changes. The focused repaired test passes. The existing
+unbounded-bridge and bridge-byte-bound mutants are rechecked below.
+
+The parent superseded local elapsed-time attribution before this fix: only one
+Q1 sanity timing and CPU-clock profiles are taken. Attributed timing is pending
+the parent's settled-machine heavy job; no additional local timing rounds run.
+
+| Q1 user self symbol | Before (hash only) | After (bounded polls) |
+|---|---:|---:|
+| ScanCancel::is_cancelled | 14.91% | 0.24% |
+| Mutex::lock_contended | 11.72% | 0.48% |
+
+Scalar `eval::arith` now leads at 12.25%; `Atom::get`, allocator/free work and
+owned-key collection remain visible for fix 3. The one sanity run is 3.245 s at
+1-minute load 5.40, **not an attributed elapsed gain**.
+[Profiles](raw/20261107-hash-aggregate-perf1/cancel-profiles.json),
+[all Q1 symbols](raw/20261107-hash-aggregate-perf1/cancel-q1.json),
+[sanity](raw/20261107-hash-aggregate-perf1/cancel-sanity.json).
+The new poll-removed and per-row-poll mutants are **2/2 CAUGHT**, zero invalid;
+[results](raw/20261107-hash-aggregate-perf1/mutants-cancel.md).
+Both existing wire-bound mutants are **CAUGHT**, with their private control
+passing and the intended aggregate-bound assertion failing under the mutants:
+[results](raw/20261107-hash-aggregate-perf1/mutants-cancel-wire.txt).
+The complete [required check sequence](raw/20261107-hash-aggregate-perf1/checks-cancel.txt)
+was rerun after the test repair and passes.
+
+Current local profiling reproduction (no timing rounds):
+
+```sh
+python3 scripts/profile-aggregate-perf1.py STAGE --sanity --candidate target/release/nata --data DATA_SF1 --out "$HOME/tmp-perf1/profiles"
+```

@@ -1441,8 +1441,20 @@ fn aggregate_output_backpressure_disconnect_and_cancel_join() {
     c.send_query(&q);
     assert_eq!(read(&mut c.socket).0, b'T');
     wait_until(|| s.metrics.rows_produced.load(Ordering::SeqCst) > 100);
-    std::thread::sleep(Duration::from_millis(200));
-    let before = s.metrics.rows_produced.load(Ordering::SeqCst);
+    // Socket buffers can still be filling after 200 ms on a loaded machine.
+    // Observe the stall within the existing deadline before testing that it
+    // persists; an unbounded producer still fails the all-rows check below.
+    let produced = std::cell::Cell::new(s.metrics.rows_produced.load(Ordering::SeqCst));
+    let changed = std::cell::Cell::new(Instant::now());
+    wait_until(|| {
+        let now = s.metrics.rows_produced.load(Ordering::SeqCst);
+        if now != produced.get() {
+            produced.set(now);
+            changed.set(Instant::now());
+        }
+        changed.get().elapsed() >= Duration::from_millis(200)
+    });
+    let before = produced.get();
     std::thread::sleep(Duration::from_millis(200));
     assert_eq!(s.metrics.rows_produced.load(Ordering::SeqCst), before);
     assert!(

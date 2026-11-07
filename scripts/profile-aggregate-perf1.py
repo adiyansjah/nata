@@ -14,6 +14,7 @@ p.add_argument('stage')
 p.add_argument('--candidate', type=Path, required=True)
 p.add_argument('--data', type=Path, required=True)
 p.add_argument('--out', type=Path, required=True)
+p.add_argument('--sanity', action='store_true', help='Run Q1 once without perf as a sanity check only')
 a = p.parse_args()
 a.out.mkdir(parents=True, exist_ok=True)
 root = Path(__file__).resolve().parents[1]
@@ -24,6 +25,12 @@ for query, spill in [('q1', False), ('high_cardinality_tpch', False), ('high_car
     label = f'{a.stage}-{query}' + ('-64MiB' if spill else '')
     sql = (root / f'check/queries/aggregate/{query}.sql').read_text().replace('{data}', str(a.data.resolve()).replace("'", "''"))
     command = [str(a.candidate.resolve()), 'sql', '--csv', '--report', '--threads', '8', '--aggregate-memory-bytes', str((64 if spill else 8192) << 20), '--spill-directory', str(a.out.resolve()), '--spill-disk-bytes', str(4 << 30), '--command=' + sql]
+    if a.sanity and query == 'q1':
+        sanity_load = os.getloadavg()
+        sanity_start = time.monotonic()
+        with open(os.devnull, 'w') as sink:
+            sanity = subprocess.run(command, env=env, stdout=sink, stderr=subprocess.PIPE, text=True, timeout=600, check=True)
+        (a.out / (a.stage + '-sanity.json')).write_text(json.dumps(dict(verdict='one local sanity only; no attribution', seconds=time.monotonic()-sanity_start, load=sanity_load, counters=next(line for line in sanity.stderr.splitlines() if line.startswith('aggregate:'))), indent=2)+'\n')
     profile = a.out / (label + '.data')
     load = os.getloadavg()
     start = time.monotonic()
@@ -43,6 +50,7 @@ for query, spill in [('q1', False), ('high_cardinality_tpch', False), ('high_car
     (a.out / (label + '.json')).write_text(json.dumps(symbols, indent=2)+'\n')
     (a.out / (label + '.txt')).write_text('CPU-clock user self samples; sorted by share; no elapsed-time attribution.\n' + '\n'.join(f"{row['percent']:6.2f}% {row['samples']:6d} {row['symbol']}" for row in symbols)+'\n')
     counters = next(line for line in result.stderr.splitlines() if line.startswith('aggregate:'))
-    observations.append(dict(query=query, spill=spill, load=load, profiled_seconds=time.monotonic()-start, counters=counters))
+    lost = re.search(r'Total Lost Samples: ([0-9]+)', report)
+    observations.append(dict(query=query, spill=spill, load=load, lost_samples=int(lost[1]) if lost else None, samples=sum(row['samples'] for row in symbols), profiled_seconds=time.monotonic()-start, counters=counters))
     print(label, 'profile complete', flush=True)
 (a.out / (a.stage + '-profiles.json')).write_text(json.dumps(dict(stage=a.stage, binary_sha256=hashlib.sha256(a.candidate.read_bytes()).hexdigest(), observations=observations), indent=2)+'\n')

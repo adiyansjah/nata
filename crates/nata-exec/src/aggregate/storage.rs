@@ -1,6 +1,6 @@
 //! Disk jobs own the tables/buffers they consume. Only the bounded I/O worker
 //! executes these methods; CPU continuations poll their tickets and requeue.
-use super::{Atom, State, Table, replay};
+use super::{Atom, CANCEL_ROWS, State, Table, replay};
 use crate::spill::{Registry, SpillBatch, SpillFile, Workspace, schema};
 use arrow_array::{Array, ArrayRef, BinaryArray, RecordBatch, UInt64Array};
 use nata_sql::bind::Aggregate;
@@ -54,11 +54,12 @@ impl Storage {
             let mut states: Vec<Vec<u8>> = Vec::new();
             let mut hashes = Vec::new();
             let mut bytes = 0;
-            for (key, state) in table.groups {
-                if self
-                    .cancel
-                    .as_ref()
-                    .is_some_and(nata_parquet::ScanCancel::is_cancelled)
+            for (row, (key, state)) in table.groups.into_iter().enumerate() {
+                if row.is_multiple_of(CANCEL_ROWS)
+                    && self
+                        .cancel
+                        .as_ref()
+                        .is_some_and(nata_parquet::ScanCancel::is_cancelled)
                 {
                     return Err(io::Error::new(
                         io::ErrorKind::Interrupted,
@@ -189,17 +190,17 @@ impl Storage {
             u32::try_from(partition).map_err(|_| invalid())?,
             depth,
         )? {
+            if self
+                .cancel
+                .as_ref()
+                .is_some_and(nata_parquet::ScanCancel::is_cancelled)
+            {
+                return Err(io::Error::new(
+                    io::ErrorKind::Interrupted,
+                    "aggregate repartition cancelled",
+                ));
+            }
             for row in 0..frame.batch().num_rows() {
-                if self
-                    .cancel
-                    .as_ref()
-                    .is_some_and(nata_parquet::ScanCancel::is_cancelled)
-                {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Interrupted,
-                        "aggregate repartition cancelled",
-                    ));
-                }
                 let (key, state) = record(&frame, row, a, partition, depth, self.hash)?;
                 let size = replay::size(&key, &state)?;
                 if bytes + size > 24 << 10 {

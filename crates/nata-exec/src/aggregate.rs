@@ -20,6 +20,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const PARTITIONS: usize = 16;
+// Poll at entry to every batch/resume, and at most 1024 selected rows apart.
+const CANCEL_ROWS: usize = 1024;
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Atom {
     Null,
@@ -393,8 +395,9 @@ impl Partial {
             .aggregate
             .as_ref()
             .ok_or_else(|| EvalError::internal("aggregate missing"))?;
+        let start = evaluated.next;
         while let Some(&r) = evaluated.rows.get(evaluated.next) {
-            if cancelled() {
+            if (evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled() {
                 return Err(EvalError::at(nata_sql::Pos::NONE, "aggregate cancelled"));
             }
             let i = r as usize;
@@ -486,8 +489,8 @@ fn merge(
     tables.sort_by_key(|t| t.groups.len());
     let mut out = tables.pop().unwrap_or_else(Table::new);
     for mut table in tables {
-        for (key, states) in table.groups.drain() {
-            if cancelled() {
+        for (row, (key, states)) in table.groups.drain().enumerate() {
+            if row.is_multiple_of(CANCEL_ROWS) && cancelled() {
                 return Err(EvalError::at(nata_sql::Pos::NONE, "cancelled"));
             }
             if let Some(dest) = out.groups.get_mut(&key) {
@@ -501,8 +504,8 @@ fn merge(
         }
         out.grants.append(&mut table.grants);
     }
-    for states in out.groups.values_mut() {
-        if cancelled() {
+    for (row, states) in out.groups.values_mut().enumerate() {
+        if row.is_multiple_of(CANCEL_ROWS) && cancelled() {
             return Err(EvalError::at(nata_sql::Pos::NONE, "cancelled"));
         }
         for (s, a) in states.iter_mut().zip(&a.aggregates) {
@@ -806,6 +809,109 @@ pub(crate) fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn counting_partial() -> Partial {
+        use nata_sql::plan::{Project, Scan};
+        Partial {
+            shared: Arc::new(Shared {
+                plan: Arc::new(LogicalPlan {
+                    scan: Scan {
+                        pattern: String::new(),
+                        files: vec![],
+                        columns: vec![],
+                        pushed: vec![],
+                    },
+                    aggregate: Some(Aggregate {
+                        keys: vec![],
+                        aggregates: vec![AggregateExpr {
+                            name: "count".into(),
+                            arg: None,
+                            ty: SqlType::BigInt,
+                            pos: nata_sql::Pos::NONE,
+                        }],
+                        having: None,
+                    }),
+                    filter: None,
+                    project: Project { exprs: vec![] },
+                    limit: None,
+                }),
+                manager: MemoryManager::new(1 << 20, 4096, 1).expect("manager"),
+                metrics: Mutex::new(AggregateStats::default()),
+                hash: partition_hash,
+                force_collisions: false,
+            }),
+            tables: (0..PARTITIONS).map(|_| Table::new()).collect(),
+        }
+    }
+    fn counting_batch(n: u32) -> Evaluated {
+        let rows: Vec<_> = (0..n).collect();
+        Evaluated {
+            hashes: hashing::columns(&[], &rows),
+            rows,
+            keys: vec![],
+            args: vec![None],
+            next: 0,
+            _strings: None,
+        }
+    }
+    #[test]
+    fn partial_polls_at_batch_entry_and_bounded_intervals_in_large_batches() {
+        use std::cell::Cell;
+        let mut partial = counting_partial();
+        let calls = Cell::new(0);
+        let poll = || {
+            calls.set(calls.get() + 1);
+            false
+        };
+        for _ in 0..3 {
+            let mut batch = counting_batch(256);
+            assert!(partial.resume(&mut batch, &poll).expect("complete"));
+        }
+        assert_eq!(calls.get(), 3, "one cancel lock per ordinary batch");
+        let mut large = counting_batch(4097);
+        assert!(partial.resume(&mut large, &poll).expect("large"));
+        assert_eq!(calls.get(), 8, "bounded polling within large batches");
+        let mut large = counting_batch(4097);
+        // A continuation can resume after an arbitrary row, not just a multiple
+        // of CANCEL_ROWS. Entry still has to observe cancellation immediately.
+        large.next = 17;
+        assert!(partial.resume(&mut large, &|| true).is_err());
+        assert_eq!(large.next, 17);
+        let calls = Cell::new(0);
+        assert!(
+            partial
+                .resume(&mut large, &|| {
+                    calls.set(calls.get() + 1);
+                    calls.get() == 2
+                })
+                .is_err()
+        );
+        assert_eq!(large.next, 17 + CANCEL_ROWS, "cancel latency row bound");
+        let manager = Arc::clone(&partial.shared.manager);
+        drop(partial);
+        assert_eq!(manager.snapshot().held, 0);
+    }
+    #[test]
+    fn resident_finalization_also_polls_at_bounded_intervals() {
+        use std::cell::Cell;
+        let partial = counting_partial();
+        let a = partial.shared.plan.aggregate.as_ref().expect("aggregate");
+        let manager = MemoryManager::new(16 << 20, 4096, 1).expect("manager");
+        let mut table = Table::new();
+        for i in 0..4097 {
+            let key = vec![Atom::Int(i)];
+            table.reserve(&manager, &key, a).expect("reserve");
+            table.groups.insert(key, vec![State::Count(1)]);
+        }
+        let calls = Cell::new(0);
+        let out = merge(vec![table], a, &manager, &|| {
+            calls.set(calls.get() + 1);
+            false
+        })
+        .expect("merge");
+        assert_eq!(calls.get(), 5, "bounded finalization polling");
+        drop(out);
+        assert_eq!(manager.snapshot().held, 0);
+    }
     #[test]
     fn collision_equality_and_canonical_float_keys() {
         let mut groups = Groups::new();

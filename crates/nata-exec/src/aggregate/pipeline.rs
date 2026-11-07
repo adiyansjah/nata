@@ -653,12 +653,13 @@ fn merge_step(
                 task.row = 0;
                 task.ticket = None;
                 if task.frame.is_none() {
-                    for states in task.table.groups.values_mut() {
-                        if task
-                            .storage
-                            .cancel
-                            .as_ref()
-                            .is_some_and(ScanCancel::is_cancelled)
+                    for (row, states) in task.table.groups.values_mut().enumerate() {
+                        if row.is_multiple_of(CANCEL_ROWS)
+                            && task
+                                .storage
+                                .cancel
+                                .as_ref()
+                                .is_some_and(ScanCancel::is_cancelled)
                         {
                             return Err(cancel_error());
                         }
