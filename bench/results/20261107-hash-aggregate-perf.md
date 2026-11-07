@@ -1402,3 +1402,41 @@ load before each cell. c3d-highcpu-8 and n4a-highcpu-8, Spot; the ARM64 VM was p
   2.8-3.0x (target 2x); spill 9.4-13.7x (target 2x), almost untouched by step 2b (0.93-0.96x).
 - The same jobs reran the browse oracle with the PG15 fixes (`a956048`, `ba2df5a`): **59/59 PASS on both CPUs** against PostgreSQL
   15.19 (`browse-oracle-pg15-*.txt`).
+
+## Spill path profile on clean VMs (runs `spillprof-c3d`, `spillprof-n4a`, added by the parent, 2026-11-08)
+
+Purpose: replace guesses with measured shares before step 2d (the parent's estimate that spill "has the most room" rested on the size of
+the gap only). Main at `6932e88` plus the profile script (step 2b merged), SF1, `scripts/profile-spill-whole.sh` (high-cardinality query, 1 and 8
+threads, in memory and 64 MiB) and `scripts/profile-aggregate-perf1.py`, with `perf record -e cpu-clock -g` including kernel samples.
+c3d-highcpu-8 and n4a-highcpu-8, Spot, approved $0.09 + $0.15. Raw: `raw/20261108-hash-aggregate-spill-profile/`.
+
+**Tooling gaps.** `/usr/bin/time` is not on the Debian 12 image (wall/CPU split missing; the `spill-whole` step exits 1 for that
+reason only). On n4a ARM64, `perf` sampling is refused, so there are **no ARM64 profiles** (register R26).
+
+x86-64 shares by binary (self samples):
+
+| Cell | Nata | kernel | libc | Aggregate counters |
+|---|---:|---:|---:|---|
+| 1 thread, in memory | 60.6% | 13.7% | 25.8% | partial 1.69 s, merge 0.24 s |
+| 1 thread, 64 MiB | 42.6% | **36.8%** | 20.2% | 604 MB written, 692 MB read, **272 partitions**, recursion depth 1 |
+| 8 threads, in memory | 58.4% | 25.0% | 16.7% | partial 5.70 s (all workers), merge 1.12 s |
+| 8 threads, 64 MiB | 37.1% | **35.0%** | **27.4%** | 960 MB written, 1.22 GB read, **4,368 partitions**, recursion depth 2 |
+
+Top symbols, 1 thread at 64 MiB: kernel `_raw_spin_unlock_irqrestore` 8.8% and `syscall_enter_from_user_mode` 5.3% (wake-ups and
+syscalls), `replay::decode` collecting a `Vec<State>` per row 2.9% + 1.8%, `malloc` 1.8%, flatbuffers `TableVerifier`/`append_trace`
+2.3%, `std::sync::mpmc` `SyncWaker::notify` and the `MergeTask` channel 2.2%, `replay::encode` 1.1%. In memory: `State::finalize`
+6.5%, `Partial::resume` 6.5%, `hashing::key` 5.2%, `Groups::insert`/`find_row`/rehash 8.3%, libc allocation and page faults about 10%.
+
+**Findings for step 2d (measured, ordered by share):**
+1. The merge/replay path still hands every task through `mpmc` channels with a kernel wake-up, the same per-batch hand-off 2b/1
+   removed from the partial path.
+2. Partition fan-out: 272 to 4,368 partitions with recursive re-spilling write 6.7-10.7x the ~90 MB result; the fan-out is not sized
+   from the budget and the row count.
+3. Replay allocates per row (`Vec<State>` from an iterator) and decodes states row by row.
+4. Arrow IPC flatbuffer verification runs per small message; validation per file or per larger message keeps the reader's checks.
+5. In memory, allocation churn and `finalize` are about 20%.
+
+**Spike beside Nata (sanity only: load 3.2-3.6 when it ran, right after the builds).** The slice 3 arrow-pipeline spike's reduced Q1,
+end to end with Parquet decode: 151 ms (x86-64) and 129 ms (ARM64) at one thread; Nata's full Q1 on the same machine types was 1.234 s
+and 0.993 s in the settled 2b runs, DuckDB 0.226 s and 0.217 s. The reduced query computes fewer aggregates, so this bounds the design
+gap only loosely; a settled like-for-like run belongs to card 0008.

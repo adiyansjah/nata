@@ -1,0 +1,15 @@
+End to end (Parquet decode included) -- sanity only unless run on a quiet machine. load average at start: 3.63 3.04 1.44
+rounds: 7 (+1 warm-up); arms interleaved in rotating order: protocol, generic-ops, protocol-again (control); min / median ms; ratios are medians of paired per-round ratios [Q1, Q3]
+
+| query | threads | protocol ms | generic-ops ms | protocol / generic-ops [Q1, Q3] | control (protocol again / protocol) [Q1, Q3] |
+|---|---:|---|---|---|---|
+| q1 | 1 | 151 / 152 | 151 / 152 | 1.00 [0.99, 1.00] | 1.00 [1.00, 1.01] |
+| q1 | 2 | 77 / 78 | 77 / 78 | 1.00 [1.00, 1.01] | 1.00 [1.00, 1.00] |
+| q1 | 4 | 41 / 45 | 40 / 41 | 1.10 [1.09, 1.12] | 1.04 [1.03, 1.12] |
+| q1 | 8 | 32 / 33 | 31 / 31 | 1.05 [1.04, 1.07] | 1.03 [1.02, 1.04] |
+| q6 | 1 | 85 / 87 | 83 / 83 | 1.04 [1.02, 1.04] | 1.00 [0.98, 1.00] |
+| q6 | 2 | 44 / 44 | 43 / 43 | 1.03 [1.03, 1.03] | 1.00 [1.00, 1.00] |
+| q6 | 4 | 23 / 25 | 22 / 22 | 1.11 [1.03, 1.18] | 1.04 [0.99, 1.12] |
+| q6 | 8 | 17 / 18 | 16 / 16 | 1.13 [1.12, 1.16] | 1.00 [0.96, 1.06] |
+
+load average at end: 3.23 2.98 1.43

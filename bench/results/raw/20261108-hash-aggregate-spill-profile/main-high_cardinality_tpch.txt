@@ -1,0 +1,162 @@
+CPU-clock user self samples; sorted by share; no elapsed-time attribution.
+ 16.28%    139 nata_exec::aggregate::hashing::key
+  7.61%     65 <nata_exec::aggregate::Partial>::resume
+  5.74%     49 <nata_exec::aggregate::Groups>::insert
+  5.62%     48 <hashbrown::raw::RawTable<usize>>::reserve_rehash::<<nata_exec::aggregate::Groups>::try_reserve::{closure#0}>
+  5.50%     47 <nata_exec::aggregate::State>::finalize
+  4.10%     35 nata_exec::aggregate::batch
+  2.58%     22 malloc
+  2.46%     21 0x000000000009508b
+  2.22%     19 <nata_kernels::decimal::Decimal>::column
+  2.22%     19 0x000000000009633f
+  2.11%     18 cfree
+  1.76%     15 <nata_exec::aggregate::Groups>::find_row::{closure#0}
+  1.29%     11 __mprotect
+  1.29%     11 0x0000000000096c98
+  1.05%      9 <nata_kernels::aggregate::ExactSum>::decimal_sum
+  0.94%      8 <alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::is_valid
+  0.94%      8 <arrow_buffer::buffer::scalar::ScalarBuffer<f64>>::slice
+  0.94%      8 <arrow_buffer::buffer::scalar::ScalarBuffer<i128>>::slice
+  0.94%      8 <nata_sql::texpr::Expr>::children
+  0.94%      8 <snap::decompress::Decoder>::decompress
+  0.94%      8 nata_exec::aggregate::hashing::columns_into
+  0.82%      7 nata_parquet::csv::format_decimal
+  0.82%      7 nata_parquet::csv::push_field
+  0.82%      7 0x000000000016e0ba
+  0.70%      6 <hashbrown::raw::RawTable<usize>>::insert::<<nata_exec::aggregate::Groups>::insert::{closure#0}>
+  0.70%      6 <parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i32>
+  0.70%      6 0x0000000000095243
+  0.59%      5 nata_exec::aggregate::merge
+  0.59%      5 nata_parquet::csv::cell
+  0.59%      5 0x0000000000095091
+  0.47%      4 <alloc::sync::Arc<dyn arrow_array::array::Array>>::drop_slow
+  0.47%      4 <alloc::vec::Vec<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>), core::iter::adapters::take::Take<&mut alloc::vec::into_iter::IntoIter<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>>>>::from_iter
+  0.47%      4 <alloc::vec::Vec<nata_exec::aggregate::State> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::State, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, <nata_exec::aggregate::State>::new>>>::from_iter
+  0.47%      4 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::slice
+  0.47%      4 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as arrow_array::array::Array>::slice
+  0.47%      4 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::IntervalMonthDayNanoType> as arrow_array::array::Array>::is_valid
+  0.47%      4 <nata_exec::aggregate::Table>::reserve_bytes
+  0.47%      4 <nata_exec::aggregate::Table>::reserve_entry
+  0.47%      4 <nata_exec::eval::Evaluator>::eval
+  0.47%      4 <nata_exec::value::Col>::to_arrow
+  0.47%      4 <nata_kernels::aggregate::ExactSum>::add
+  0.47%      4 nata_kernels::aggregate::add_count
+  0.47%      4 nata_parquet::csv::format_decimal_typed
+  0.47%      4 realloc
+  0.47%      4 0x0000000000095196
+  0.47%      4 0x00000000000962d3
+  0.35%      3 <alloc::vec::Vec<nata_exec::aggregate::Atom> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::Atom, core::iter::adapters::map::Map<core::slice::iter::Iter<alloc::sync::Arc<nata_exec::value::Col>>, <nata_exec::aggregate::Partial>::resume::{closure#5}>>>::from_iter
+  0.35%      3 <alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter_map::FilterMap<core::ops::range::Range<usize>, <nata_exec::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter
+  0.35%      3 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type> as arrow_array::array::Array>::data_type
+  0.35%      3 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::is_valid
+  0.35%      3 <arrow_buffer::buffer::immutable::Buffer>::slice_with_length
+  0.35%      3 <nata_exec::output::ResultWriter<nata::sql::Out<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutLock>>>>::write_batch
+  0.35%      3 <nata_exec::value::Col>::read_arrow
+  0.35%      3 <u128>::_fmt_inner
+  0.35%      3 <usize>::_fmt
+  0.35%      3 __libc_calloc
+  0.35%      3 nata_exec::eval::arith_into
+  0.35%      3 0x0000000000096682
+  0.23%      2 <alloc::vec::Vec<i128> as core::clone::Clone>::clone
+  0.23%      2 <alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter::Filter<core::iter::adapters::copied::Copied<core::slice::iter::Iter<u32>>, <nata_exec::eval::Evaluator>::filter_rows::{closure#2}>>>::from_iter
+  0.23%      2 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as core::any::Any>::type_id
+  0.23%      2 <arrow_array::record_batch::RecordBatch>::slice
+  0.23%      2 <arrow_array::record_batch::RecordBatch>::try_from_iter::<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, alloc::string::String>
+  0.23%      2 <nata_exec::aggregate::Atom as core::slice::cmp::SlicePartialEq<nata_exec::aggregate::Atom>>::equal_same_length
+  0.23%      2 <nata_exec::aggregate::Atom>::get
+  0.23%      2 <parquet::arrow::record_reader::GenericRecordReader<alloc::vec::Vec<i64>, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type>>>::read_records
+  0.23%      2 __rustc::__rust_alloc
+  0.23%      2 __rustc::__rust_no_alloc_shim_is_unstable_v2
+  0.23%      2 __rustc::__rust_realloc
+  0.23%      2 core::ptr::drop_glue::<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>
+  0.23%      2 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.23%      2 nata_exec::aggregate::expression_slots
+  0.23%      2 nata_kernels::decimal::compare::<nata_exec::error::EvalError, nata_exec::eval::compare::{closure#0}>
+  0.23%      2 nata_parquet::filter::evaluate
+  0.23%      2 parquet::arrow::array_reader::primitive_array::coerce_i64
+  0.23%      2 parquet::util::bit_pack::unpack32::unpack::<12>
+  0.23%      2 0x00000000000961b5
+  0.23%      2 0x000000000016d835
+  0.23%      2 0x000000000016db75
+  0.12%      1 <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.12%      1 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.12%      1 <alloc::string::String as core::fmt::Write>::write_str
+  0.12%      1 <alloc::sync::Arc<[alloc::sync::Arc<arrow_schema::field::Field>]>>::drop_slow
+  0.12%      1 <alloc::sync::Arc<arrow_schema::schema::Schema>>::drop_slow
+  0.12%      1 <alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::len
+  0.12%      1 <alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)> as alloc::vec::spec_from_iter::SpecFromIter<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#10}>::{closure#6}::{closure#1}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>>>>::from_iter
+  0.12%      1 <alloc::vec::Vec<alloc::sync::Arc<dyn arrow_array::array::Array>> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<alloc::sync::Arc<dyn arrow_array::array::Array>, core::iter::adapters::map::Map<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, <arrow_array::array::struct_array::StructArray>::slice::{closure#0}>>>::from_iter
+  0.12%      1 <arrow_array::array::boolean_array::BooleanArray as core::convert::From<alloc::vec::Vec<bool>>>::from
+  0.12%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::null_count
+  0.12%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal64Type> as core::any::Any>::type_id
+  0.12%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::TimestampMicrosecondType> as arrow_array::array::Array>::is_valid
+  0.12%      1 <arrow_array::array::struct_array::StructArray as core::any::Any>::type_id
+  0.12%      1 <arrow_array::record_batch::RecordBatch>::try_from_iter::<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, alloc::string::String>
+  0.12%      1 <arrow_array::record_batch::RecordBatch>::try_new_impl
+  0.12%      1 <arrow_buffer::buffer::mutable::MutableBuffer>::new_null
+  0.12%      1 <arrow_data::data::ArrayDataBuilder>::build
+  0.12%      1 <arrow_schema::datatype::DataType as core::cmp::PartialEq>::eq
+  0.12%      1 <arrow_schema::schema::Schema>::index_of
+  0.12%      1 <arrow_schema::schema::Schema>::project
+  0.12%      1 <core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#10}>::{closure#6}::{closure#1}::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#10}>::{closure#6}::{closure#1}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>>>
+  0.12%      1 <core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <arrow_schema::schema::Schema>::project::{closure#0}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <arrow_schema::schema::Schema>::project::{closure#0}>, core::result::Result<core::convert::Infallible, arrow_schema::error::ArrowError>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<alloc::sync::Arc<arrow_schema::field::Field>, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>>>
+  0.12%      1 <i64 as alloc::string::SpecToString>::spec_to_string
+  0.12%      1 <nata_exec::aggregate::Partial>::recycle
+  0.12%      1 <nata_exec::aggregate::fusion::Program>::evaluate
+  0.12%      1 <nata_exec::eval::Evaluator>::filter_rows
+  0.12%      1 <nata_exec::value::Col>::from_arrow
+  0.12%      1 <nata_sched::memory::Chunks>::reserve
+  0.12%      1 <parquet::arrow::array_reader::struct_array::StructArrayReader as parquet::arrow::array_reader::ArrayReader>::consume_batch
+  0.12%      1 <parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int64Type> as parquet::column::reader::decoder::ColumnValueDecoder>::read
+  0.12%      1 <parquet::encodings::decoding::PlainDecoder<parquet::data_type::Int64Type> as parquet::encodings::decoding::Decoder<parquet::data_type::Int64Type>>::get
+  0.12%      1 <parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i64>
+  0.12%      1 __rustc::__rdl_alloc
+  0.12%      1 __rustc::__rdl_alloc_zeroed
+  0.12%      1 __rustc::__rust_dealloc
+  0.12%      1 alloc::fmt::format::format_inner
+  0.12%      1 core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type>>
+  0.12%      1 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.12%      1 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.12%      1 core::ptr::drop_glue::<arrow_schema::datatype::DataType>
+  0.12%      1 core::ptr::drop_glue::<nata_exec::value::Data>
+  0.12%      1 nata_exec::eval::literal_into
+  0.12%      1 nata_exec::exec::max_depth::depth
+  0.12%      1 parquet::util::bit_pack::unpack32::unpack::<4>
+  0.12%      1 0x0000000000094996
+  0.12%      1 0x0000000000095064
+  0.12%      1 0x000000000009509b
+  0.12%      1 0x00000000000950a7
+  0.12%      1 0x00000000000951ba
+  0.12%      1 0x0000000000095227
+  0.12%      1 0x0000000000096120
+  0.12%      1 0x0000000000096131
+  0.12%      1 0x000000000009618c
+  0.12%      1 0x00000000000961b9
+  0.12%      1 0x00000000000961d6
+  0.12%      1 0x0000000000096293
+  0.12%      1 0x00000000000962b4
+  0.12%      1 0x00000000000962b8
+  0.12%      1 0x00000000000965ce
+  0.12%      1 0x000000000009672c
+  0.12%      1 0x000000000009690c
+  0.12%      1 0x000000000009736d
+  0.12%      1 0x0000000000097385
+  0.12%      1 0x00000000000975b7
+  0.12%      1 0x00000000000975e5
+  0.12%      1 0x00000000000975ec
+  0.12%      1 0x0000000000097793
+  0.12%      1 0x00000000000978c1
+  0.12%      1 0x0000000000097947
+  0.12%      1 0x00000000000979df
+  0.12%      1 0x0000000000097afc
+  0.12%      1 0x0000000000097cd3
+  0.12%      1 0x0000000000097ce0
+  0.12%      1 0x000000000009839e
+  0.12%      1 0x000000000016d803
+  0.12%      1 0x000000000016d80f
+  0.12%      1 0x000000000016d85c
+  0.12%      1 0x000000000016d8b2
+  0.12%      1 0x000000000016d9be
+  0.12%      1 0x000000000016d9fd
+  0.12%      1 0x000000000016da04
+  0.12%      1 0x000000000016e046
