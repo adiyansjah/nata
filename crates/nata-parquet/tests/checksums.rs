@@ -181,6 +181,39 @@ fn every_flipped_byte_of_the_pages_of_a_checksummed_file_is_an_error_or_harmless
     );
 }
 
+/// R4's limit (card 0004, item B), pinned. A page CRC covers the payload of a page, not its header. In `checksummed_v2_zstd` the header of the second
+/// page of the first column (bytes 800..878) holds, in field 5 of the data page v2 header, `definition_levels_byte_length` (3). One flipped bit (byte 826,
+/// bit 3: 3 becomes 7) moves the split between the level bytes and the values inside a payload whose CRC still matches, and the file reads as other rows with
+/// the check ON. This is the case 16900 of the damaged-file fuzz (seed 20261107, shape `checksummed_v2_zstd`). A flipped bit inside the payload of the
+/// same page (byte 900) is an error with the check on.
+#[test]
+fn a_page_header_is_outside_the_page_checksum_but_its_payload_is_inside() {
+    let src = fixture("checksummed_v2_zstd");
+    let clean_bytes = std::fs::read(&src).expect("read");
+    let clean = scan_all(&src).expect("clean");
+    let dir = scratch("crc-header");
+    // the bytes are where the test says they are: the page header of the second page of column 0 starts at 800 and its payload (572 bytes) at 878
+    assert_eq!(&clean_bytes[800..804], &[0x15, 0x06, 0x15, 0xf8]);
+    let mut header = clean_bytes.clone();
+    header[826] ^= 0x08;
+    let p = dir.join("header.parquet");
+    std::fs::write(&p, &header).expect("write");
+    let got = scan_all(&p)
+        .expect("a damaged level length is not caught by a payload checksum, in any build");
+    assert_ne!(got.csv, clean.csv, "other rows, silently: R4's limit");
+
+    #[cfg(feature = "page-crc")]
+    {
+        let mut payload = clean_bytes.clone();
+        payload[900] ^= 0x08;
+        let q = dir.join("payload.parquet");
+        std::fs::write(&q, &payload).expect("write");
+        let e = scan_all(&q).expect_err("the payload checksum does not match");
+        assert!(matches!(e.kind, ErrorKind::Corrupt(_)), "{e}");
+        assert!(e.to_string().contains("CRC"), "{e}");
+    }
+}
+
 #[test]
 fn page_checksums_are_opt_in() {
     // Default builds omit verification; enabled test runs explicitly set NATA_CRC_BUILD=1.

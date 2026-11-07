@@ -6,10 +6,11 @@
 //!
 //! Plain Parquet pages have no checksum by default, so a flipped value byte can decode to a different valid value: outcomes are CLASSIFIED (error /
 //! same rows / different rows) and the counts are printed, not hidden. Three more shapes are files WRITTEN WITH page checksums (R4: `tests/fixtures/`, made by
-//! pyarrow; parquet-rs cannot write them): with the verification compiled in (opt-in cargo feature `page-crc`) the damage that stays inside the page region
-//! must never read as other rows (class 0); the damage that touches the footer is not covered by a page checksum and is counted apart. Built WITHOUT the
+//! pyarrow; parquet-rs cannot write them): with the verification compiled in (opt-in cargo feature `page-crc`) the damage that stays inside page PAYLOADS (the
+//! bytes a page CRC covers, found from the footer and the page headers) must never read as other rows (class 0). A page CRC does not cover the footer or a page header
+//! (sizes, encoding, and in a data page v2 the lengths of the level sections): such damage can read as other rows, and is counted apart (R4's limit, card 0004 item B). Built WITHOUT the
 //! feature (`--no-default-features`) the same damage MUST give a non-zero class: that is the known-bad build, the proof that this check can fail. `NATA_FUZZ_CASES` (default 3000 per shape), `NATA_FUZZ_SEED` (default
-//! 20261106); a failure prints `shape, case, seed` and the mutation, and `NATA_FUZZ_ONLY=<shape>:<case>` replays it.
+//! 20261106); a failure prints `shape, case, seed` and the mutation, and `NATA_FUZZ_ONLY=<shape>:<case>` replays it (`NATA_FUZZ_ONLY=<shape>` runs one whole shape).
 
 mod common;
 use common::faults::FaultOpener;
@@ -396,6 +397,116 @@ fn damage(clean: &[u8], rng: &mut Rng) -> (Vec<u8>, String) {
     (b, desc)
 }
 
+/// The bytes a page CRC covers in a clean file: the payload of every page (the compressed body after the page header), found from the footer's column
+/// chunk ranges and a walk over the page headers. A page header is NOT covered: it holds the sizes, the encoding and, in a data page v2, the lengths of
+/// the level sections (card 0004, item B: a flipped bit in `definition_levels_byte_length` read as other rows with the checksum on). `true` = covered.
+fn crc_covered_bytes(file: &[u8]) -> Vec<bool> {
+    use parquet::file::reader::FileReader;
+    use parquet::file::serialized_reader::SerializedFileReader;
+    let reader = SerializedFileReader::new(bytes::Bytes::copy_from_slice(file)).expect("footer");
+    let mut covered = vec![false; file.len()];
+    for rg in reader.metadata().row_groups() {
+        for col in rg.columns() {
+            let (start, len) = col.byte_range();
+            let (start, end) = (start as usize, (start + len) as usize);
+            let mut pos = start;
+            while pos < end {
+                let mut c = Compact { b: file, pos };
+                let size = c.page_header_compressed_size();
+                let payload_end = c.pos + size;
+                assert!(payload_end <= end, "page runs past its column chunk");
+                covered[c.pos..payload_end].fill(true);
+                pos = payload_end;
+            }
+        }
+    }
+    covered
+}
+
+/// Just enough of the Thrift compact protocol to walk a page header (a struct of integers and small nested structs).
+struct Compact<'a> {
+    b: &'a [u8],
+    pos: usize,
+}
+
+impl Compact<'_> {
+    fn byte(&mut self) -> u8 {
+        self.pos += 1;
+        self.b[self.pos - 1]
+    }
+    fn varint(&mut self) -> u64 {
+        let (mut v, mut shift) = (0u64, 0);
+        loop {
+            let c = self.byte();
+            v |= u64::from(c & 0x7f) << shift;
+            if c & 0x80 == 0 {
+                return v;
+            }
+            shift += 7;
+        }
+    }
+    fn skip(&mut self, ty: u8) {
+        match ty {
+            1 | 2 => {}                              // booleans are in the field type
+            3 => self.pos += 1,                      // byte
+            4..=6 => drop(self.varint()),            // i16, i32, i64
+            7 => self.pos += 8,                      // double
+            8 => self.pos += self.varint() as usize, // binary
+            9 | 10 => {
+                let h = self.byte();
+                let n = if h >> 4 == 15 {
+                    self.varint()
+                } else {
+                    u64::from(h >> 4)
+                };
+                for _ in 0..n {
+                    if h & 15 <= 2 {
+                        self.pos += 1;
+                    } else {
+                        self.skip(h & 15);
+                    }
+                }
+            }
+            12 => self.fields(&mut |_, _| false),
+            t => panic!("thrift type {t} in a page header"),
+        }
+    }
+    /// Walk a struct; `take(field id, type)` returns true when it consumed the field's value itself.
+    fn fields(&mut self, take: &mut dyn FnMut(&mut Self, i16) -> bool) {
+        let mut id = 0i16;
+        loop {
+            let h = self.byte();
+            if h == 0 {
+                return;
+            }
+            let (ty, delta) = (h & 15, h >> 4);
+            id = if delta == 0 {
+                let z = self.varint();
+                ((z >> 1) as i64 ^ -((z & 1) as i64)) as i16
+            } else {
+                id + i16::from(delta)
+            };
+            if !take(self, id) {
+                self.skip(ty);
+            }
+        }
+    }
+    /// Reads a page header at `pos`, leaves `pos` after it, returns `compressed_page_size` (field 3).
+    fn page_header_compressed_size(&mut self) -> usize {
+        let mut size = None;
+        self.fields(&mut |c, id| {
+            if id == 3 {
+                let z = c.varint();
+                size = Some(((z >> 1) as i64 ^ -((z & 1) as i64)) as usize);
+                true
+            } else {
+                false
+            }
+        });
+        size.expect("compressed_page_size")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Result_ {
     Rows(String),
@@ -505,10 +616,14 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(3000);
-    let only: Option<(String, usize)> = std::env::var("NATA_FUZZ_ONLY").ok().and_then(|v| {
-        let (s, c) = v.split_once(':')?;
-        Some((s.to_string(), c.parse().ok()?))
-    });
+    // `<shape>:<case>` replays one case; `<shape>` alone runs every case of that shape (the cases do not depend on which shapes run).
+    let only: Option<(String, Option<usize>)> =
+        std::env::var("NATA_FUZZ_ONLY")
+            .ok()
+            .map(|v| match v.split_once(':') {
+                Some((s, c)) => (s.to_string(), c.parse().ok()),
+                None => (v, None),
+            });
     eprintln!(
         "fuzz: seed {seed}, {cases} cases per shape, {} shapes, 1 and 4 threads (replay: NATA_FUZZ_SEED={seed} NATA_FUZZ_ONLY=<shape>:<case>)",
         SHAPES.len()
@@ -557,6 +672,13 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
         let (mut errors, mut same, mut different, mut panics) = (0usize, 0usize, 0usize, 0usize);
         // different rows when the damage stayed inside the page region (the bytes between the leading magic and the footer, the length unchanged)
         let mut different_in_pages = 0usize;
+        // of those, in a checksummed file: damage only in page payloads (what a page CRC covers), and damage that touches a page header (what it does not)
+        let (mut different_in_payload, mut different_in_headers) = (0usize, 0usize);
+        let covered = if name.starts_with("checksummed_") {
+            crc_covered_bytes(&clean)
+        } else {
+            vec![]
+        };
         let footer_start = {
             let len = clean.len();
             let fl =
@@ -564,7 +686,10 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
             len.saturating_sub(8 + fl).max(4)
         };
         for case in 0..cases {
-            if only.as_ref().is_some_and(|(s, c)| s != name || *c != case) {
+            if only
+                .as_ref()
+                .is_some_and(|(s, c)| s != name || c.is_some_and(|c| c != case))
+            {
                 continue;
             }
             let mut rng = Rng(seed
@@ -653,16 +778,33 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
                         && changed.iter().all(|i| (4..footer_start).contains(i));
                     if in_pages {
                         different_in_pages += 1;
-                        if name.starts_with("checksummed_") && cfg!(feature = "page-crc") {
-                            panic!(
-                                "{what}: damage inside the page region of a checksummed file read as other rows"
-                            );
+                        if name.starts_with("checksummed_") {
+                            if changed.iter().all(|i| covered[*i]) {
+                                different_in_payload += 1;
+                                if cfg!(feature = "page-crc") {
+                                    panic!(
+                                        "{what}: damage inside the page payloads of a checksummed file (bytes the page CRC covers) read as other rows"
+                                    );
+                                }
+                            } else {
+                                // a page header (or the bytes between pages) changed: the CRC does not cover it, so this is R4's limit, counted apart
+                                different_in_headers += 1;
+                            }
                         }
                     }
                 }
             }
         }
-        table.push((name, errors, same, different, panics, different_in_pages));
+        table.push((
+            name,
+            errors,
+            same,
+            different,
+            panics,
+            different_in_pages,
+            different_in_payload,
+            different_in_headers,
+        ));
     }
     // a joined thread leaves /proc a moment after its join returns (seen once under heavy load: 3 threads against 2): wait a little before judging
     let leave_by = std::time::Instant::now() + Duration::from_secs(5);
@@ -677,38 +819,39 @@ fn damaged_files_never_panic_hang_leak_or_leak_a_value() {
     eprintln!(
         "fuzz outcome classes per shape (cases = error + caught dependency panic + same rows + different rows; each case ran at 1 and 4 threads with identical outcomes):"
     );
-    for (n, e, s, d, p, dp) in &table {
+    for (n, e, s, d, p, dp, dpay, dhdr) in &table {
         eprintln!(
-            "  {n:<28} error {e:>5}   caught panic {p:>4}   same rows {s:>5}   different rows {d:>5} (damage inside the pages: {dp:>5})   total {}",
+            "  {n:<28} error {e:>5}   caught panic {p:>4}   same rows {s:>5}   different rows {d:>5} (damage inside the pages: {dp:>5}; of those, payload bytes only {dpay:>5}, touching a page header {dhdr:>5})   total {}",
             e + s + d + p
         );
     }
-    let total: usize = table.iter().map(|(_, e, s, d, p, _)| e + s + d + p).sum();
+    let total: usize = table.iter().map(|(_, e, s, d, p, ..)| e + s + d + p).sum();
     let panics: usize = table.iter().map(|t| t.4).sum();
     eprintln!(
         "fuzz total: {total} cases, {} scans; {panics} cases hit a panic inside a dependency that the task boundary caught",
         total * 2
     );
     if only.is_none() {
-        for (n, e, _, _, p, _) in &table {
+        for (n, e, _, _, p, ..) in &table {
             assert!(
                 *e + *p > 0,
                 "{n}: the damage never produced an error: the fuzz is not biting"
             );
         }
-        // R4. With the verification: no checksummed file read as other rows after damage inside its pages (asserted case by case above). Without it
-        // (the known-bad build) the same damage MUST read as other rows in some case, or this check could not fail.
-        let pages_other_rows: usize = table
+        // R4. With the verification: no checksummed file read as other rows after damage that stays inside page PAYLOADS, the bytes a page CRC covers
+        // (asserted case by case above). Damage that touches a page header is outside the CRC and is only counted. Without the verification (the
+        // known-bad build) the same payload damage MUST read as other rows in some case, or this check could not fail.
+        let payload_other_rows: usize = table
             .iter()
             .filter(|t| t.0.starts_with("checksummed_"))
-            .map(|t| t.5)
+            .map(|t| t.6)
             .sum();
         if cfg!(feature = "page-crc") {
-            assert_eq!(pages_other_rows, 0);
+            assert_eq!(payload_other_rows, 0);
         } else {
             assert!(
-                pages_other_rows > 0,
-                "without the page checksum the damage inside pages must sometimes read as other rows (it did not in {cases} cases per shape)"
+                payload_other_rows > 0,
+                "without the page checksum the damage inside page payloads must sometimes read as other rows (it did not in {cases} cases per shape)"
             );
         }
     }
