@@ -1,6 +1,6 @@
 # 0009: Query memory budgets, fair shares and spill requests
 
-Status: proposed
+Status: accepted (by the owner, 2026-11-07, with card 0005); its default sizes are frozen only after the walking skeleton measures them (card 0005 part 3, decision 4)
 Date: 2026-11-07
 
 ## Context

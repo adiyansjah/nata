@@ -1,10 +1,10 @@
 # 0005: Hash aggregate with spill; GROUP BY, HAVING, common aggregates
 
-Status: draft
+Status: accepted (by the owner, 2026-11-07, with the five decisions in part 3, "Owner decisions")
 Date: 2026-11-07
 ADRs: 0001–0004, 0006–0008 (relies on); proposes [0009](../decisions/0009-query-memory-manager.md) and [0010](../decisions/0010-hash-aggregation.md)
 
-Rule: [way of working §2](../way-of-working.md). Slice 5 of the feature map; implementation waits for card 0004's deep-check closeout and acceptance of this card and its decisions. This draft accepts nothing and authorizes no cloud runs.
+Rule: [way of working §2](../way-of-working.md). Slice 5 of the feature map. Accepted 2026-11-07; implementation (the walking skeleton onward) waits for card 0004's deep-check closeout. The baseline spike and the reference runs of part 4 may start now. Cloud runs follow §8 (heavy runs on Spot VMs sized to the work, local trial first, planner worst case shown; costs accepted by the owner).
 
 ## 1. Goal
 
@@ -30,7 +30,7 @@ WHERE l_shipdate <= DATE '1998-09-02'
 GROUP BY l_orderkey HAVING count(*) > 1;
 ```
 
-Proposed strict contract: [ADR 0010](../decisions/0010-hash-aggregation.md) specifies types and phase order. `SUM(INTEGER)` (also other signed integers) is `DECIMAL(38,0)`; `SUM(DECIMAL(p,s))` is `DECIMAL(38,s)`. Decimal `AVG` follows [decimal-rules §8](../decimal-rules.md#8-functions-and-aggregates); integer `AVG` uses that formula with the integer's decimal precision (INTEGER: `DECIMAL(16,6)`, BIGINT: `DECIMAL(25,6)`). Counts are non-NULL `BIGINT`; MIN/MAX retain their input type. Overflow is an error; partial sums cannot overflow merely because merge order changes. NULL keys group together; aggregates ignore NULL arguments, except `COUNT(*)` counts every row. Empty global input produces one row (counts zero, others NULL); empty grouped input produces none. HAVING retains TRUE only, after merging all partial states.
+Proposed strict contract: [ADR 0010](../decisions/0010-hash-aggregation.md) specifies types and phase order. `SUM` of TINYINT/SMALLINT/INTEGER is `BIGINT` and `SUM(BIGINT)` is `DECIMAL(38,0)` (PostgreSQL's rule; overflow of either is an error); `SUM(DECIMAL(p,s))` is `DECIMAL(38,s)`. Decimal `AVG` follows [decimal-rules §8](../decimal-rules.md#8-functions-and-aggregates); integer `AVG` uses that formula with the integer's decimal precision (INTEGER: `DECIMAL(16,6)`, BIGINT: `DECIMAL(25,6)`). Counts are non-NULL `BIGINT`; MIN/MAX retain their input type. Overflow is an error; partial sums cannot overflow merely because merge order changes. NULL keys group together; aggregates ignore NULL arguments, except `COUNT(*)` counts every row. Empty global input produces one row (counts zero, others NULL); empty grouped input produces none. HAVING retains TRUE only, after merging all partial states.
 
 Not supported yet: DISTINCT aggregates (including count distinct, proposed for slice 9's DISTINCT work), aggregate FILTER/ORDER BY, nested aggregates, float SUM/AVG, GROUP BY ALL/ordinals/aliases, grouping sets/ROLLUP/CUBE, windows, joins and subqueries. Ungrouped column references are bind errors; unsupported constructs get positioned `not supported yet: <what>`. No ordering is promised for aggregate results, including LIMIT; scan-only order remains unchanged. The owner/parent must decide this scope cut, integer types and grouped ordering, the proposed memory/disk defaults and bounded spill/I/O design. Acceptance precedes implementation; dialect documentation follows, with no edits to accepted ADRs in this planning task.
 
@@ -52,6 +52,13 @@ All new numeric budgets below are **targets**, not observations. Performance/res
 | Operability | EXPLAIN shows partial aggregate → partition/final aggregate → HAVING → project/limit; ANALYZE adds input/groups, phase time, peak grants, spill bytes/files/depth and waits. Seed/query/config replays every failure | Golden plans/reports, counter invariants and planted-failure replay; zero counters must distinguish no spill from an uninstrumented path | Existing `nata-exec` explain/report; spike spill counters |
 
 ## 3. Decision rules (fixed before measuring)
+
+**Owner decisions (2026-11-07, accepting the parent's recommendations):**
+1. **Integer `SUM` and `AVG` types:** `SUM` of TINYINT/SMALLINT/INTEGER is `BIGINT`, `SUM(BIGINT)` is `DECIMAL(38,0)`, as in PostgreSQL; overflow is an error. `AVG` of integers is an exact `DECIMAL` (the decimal-rules formula with the integer's decimal precision), never a float. Every difference from DuckDB is listed in `docs/dialect.md` and held by `check/queries/sql-differences`.
+2. **Row order:** grouped output without `ORDER BY` is unordered. The dialect says so, and the differential check compares grouped results as multisets.
+3. **`COUNT(DISTINCT …)` and other DISTINCT aggregates:** not supported yet in this slice (a positioned `not supported yet`); they come with slice 9's DISTINCT work.
+4. **Default memory budget:** ADR 0009's starting rule (half of the smaller of physical memory and the cgroup limit, divided by the admitted queries). It is measured in the walking skeleton and frozen with its numbers before closeout.
+5. **Spill format:** the part 4 baseline spike decides: Arrow IPC, unless it cannot bound reads and allocations, in which case a small explicit record format. The rule is fixed in part 3.
 
 - **Semantics and bounds win:** every correctness, cleanup and bound check passes in memory and forced-spill modes, or the slice stays open. No budget expansion, FLOAT fallback or per-worker multiplication of B to obtain a pass. An input below the minimum working grant fails clearly; the declared small-budget fixtures must succeed.
 - **References before Nata:** freeze provisional rows from part 4's matching reference measurements, with owner/parent acceptance, before timing Nata. After that, report the rule, numbers, verdict and reproduce command for every row; a miss stays a miss/deviation, never a retroactive threshold. Unsettled/noisy cells are unresolved, not passes.

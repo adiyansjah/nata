@@ -1,6 +1,6 @@
 # 0010: Parallel exact hash aggregation and partitioned spill
 
-Status: proposed
+Status: accepted (by the owner, 2026-11-07, with card 0005; amended as noted)
 Date: 2026-11-07
 
 ## Context
@@ -20,7 +20,8 @@ Propose the following extension; existing accepted ADRs/dialect pages are unchan
 
 | Aggregate input | Result (proposed where integer/count rules were open) |
 |---|---|
-| SUM of TINYINT/SMALLINT/INTEGER/BIGINT | `DECIMAL(38,0)`, exact integer value; INTEGER does not keep its narrow input range |
+| SUM of TINYINT/SMALLINT/INTEGER | `BIGINT` (PostgreSQL's rule; overflow is an error) |
+| SUM of BIGINT | `DECIMAL(38,0)`, exact integer value |
 | SUM of DECIMAL(p,s) | `DECIMAL(38,s)`, [decimal-rules §8](../decimal-rules.md#8-functions-and-aggregates) |
 | AVG of DECIMAL(p,s) | `S=min(s+6,38-(p-s))`, `P=(p-s)+S`; `DECIMAL(P,S)`, exact sum/count, half away from zero |
 | AVG of signed integers | Apply the same formula to decimal precisions 3/5/10/19, scale 0; INTEGER → `DECIMAL(16,6)`, BIGINT → `DECIMAL(25,6)` |
@@ -71,3 +72,7 @@ Aggregation adds a real breaker/dependent-source path and memory service, not ju
 ## Revisit when
 
 The baseline rejects bounded IPC or reuse tables, exact-wide helpers fail their oracle, skew exhausts the depth budget on a supported workload, profiles meet the custom-replacement rule, or slices 6–8 need a different spill record or scheduling interface.
+
+## Amendments
+
+- 2026-11-07, at acceptance (owner): SUM of TINYINT/SMALLINT/INTEGER is `BIGINT` and SUM of BIGINT is `DECIMAL(38,0)`, as in PostgreSQL, instead of the proposed `DECIMAL(38,0)` for every integer. AVG of integers stays an exact DECIMAL. Grouped output is unordered without ORDER BY. DISTINCT aggregates wait for slice 9. Card 0005 part 3 records the decisions.
