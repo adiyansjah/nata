@@ -1,0 +1,194 @@
+diff --git a/crates/nata-exec/src/aggregate/pipeline.rs b/crates/nata-exec/src/aggregate/pipeline.rs
+index a12b417..5b810da 100644
+--- a/crates/nata-exec/src/aggregate/pipeline.rs
++++ b/crates/nata-exec/src/aggregate/pipeline.rs
+@@ -179,6 +179,7 @@ pub(super) fn accumulate(
+     let mut tasks = VecDeque::new();
+     let failure: Mutex<Option<(usize, ScanError)>> = Mutex::new(None);
+     let mut decode_bytes = 64 << 10;
++    let mut large_decode_bytes = 64 << 10;
+     for f in 0..scan.file_count() {
+         let file = match scan.open_file(f) {
+             Ok(file) => file,
+@@ -202,6 +203,11 @@ pub(super) fn accumulate(
+                     .and_then(|n| n.checked_add(expression_bytes))
+                     .ok_or_else(|| scan_error("scan minimum working set overflow"))?,
+             );
++            large_decode_bytes = large_decode_bytes.max(
++                task.cursor_bytes(1024)
++                    .and_then(|n| n.checked_add(expression_bytes))
++                    .unwrap_or(usize::MAX),
++            );
+             tasks.push_back((tasks.len(), task));
+         }
+     }
+@@ -263,6 +269,16 @@ pub(super) fn accumulate(
+         .min(32)
+         .min((free.saturating_sub(1 << 20) / task_bytes.max(1)).max(1))
+         .max(1);
++    // Determine admission with the unchanged 256-row minimum first. Use spare
++    // capacity only if every already-admitted task fits its larger decode grant.
++    let large_task_bytes =
++        large_decode_bytes.saturating_add(if has_strings { Scratch::MINIMUM } else { 0 });
++    let batch_rows = if large_task_bytes.saturating_mul(n).saturating_add(1 << 20) <= free {
++        decode_bytes = large_decode_bytes;
++        1024
++    } else {
++        256
++    };
+     let tasks = Mutex::new(tasks);
+     let mut states = Vec::new();
+     for _ in 0..n {
+@@ -443,7 +459,7 @@ pub(super) fn accumulate(
+                             return Ok(Step::Done(Ok(empty_tables())));
+                         }
+                         state.source = Some((index, task.path().to_path_buf(), task.row_group()));
+-                        state.cursor = Some(task.cursor(256)?);
++                        state.cursor = Some(task.cursor_chunked(batch_rows, 256)?);
+                     }
+                     if let Some(cursor) = &mut state.cursor {
+                         if let Some(batch) = cursor.next_batch()? {
+diff --git a/crates/nata-exec/tests/aggregate_spill.rs b/crates/nata-exec/tests/aggregate_spill.rs
+index 4bfc074..9d4b387 100644
+--- a/crates/nata-exec/tests/aggregate_spill.rs
++++ b/crates/nata-exec/tests/aggregate_spill.rs
+@@ -441,3 +441,49 @@ fn forced_spill_flushes_each_decoded_batch_inside_a_morsel() {
+     empty(&base);
+     std::fs::remove_dir_all(d).expect("cleanup");
+ }
++
++#[test]
++fn decode_batch_growth_preserves_argument_error_positions_before_having() {
++    let d = dir("spill-decode-error-phase");
++    let p = d.join("t.parquet");
++    let values: ArrayRef = Arc::new(Int32Array::from_iter_values(0..1025));
++    write_batch(
++        &p,
++        &RecordBatch::try_from_iter([("id", values)]).expect("batch"),
++        1025,
++    );
++    // The first argument fails in a later original 256-row span. The second
++    // fails in the first span, even though the larger decode reads both at once.
++    // A pushed predicate compacts each span; chunking after it would be wrong.
++    let sql = format!(
++        "SELECT sum(1 // (256-id)), sum(1 // id) FROM '{}' WHERE id <> 1 HAVING false LIMIT 0",
++        p.display()
++    );
++    let planned = plan_sql(&sql, &FsSource).expect("plan");
++    let expected = planned
++        .plan
++        .aggregate
++        .as_ref()
++        .expect("aggregate")
++        .aggregates[1]
++        .arg
++        .as_ref()
++        .expect("arg")
++        .pos;
++    let mut cfg = ExecConfig::new(1);
++    cfg.aggregate_memory_bytes = Some(8 << 30);
++    let mut observed = Observed::default();
++    let error = execute_observed(
++        Arc::new(planned.plan),
++        &cfg,
++        None,
++        &mut observed,
++        |_| Ok(()),
++    )
++    .expect_err("division");
++    let nata_parquet::ErrorKind::Eval { line, column, .. } = error.kind else {
++        panic!("{error:?}")
++    };
++    assert_eq!((line, column), (expected.line, expected.col));
++    std::fs::remove_dir_all(d).expect("cleanup");
++}
+diff --git a/crates/nata-parquet/src/reader.rs b/crates/nata-parquet/src/reader.rs
+index d79ade8..e43f429 100644
+--- a/crates/nata-parquet/src/reader.rs
++++ b/crates/nata-parquet/src/reader.rs
+@@ -1334,6 +1334,8 @@ pub struct RowGroupCursor {
+     _open: Counted,
+     _guard: Option<Box<dyn Send + Sync>>,
+     done: bool,
++    pending: Option<RecordBatch>,
++    output_rows: usize,
+ }
+ impl RowGroupTask {
+     /// Conservative compressed/decode/evaluation allowance, checked before the
+@@ -1367,6 +1369,15 @@ impl RowGroupTask {
+             .checked_add(64 << 10)
+     }
+     pub fn cursor(&self, batch_rows: usize) -> Result<RowGroupCursor, ScanError> {
++        self.cursor_chunked(batch_rows, batch_rows)
++    }
++    /// Decode larger Arrow batches while retaining bounded pre-filter chunks.
++    /// The caller must reserve `cursor_bytes(batch_rows)` before construction.
++    pub fn cursor_chunked(
++        &self,
++        batch_rows: usize,
++        output_rows: usize,
++    ) -> Result<RowGroupCursor, ScanError> {
+         guarded(&self.file.path, Some(self.row_group), || {
+             let f = &self.file;
+             if f.ctx.map.is_some() || f.ctx.sink.is_some() {
+@@ -1408,6 +1419,8 @@ impl RowGroupTask {
+                 _open: Counted::new(&f.ctx.stats.handles),
+                 _guard,
+                 done: false,
++                pending: None,
++                output_rows: output_rows.max(1),
+             })
+         })
+     }
+@@ -1419,25 +1432,33 @@ impl RowGroupCursor {
+         let task = self.task.clone();
+         guarded(&task.file.path, Some(task.row_group), || {
+             let f = &task.file;
+-            let Some(batch) = self.reader.next() else {
+-                if self.rows != task.rows() {
+-                    return Err(ScanError::new(ErrorKind::Corrupt(
+-                        "cursor row count differs from footer".into(),
+-                    ))
+-                    .in_file(&f.path)
+-                    .in_row_group(task.row_group));
+-                }
+-                if !self.done {
+-                    ScanStats::add(&f.ctx.stats.row_groups_read, 1);
+-                }
+-                self.done = true;
+-                return Ok(None);
++            let batch = if let Some(batch) = self.pending.take() {
++                batch
++            } else {
++                let Some(batch) = self.reader.next() else {
++                    if self.rows != task.rows() {
++                        return Err(ScanError::new(ErrorKind::Corrupt(
++                            "cursor row count differs from footer".into(),
++                        ))
++                        .in_file(&f.path)
++                        .in_row_group(task.row_group));
++                    }
++                    if !self.done {
++                        ScanStats::add(&f.ctx.stats.row_groups_read, 1);
++                    }
++                    self.done = true;
++                    return Ok(None);
++                };
++                batch.map_err(|e| {
++                    ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
++                        .in_file(&f.path)
++                        .in_row_group(task.row_group)
++                })?
+             };
+-            let batch = batch.map_err(|e| {
+-                ScanError::new(ErrorKind::Corrupt(redact(&e.to_string())))
+-                    .in_file(&f.path)
+-                    .in_row_group(task.row_group)
+-            })?;
++            let rows = batch.num_rows().min(self.output_rows);
++            self.pending =
++                (rows < batch.num_rows()).then(|| batch.slice(rows, batch.num_rows() - rows));
++            let batch = batch.slice(0, rows);
+             self.rows += batch.num_rows() as u64;
+             if !column_types_are_as_requested(&batch, &f.read_columns) {
+                 return Err(ScanError::new(ErrorKind::Internal(

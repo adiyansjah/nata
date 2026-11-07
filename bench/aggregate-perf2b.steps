@@ -1,5 +1,8 @@
 # Parent only: settled SF1, separately on c3d-highcpu-8 and n4a-highcpu-8.
 # Locally prepare --baseline 838e394 --fix perf2b=HEAD --bundle .aggregate-perf2b-inputs.
+# Candidate: retained 2b/1, capped small-group lookup (2b/3), and shared arguments/buffers (2b/4).
+# Rejected 2b/2 i64 lanes and 2b/5 larger decoding are evidence only.
+# Local timings are unsettled; this job provides the independent settled comparison.
 # No GCP identifiers or credentials belong in this file.
 prepare mkdir -p "$WORK/aggregate-perf2b/tmp"
 fixtures rm -rf "$WORK/aggregate-perf2b-sf1" && TMPDIR="$WORK/aggregate-perf2b/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2b-sf1"

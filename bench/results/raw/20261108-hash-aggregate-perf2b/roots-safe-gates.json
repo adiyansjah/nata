@@ -1,0 +1,350 @@
+[
+  {
+    "query": "q1",
+    "threads": 1,
+    "arm": "before",
+    "rows": 4,
+    "seconds": 2.008823451003991,
+    "load": [
+      2.25927734375,
+      2.0322265625,
+      2.38330078125
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1988690022,
+      "merge_ns": 13841,
+      "partial_groups": 4,
+      "largest_partial": 4,
+      "rehashes": 3,
+      "reservation_calls": 26,
+      "reservation_releases": 26,
+      "memory_lock_wait_ns": 6445,
+      "peak_reservation": 31564535,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "arm": "after",
+    "rows": 4,
+    "seconds": 1.8668811499956064,
+    "load": [
+      2.158203125,
+      2.0146484375,
+      2.37548828125
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1846878189,
+      "merge_ns": 16283,
+      "partial_groups": 4,
+      "largest_partial": 4,
+      "rehashes": 3,
+      "reservation_calls": 26,
+      "reservation_releases": 26,
+      "memory_lock_wait_ns": 4662,
+      "peak_reservation": 31564535,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "arm": "control",
+    "rows": 4,
+    "seconds": 1.9656283109798096,
+    "load": [
+      2.158203125,
+      2.0146484375,
+      2.37548828125
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1946825840,
+      "merge_ns": 18021,
+      "partial_groups": 4,
+      "largest_partial": 4,
+      "rehashes": 3,
+      "reservation_calls": 26,
+      "reservation_releases": 26,
+      "memory_lock_wait_ns": 5121,
+      "peak_reservation": 31564535,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "arm": "before",
+    "rows": 4,
+    "seconds": 0.5708910170360468,
+    "load": [
+      1.64501953125,
+      1.90087890625,
+      2.3232421875
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3521024271,
+      "merge_ns": 47149,
+      "partial_groups": 32,
+      "largest_partial": 4,
+      "rehashes": 24,
+      "reservation_calls": 61,
+      "reservation_releases": 61,
+      "memory_lock_wait_ns": 11328,
+      "peak_reservation": 152269938,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "arm": "after",
+    "rows": 4,
+    "seconds": 0.4929795949719846,
+    "load": [
+      1.64501953125,
+      1.90087890625,
+      2.3232421875
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3211471779,
+      "merge_ns": 447956,
+      "partial_groups": 32,
+      "largest_partial": 4,
+      "rehashes": 24,
+      "reservation_calls": 61,
+      "reservation_releases": 61,
+      "memory_lock_wait_ns": 9240,
+      "peak_reservation": 152269938,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "arm": "control",
+    "rows": 4,
+    "seconds": 0.5368567690020427,
+    "load": [
+      1.64501953125,
+      1.90087890625,
+      2.3232421875
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3343931101,
+      "merge_ns": 46847,
+      "partial_groups": 32,
+      "largest_partial": 4,
+      "rehashes": 24,
+      "reservation_calls": 61,
+      "reservation_releases": 61,
+      "memory_lock_wait_ns": 61992,
+      "peak_reservation": 152269938,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "arm": "before",
+    "rows": 1273748,
+    "seconds": 3.838543036952615,
+    "load": [
+      2.2001953125,
+      2.03173828125,
+      2.35595703125
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1899898158,
+      "merge_ns": 307743755,
+      "partial_groups": 1493405,
+      "largest_partial": 1493405,
+      "rehashes": 256,
+      "reservation_calls": 1344,
+      "reservation_releases": 1344,
+      "memory_lock_wait_ns": 191777,
+      "peak_reservation": 1554499699,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "arm": "after",
+    "rows": 1273748,
+    "seconds": 3.9118134810123593,
+    "load": [
+      1.93359375,
+      1.98046875,
+      2.333984375
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1797219359,
+      "merge_ns": 318021451,
+      "partial_groups": 1493405,
+      "largest_partial": 1493405,
+      "rehashes": 256,
+      "reservation_calls": 1344,
+      "reservation_releases": 1344,
+      "memory_lock_wait_ns": 189949,
+      "peak_reservation": 1554499699,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "arm": "control",
+    "rows": 1273748,
+    "seconds": 3.791575642011594,
+    "load": [
+      1.72607421875,
+      1.931640625,
+      2.31201171875
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 1829435877,
+      "merge_ns": 354855971,
+      "partial_groups": 1493405,
+      "largest_partial": 1493405,
+      "rehashes": 256,
+      "reservation_calls": 1344,
+      "reservation_releases": 1344,
+      "memory_lock_wait_ns": 191839,
+      "peak_reservation": 1554499699,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "arm": "before",
+    "rows": 1273748,
+    "seconds": 2.815870482008904,
+    "load": [
+      1.236328125,
+      1.7255859375,
+      2.2021484375
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3878113744,
+      "merge_ns": 1501161625,
+      "partial_groups": 1493439,
+      "largest_partial": 213485,
+      "rehashes": 1664,
+      "reservation_calls": 2591,
+      "reservation_releases": 2591,
+      "memory_lock_wait_ns": 458410,
+      "peak_reservation": 2837635946,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "arm": "after",
+    "rows": 1273748,
+    "seconds": 3.0756981619633734,
+    "load": [
+      1.18359375,
+      1.689453125,
+      2.181640625
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3920578656,
+      "merge_ns": 1729538669,
+      "partial_groups": 1493439,
+      "largest_partial": 213485,
+      "rehashes": 1664,
+      "reservation_calls": 2591,
+      "reservation_releases": 2591,
+      "memory_lock_wait_ns": 565386,
+      "peak_reservation": 2837635946,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "arm": "control",
+    "rows": 1273748,
+    "seconds": 2.8917187830084004,
+    "load": [
+      1.14208984375,
+      1.65478515625,
+      2.16259765625
+    ],
+    "exit": 0,
+    "counters": {
+      "partial_ns": 3877181473,
+      "merge_ns": 1643393377,
+      "partial_groups": 1493439,
+      "largest_partial": 213705,
+      "rehashes": 1664,
+      "reservation_calls": 2589,
+      "reservation_releases": 2589,
+      "memory_lock_wait_ns": 582640,
+      "peak_reservation": 2837421866,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  }
+]

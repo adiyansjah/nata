@@ -1,0 +1,29 @@
+   Compiling nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-1f6d37ff/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-1f6d37ff/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-1f6d37ff/crates/nata-exec)
+    Finished `release` profile [optimized] target(s) in 17.54s
+     Running tests/aggregate_spill.rs (/home/dev/perf2b/target/release/deps/aggregate_spill-fc9a4114e00022fa)
+
+running 13 tests
+test a_hot_string_group_coalesces_without_recursive_repartition ... ok
+test an_earlier_argument_error_wins_over_a_later_file_schema_error ... ok
+test cancel_during_spill_joins_io_and_removes_every_file ... ok
+test decode_batch_growth_preserves_argument_error_positions_before_having ... ok
+test dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget ... ok
+test disk_quota_error_is_clear_and_query_cleanup_is_complete ... ok
+test forced_spill_flushes_each_decoded_batch_inside_a_morsel ... ok
+test injected_write_failure_returns_error_and_removes_every_file ... ok
+test pressure_releases_reservations_and_recursive_merge_reads_every_partition ... ok
+test real_smallint_and_float32_keys_and_null_extremes_use_the_typed_spill_path ... ok
+test recursion_bound_is_enforced_under_a_process_deadline ... 
+running 1 test
+test recursion_bound_is_enforced_under_a_process_deadline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.02s
+
+ok
+test typed_sql_replay_matches_resident_for_every_key_and_state_type ... ok
+test wide_partial_sums_round_trip_without_narrowing_before_merge ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.78s
+

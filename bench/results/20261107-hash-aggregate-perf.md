@@ -772,6 +772,12 @@ child's one local sanity run (2.2 s against 1.1 s) was machine noise: the settle
 
 ## Performance step 2b
 
+**2026-11-08 continuation:** the owner resumed this work after the initial stop
+recorded below. Latest sections 2b/3, 2b/4 (including its addendum), and 2b/5
+retain the small lookup and shared expressions/buffers provisionally, reject
+larger decoding, and leave settled both-CPU timing to the parent. The original
+stop and measurements remain historical evidence.
+
 **STOPPED at the required regression guard.** Retain the morsel scheduling
 change; reject the i64 lane (Q1 +18.5% / +19.5% paired latency, no compensating
 gain). Low-cardinality groups and expression fusion/buffer reuse are unstarted.
@@ -1198,3 +1204,161 @@ Kani regression rerun: **4/4 PASS, 8/8 covers**, importing the unchanged product
 `Decimal::column`. Individual `fusion-kani-*.txt` logs are adjacent to the raw
 profiles. These bounded kernels do not prove DAG compilation, buffer lifetime,
 or general i256 arithmetic; runtime/mutation checks cover the changed wrappers.
+
+### 2b/5 — reject grant-adaptive 1,024-row decoding
+
+**Rule:** Keep the original 256-row admission/minimum, concurrency and expression phase spans. Admit a 1,024-row decode buffer only when every task fits its larger cursor grant plus the unchanged table-progress floor. Slice into the original 256-row spans before pushed filtering, so compaction cannot move argument errors across spans.
+
+Local shared x86-64 VM; **unsettled**, warm SF1, whole CLI, 8 GiB,
+five alternating rounds and identical-before generic control. Frozen targets and
+ADRs remain unchanged; no both-architecture or settled target claim.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.301 | 1.304 | 1.303 | 1.008 | 0.988 |
+| q1 | 8 | 0.396 | 0.384 | 0.402 | 0.967 | 1.011 |
+| high_cardinality_tpch | 1 | 2.843 | 2.825 | 2.817 | 0.998 | 0.979 |
+| high_cardinality_tpch | 8 | 2.043 | 2.006 | 2.029 | 1.015 | 1.023 |
+
+**Verdict:** REJECT: no established gain beyond twin noise. Q1 ratios 1.008/0.967, high-cardinality 0.998/1.015; no >3% regression, but only the eight-thread Q1 median improves, by 3.3%, within the twin paired range 0.951–1.084 (candidate range 0.960–1.036). The keep-only-if-it-wins rule is not satisfied; decoding and expression batch sizes remain 256 in final code.
+
+One-thread whole-process Q1 self shares (inclusive shares are not additive):
+
+| Symbol | Before % | After % |
+|---|---:|---:|
+| Partial::resume | 19.72 | 17.02 |
+| Decimal::column | 12.15 | 12.77 |
+| ExactSum::add | 5.84 | 5.56 |
+| Col::from_arrow | 3.16 | 3.27 |
+
+[Samples](raw/20261108-hash-aggregate-perf2b/batch-samples.json),
+[distributions, paired controls and immutable binary hashes](raw/20261108-hash-aggregate-perf2b/batch-summary.json),
+[DuckDB value gates](raw/20261108-hash-aggregate-perf2b/batch-gates.json).
+Full per-cell profiles are adjacent `batch-QUERY-THREADS-ARM.txt` files.
+Commands use external immutable copies, never an in-place rebuilt binary:
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py batch --before /home/dev/perf2b-next/fusion --after /home/dev/perf2b-next/batch --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2b --profile
+```
+
+The candidate's SF1 DuckDB gates all pass, and its 13 focused aggregate-spill
+tests pass, including a positioned-error test across decode spans and
+force-every-output-batch spill. The exact source is retained as
+[rejected-batch.patch](raw/20261108-hash-aggregate-perf2b/rejected-batch.patch),
+against `005d610`; [native log](raw/20261108-hash-aggregate-perf2b/batch-focused.txt).
+The patch is removed from production. No changed proved kernel and no retained
+batch change: full touched-crate gates and batch-specific mutations were not
+run on this rejected candidate.
+
+### 2b/4 addendum — complete conditional arguments and plan-owned text
+
+**Rule:** Also share structurally identical complete conditional roots on the same retained-row selection, ignoring source positions only after preserving first evaluation order. Keep internal conditional selections in the existing evaluator. Reference text constants through that evaluator so instructions retain no extra owned text copy.
+
+Local shared x86-64 VM; **unsettled**, warm SF1, whole CLI, 8 GiB,
+five alternating rounds and identical-before generic control. Frozen targets and
+ADRs remain unchanged; no both-architecture or settled target claim.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.663 | 1.691 | 1.866 | 1.018 | 1.026 |
+| q1 | 8 | 0.566 | 0.583 | 0.582 | 1.047 | 1.038 |
+| high_cardinality_tpch | 1 | 3.867 | 3.780 | 3.893 | 0.968 | 1.007 |
+| high_cardinality_tpch | 8 | 2.709 | 2.662 | 2.607 | 0.978 | 0.960 |
+
+**Verdict:** Retain provisionally for completeness, locally unsettled. Common eager-path ratios are 1.018/1.047 for Q1 and 0.968/0.978 for high cardinality. The eight-thread Q1 +4.7% cell has compensating many-group improvements of 3.2%/2.2%; its twin also drifts +3.8%. It is unresolved, not certified regression-free. No conditional-query latency gain is claimed from these eager-path timings.
+
+One-thread whole-process Q1 self shares (inclusive shares are not additive):
+
+| Symbol | Before % | After % |
+|---|---:|---:|
+| Partial::resume | 18.93 | 20.66 |
+| Decimal::column | 12.86 | 11.53 |
+| ExactSum::add | 5.48 | 5.71 |
+| Col::from_arrow | 2.50 | 2.74 |
+
+[Samples](raw/20261108-hash-aggregate-perf2b/roots-safe-samples.json),
+[distributions, paired controls and immutable binary hashes](raw/20261108-hash-aggregate-perf2b/roots-safe-summary.json),
+[DuckDB value gates](raw/20261108-hash-aggregate-perf2b/roots-safe-gates.json).
+Full per-cell profiles are adjacent `roots-safe-QUERY-THREADS-ARM.txt` files.
+Commands use external immutable copies, never an in-place rebuilt binary:
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py roots-safe --before /home/dev/perf2b-next/fusion --after /home/dev/perf2b-next/roots-safe --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2b --profile
+```
+
+This completes shared argument materialization on the same selection: eager
+subexpressions share DAG nodes; identical complete conditional roots share one
+evaluator result. Internal CASE/AND/OR/BETWEEN selections remain independent.
+Text literals are kept by plan reference through the generic evaluator, avoiding
+an extra retained owned string in the instruction arena. The existing
+conditional evaluator still allocates its internal temporaries; no conditional
+SQL latency claim is made without a corresponding timed fixture.
+
+The first complete-root candidate, before the text-constant guard, is preserved
+in `roots-*` raw files: paired ratios Q1 **0.986/1.000**, many-group
+**0.983/0.966**. Those numbers do not describe final HEAD. The final
+`roots-safe-*` run above rebuilds and times the actual guarded code against the
+same immutable fusion binary. No result mismatch occurred in either trial.
+
+Final full executor tests and clippy pass; normal and forced-spill gates each
+pass **65/65**. The new tests cover root sharing at different source positions,
+roots with different values, masked branches, and absence of owned text-literal
+instructions. Four focused mutations are **4 caught, 0 missed, 0 invalid**:
+returning true/false from either the typed root comparator or eager eligibility.
+[Tests](raw/20261108-hash-aggregate-perf2b/roots-safe-tests.txt),
+[checks](raw/20261108-hash-aggregate-perf2b/roots-safe-checks.txt),
+[mutation outcomes](raw/20261108-hash-aggregate-perf2b/roots-safe-mutants-outcomes.json).
+Source SHA-256 is unchanged after in-place mutation restoration. No proved
+kernel changed in this addendum; the four decimal Kani regression proofs above
+remain applicable to the same unchanged kernel, not to this tree comparator.
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2b/tmp CARGO_BUILD_JOBS=4 RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --profile release --output /home/dev/perf2b-next/mutants-roots -p nata-exec -f crates/nata-exec/src/aggregate/fusion.rs -F 'replace (same_expression|eager) -> bool with (true|false)' --timeout 180
+```
+
+### Continuation handoff and final reproduction
+
+Retained implementation commits: `cbe0854` (2b/3) and `005d610` (initial 2b/4);
+the following continuation commit contains complete-root sharing, the text guard,
+rejected 2b/5 evidence and this handoff. The final report identifies that commit.
+All local results are **unsettled**. The >3% Q1 cells on the small lookup and
+complete-root extension have compensating gains and large/noisy twin controls;
+they remain unresolved for the parent's settled test, not regression-free claims.
+No target, ADR, minimum grant, default, spill format or dependency changed.
+`Cargo.lock` is unchanged. Builds/tests from this task were serial at `-j 4`;
+mutants ran serially in-place with their jobserver disabled. Observed free disk
+stayed at least 25 GB, so stale-output deletion was unnecessary.
+
+Final fresh-data verification and binary identity are recorded in
+[continuation-final-checks.txt](raw/20261108-hash-aggregate-perf2b/continuation-final-checks.txt):
+locked release build, both fixture generators, **65/65 normal and 65/65 forced
+spill**, then byte comparison of the rebuilt CLI with the immutable final timed
+candidate and `cargo fmt --all --check`. The final source hashes are adjacent.
+
+```sh
+export CARGO_TARGET_DIR=/home/dev/perf2b/target
+cargo build --locked --release -j 4 -p nata -p nata-check
+scripts/gen-tpch.sh 0.01 /home/dev/perf2b-next/final-data
+scripts/gen-sql-check-data.sh /home/dev/perf2b-next/final-data
+env -u AI_AGENT "$CARGO_TARGET_DIR/release/nata-check" --candidate "$CARGO_TARGET_DIR/release/nata" --data /home/dev/perf2b-next/final-data --queries check/queries/aggregate
+env -u AI_AGENT "$CARGO_TARGET_DIR/release/nata-check" --candidate "$CARGO_TARGET_DIR/release/nata" --data /home/dev/perf2b-next/final-data --queries check/queries/aggregate --force-aggregate-spill
+```
+
+Parent-only commands, **not launched here**. Prepare after the final commit;
+`perf2b=HEAD` includes all retained changes against baseline `838e394`.
+Use the spend returned by each plan and fresh run IDs if these are occupied.
+The steps cover SF1 Q1/high-cardinality × 1/8 threads × 8 GiB/64 MiB with
+DuckDB and identical twins. SF10 scaling and frozen-target certification remain
+open; a successful SF1 comparison alone cannot close slice 5.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 838e394 --fix perf2b=HEAD --bundle .aggregate-perf2b-inputs
+cp bench/aggregate-perf2b.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2b-20261108-x86 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2b-20261108-x86 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2b-20261108-arm64 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2b-20261108-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
+```
+
+No GCP plan, VM or API was invoked; no push or merge. Staged leak scanning is
+required and run before each continuation commit.

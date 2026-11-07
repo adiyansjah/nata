@@ -29,12 +29,56 @@ pub(super) struct Program {
 }
 fn eager(e: &Expr) -> bool {
     match &e.kind {
+        // Keep plan-owned text constants in the generic evaluator instead of
+        // retaining an additional owned copy in the task instruction arena.
+        ExprKind::Literal(Value::Str(_)) => false,
         ExprKind::Column(_) | ExprKind::Literal(_) => true,
         ExprKind::Arith { left, right, .. } => eager(left) && eager(right),
         ExprKind::Cast { expr, .. } => eager(expr),
         _ => false,
     }
 }
+// Compare typed structure, not source positions. Only complete conditional
+// roots share a result: their internal branches retain independent selections.
+fn same_expression(l: &Expr, r: &Expr) -> bool {
+    if l.ty != r.ty {
+        return false;
+    }
+    let same = match (&l.kind, &r.kind) {
+        (ExprKind::Column(a), ExprKind::Column(b)) => a == b,
+        (ExprKind::Literal(a), ExprKind::Literal(b)) => a == b,
+        (ExprKind::Arith { op: a, .. }, ExprKind::Arith { op: b, .. }) => a == b,
+        (ExprKind::Cmp { op: a, .. }, ExprKind::Cmp { op: b, .. }) => a == b,
+        (ExprKind::IsNull { negated: a, .. }, ExprKind::IsNull { negated: b, .. })
+        | (ExprKind::Between { negated: a, .. }, ExprKind::Between { negated: b, .. })
+        | (ExprKind::InList { negated: a, .. }, ExprKind::InList { negated: b, .. }) => a == b,
+        (
+            ExprKind::Case {
+                operand: a,
+                whens: aw,
+                ..
+            },
+            ExprKind::Case {
+                operand: b,
+                whens: bw,
+                ..
+            },
+        ) => a.is_some() == b.is_some() && aw.len() == bw.len(),
+        (ExprKind::Neg(_), ExprKind::Neg(_))
+        | (ExprKind::Not(_), ExprKind::Not(_))
+        | (ExprKind::And(_), ExprKind::And(_))
+        | (ExprKind::Or(_), ExprKind::Or(_))
+        | (ExprKind::Cast { .. }, ExprKind::Cast { .. }) => true,
+        _ => false,
+    };
+    if !same {
+        return false;
+    }
+    let lc = l.children();
+    let rc = r.children();
+    lc.len() == rc.len() && lc.into_iter().zip(rc).all(|(l, r)| same_expression(l, r))
+}
+
 impl Program {
     pub(super) fn new(a: &Aggregate) -> Self {
         let mut out = Self {
@@ -44,19 +88,36 @@ impl Program {
             args: vec![],
             empty_text: Arc::new(arrow_array::StringArray::from(Vec::<&str>::new())),
         };
+        let roots: Vec<_> = a
+            .keys
+            .iter()
+            .map(Some)
+            .chain(a.aggregates.iter().map(|a| a.arg.as_ref()))
+            .collect();
         for (i, e) in a.keys.iter().enumerate() {
-            let id = out.root(e, i);
+            let id = out.root(e, i, &roots);
             out.keys.push(id);
         }
         for (i, agg) in a.aggregates.iter().enumerate() {
-            let id = agg.arg.as_ref().map(|e| out.root(e, a.keys.len() + i));
+            let id = agg
+                .arg
+                .as_ref()
+                .map(|e| out.root(e, a.keys.len() + i, &roots));
             out.args.push(id);
         }
         out
     }
-    fn root(&mut self, e: &Expr, root: usize) -> usize {
+    fn root(&mut self, e: &Expr, root: usize, roots: &[Option<&Expr>]) -> usize {
         if eager(e) {
             self.compile(e)
+        } else if let Some(id) = self.nodes.iter().position(|n| {
+            if let Code::Generic(other) = n.code {
+                roots[other].is_some_and(|prior| same_expression(e, prior))
+            } else {
+                false
+            }
+        }) {
+            id
         } else {
             self.push(Code::Generic(root), e)
         }
@@ -317,6 +378,50 @@ mod tests {
         assert_eq!(v.as_ptr(), ptr);
     }
     #[test]
+    fn text_literals_do_not_add_owned_instruction_copies() {
+        let a = aggregate(vec![Expr::literal(
+            Value::Str("text".into()),
+            SqlType::Varchar,
+            Pos::START,
+        )]);
+        let p = Program::new(&a);
+        assert!(matches!(p.nodes[0].code, Code::Generic(0)));
+    }
+    #[test]
+    fn complete_conditional_roots_share_without_merging_different_values() {
+        let conditional = |value, pos| {
+            Expr::new(
+                ExprKind::Case {
+                    operand: None,
+                    whens: vec![(
+                        Expr::literal(Value::Bool(false), SqlType::Boolean, pos),
+                        binary(ArithOp::IntDiv, lit(10), col(), pos),
+                    )],
+                    else_: Box::new(lit(value)),
+                },
+                SqlType::BigInt,
+                pos,
+            )
+        };
+        let a = aggregate(vec![
+            conditional(3, Pos::START),
+            conditional(4, Pos::START),
+            conditional(3, Pos { line: 2, col: 9 }),
+        ]);
+        let mut p = Program::new(&a);
+        let b = batch(vec![Some(0)]);
+        let types = [SqlType::BigInt];
+        let ev = Evaluator::new(&b, &types);
+        let (_, args) = p.evaluate(&b, &ev, &a, &[0]).expect("masked conditional");
+        let x = args[0].as_ref().expect("arg");
+        let y = args[1].as_ref().expect("arg");
+        let z = args[2].as_ref().expect("arg");
+        assert!(Arc::ptr_eq(x, z));
+        assert!(!Arc::ptr_eq(x, y));
+        assert_eq!(Atom::get(x, 0), Atom::Int(3));
+        assert_eq!(Atom::get(y, 0), Atom::Int(4));
+    }
+    #[test]
     fn first_positioned_error_and_conditional_phase_match_evaluator() {
         let first = Pos { line: 2, col: 10 };
         let later = Pos { line: 3, col: 20 };
@@ -348,10 +453,26 @@ mod tests {
             SqlType::BigInt,
             Pos::START,
         );
-        let a = aggregate(vec![conditional, product()]);
+        let conditional2 = Expr::new(
+            ExprKind::Case {
+                operand: None,
+                whens: vec![(
+                    Expr::literal(Value::Bool(false), SqlType::Boolean, later),
+                    binary(ArithOp::IntDiv, lit(10), col(), first),
+                )],
+                else_: Box::new(product()),
+            },
+            SqlType::BigInt,
+            later,
+        );
+        let a = aggregate(vec![conditional, product(), conditional2]);
         let mut p = Program::new(&a);
         assert!(matches!(p.nodes[0].code, Code::Generic(0)));
         let (_, args) = p.evaluate(&b, &ev, &a, &[0, 1]).expect("unselected branch");
+        assert!(Arc::ptr_eq(
+            args[0].as_ref().expect("arg"),
+            args[2].as_ref().expect("arg")
+        ));
         assert_eq!(Atom::get(args[0].as_ref().expect("arg"), 0), Atom::Int(0));
     }
 }
