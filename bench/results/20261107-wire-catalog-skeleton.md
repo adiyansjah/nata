@@ -203,3 +203,31 @@ Branch: `t3/wire-catalog-portals`; preflight merge: `f797e21`, from main `7e1fac
 The implementation commit includes this record. The owned `~/tmp-wcskel2` scratch
 is removed after preserving these results; the worktree target remains for the
 parent's normal worktree cleanup.
+
+## Rebased onto main — 2026-11-07
+
+Rebased the two track C commits onto `c0bb960`, including step D (`b67cbd1`,
+`e198d08`). Conflicts were confined to `server.rs`, `tests/protocol.rs` and
+`tests/support/mod.rs`: retain both appended test blocks, combine catalog and
+execution configuration in the server/test harness, and pass the admitted
+`ExecConfig` through bounded portals as well as ordinary execution. No test was
+dropped. An additional forced-spill bounded aggregate test checks the divided
+budget, suspended cancel, resume and grant cleanup. No behavioral contradiction
+or feature extension was needed.
+
+Both client matrices still hold **with no changed cells**: wire/catalog remains
+36 PASS / 38 explicit FAIL / 9 not run (expected exit 1), including five exact
+PostgreSQL Execute fixture comparisons; all 50 step D aggregate cells PASS,
+including forced spill and the existing ADBC R22 outcome. Client versions match
+the recorded local versions. Fmt, clippy, workspace tests (497 passed), deny,
+scan 5/5, SQL 252/252, differences **55/55** (current main's extra case), aggregate
+65/65 and forced aggregate 65/65 PASS. All nine focused wire mutants are CAUGHT
+(track C's five plus idle wakeup, and step D's three), with passing private-copy
+controls, zero survivors/INVALID and a 160-second sequential sweep. Wirecapture
+unit tests, Python syntax, 11 offline fixture pairs and local job-chain stubs
+also PASS. Missing Python dependencies were installed only in disposable
+scratch; all heavy work used disk TMPDIR and ran one job at a time.
+
+[Rebase check summary, matrices and mutant results](raw/20261107-wire-catalog-skeleton/rebased-on-main/)
+retain the rerun evidence. Original acceptance gaps and explicit refusals above
+remain open; no GCP, push or merge was performed.

@@ -1,0 +1,28 @@
+Rebased onto main c0bb960; code commit bec6e62.
+All heavy local checks ran sequentially with disk TMPDIR=$HOME/tmp-rebase-c.
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace (RUST_TEST_THREADS=2): PASS; 497 passed, zero failed/ignored, 71 summaries.
+cargo deny check: PASS (inherited unmatched license allowance warnings only).
+cargo build -p nata -p nata-check: PASS
+Fresh SF0.01 TPC-H and SQL fixtures: PASS
+nata-check scan: 5/5 PASS
+nata-check sql: 252/252 PASS
+nata-check sql-differences: 55/55 PASS (current main includes one more than the older records).
+nata-check aggregate: 65/65 PASS
+nata-check aggregate --force-aggregate-spill: 65/65 PASS
+Combined nata-pgwire protocol tests: 34 PASS, included in workspace run.
+Wirecapture Python unit tests: 3 PASS with pglast 8.7 in disposable Python 3.12 environment.
+Initial system/client Python attempts lacked pglast; rerun above passed after scratch-only installation.
+Client Python environment lacked pgcli/ADBC; scratch installed the exact recorded client versions.
+Python syntax checks: PASS
+scripts/gcp/test/test-job-chains.sh (local stubs only): PASS
+Offline wirecapture architecture equality: 11/11 JSON pairs PASS
+Wire matrix: expected exit 1; 36 PASS / 38 FAIL / 9 not run, identical to original matrix.
+Five live execute-limit fixtures: byte-for-byte PASS; malformed frame and JDBC positive fetch PASS.
+Aggregate client matrix: exit 0; all 50 results and versions identical to step D, including R22 outcomes.
+Focused wire mutation sweep: 160 seconds; unmutated lib/protocol PASS; 9 CAUGHT, zero SURVIVED/INVALID.
+Private source copies reused compiled dependencies; source fingerprint unchanged.
+No GCP, push or merge.
+scripts/check-leaks.sh --staged: PASS
+git diff --cached --check: PASS

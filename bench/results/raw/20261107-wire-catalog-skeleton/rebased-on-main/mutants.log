@@ -1,0 +1,20 @@
+unmutated lib: PASS
+unmutated protocol: PASS
+catalog-wrong-oid: CAUGHT
+exact-end-suspension-missing: CAUGHT
+statement-timeout-not-enforced: CAUGHT
+refused-catalog-silent-empty: CAUGHT
+cancel-applied-while-suspended: CAUGHT
+portal-idle-wake-missing: CAUGHT
+aggregate-numeric-wrong-oid: CAUGHT
+aggregate-cancel-token-lost: CAUGHT
+aggregate-admission-pool-multiplied: CAUGHT
+aggregate-admission-pool-multiplied: failing assertions in bounded_aggregate_keeps_admitted_spill_configuration, two_spilling_queries_share_pool_cancel_and_release
+aggregate-cancel-token-lost: failing assertions in two_spilling_queries_share_pool_cancel_and_release
+aggregate-numeric-wrong-oid: failing assertions in aggregates_named_prepare_text_binary_copy_and_positioned_errors, binary_default_driver_scalars_and_descriptions, copy_binary_framing_types_nulls_extended_and_refusals, recorded_simple_error_empty_types_nulls_and_terminate
+cancel-applied-while-suspended: failing assertions in bounded_aggregate_keeps_admitted_spill_configuration, skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope
+catalog-wrong-oid: failing assertions in exact_adbc_bootstrap_and_unknown_catalog_refusal, skeleton_snapshot_named_scan_and_metadata
+exact-end-suspension-missing: failing assertions in bounded_aggregate_keeps_admitted_spill_configuration, skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope, skeleton_portal_expiry_and_close_release_admission
+portal-idle-wake-missing: failing assertions in server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling
+refused-catalog-silent-empty: failing assertions in exact_adbc_bootstrap_and_unknown_catalog_refusal, skeleton_all_36_inventory_additions_refuse_before_rows, skeleton_snapshot_named_scan_and_metadata
+statement-timeout-not-enforced: failing assertions in skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope
