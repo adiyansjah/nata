@@ -76,7 +76,9 @@ jobs:
     name: loom bound 3, ${{ matrix.model }}
     needs: loom-models
     runs-on: ubuntu-latest
-    timeout-minutes: 90          # build (a few minutes) + SCHED_TIMEOUT below
+    # build (a few minutes) + SCHED_TIMEOUT below. m21 needs more than 3,000 s at bound 3 on a GitHub runner (first nightly, 2026-11-07: rc=124 with no
+    # failure after 3,000 s; m09, the next largest, passed in 25 minutes), so it alone gets 5.5 hours inside the 6-hour job limit.
+    timeout-minutes: ${{ startsWith(matrix.model, 'm21_') && 350 || 90 }}
     strategy:
       fail-fast: false
       matrix:
@@ -92,7 +94,7 @@ jobs:
         shell: bash          # -eo pipefail: the exit status of run_loom.sh, not of tee
         env:
           LOOM_MAX_PREEMPTIONS: "3"
-          SCHED_TIMEOUT: "3000"    # seconds for the model: how long bound 3 takes is measured by this job, not locally
+          SCHED_TIMEOUT: ${{ startsWith(matrix.model, 'm21_') && '19800' || '3000' }}    # seconds for the model; how long bound 3 takes is measured by this job
           SCHED_OFFLINE: ""
           CARGO_TARGET_DIR: target/loom
           SCHED_ONLY: ^${{ matrix.model }}$
