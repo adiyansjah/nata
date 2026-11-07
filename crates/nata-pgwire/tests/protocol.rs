@@ -166,6 +166,7 @@ fn malformed_lengths_startup_ssl_and_max_connections() {
         max_connections: 0,
         max_queries: 1,
         threads: 1,
+        execution: nata_exec::ExecConfig::new(1),
         metrics: None,
     };
     assert!(c.validate().is_err());
@@ -236,6 +237,7 @@ fn unsafe_listen_requires_explicit_flag() {
         max_connections: 64,
         max_queries: 1,
         threads: 1,
+        execution: nata_exec::ExecConfig::new(1),
         metrics: None,
     };
     assert!(c.validate().is_err());
@@ -1185,4 +1187,280 @@ fn exceptional_dates_text_binary_copy_and_range_errors() {
         }
     }
     std::fs::remove_dir_all(dir).expect("cleanup");
+}
+
+#[test]
+fn aggregates_named_prepare_text_binary_copy_and_positioned_errors() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    let q = format!(
+        "SELECT sum(i), sum(bi), sum(n), avg(i), count(*), avg(n) FROM '{}'",
+        fixture()
+    );
+    let expected = vec![vec![
+        Some("-1".into()),
+        Some("-1".into()),
+        Some("123.449".into()),
+        Some("-0.500000".into()),
+        Some("3".into()),
+        Some("61.725".into()),
+    ]];
+    let r = c.query(&q);
+    assert_eq!(values(&r), expected, "{r:?}");
+    let mut desc = &r[0].1[2..];
+    for (oid, typmod) in [
+        (20, -1),
+        (1700, (38 << 16) + 4),
+        (1700, ((38 << 16) | 3) + 4),
+        (1700, ((16 << 16) | 6) + 4),
+        (20, -1),
+        (1700, ((38 << 16) | 3) + 4),
+    ] {
+        let end = desc.iter().position(|b| *b == 0).expect("name");
+        desc = &desc[end + 1..];
+        assert_eq!(
+            i32::from_be_bytes(desc[6..10].try_into().expect("oid")),
+            oid
+        );
+        assert_eq!(
+            i32::from_be_bytes(desc[12..16].try_into().expect("typmod")),
+            typmod
+        );
+        desc = &desc[18..];
+    }
+    c.parse_named("aggregate", &q, &[]);
+    assert_eq!(tags(&c.sync()), b"1Z");
+    for binary in [false, true, false] {
+        let mut body = b"\0aggregate\0\0\0\0\0".to_vec();
+        body.extend(1i16.to_be_bytes());
+        body.extend(i16::from(binary).to_be_bytes());
+        c.frame(b'B', &body);
+        c.execute(0);
+        let r = c.sync();
+        assert_eq!(tags(&r), b"2DCZ");
+        if binary {
+            let data = &r[1].1;
+            assert_eq!(&data[2..6], &8i32.to_be_bytes());
+            assert_eq!(&data[6..14], &(-1i64).to_be_bytes());
+            // Numeric -1: ndigits=1, weight=0, negative, dscale=0, digit=1.
+            assert_eq!(&data[18..28], &[0, 1, 0, 0, 0x40, 0, 0, 0, 0, 1]);
+        } else {
+            assert_eq!(values(&r), expected, "{r:?}");
+        }
+    }
+    let parameterized = format!(
+        "SELECT sum(CAST(i AS BIGINT)+$1),avg($1) FROM '{}' HAVING count(*)>$2",
+        fixture()
+    );
+    c.parse_named("aggregate-parameters", &parameterized, &[23, 23]);
+    assert_eq!(tags(&c.sync()), b"1Z");
+    let mut body = b"\0aggregate-parameters\0".to_vec();
+    body.extend(0i16.to_be_bytes());
+    body.extend(2i16.to_be_bytes());
+    for v in [b"7", b"2"] {
+        body.extend(1i32.to_be_bytes());
+        body.extend(v);
+    }
+    body.extend(0i16.to_be_bytes());
+    c.frame(b'B', &body);
+    c.execute(0);
+    assert_eq!(
+        values(&c.sync()),
+        vec![vec![Some("13".into()), Some("7.000000".into())]]
+    );
+    let copy = c.query(&format!("COPY ({q}) TO STDOUT (FORMAT binary)"));
+    assert_eq!(tags(&copy), b"HddcCZ");
+    assert!(copy[1].1.starts_with(b"PGCOPY\n\xff\r\n\0"));
+    let empty = c.query(&format!(
+        "SELECT i, count(*) FROM '{}' WHERE false GROUP BY i",
+        fixture()
+    ));
+    assert_eq!(tags(&empty), b"TCZ");
+    for select in [
+        "count(DISTINCT i)",
+        "sum(sum(i))",
+        "sum(i) FILTER (WHERE true)",
+    ] {
+        let r = c.query(&format!("SELECT {select} FROM '{}'", fixture()));
+        assert_code(&r, "0A000");
+        assert!(error_field(&r[0].1, b'P').is_some());
+    }
+    let r = c.query(&format!(
+        "SELECT sum(CAST(99999999999999999999999999999999999999 AS DECIMAL(38,0))) FROM '{}'",
+        fixture()
+    ));
+    assert_code(&r, "22003");
+}
+
+#[test]
+fn two_spilling_queries_share_pool_cancel_and_release() {
+    let dir = std::env::temp_dir().join(format!("nata-server-spill-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("dir");
+    let mut e = nata_exec::ExecConfig::new(1);
+    let pool = 64 << 20;
+    e.aggregate_memory_bytes = Some(pool);
+    e.aggregate_spill_directory = Some(dir.clone());
+    e.aggregate_force_spill = true;
+    let s = Server::start_execution(4, Arc::new(Metrics::default()), e);
+    let mut a = s.client();
+    let mut b = s.client();
+    let q = format!("SELECT id,count(*) FROM '{}' GROUP BY id", large());
+    a.send_query(&q);
+    b.send_query(&q);
+    // Description precedes accumulation. Wait for BOTH admitted spill owners.
+    assert_eq!(read(&mut a.socket).0, b'T');
+    assert_eq!(read(&mut b.socket).0, b'T');
+    wait_until(|| {
+        std::fs::read_dir(&dir)
+            .expect("base")
+            .filter_map(Result::ok)
+            .filter(|e| {
+                e.path().is_dir()
+                    && std::fs::read_dir(e.path())
+                        .expect("query")
+                        .filter_map(Result::ok)
+                        .any(|f| {
+                            f.path().extension().is_some_and(|s| s == "ipc")
+                                && f.metadata().is_ok_and(|m| m.len() > 0)
+                        })
+            })
+            .count()
+            == 2
+    });
+    assert_eq!(s.metrics.admitted.now(), 2);
+    let cancelled_at = Instant::now();
+    cancel(&s, a.key);
+    cancel(&s, b.key);
+    assert_code(&a.result(), "57014");
+    assert_code(&b.result(), "57014");
+    assert!(
+        cancelled_at.elapsed() < Duration::from_secs(2),
+        "spilling cancellation must join promptly"
+    );
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    let samples = s.metrics.aggregates.lock().expect("samples");
+    assert_eq!(samples.len(), 2);
+    assert!(
+        samples
+            .iter()
+            .all(|&(budget, peak, held, cancelled)| budget == pool / 2
+                && peak <= budget
+                && held == 0
+                && cancelled)
+    );
+    assert!(samples.iter().map(|s| s.1).sum::<usize>() <= pool);
+    drop(samples);
+    let small = format!("SELECT i,count(*),sum(i) FROM '{}' GROUP BY i", fixture());
+    a.send_query(&small);
+    b.send_query(&small);
+    let mut left = values(&a.result());
+    let mut right = values(&b.result());
+    left.sort();
+    right.sort();
+    assert_eq!(left, right);
+    assert_eq!(left.len(), 3);
+    assert_eq!(std::fs::read_dir(&dir).expect("clean").count(), 0);
+    assert_eq!(
+        values(&a.query(&format!("SELECT count(*) FROM '{}'", fixture()))),
+        vec![vec![Some("3".into())]]
+    );
+    drop(s);
+    std::fs::remove_dir(dir).expect("removed");
+}
+
+#[test]
+fn aggregate_cancel_before_output_and_injected_spill_error_recover() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    c.send_query(&format!(
+        "SELECT id,count(*) FROM '{}' GROUP BY id",
+        large()
+    ));
+    assert_eq!(read(&mut c.socket).0, b'T');
+    cancel(&s, c.key);
+    assert_code(&c.result(), "57014");
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert_eq!(
+        values(&c.query(&format!(
+            "SELECT count(*),sum(i),avg(i) FROM '{}' WHERE false",
+            fixture()
+        ))),
+        vec![vec![Some("0".into()), None, None]]
+    );
+    let dir = std::env::temp_dir().join(format!("nata-server-fault-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("base");
+    let mut e = nata_exec::ExecConfig::new(1);
+    e.aggregate_force_spill = true;
+    e.aggregate_spill_fail_after = Some(9);
+    e.aggregate_spill_directory = Some(dir.clone());
+    let s = Server::start_execution(4, Arc::new(Metrics::default()), e);
+    let mut c = s.client();
+    let r = c.query(&format!("SELECT sum(i) FROM '{}'", fixture()));
+    assert!(r.iter().any(|m| m.0 == b'E'));
+    assert!(
+        !r.iter().any(|m| m.0 == b'C'),
+        "failed spill must not report success"
+    );
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert_eq!(std::fs::read_dir(&dir).expect("clean").count(), 0);
+    drop(s);
+    std::fs::remove_dir(dir).expect("removed");
+}
+
+#[test]
+fn aggregate_output_backpressure_disconnect_and_cancel_join() {
+    let path = std::env::temp_dir().join(format!(
+        "nata-aggregate-output-{}.parquet",
+        std::process::id()
+    ));
+    let batch = RecordBatch::try_from_iter([
+        (
+            "id",
+            Arc::new(Int64Array::from_iter_values(0..8192)) as ArrayRef,
+        ),
+        (
+            "s",
+            Arc::new(StringArray::from(vec!["x".repeat(1024); 8192])) as ArrayRef,
+        ),
+    ])
+    .expect("batch");
+    let mut writer = parquet::arrow::ArrowWriter::try_new(
+        std::fs::File::create(&path).expect("create"),
+        batch.schema(),
+        None,
+    )
+    .expect("writer");
+    writer.write(&batch).expect("write");
+    writer.close().expect("close");
+    let s = Server::start(4);
+    let mut c = s.client();
+    let q = format!("SELECT id,max(s) FROM '{}' GROUP BY id", path.display());
+    c.send_query(&q);
+    assert_eq!(read(&mut c.socket).0, b'T');
+    wait_until(|| s.metrics.rows_produced.load(Ordering::SeqCst) > 100);
+    std::thread::sleep(Duration::from_millis(200));
+    let before = s.metrics.rows_produced.load(Ordering::SeqCst);
+    std::thread::sleep(Duration::from_millis(200));
+    assert_eq!(s.metrics.rows_produced.load(Ordering::SeqCst), before);
+    assert!(
+        before < 8192,
+        "aggregate output must stop at a slow consumer"
+    );
+    cancel(&s, c.key);
+    drop(c);
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    let mut c = s.client();
+    c.send_query(&q);
+    assert_eq!(read(&mut c.socket).0, b'T');
+    drop(c);
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert!(
+        s.metrics
+            .aggregates
+            .lock()
+            .expect("samples")
+            .iter()
+            .all(|s| s.2 == 0)
+    );
+    std::fs::remove_file(path).expect("remove");
 }

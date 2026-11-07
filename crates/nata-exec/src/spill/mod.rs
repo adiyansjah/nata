@@ -4,9 +4,12 @@
 //! never by an operator on a CPU worker. `Workspace` owns a reservation for all
 //! simultaneous codec buffers; callers cannot decode without that reservation.
 mod admission;
+mod cleanup;
+pub use cleanup::cleanup_stale;
 #[path = "io.rs"]
 mod disk_io;
-pub(crate) use admission::{available_bytes, descriptor_allowance};
+pub use admission::available_bytes;
+pub(crate) use admission::descriptor_allowance;
 mod ipc;
 mod registry;
 

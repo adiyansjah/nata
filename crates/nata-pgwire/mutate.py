@@ -16,6 +16,9 @@ SESSION = 'crates/nata-pgwire/src/session.rs'
 EXTENDED = 'crates/nata-pgwire/src/extended.rs'
 SQLERROR = 'crates/nata-sql/src/error.rs'
 MUTANTS = {
+ 'aggregate-numeric-wrong-oid': (CODEC, 'Decimal { precision, scale } => (\n            1700,', 'Decimal { precision, scale } => (\n            25,', 'protocol'),
+ 'aggregate-cancel-token-lost': (SERVER, 'self.token.cancel();', '// lost executor cancellation', 'protocol'),
+ 'aggregate-admission-pool-multiplied': (SERVER, 'Some(pool / config.max_queries)', 'Some(pool)', 'protocol'),
  'date-epoch-off': ('crates/nata-pgwire/src/date.rs','const EPOCH: i64 = 10_957;', 'const EPOCH: i64 = 10_958;', 'protocol'),
  'date-range-unchecked': ('crates/nata-pgwire/src/date.rs','if !(MIN..END).contains(&days) {','if false {','protocol'),
  'date-bc-spelling': ('crates/nata-pgwire/src/date.rs','format!("{:04}-{m:02}-{d:02} BC", 1 - y)','format!("{:04}-{m:02}-{d:02} (BC)", 1 - y)','protocol'),

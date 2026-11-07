@@ -45,7 +45,18 @@ enum Command {
         /// Concurrent queries (default: CPU worker budget).
         #[arg(long)]
         max_queries: Option<usize>,
+        /// Node aggregate memory pool; divided by max-queries.
+        #[arg(long)]
+        aggregate_memory_bytes: Option<usize>,
+        #[arg(long)]
+        spill_disk_bytes: Option<u64>,
+        #[arg(long)]
+        spill_directory: Option<PathBuf>,
+        #[arg(long, hide = true)]
+        force_aggregate_spill: bool,
     },
+    /// Remove abandoned aggregate spill files, skipping locked live queries.
+    CleanupSpill { directory: PathBuf },
     /// Start a node.
     Run,
     /// Run one SQL statement and print the result: `SELECT ... FROM '<file or glob>' [WHERE ...] [LIMIT n [OFFSET m]]`, or `EXPLAIN [ANALYZE]` of it.
@@ -274,12 +285,28 @@ fn scan(a: ScanArgs) -> ExitCode {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let what = match cli.command {
+        Command::CleanupSpill { directory } => {
+            return match nata_exec::spill::cleanup_stale(&directory) {
+                Ok(n) => {
+                    eprintln!("removed {n} stale spill directories");
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("spill cleanup failed: {e}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
         Command::Serve {
             listen,
             unsafe_listen,
             max_connections,
             threads,
             max_queries,
+            aggregate_memory_bytes,
+            spill_disk_bytes,
+            spill_directory,
+            force_aggregate_spill,
         } => {
             std::panic::set_hook(Box::new(|_| {
                 let _ = writeln!(std::io::stderr(), "error: internal server error");
@@ -296,6 +323,14 @@ fn main() -> ExitCode {
                 threads: threads.unwrap_or_else(|| {
                     std::thread::available_parallelism().map_or(1, std::num::NonZero::get)
                 }),
+                execution: {
+                    let mut e = nata_exec::ExecConfig::new(1);
+                    e.aggregate_memory_bytes = aggregate_memory_bytes;
+                    e.aggregate_spill_disk_bytes = spill_disk_bytes;
+                    e.aggregate_spill_directory = spill_directory;
+                    e.aggregate_force_spill = force_aggregate_spill;
+                    e
+                },
                 metrics: None,
             };
             let result = config.validate().and_then(|()| {

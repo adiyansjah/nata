@@ -25,6 +25,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "restart-cleanup-skipped": ("exec", [("crates/nata-exec/src/spill/cleanup.rs", "let mut removed = 0;", 'return Ok(0); #[allow(unreachable_code, reason = "mutation")] let mut removed = 0;')]),
  "spill-recursion-bound-removed": ("exec", [(PIPE, "if depth >= 8 {", "if depth >= 8 && false {")]),
  "spill-partition-not-read-back": ("exec", [(IPC, "let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;", "if file.size()? > 0 { return Ok(None); } let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;")]),
  "spill-reservation-not-released": ("exec", [(STORAGE, "drop(table.grants);", "std::mem::forget(table.grants);")]),
@@ -177,6 +178,8 @@ def run_one(name, base, work):
     code, out = run_suite(suite, base, work)
     for f, orig in touched.items():
         open(os.path.join(base, f), "w").write(orig)
+    if code == 99:
+        return "INVALID", "test suite timed out"
     if code == 0:
         return "SURVIVED", ""
     if "could not compile" in out or "error[E" in out:

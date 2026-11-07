@@ -22,6 +22,9 @@ impl Server {
         Self::start_with(max, Arc::new(Metrics::default()))
     }
     fn start_with(max: usize, metrics: Arc<Metrics>) -> Self {
+        Self::start_execution(max, metrics, nata_exec::ExecConfig::new(1))
+    }
+    fn start_execution(max: usize, metrics: Arc<Metrics>, execution: nata_exec::ExecConfig) -> Self {
         let (address_tx, address_rx) = std::sync::mpsc::channel();
         let (stop, stopped) = tokio::sync::oneshot::channel();
         let m = Arc::clone(&metrics);
@@ -29,7 +32,7 @@ impl Server {
             tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().expect("runtime").block_on(async move {
                 let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("listen");
                 let address = listener.local_addr().expect("address"); address_tx.send(address).expect("send");
-                let config = Config {listen:address, unsafe_listen:false, max_connections:max, threads:2, max_queries:2, metrics:Some(m)};
+                let config = Config {listen:address, unsafe_listen:false, max_connections:max, threads:2, max_queries:2, execution, metrics:Some(m)};
                 tokio::select! { r = serve_listener(listener,config) => panic!("server ended {r:?}"), _ = stopped => {} }
             });
         });

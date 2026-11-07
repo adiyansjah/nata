@@ -33,6 +33,7 @@ struct Ledger {
 /// D and the process descriptor allowance are supplied by admission.
 pub struct Registry {
     directory: PathBuf,
+    _owner: File,
     quota: u64,
     descriptor_cap: usize,
     state: Mutex<Ledger>,
@@ -61,9 +62,11 @@ impl Registry {
             .and_then(|n| n.checked_add(4096))
             .ok_or_else(invalid)?;
         let grant = reserve(&memory, bytes)?;
-        if quota == 0 || process_allowance == 0 || !fs::symlink_metadata(base)?.is_dir() {
+        if quota == 0 || process_allowance < 2 || !fs::symlink_metadata(base)?.is_dir() {
             return Err(io::Error::other("invalid spill admission"));
         }
+        let guard = File::open(base)?;
+        guard.lock()?;
         let mut builder = fs::DirBuilder::new();
         #[cfg(unix)]
         {
@@ -77,10 +80,14 @@ impl Registry {
             let directory = base.join(format!("nata-spill-{}-{id}", std::process::id()));
             match builder.create(&directory) {
                 Ok(()) => {
+                    let owner = super::cleanup::lock_file(&directory.join("owner.lock"))?;
+                    owner.lock()?;
                     return Ok(Arc::new(Self {
                         directory,
+                        _owner: owner,
                         quota,
-                        descriptor_cap: FD_CAP.min(process_allowance),
+                        // The persistent ownership lock consumes one spill descriptor.
+                        descriptor_cap: FD_CAP.min(process_allowance) - 1,
                         state: Mutex::new(Ledger {
                             stats: SpillStats::default(),
                             next: 0,
@@ -160,6 +167,7 @@ impl Drop for Registry {
     fn drop(&mut self) {
         // File and handle owners retain the registry until their own cleanup.
         // Remove only the exclusively-created, query-private directory.
+        let _ = fs::remove_file(self.directory.join("owner.lock"));
         let _ = fs::remove_dir(&self.directory);
     }
 }

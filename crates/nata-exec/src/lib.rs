@@ -19,3 +19,6 @@ pub use error::EvalError;
 pub use exec::{ExecConfig, ExecReport, Observed, OperatorStats, execute, execute_observed};
 
 mod aggregate;
+
+/// Node execution pool: half the smaller physical/cgroup memory limit.
+pub use aggregate::default_budget as default_memory_pool;

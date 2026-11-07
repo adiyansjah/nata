@@ -194,13 +194,25 @@ fn seeded_disconnect_cancel_kill_under_contention() {
     let mut seed = knob("NATA_PGWIRE_SEED", 0x4b20261107) as u64;
     let start = Instant::now();
     eprintln!("RELIABILITY seed={seed} scenarios={n}");
-    let q = format!("SELECT s FROM '{}'", large());
+    let aggregate = knob("NATA_PGWIRE_AGGREGATE", 0) != 0;
+    let q = if aggregate {
+        format!("SELECT id,count(*) FROM '{}' GROUP BY id", large())
+    } else {
+        format!("SELECT s FROM '{}'", large())
+    };
     let small = format!("SELECT si FROM '{}' LIMIT 1", fixture());
     let m = Arc::new(Metrics {
         opener: Some(Arc::new(SlowOpen)),
         ..Metrics::default()
     });
-    let s = Server::start_with(64, m);
+    let s = if aggregate {
+        let mut execution = nata_exec::ExecConfig::new(1);
+        execution.aggregate_memory_bytes = Some(128 << 20);
+        execution.aggregate_force_spill = true;
+        Server::start_execution(64, m, execution)
+    } else {
+        Server::start_with(64, m)
+    };
     // Warm allocator arenas and all query paths before taking a baseline.
     let mut warm = s.client();
     warm.send_query(&q);

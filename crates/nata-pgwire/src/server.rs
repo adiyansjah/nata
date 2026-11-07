@@ -34,6 +34,8 @@ pub struct Metrics {
     /// Up to 64 completed scans; gauges remain inspectable after release.
     pub scans: Mutex<Vec<Arc<nata_parquet::ScanStats>>>,
     pub opener: Option<Arc<dyn nata_parquet::Opener>>,
+    /// Completed aggregate (budget, peak, held, cancelled) samples, bounded to 64.
+    pub aggregates: Mutex<Vec<(usize, usize, usize, bool)>>,
 }
 struct Counted {
     metrics: Option<Arc<Metrics>>,
@@ -57,6 +59,8 @@ pub struct Config {
     pub threads: usize,
     /// Concurrent admissions, capped by the total CPU worker budget.
     pub max_queries: usize,
+    /// Aggregate execution settings; memory is the NODE pool, divided by admissions.
+    pub execution: nata_exec::ExecConfig,
     pub metrics: Option<Arc<Metrics>>,
 }
 impl Config {
@@ -159,6 +163,42 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
         config.max_queries,
         config.threads
     );
+    let mut execution = config.execution.clone();
+    let system_pool = nata_exec::default_memory_pool();
+    let pool = execution.aggregate_memory_bytes.unwrap_or(system_pool);
+    if pool == 0 || (system_pool != 0 && pool > system_pool) {
+        return Err(io::Error::other(
+            "aggregate memory admission requires a positive pool no larger than the physical/cgroup pool",
+        ));
+    }
+    execution.aggregate_memory_bytes = Some(pool / config.max_queries);
+    let base = execution
+        .aggregate_spill_directory
+        .clone()
+        .unwrap_or_else(std::env::temp_dir);
+    let disk_pool = nata_exec::spill::available_bytes(&base)? / 2;
+    let disk_share = disk_pool / config.max_queries as u64;
+    let requested = execution.aggregate_spill_disk_bytes.unwrap_or_else(|| {
+        u64::try_from(pool / config.max_queries)
+            .unwrap_or(u64::MAX)
+            .saturating_mul(4)
+    });
+    if execution.aggregate_spill_disk_bytes.is_some() && requested > disk_share {
+        return Err(io::Error::other("spill disk admission exceeds node pool"));
+    }
+    execution.aggregate_spill_disk_bytes = Some(requested.min(disk_share));
+    let _ = writeln!(
+        io::stderr(),
+        "aggregate_node_pool={} aggregate_query_budget={} aggregate_disk_share={} memory_source={}",
+        pool,
+        pool / config.max_queries,
+        requested.min(disk_share),
+        if config.execution.aggregate_memory_bytes.is_some() {
+            "explicit"
+        } else {
+            "physical-cgroup"
+        }
+    );
     let sockets = Arc::new(Semaphore::new(config.max_connections + 8));
     let pending = Arc::new(Semaphore::new(8));
     let sessions = Arc::new(Semaphore::new(config.max_connections));
@@ -187,6 +227,9 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
         let id = ids.fetch_add(1, Ordering::Relaxed);
         let threads = config.threads / config.max_queries;
         let metrics = config.metrics.clone();
+        let mut execution = execution.clone();
+        execution.threads = threads;
+        execution.window = threads.saturating_mul(2);
         tokio::spawn(async move {
             let _socket_slot = socket_slot;
             let startup = tokio::time::timeout(Duration::from_secs(5), async {
@@ -284,7 +327,7 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
                 return;
             }
             drop(startup_slot);
-            let _ = session_loop(socket, &registration, queries, threads, metrics, state).await;
+            let _ = session_loop(socket, &registration, queries, execution, metrics, state).await;
         });
     }
 }
@@ -372,7 +415,7 @@ async fn session_loop(
     socket: TcpStream,
     registered: &Registered,
     queries: Arc<Semaphore>,
-    threads: usize,
+    execution: nata_exec::ExecConfig,
     metrics: Option<Arc<Metrics>>,
     mut state: session::State,
 ) -> io::Result<()> {
@@ -765,6 +808,7 @@ async fn session_loop(
                     let progress = metrics.clone();
                     let result_formats =
                         portal.as_ref().map_or_else(Vec::new, |p| p.results.clone());
+                    let execution = execution.clone();
                     let worker = std::thread::Builder::new()
                         .name("nata-query".into())
                         .stack_size(nata_sql::parse::WORKER_STACK_BYTES)
@@ -788,7 +832,7 @@ async fn session_loop(
                                         &q,
                                         &params,
                                         mode,
-                                        threads,
+                                        &execution,
                                         &token,
                                         &c,
                                         &tx,
@@ -880,7 +924,7 @@ async fn session_loop(
                     rows,
                     result.as_ref().map_or_else(|e| e.code, |_| "00000"),
                     queue_wait_us,
-                    threads
+                    execution.threads
                 );
                 if transport_failed || *disconnected.borrow() {
                     return Ok(());
@@ -1101,7 +1145,7 @@ fn produce(
     sql: &str,
     params: &[nata_sql::ast::Expr],
     mode: u8,
-    threads: usize,
+    execution: &nata_exec::ExecConfig,
     token: &ScanCancel,
     cancelled: &AtomicBool,
     tx: &mpsc::Sender<Event>,
@@ -1167,13 +1211,8 @@ fn produce(
             p.plan.explain_text()
         } else {
             let plan = Arc::new(p.plan);
-            let report = nata_exec::execute(
-                Arc::clone(&plan),
-                &nata_exec::ExecConfig::new(threads),
-                Some(token),
-                |_| Ok(()),
-            )
-            .map_err(WireError::scan)?;
+            let report = nata_exec::execute(Arc::clone(&plan), execution, Some(token), |_| Ok(()))
+                .map_err(WireError::scan)?;
             nata_exec::explain::analyze_text(&plan, &report)
         };
         send(encode(codec::description(&[(
@@ -1200,7 +1239,7 @@ fn produce(
     }
     let description = codec::description(&fields).map_err(|_| WireError::internal())?;
     let mut rows = 0u64;
-    let mut config = nata_exec::ExecConfig::new(threads);
+    let mut config = execution.clone();
     config.opener = metrics.and_then(|m| m.opener.clone());
     let mut observed = nata_exec::Observed::default();
     let result = nata_exec::execute_observed(
@@ -1308,6 +1347,16 @@ fn produce(
             scans.remove(0);
         }
         scans.push(stats);
+    }
+    if let Some(m) = metrics
+        && let Some(manager) = observed.aggregate_memory
+    {
+        let s = manager.snapshot();
+        let mut samples = m.aggregates.lock().expect("aggregate metrics");
+        if samples.len() == 64 {
+            samples.remove(0);
+        }
+        samples.push((s.budget, s.peak, s.held, s.cancelled));
     }
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());

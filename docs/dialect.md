@@ -195,9 +195,18 @@ must already exist. Otherwise the single-query CLI budget is half the smaller
 physical/cgroup memory limit, with private spill directories under TMPDIR.
 `--report` and EXPLAIN ANALYZE include spill bytes read/written, partitions,
 maximum recursion depth, peak reservations and cumulative spill-file opens.
-Reservations are conservative capacity allowances; they do not certify process
-RSS or server admission sharing. Serve/default-client verification remains
-step D.
+Reservations are conservative capacity allowances; independent RSS evidence
+is recorded in the skeleton results. `nata serve --aggregate-memory-bytes N`
+sets a node pool, divided by `--max-queries`; each admitted query receives
+that fixed share, including EXPLAIN ANALYZE and binary COPY. Default N is half
+the smaller physical/cgroup limit. Concurrent disk caps also share half the
+available volume bytes. An explicit `--spill-disk-bytes D` is per query and is
+rejected if the admitted sum would exceed that disk pool.
+
+After an unclean exit, run `nata cleanup-spill <spill-directory>` (or the
+TMPDIR used by the killed process). It removes only recognized query files
+whose ownership lock is no longer held. Live queries, links and unknown files
+are skipped. Abandoned files are never adopted or read as query input.
 
 ### Deliberate DuckDB differences (section 9 additions)
 

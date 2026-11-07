@@ -91,7 +91,7 @@ fn descriptors_are_capped_and_release_on_drop() {
     for allowance in [3, 32, 64] {
         let registry = Registry::new(&base.0, 4096, allowance, Arc::clone(&m)).expect("registry");
         let f = registry.create().expect("file");
-        let cap = allowance.min(32);
+        let cap = allowance.min(32) - 1;
         let handles: Vec<_> = (0..cap).map(|_| f.open().expect("handle")).collect();
         assert!(f.open().is_err(), "descriptor cap removed");
         assert!(registry.create().is_err(), "creation bypasses cap");
@@ -410,4 +410,90 @@ fn decoded_buffers_retain_reservation_and_cannot_multiply_workspace() {
     }
     base.empty();
     clean(&m);
+}
+
+#[test]
+fn restart_cleanup_skips_live_and_removes_killed_owner() {
+    // This test reexecutes itself, then SIGKILLs a real registry owner.
+    const CHILD: &str = "NATA_CLEANUP_CHILD";
+    if let Ok(base) = std::env::var(CHILD) {
+        let memory = nata_sched::memory::MemoryManager::new(8 << 20, 1 << 20, 1).expect("memory");
+        let registry = nata_exec::spill::Registry::new(
+            std::path::Path::new(&base),
+            1 << 20,
+            32,
+            Arc::clone(&memory),
+        )
+        .expect("registry");
+        let file = registry.create().expect("file");
+        let mut workspace = Workspace::new(&memory).expect("workspace");
+        workspace
+            .write(&mut file.open().expect("open"), &batch(1), 0, 0)
+            .expect("spill write");
+        std::fs::write(std::path::Path::new(&base).join("ready"), b"ready").expect("ready");
+        let _file = std::hint::black_box(file);
+        loop {
+            std::thread::park();
+        }
+    }
+    let base = std::env::temp_dir().join(format!("nata-restart-{}", std::process::id()));
+    std::fs::create_dir_all(&base).expect("base");
+    let mut child = std::process::Command::new(std::env::current_exe().expect("exe"))
+        .args([
+            "restart_cleanup_skips_live_and_removes_killed_owner",
+            "--exact",
+            "--nocapture",
+        ])
+        .env(CHILD, &base)
+        .spawn()
+        .expect("spawn");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while !base.join("ready").exists() {
+        assert!(std::time::Instant::now() < deadline, "child did not start");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert_eq!(
+        nata_exec::spill::cleanup_stale(&base).expect("live cleanup"),
+        0
+    );
+    child.kill().expect("kill");
+    child.wait().expect("join");
+    assert_eq!(
+        nata_exec::spill::cleanup_stale(&base).expect("restart cleanup"),
+        1
+    );
+    assert_eq!(
+        nata_exec::spill::cleanup_stale(&base).expect("idempotent"),
+        0
+    );
+    std::fs::remove_file(base.join("ready")).expect("ready");
+    std::fs::remove_dir(base).expect("removed all spill data");
+}
+
+#[test]
+fn restart_cleanup_rejects_unknown_files_and_symlinks() {
+    let base = Base::new();
+    let unknown = base.0.join("nata-spill-999999-0");
+    fs::create_dir(&unknown).expect("dir");
+    fs::write(unknown.join("owner.lock"), b"").expect("owner");
+    fs::write(unknown.join("unknown.data"), b"not ours").expect("unknown");
+    assert_eq!(
+        nata_exec::spill::cleanup_stale(&base.0).expect("skip unknown"),
+        0
+    );
+    assert!(unknown.join("unknown.data").exists());
+    #[cfg(unix)]
+    {
+        let target = base.0.join("keep");
+        fs::write(&target, b"keep").expect("target");
+        let linked = base.0.join("nata-spill-999999-1");
+        fs::create_dir(&linked).expect("dir");
+        fs::write(linked.join("owner.lock"), b"").expect("owner");
+        std::os::unix::fs::symlink(&target, linked.join("partition-0.ipc")).expect("link");
+        assert_eq!(
+            nata_exec::spill::cleanup_stale(&base.0).expect("skip link"),
+            0
+        );
+        assert_eq!(fs::read(target).expect("untouched"), b"keep");
+    }
 }

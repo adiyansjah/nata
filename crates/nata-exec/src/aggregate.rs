@@ -553,7 +553,7 @@ fn expression_slots(plan: &LogicalPlan) -> usize {
     }
     count
 }
-fn default_budget() -> usize {
+pub fn default_budget() -> usize {
     let physical = std::fs::read_to_string("/proc/meminfo")
         .ok()
         .and_then(|s| {
@@ -595,12 +595,7 @@ fn default_budget() -> usize {
         }
     }
     let cgroup = limits.into_iter().min();
-    physical
-        .into_iter()
-        .chain(cgroup)
-        .min()
-        .unwrap_or(128 << 20)
-        / 2
+    physical.into_iter().chain(cgroup).min().unwrap_or(0) / 2
 }
 fn eval_on_stack<T: Send>(depth: usize, f: impl FnOnce() -> R<T> + Send) -> R<T> {
     if depth <= 64 {
