@@ -163,6 +163,9 @@ Since 2026-11-04 the main Claude Code session works as an **orchestrator**: it p
     builds a slice names the new direct dependencies the card's ADRs select, and says that a crate already in `Cargo.lock` may become a
     direct dependency at its locked version, with `cargo deny` passing and its unsafe code recorded. Only a crate that is not in the lockfile
     yet is a stop-and-report.
+  - **Clean up disk** (added 2026-11-07; finished children's scratch and build directories filled the 252 GB disk). A child deletes its own
+    scratch directories (`~/tmp-*`) when it finishes. The orchestrator deletes a child's worktree `target/` once its work is merged or
+    abandoned, and checks free disk space before it starts a child.
   - **Stop and report.** A child stops and reports before anything the brief does not name: a rerun beyond the count allowed, a new dependency, a change to a threshold or a default.
   - **Fixed report form.** Each verdict is reported as: the card's rule as written, the measured numbers, the verdict the rule gives, and the command that reproduces it. A verdict that does not follow from the rule is a finding, not a result.
   - **Own worktree by default.** A child that edits code works in its own worktree (`isolation: worktree`), not in the shared checkout, so the orchestrator can test and fix in the main tree at any time.
