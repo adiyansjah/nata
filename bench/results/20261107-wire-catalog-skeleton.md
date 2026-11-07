@@ -231,3 +231,21 @@ scratch; all heavy work used disk TMPDIR and ran one job at a time.
 [Rebase check summary, matrices and mutant results](raw/20261107-wire-catalog-skeleton/rebased-on-main/)
 retain the rerun evidence. Original acceptance gaps and explicit refusals above
 remain open; no GCP, push or merge was performed.
+
+## Heavy checks on clean VMs (added by the parent, 2026-11-07)
+
+Runs `wcskel-arm64` (n4a-highcpu-16, $0.054) and `wcskel-x86-r2` (c3d-highcpu-16, $0.044), generic `heavy` job with
+`scripts/wire-skeleton/heavy.steps.example`. A first x86-64 attempt (`wcskel-x86`) failed at once with "no heavy.steps in the shipped
+tree": the parent removed the file before the tree was shipped. Nothing was measured in it.
+
+| Step | ARM64 | x86-64 |
+|---|---|---|
+| protocol tests | pass | pass |
+| wire-codec fuzz, 1,000,000 cases | pass | pass |
+| metadata fuzz, 1,000,000 cases | pass | pass |
+| live reliability (4,000 scenarios, 20,000 cases, contention 8) | pass | pass |
+| skeleton mutants | all CAUGHT | all CAUGHT |
+| damaged-Parquet fuzz, 30,000 per shape | pass | pass |
+| client matrix | exit 1: the known skeleton FAIL cells (schema browsing, text/CSV/table COPY with 0A000) | identical cells |
+
+The client matrix is identical on both CPU types. Its FAIL cells are the rest of slice 10, not regressions.
