@@ -1,0 +1,39 @@
+CASE throttle_503_slowdown_then_ok: PASS outcome=ok attempts=0 elapsed_ms=47
+CASE throttle_429_retry_after_honored: PASS outcome=ok attempts=0 elapsed_ms=1002
+CASE retry_after_beyond_deadline_fails_without_another_attempt: PASS outcome=Throttled attempts=1 elapsed_ms=0
+CASE persistent_500_exactly_four_attempts: PASS outcome=Server5xx attempts=4 elapsed_ms=112
+CASE backoff_gaps_follow_equal_jitter: PASS gaps_ms=[19, 25, 68] elapsed_ms=114 
+CASE stalled_headers_timeout_then_ok: PASS outcome=ok attempts=0 elapsed_ms=821
+CASE stalled_body_persistent_bounded_by_attempt_timeout: PASS outcome=Timeout attempts=4 elapsed_ms=3316
+CASE truncated_body_retried_no_duplicate_bytes: PASS outcome=ok attempts=0 elapsed_ms=20
+CASE chunked_range_response_without_content_length_rejected: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE truncated_persistent_four_attempts: PASS outcome=Transport attempts=4 elapsed_ms=115
+CASE connection_reset_then_ok: PASS outcome=ok attempts=0 elapsed_ms=48
+CASE content_range_claims_more_than_requested: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE content_range_shifted_start: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE range_ignored_full_object_200: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE content_length_longer_than_range: PASS outcome=BadLength attempts=1 elapsed_ms=0
+CASE content_length_shorter_than_range: PASS outcome=BadLength attempts=1 elapsed_ms=0
+CASE version_change_between_two_range_reads: PASS elapsed_ms=5 second read failed IdentityChanged (412)
+CASE version_change_endpoint_ignores_if_match: PASS outcome=IdentityChanged attempts=1 elapsed_ms=5
+CASE size_change_endpoint_ignores_if_match: PASS outcome=IdentityChanged attempts=1 elapsed_ms=4
+CASE auth_403_is_permanent: PASS outcome=Auth attempts=1 elapsed_ms=0
+CASE missing_object_404_is_permanent: PASS outcome=NotFound attempts=1 elapsed_ms=0
+CASE range_beyond_pinned_length_rejected_before_any_request: PASS outcome=BadRange attempts=0 elapsed_ms=0
+CASE grant_too_small_is_a_bounded_error: PASS outcome=GrantTooSmall attempts=0 elapsed_ms=0
+CASE cancel_during_stalled_body: PASS quiescence_ms=0 
+CASE cancel_during_backoff_sleep: PASS quiescence_ms=0 result=Err(Cancelled)
+CASE cancel_in_permit_wait_other_query_continues: PASS a_ok=true b=Ok(1000) elapsed_ms=498
+CASE operation_deadline_bounds_a_long_retry_chain: PASS elapsed_ms=1164 result=Err((DeadlineExceeded, 17)) (deadline 1200 ms)
+CASE inflight_caps_per_query_and_per_node: PASS peak active attempts: one query 16 (cap 16); three queries 32 (cap 32) 
+CASE grant_caps_the_bytes_in_flight: PASS peak concurrent attempts 2 (budget fits 2) 
+CASE seeded_chaos_every_read_exact_or_bounded_error: PASS seed=20261107 reads_ok=72 reads_failed_bounded=8 gets_run1=53 gets_run2=53 
+RESULT faults: 30 cases, 0 failed
+CASE cache_off_vs_bounded_cache_repeated_footer_reads: PASS 10 objects x 5 queries: no_cache: heads=50 footer_gets=100 footer_bytes=3277000 server_gets=100 server_heads=50; bounded_cache: heads=50 footer_gets=20 footer_bytes=655400 server_gets=20 server_heads=50; 
+CASE replaced_object_never_served_stale: PASS after a replace the next open sees the new footer
+CASE lru_eviction_bounded_by_bytes_and_entries: PASS cap 99890 B (3 entries of ~28540 B): retained 85621 B, 3 entries, 3 evictions
+CASE pinned_entries_stay_charged_and_force_a_bypass: PASS outcomes [Miss, Miss, Bypass, Bypass], retained 57081 B <= cap 71350 B, then 57081 B after the handles dropped
+CASE over_entry_cap_is_bypassed_not_admitted: PASS bypassed, served uncached
+CASE failed_fill_is_never_published: PASS fill failed after 4 attempts, nothing cached, next open filled normally
+CASE credential_scope_is_part_of_the_key: PASS two scopes, two entries
+RESULT cache: 7 cases, 0 failed

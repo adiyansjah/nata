@@ -1,0 +1,21 @@
+# Card 0006 walking skeleton: the heavy steps for the generic `heavy` job (scripts/gcp/README.md). Copy to the gitignored `heavy.steps` at the root of the tree you
+# ship, one step per line `NAME [VAR=value ...] COMMAND...`; every exit file is a gate (a failing command is a result, not a failed job).
+#
+# No bucket is needed for these: the endpoint is the in-process fake (loopback). The real-bucket cells have their own job, see `real-bucket.steps.example`.
+# Sizes: the transport fuzz makes ~6 reads per case and the damaged-object fuzz two scans per case; at 30 to 60 ms per case on one core, 200,000 cases of each
+# run in about two hours and fit a 16-vCPU Spot VM next to the mutant sweep. Replay one case with the printed seed and case number (NATA_OBJ_FUZZ_SEED, NATA_OBJ_FUZZ_ONLY=<n>).
+objstore-tests cargo test --release -p nata-objstore
+objstore-transport-fuzz NATA_OBJ_FUZZ_SEED=20261107 NATA_OBJ_FUZZ_CASES=200000 cargo test --release -p nata-objstore --test fuzz transport_responses -- --nocapture
+objstore-object-fuzz NATA_OBJ_FUZZ_SEED=20261107 NATA_OBJ_FUZZ_CASES=200000 cargo test --release -p nata-objstore --test fuzz damaged_objects -- --nocapture
+# the 13 wrapper mutants and the 4 cache mutants, each in its own process; every one must be CAUGHT (about 10 minutes at 8 vCPU)
+objstore-mutants cargo run --release -p nata-objstore --features mutants --bin objstore-sweep -- mutants
+# the hostile-body cases under `ulimit -v 1536 MiB`, once more with the mutant that removes the transport bound (must die) and the one that removes the success-body bound
+objstore-hostile cargo run --release -p nata-objstore --features mutants --bin objstore-sweep -- hostile-all
+# the differential sets, local and from the fake endpoint (data: scripts/gen-tpch.sh 0.01 and scripts/gen-sql-check-data.sh into $WORK/data/tpch-sf0.01)
+objstore-check bash scripts/object-store/check.sh $WORK/data/tpch-sf0.01 fake
+# the default clients against `nata serve` with a registered s3:// table served by the fake endpoint, and its local twin (client setup as the aggregate job)
+objstore-build cargo build --release -p nata -p nata-objfake
+objstore-client-setup bash scripts/aggregate-client-setup.sh
+objstore-client-smoke bash -c '"$WORK/aggregate-client/bin/python" scripts/object-store/client-smoke.py --nata target/release/nata --objfake target/release/nata-objfake --parquet "$WORK/data/tpch-sf0.01/lineitem.parquet" --work "$WORK/objstore-smoke" --jar "$WORK/aggregate-pgjdbc.jar"'
+# the damaged-file fuzz of the scan on local files (unchanged by this slice; run on the closing commit) and the carried-in R6c/R6d guard check
+file-fuzz NATA_FUZZ_CASES=30000 NATA_FUZZ_SEED=20261107 cargo test --release -p nata-parquet --features page-crc --test fuzz_files -- --nocapture
