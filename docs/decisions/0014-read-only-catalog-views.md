@@ -59,3 +59,7 @@ Required helper surface to freeze against captures: version/current_database/cur
 ## Confidence, consequences and revisit when
 
 Medium for a shared read-only provider; low for inventory sufficiency until captures pass. It adds an explicit metadata contract and bounded query surface, not writes or a PostgreSQL catalog clone. Revisit on an uncaptured query/client upgrade, new Nata type/connector, persistent identity requirement or catalog size exceeding the frozen budget. Parent must settle provider ownership and mapping of catalogs to databases before implementation.
+
+## Amendments
+
+- 2026-11-07, after the real-client capture against PostgreSQL (`bench/results/20261107-wire-catalog-reference.md`): the inventory is **expanded**. The default clients read 87 client/object rows; 51 were in the proposed surface and **36 were missing** (among them `pg_depend`, the policy, publication and statistics catalogs, more columns of `pg_class`, `pg_database`, `pg_index`, `pg_inherits`, `pg_proc` and `information_schema`, and 18 helper spellings). Each of the 36 is either served, read-only and derived from Nata's catalog, or refused with a stated, tested effect on that client (for example, an empty result where PostgreSQL would list policies). Silently dropping one is not allowed. The record lists every row.

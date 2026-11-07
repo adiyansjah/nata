@@ -36,3 +36,7 @@ Related: [ADR 0008](0008-client-protocol.md), [ADR 0009](0009-query-memory-manag
 ## Confidence, consequences and revisit when
 
 Low until the captured sequences and cancellation model pass; medium that explicit retention accounting is preferable to invisible parked work. The server can serve JDBC fetch sizes with bounded retention, but slow thinkers may lose a portal. Revisit if normal default-client use exceeds the lease, parked producers cannot release resources on deadline, or a real requirement for SQL cursors/spooling arises. If the safe bounded policy cannot satisfy the mandatory matrix, stop for the owner rather than extending transaction or spool scope implicitly.
+
+## Amendments
+
+- 2026-11-07, correction after the PostgreSQL capture (`bench/results/20261107-wire-catalog-reference.md`): when a positive max-rows Execute returns exactly the remaining rows, PostgreSQL still answers `PortalSuspended`; only the **next** Execute returns `CommandComplete` with `SELECT 0`. Completion counts are per Execute, not per portal. Nata follows PostgreSQL's sequence, held by the committed byte-for-byte fixtures.
