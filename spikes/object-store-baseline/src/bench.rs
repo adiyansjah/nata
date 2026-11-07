@@ -169,7 +169,8 @@ fn metadata_token() -> Result<String, String> {
 pub fn duck_script(sc: &StoreCfg, cell: &Cell, q: &QueryKind, threads: usize, reps: usize, auth: &DuckAuth, token: Option<&str>) -> String {
     let urls: Vec<String> = cell.rels().iter().map(|r| format!("'{}'", sc.duck_url(r))).collect();
     let table = format!("read_parquet([{}])", urls.join(", "));
-    let mut s = String::from("LOAD httpfs;\n");
+    // CREATE SECRET prints a result row ("true"); its output is discarded so that the first statement's text is the query's alone
+    let mut s = String::from("LOAD httpfs;\n.output /dev/null\n");
     s += &format!("SET threads={threads};\n");
     match (&sc.kind, auth) {
         (StoreKind::S3 { spec }, _) => {
@@ -189,7 +190,7 @@ pub fn duck_script(sc: &StoreCfg, cell: &Cell, q: &QueryKind, threads: usize, re
             }
         }
     }
-    s += ".timer on\n";
+    s += ".output\n.timer on\n";
     let sql = q.sql().replace("{T}", &table);
     for _ in 0..reps {
         s += &sql;
@@ -311,12 +312,14 @@ impl Bench {
         let want = self.expected.get(&format!("{}|{}", cell.dir.split('/').next().unwrap_or(""), cell.query)).cloned().unwrap_or_default();
         let reps = if cell.query == "meta" { 5 } else { 1 };
         let mk = |rep: usize, wall: f64, text: &str| Row {
+            // note filled below when the answer differs
             cell: cell.id(),
             arm: arm.to_string(),
             round,
             rep,
             workers: self.workers,
             ok: !want.is_empty() && text == want,
+            // (the answer text is numbers only: on a mismatch it is the first thing to look at)
             wall,
             first: 0.0,
             needed: 0,
@@ -330,7 +333,7 @@ impl Bench {
             rss_mb: 0.0,
             fb50: 0.0,
             fb99: 0.0,
-            note: String::new(),
+            note: if !want.is_empty() && text != want { format!("MISMATCH got={}", text.chars().take(80).collect::<String>().replace('\n', "/")) } else { String::new() },
         };
         if base_arm(arm) == "duck" {
             let token = if matches!(self.sc.kind, StoreKind::Gcs { .. }) { metadata_token().ok() } else { None };
@@ -472,4 +475,24 @@ pub fn settle(label: &str) -> String {
 
 pub fn median_of(v: &[f64]) -> f64 {
     median(v)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_gcs_script_discards_the_secret_row_and_carries_the_token_only_in_the_secret() {
+        // found by the first GCP attempt: CREATE SECRET prints a "true" row that polluted the first answer; no local trial had used a secret
+        let sc = StoreCfg { kind: StoreKind::Gcs { bucket: "bkt".into() }, prefix: "p".into() };
+        let cell = Cell { dir: "sf1/small1".into(), files: 1, sf: 1.0, query: "full".into() };
+        let s = duck_script(&sc, &cell, &QueryKind::Full, 4, 1, &DuckAuth::Bearer, Some("TOK"));
+        let i_out = s.find(".output /dev/null").unwrap();
+        let i_secret = s.find("BEARER_TOKEN 'TOK'").unwrap();
+        let i_back = s.find("\n.output\n").unwrap();
+        let i_timer = s.find(".timer on").unwrap();
+        assert!(i_out < i_secret && i_secret < i_back && i_back < i_timer);
+        assert!(s.contains("https://storage.googleapis.com/bkt/p/sf1/small1/part-0000.parquet"));
+        assert_eq!(s.matches("TOK").count(), 1);
+    }
 }
