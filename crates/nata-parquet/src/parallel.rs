@@ -76,7 +76,11 @@ impl Work for ScanWork {
         match task.run_cancellable(&|| cancel.is_cancelled()) {
             Ok(TaskResult::Done(o)) => Run::Done(o),
             Ok(TaskResult::Cancelled) => Run::Cancelled,
-            Err(e) => Run::Failed(e),
+            Err(e) => {
+                // a failed row group makes every later file's result unreachable: stop their blocked remote reads (a no-op for local files)
+                self.plan.abandon_from(task.file_index().saturating_add(1));
+                Run::Failed(e)
+            }
         }
     }
 
@@ -120,7 +124,7 @@ impl ScanCancel {
         }
     }
 
-    fn register(&self, hook: Box<dyn Fn() + Send + Sync>) {
+    pub(crate) fn register(&self, hook: Box<dyn Fn() + Send + Sync>) {
         let mut g = self
             .0
             .lock()
@@ -131,7 +135,7 @@ impl ScanCancel {
         g.hook = Some(hook);
     }
 
-    fn clear(&self) {
+    pub(crate) fn clear(&self) {
         let mut g = self
             .0
             .lock()
@@ -178,12 +182,24 @@ pub fn run_parallel_with(
         );
         if let Some(c) = cancel {
             let handle = sched.cancel_handle();
-            c.register(Box::new(move || handle.cancel()));
+            let cancelled_plan = Arc::clone(&plan);
+            c.register(Box::new(move || {
+                cancelled_plan.cancel_remote();
+                handle.cancel();
+            }));
         }
         let outcome = sched.run(|_seq, out| {
             for batch in &out.batches {
-                if lim.feed(batch, &mut sink)? {
-                    return Ok(Flow::Stop);
+                match lim.feed(batch, &mut sink) {
+                    Ok(false) => {}
+                    Ok(true) => {
+                        plan.cancel_remote();
+                        return Ok(Flow::Stop);
+                    }
+                    Err(e) => {
+                        plan.cancel_remote();
+                        return Err(e);
+                    }
                 }
             }
             Ok(Flow::Continue)

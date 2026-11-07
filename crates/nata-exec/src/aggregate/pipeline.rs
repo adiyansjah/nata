@@ -157,9 +157,12 @@ pub(super) fn accumulate(
     let mut options = shared.plan.scan.scan_options();
     options.late_materialization = cfg.late_materialization;
     if shared.plan.scan.columns.is_empty() {
-        options.columns = Some(vec![crate::exec::first_readable_column(&shared.plan)?]);
+        options.columns = Some(vec![crate::exec::first_readable_column(
+            &shared.plan,
+            cfg.remote.as_deref(),
+        )?]);
     }
-    let scan = Arc::new(ScanPlan::open_budgeted(
+    let scan = Arc::new(ScanPlan::open_remote(
         &shared.plan.scan.files,
         &options,
         cfg.opener
@@ -168,8 +171,11 @@ pub(super) fn accumulate(
         None,
         None,
         Some(Arc::clone(&shared.manager)),
+        cfg.remote.as_ref(),
     )?);
     observed.stats = Some(Arc::clone(scan.stats()));
+    // a cancel also wakes a worker that is waiting for a store (a no-op for local files)
+    let _remote_cancel = scan.cancel_hook(cancel);
     let mut tasks = VecDeque::new();
     let failure: Mutex<Option<(usize, ScanError)>> = Mutex::new(None);
     let mut decode_bytes = 64 << 10;

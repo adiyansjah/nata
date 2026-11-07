@@ -15,6 +15,10 @@ pub trait SourceProvider: Sync {
     fn named(&self, _name: &[String]) -> std::result::Result<SourceInfo, String> {
         Err("registered table names require a catalog snapshot".into())
     }
+    /// Whether this provider reads `s3://` and `gs://` locations (card 0006). The default, the file system, refuses them with `not supported yet`.
+    fn supports_remote(&self) -> bool {
+        false
+    }
     /// The files that a path or glob names, in the order of the scan.
     fn expand(&self, pattern: &str) -> std::result::Result<Vec<PathBuf>, String>;
     /// The top-level columns of a file, from its footer alone.
@@ -32,6 +36,51 @@ impl SourceProvider for FsSource {
 
     fn leaves(&self, file: &Path) -> std::result::Result<Vec<Leaf>, ScanError> {
         nata_parquet::read_leaves(file)
+    }
+}
+
+/// The file system for local paths and a remote reader for `s3://` and `gs://` locations and globs (card 0006): the front end binds names and types from
+/// the footer of the first object, which comes from the reader's identity-validated footer cache, so the scan that follows finds it warm.
+pub struct RoutedSource<'a> {
+    pub local: &'a dyn SourceProvider,
+    pub remote: &'a dyn nata_parquet::RemoteIo,
+    /// Polled while the binder waits for the store (Ctrl-C).
+    pub cancel: &'a (dyn Fn() -> bool + Sync),
+}
+
+impl SourceProvider for RoutedSource<'_> {
+    fn named(&self, name: &[String]) -> std::result::Result<SourceInfo, String> {
+        self.local.named(name)
+    }
+
+    fn supports_remote(&self) -> bool {
+        true
+    }
+
+    fn expand(&self, pattern: &str) -> std::result::Result<Vec<PathBuf>, String> {
+        if nata_parquet::is_remote_location(pattern) {
+            return self
+                .remote
+                .expand(pattern, self.cancel)
+                .map(|v| v.into_iter().map(PathBuf::from).collect())
+                .map_err(|e| e.message);
+        }
+        self.local.expand(pattern)
+    }
+
+    fn leaves(&self, file: &Path) -> std::result::Result<Vec<Leaf>, ScanError> {
+        let Some(location) = file
+            .to_str()
+            .filter(|l| nata_parquet::is_remote_location(l))
+        else {
+            return self.local.leaves(file);
+        };
+        let meta = self
+            .remote
+            .footer(location, self.cancel)
+            .map_err(|e| nata_parquet::remote_scan_error(&e, file))?;
+        nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+            .map_err(|m| ScanError::not_supported(m).in_file(file))
     }
 }
 
@@ -99,10 +148,12 @@ pub fn resolve_with(
     if pattern.is_empty() {
         return Err(SqlError::bind(pos, "the path is empty"));
     }
-    if pattern.contains("://") {
+    if pattern.contains("://")
+        && !(provider.supports_remote() && nata_parquet::is_remote_location(pattern))
+    {
         return Err(SqlError::not_supported(
             pos,
-            "remote paths (only local files and globs)",
+            "remote paths other than s3:// and gs:// (local files and globs, and objects in S3 or GCS)",
         ));
     }
     let files = provider

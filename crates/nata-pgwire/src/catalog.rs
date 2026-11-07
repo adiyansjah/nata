@@ -40,6 +40,12 @@ pub struct Snapshot {
 }
 impl Snapshot {
     pub fn load(path: &Path) -> io::Result<Self> {
+        Self::load_with(path, None)
+    }
+
+    /// As `load`; with a remote reader a table's location may also be one object in a store (`s3://bucket/key`, `gs://bucket/key`; no glob), whose
+    /// schema is read from its footer through the reader (card 0006, ADR 0014's snapshot interface).
+    pub fn load_with(path: &Path, remote: Option<&dyn nata_parquet::RemoteIo>) -> io::Result<Self> {
         let invalid = || io::Error::other("invalid or oversized local catalog registry");
         let mut text = String::new();
         std::fs::File::open(path)?
@@ -105,7 +111,8 @@ impl Snapshot {
             if [catalog, schema, name]
                 .iter()
                 .any(|s| s.is_empty() || s.len() > 63 || s.contains('\0'))
-                || file.contains("://")
+                || (file.contains("://")
+                    && !(remote.is_some() && nata_parquet::is_remote_location(file)))
                 || file.contains(['*', '?', '[', '\0'])
                 || matches!(*schema, "pg_catalog" | "information_schema")
                 || !identities.insert((catalog.to_string(), schema.to_string(), name.to_string()))
@@ -113,13 +120,26 @@ impl Snapshot {
                 return Err(invalid());
             }
             let p = PathBuf::from(file);
-            let p = if p.is_absolute() {
+            let p = if p.is_absolute() || nata_parquet::is_remote_location(file) {
                 p
             } else {
                 path.parent().unwrap_or(Path::new(".")).join(p)
             };
+            let no_cancel = || false;
+            let routed;
+            let provider: &dyn SourceProvider = match remote {
+                Some(remote) => {
+                    routed = nata_sql::RoutedSource {
+                        local: &nata_sql::FsSource,
+                        remote,
+                        cancel: &no_cancel,
+                    };
+                    &routed
+                }
+                None => &nata_sql::FsSource,
+            };
             let source = nata_sql::source::resolve_with(
-                &nata_sql::FsSource,
+                provider,
                 p.to_str().ok_or_else(invalid)?,
                 nata_sql::Pos::START,
                 BindOptions { all_footers: true },

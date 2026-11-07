@@ -60,6 +60,8 @@ pub struct ExecConfig {
     /// Footers read ahead (register item P2): how many files may be pending at once. 1 is slice 3's behaviour (one file at a time); default 8 after the
     /// slice-4 benchmark cleared 1.3x on both CPU types.
     pub footers_ahead: usize,
+    /// Reads the `s3://` and `gs://` files of the plan (card 0006); `None`: such a path is an error.
+    pub remote: Option<Arc<dyn nata_parquet::RemoteIo>>,
 }
 
 impl ExecConfig {
@@ -79,6 +81,7 @@ impl ExecConfig {
             opener: None,
             late_materialization: false,
             footers_ahead: 8,
+            remote: None,
         }
     }
 }
@@ -374,7 +377,7 @@ pub fn execute_observed(
     options.late_materialization = cfg.late_materialization;
     if plan.scan.columns.is_empty() {
         // `SELECT 1 FROM 'f'`: no column is needed, but the scan delivers rows with at least one: the first one the scan supports
-        options.columns = Some(vec![first_readable_column(&plan)?]);
+        options.columns = Some(vec![first_readable_column(&plan, cfg.remote.as_deref())?]);
     }
     let depth = max_depth(&plan);
     let big_stack = (depth > DEEP).then(|| depth.saturating_mul(32 * 1024).saturating_add(8 << 20));
@@ -393,11 +396,14 @@ pub fn execute_observed(
         Some(o) => Arc::clone(o),
         None => Arc::new(nata_parquet::FsOpener),
     };
-    let scan = Arc::new(ScanPlan::open_with_map(
+    let scan = Arc::new(ScanPlan::open_remote(
         &plan.scan.files,
         &options,
         opener,
         Some(map),
+        None,
+        None,
+        cfg.remote.as_ref(),
     )?);
     observed.stats = Some(Arc::clone(scan.stats()));
     let (offset, limit) = match plan.limit {
@@ -461,13 +467,30 @@ pub fn execute_observed(
 }
 
 /// The name of the first column of the first file that the scan can read.
-pub(crate) fn first_readable_column(plan: &LogicalPlan) -> Result<String, ScanError> {
+pub(crate) fn first_readable_column(
+    plan: &LogicalPlan,
+    remote: Option<&dyn nata_parquet::RemoteIo>,
+) -> Result<String, ScanError> {
     let first = plan
         .scan
         .files
         .first()
         .ok_or_else(|| ScanError::usage("no file given"))?;
-    let leaves = nata_parquet::read_leaves(first)?;
+    let leaves = match (
+        first
+            .to_str()
+            .filter(|l| nata_parquet::is_remote_location(l)),
+        remote,
+    ) {
+        (Some(location), Some(remote)) => {
+            let meta = remote
+                .footer(location, &|| false)
+                .map_err(|e| nata_parquet::remote_scan_error(&e, first))?;
+            nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+                .map_err(|m| ScanError::not_supported(m).in_file(first))?
+        }
+        _ => nata_parquet::read_leaves(first)?,
+    };
     leaves
         .into_iter()
         .find(|l| l.kind.is_ok())

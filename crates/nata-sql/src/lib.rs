@@ -12,7 +12,7 @@ pub mod types;
 
 pub use error::{ErrorClass, Pos, Result, SqlError};
 pub use plan::{LogicalPlan, Planned};
-pub use source::{BindOptions, FsSource, SourceProvider};
+pub use source::{BindOptions, FsSource, RoutedSource, SourceProvider};
 
 /// Parse, bind and plan one statement: `SELECT ... FROM '<file or glob>' [WHERE ...] [LIMIT n [OFFSET m]]`, or `EXPLAIN [ANALYZE]` of it.
 ///

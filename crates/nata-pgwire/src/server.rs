@@ -1276,20 +1276,40 @@ struct Source<'a>(
     &'a crate::catalog::Snapshot,
     &'a str,
     &'a [String],
+    Option<&'a dyn nata_parquet::RemoteIo>,
 );
 impl SourceProvider for Source<'_> {
     fn named(&self, name: &[String]) -> Result<nata_sql::source::SourceInfo, String> {
         self.1.resolve(name, self.2, self.3)
     }
+    fn supports_remote(&self) -> bool {
+        self.4.is_some()
+    }
     fn expand(&self, p: &str) -> Result<Vec<PathBuf>, String> {
         if self.0.load(Ordering::SeqCst) {
             return Err("cancelled".into());
+        }
+        if let Some(remote) = self.4.filter(|_| nata_parquet::is_remote_location(p)) {
+            return remote
+                .expand(p, &|| self.0.load(Ordering::SeqCst))
+                .map(|v| v.into_iter().map(PathBuf::from).collect())
+                .map_err(|e| e.message);
         }
         nata_sql::FsSource.expand(p)
     }
     fn leaves(&self, p: &Path) -> Result<Vec<nata_parquet::schema::Leaf>, ScanError> {
         if self.0.load(Ordering::SeqCst) {
             return Err(ScanError::new(ErrorKind::Cancelled("cancelled".into())));
+        }
+        if let (Some(remote), Some(location)) = (
+            self.4,
+            p.to_str().filter(|l| nata_parquet::is_remote_location(l)),
+        ) {
+            let meta = remote
+                .footer(location, &|| self.0.load(Ordering::SeqCst))
+                .map_err(|e| nata_parquet::remote_scan_error(&e, p))?;
+            return nata_parquet::schema::leaves(meta.file_metadata().schema_descr())
+                .map_err(|m| ScanError::not_supported(m).in_file(p));
         }
         nata_sql::FsSource.leaves(p)
     }
@@ -1315,7 +1335,13 @@ fn produce(
     let p = nata_sql::plan_parameters(
         inner.unwrap_or(sql),
         params,
-        &Source(cancelled, catalog, database, search_path),
+        &Source(
+            cancelled,
+            catalog,
+            database,
+            search_path,
+            execution.remote.as_deref(),
+        ),
     );
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());

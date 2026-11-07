@@ -27,7 +27,7 @@ use std::fs::File;
 use std::io::Read;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use arrow_array::{BooleanArray, RecordBatch};
@@ -45,6 +45,9 @@ use crate::adapter;
 use crate::error::{ErrorKind, ScanError, redact};
 use crate::filter::{self, Term};
 use crate::opener::{FsOpener, OpenFile, OpenFor, Opener};
+use crate::remote::{
+    Blob, BlobRead, RemoteErrorKind, RemoteFile, RemoteIo, RemoteQuery, is_remote_location,
+};
 use crate::schema::{Kind, Leaf, leaves};
 use crate::stats::{Counted, Reservation, ScanStats};
 
@@ -83,6 +86,10 @@ pub struct RowGroupInfo {
 #[derive(Debug)]
 pub struct FileScan {
     path: PathBuf,
+    /// Number in the plan's file list (the order of the scan).
+    index: usize,
+    /// The opened object, for a file in a store.
+    remote: Option<RemoteFile>,
     meta: ArrowReaderMetadata,
     mask: ProjectionMask,
     /// The names of the columns that the filter needs and the output wants, in the order of this file's schema, with their expected Arrow types.
@@ -140,6 +147,11 @@ pub struct Ctx {
     pub sink: Option<TaskSinkFactory>,
     pub stats: Arc<ScanStats>,
     pub memory: Option<Arc<nata_sched::memory::MemoryManager>>,
+    /// The object-store reader of this scan's `s3://` and `gs://` files, if the scan was opened with one (card 0006).
+    pub remote: Option<Arc<dyn RemoteQuery>>,
+    /// Files with an index at or above this value are abandoned: a remote open or fetch waiting for them stops (the scan ended, was cancelled, or a
+    /// lower file failed, so their result can never be delivered). `usize::MAX`: nothing is abandoned.
+    pub abandon_from_file: AtomicUsize,
 }
 
 impl std::fmt::Debug for Ctx {
@@ -221,6 +233,20 @@ pub enum TaskResult {
 fn io_error(e: &std::io::Error, path: &Path) -> ScanError {
     // the OS error text names the reason (no such file, permission denied), never file contents
     ScanError::new(ErrorKind::Io(redact(&e.to_string()))).in_file(path)
+}
+
+/// A remote reader's failure as a scan error naming the file (the same classes as a local file's).
+pub fn remote_error(e: &crate::remote::RemoteError, path: &Path) -> ScanError {
+    // the implementation's messages are already free of endpoints, credentials, signed URLs and response bodies; `redact` is the same belt the local
+    // errors wear
+    let text = redact(&e.message);
+    let kind = match e.kind {
+        RemoteErrorKind::Io | RemoteErrorKind::Resource => ErrorKind::Io(text),
+        RemoteErrorKind::Corrupt => ErrorKind::Corrupt(text),
+        RemoteErrorKind::NotSupported => ErrorKind::NotSupported(text),
+        RemoteErrorKind::Cancelled => ErrorKind::Cancelled(text),
+    };
+    ScanError::new(kind).in_file(path)
 }
 
 fn parquet_error(e: &ParquetError, path: &Path, row_group: Option<usize>) -> ScanError {
@@ -397,8 +423,26 @@ impl ScanPlan {
         sink: Option<TaskSinkFactory>,
         memory: Option<Arc<nata_sched::memory::MemoryManager>>,
     ) -> Result<ScanPlan, ScanError> {
+        Self::open_remote(paths, options, opener, map, sink, memory, None)
+    }
+
+    /// As `open_budgeted`, and the `s3://` and `gs://` files of `paths` are read through `remote` (card 0006): one query of it is begun here and lives
+    /// as long as the plan and its tasks. Without `remote`, such a path is an error naming the missing reader.
+    pub fn open_remote(
+        paths: &[PathBuf],
+        options: &ScanOptions,
+        opener: Arc<dyn Opener>,
+        map: Option<BatchMap>,
+        sink: Option<TaskSinkFactory>,
+        memory: Option<Arc<nata_sched::memory::MemoryManager>>,
+        remote: Option<&Arc<dyn RemoteIo>>,
+    ) -> Result<ScanPlan, ScanError> {
         let Some(first_path) = paths.first() else {
             return Err(ScanError::usage("no file given"));
+        };
+        let remote = match remote {
+            Some(io) => Some(io.begin().map_err(|e| remote_error(&e, first_path))?),
+            None => None,
         };
         let ctx = Arc::new(Ctx {
             opener,
@@ -406,6 +450,8 @@ impl ScanPlan {
             sink,
             stats: Arc::new(ScanStats::default()),
             memory,
+            remote,
+            abandon_from_file: AtomicUsize::new(usize::MAX),
         });
         let mut spec: Option<Spec> = None;
         let (first, pushed) = guarded(first_path, None, || {
@@ -436,6 +482,33 @@ impl ScanPlan {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .take();
+    }
+
+    /// Stop the remote reads of every file with an index at or above `file` (a lower file failed, or the scan ended): their blocked opens and fetches
+    /// return `Cancelled` within the poll interval. Lower files are not touched, so the lowest error is still the one reported.
+    pub fn abandon_from(&self, file: usize) {
+        self.ctx.abandon_from_file.fetch_min(file, Ordering::SeqCst);
+    }
+
+    /// Stop all remote reads and cancel the plan's remote query (the scan ended: a limit, a closed output, Ctrl-C, an error).
+    pub fn cancel_remote(&self) {
+        self.abandon_from(0);
+        if let Some(r) = &self.ctx.remote {
+            r.cancel();
+        }
+    }
+
+    /// While the returned guard lives, a cancel of `cancel` also stops this plan's remote reads: a worker blocked waiting for a store wakes within
+    /// milliseconds and returns `Cancelled` (drivers that do not use `run_parallel`, such as the aggregate pipeline, call this once the plan is open).
+    pub fn cancel_hook(
+        self: &Arc<Self>,
+        cancel: Option<&crate::parallel::ScanCancel>,
+    ) -> CancelHook {
+        if let Some(c) = cancel {
+            let plan = Arc::clone(self);
+            c.register(Box::new(move || plan.cancel_remote()));
+        }
+        CancelHook(cancel.cloned())
     }
 
     /// Number of files in the plan.
@@ -487,7 +560,8 @@ impl ScanPlan {
                 guarded(path, None, || {
                     read_file(path, index, &self.options, &mut spec, &self.ctx)
                 })
-                .map(|(f, _)| Arc::new(f))?
+                .map(|(f, _)| Arc::new(f))
+                .inspect_err(|_| self.abandon_from(index.saturating_add(1)))?
             }
         };
         let st = &self.ctx.stats;
@@ -509,6 +583,17 @@ impl ScanPlan {
             all.extend(self.open_file(i)?.tasks());
         }
         Ok(all)
+    }
+}
+
+/// Unregisters the hook of [`ScanPlan::cancel_hook`] when dropped.
+pub struct CancelHook(Option<crate::parallel::ScanCancel>);
+
+impl Drop for CancelHook {
+    fn drop(&mut self) {
+        if let Some(c) = &self.0 {
+            c.clear();
+        }
     }
 }
 
@@ -611,7 +696,27 @@ fn read_file(
     ctx: &Arc<Ctx>,
 ) -> Result<(FileScan, usize), ScanError> {
     let mut metadata_grant = None;
-    let plain = {
+    // a file in a store: the identity lookup and the (cached) footer come from the remote reader; there is no handle to open
+    let remote_file = if let Some(location) = path.to_str().filter(|l| is_remote_location(l)) {
+        let Some(query) = &ctx.remote else {
+            return Err(ScanError::not_supported(
+                "reading from object storage without an object-store reader",
+            )
+            .in_file(path));
+        };
+        let abandoned = || ctx.abandon_from_file.load(Ordering::SeqCst) <= index;
+        Some(
+            query
+                .open(location, &abandoned)
+                .map_err(|e| remote_error(&e, path))?,
+        )
+    } else {
+        None
+    };
+    let plain = if let Some(rf) = &remote_file {
+        ArrowReaderMetadata::try_new(Arc::clone(&rf.metadata), ArrowReaderOptions::new())
+            .map_err(|e| parquet_error(&e, path, None))?
+    } else {
         let OpenFile {
             mut file, _guard, ..
         } = ctx
@@ -797,6 +902,8 @@ fn read_file(
     Ok((
         FileScan {
             path: path.to_path_buf(),
+            index,
+            remote: remote_file,
             meta,
             mask,
             read_columns,
@@ -891,10 +998,38 @@ mod tests {
 
 /// A file handle that counts the bytes requested through it (the reader asks for column chunks; the footer was read before), and can be made to fail.
 struct CountingFile {
-    file: File,
+    source: Source,
     bytes: Arc<AtomicU64>,
     fail_after: Option<u64>,
     delay: Option<std::time::Duration>,
+}
+
+/// Where a task's bytes come from: a local file, or the fetched ranges of one row group of an object in a store.
+enum Source {
+    Local(File),
+    Remote(Arc<Blob>),
+}
+
+/// What a task opened: the source and whatever a test attached to the handle.
+struct OpenedSource {
+    source: Source,
+    fail_reads_after: Option<u64>,
+    read_delay: Option<std::time::Duration>,
+    guard: Option<Box<dyn Send + Sync>>,
+}
+
+enum SourceRead {
+    Local(<File as ChunkReader>::T),
+    Remote(BlobRead),
+}
+
+impl Read for SourceRead {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            SourceRead::Local(r) => r.read(buf),
+            SourceRead::Remote(r) => r.read(buf),
+        }
+    }
 }
 
 struct CountingRead<R> {
@@ -941,16 +1076,23 @@ impl<R: Read> Read for CountingRead<R> {
 
 impl Length for CountingFile {
     fn len(&self) -> u64 {
-        self.file.len()
+        match &self.source {
+            Source::Local(f) => f.len(),
+            Source::Remote(b) => b.len(),
+        }
     }
 }
 
 impl ChunkReader for CountingFile {
-    type T = CountingRead<<File as ChunkReader>::T>;
+    type T = CountingRead<SourceRead>;
 
     fn get_read(&self, start: u64) -> parquet::errors::Result<Self::T> {
+        let inner = match &self.source {
+            Source::Local(f) => SourceRead::Local(f.get_read(start)?),
+            Source::Remote(b) => SourceRead::Remote(b.reader(start)),
+        };
         Ok(CountingRead {
-            inner: self.file.get_read(start)?,
+            inner,
             bytes: Arc::clone(&self.bytes),
             fail_after: self.fail_after,
             delay: self.delay,
@@ -967,7 +1109,10 @@ impl ChunkReader for CountingFile {
         if let Some(d) = self.delay {
             std::thread::sleep(d);
         }
-        let b = self.file.get_bytes(start, length)?;
+        let b = match &self.source {
+            Source::Local(f) => f.get_bytes(start, length)?,
+            Source::Remote(r) => r.get_bytes(start, length)?,
+        };
         self.bytes.fetch_add(b.len() as u64, Ordering::Relaxed);
         Ok(b)
     }
@@ -1018,12 +1163,82 @@ impl RowGroupTask {
         self.row_group
     }
 
+    /// Number of the task's file in the plan.
+    pub fn file_index(&self) -> usize {
+        self.file.index
+    }
+
     /// Rows in the row group according to the footer.
     pub fn rows(&self) -> u64 {
         self.file
             .row_groups
             .get(self.row_group)
             .map_or(0, |r| r.rows)
+    }
+
+    /// The source of this task: a local handle from the opener, or the bytes of the row group's column chunks fetched from the store. `None`: cancelled
+    /// while waiting (the task ends as cancelled, nothing is held).
+    fn open_source(&self, cancel: &dyn Fn() -> bool) -> Result<Option<OpenedSource>, ScanError> {
+        let f = &*self.file;
+        let (path, rg) = (&f.path, self.row_group);
+        let Some(remote) = &f.remote else {
+            let OpenFile {
+                file,
+                fail_reads_after,
+                read_delay,
+                _guard,
+            } = f
+                .ctx
+                .opener
+                .open(path, OpenFor::RowGroup(rg))
+                .map_err(|e| io_error(&e, path).in_row_group(rg))?;
+            return Ok(Some(OpenedSource {
+                source: Source::Local(file),
+                fail_reads_after,
+                read_delay,
+                guard: _guard,
+            }));
+        };
+        let Some(query) = &f.ctx.remote else {
+            return Err(ScanError::new(ErrorKind::Internal(
+                "a remote file without its reader".into(),
+            ))
+            .in_file(path)
+            .in_row_group(rg));
+        };
+        let bad = |what: &str| {
+            ScanError::new(ErrorKind::Corrupt(what.into()))
+                .in_file(path)
+                .in_row_group(rg)
+        };
+        let group = f.meta.metadata().row_group(rg);
+        let mut ranges: Vec<std::ops::Range<u64>> = Vec::new();
+        for (i, col) in group.columns().iter().enumerate() {
+            if !f.mask.leaf_included(i) {
+                continue;
+            }
+            let (start, len) = col.byte_range();
+            if len == 0 {
+                continue;
+            }
+            // the footer is outside input: a chunk that does not lie inside the pinned object is a damaged file, found before any request
+            let end = start
+                .checked_add(len)
+                .filter(|e| *e <= remote.length)
+                .ok_or_else(|| bad("a column chunk lies outside the file"))?;
+            ranges.push(start..end);
+        }
+        let abandoned = || cancel() || f.ctx.abandon_from_file.load(Ordering::SeqCst) <= f.index;
+        match query.fetch(remote, &ranges, &abandoned) {
+            Ok(got) => Ok(Some(OpenedSource {
+                source: Source::Remote(Arc::new(Blob::new(remote.length, got))),
+                fail_reads_after: None,
+                read_delay: None,
+                guard: None,
+            })),
+            Err(e) if e.kind == RemoteErrorKind::Cancelled => Ok(None),
+            Err(e) => Err(remote_error(&e, path).in_row_group(rg)),
+        }
     }
 
     /// Read this row group: decode, filter exactly, project. Any failure is an error that names the file and this row group; no rows are returned
@@ -1047,7 +1262,6 @@ impl RowGroupTask {
     fn run_unguarded(&self, cancel: &dyn Fn() -> bool) -> Result<TaskResult, ScanError> {
         let f = &*self.file;
         let stats = &*f.ctx.stats;
-        let (path, rg) = (&f.path, self.row_group);
         let abandoned = || {
             ScanStats::add(&stats.row_groups_abandoned, 1);
             Ok(TaskResult::Cancelled)
@@ -1055,16 +1269,15 @@ impl RowGroupTask {
         if cancel() {
             return abandoned();
         }
-        let OpenFile {
-            file: handle,
+        let Some(OpenedSource {
+            source: handle,
             fail_reads_after,
             read_delay,
-            _guard,
-        } = f
-            .ctx
-            .opener
-            .open(path, OpenFor::RowGroup(rg))
-            .map_err(|e| io_error(&e, path).in_row_group(rg))?;
+            guard: _guard,
+        }) = self.open_source(cancel)?
+        else {
+            return abandoned();
+        };
         let _open = Counted::new(&stats.handles);
         let bytes = Arc::new(AtomicU64::new(0));
         let mut tally = Tally {
@@ -1073,7 +1286,7 @@ impl RowGroupTask {
             bytes: Arc::clone(&bytes),
         };
         let source = SharedFile(Arc::new(CountingFile {
-            file: handle,
+            source: handle,
             bytes: Arc::clone(&bytes),
             fail_after: fail_reads_after,
             delay: read_delay,
@@ -1161,19 +1374,22 @@ impl RowGroupTask {
                     "cursor cannot own a batch map or sink".into(),
                 )));
             }
-            let OpenFile {
-                file,
+            let Some(OpenedSource {
+                source: file,
                 fail_reads_after,
                 read_delay,
-                _guard,
-            } = f
-                .ctx
-                .opener
-                .open(&f.path, OpenFor::RowGroup(self.row_group))
-                .map_err(|e| io_error(&e, &f.path).in_row_group(self.row_group))?;
+                guard: _guard,
+            }) = self.open_source(&|| false)?
+            else {
+                return Err(ScanError::new(ErrorKind::Cancelled(
+                    "the scan was cancelled before the row group was read".into(),
+                ))
+                .in_file(&f.path)
+                .in_row_group(self.row_group));
+            };
             let bytes = Arc::new(AtomicU64::new(0));
             let source = SharedFile(Arc::new(CountingFile {
-                file,
+                source: file,
                 bytes: Arc::clone(&bytes),
                 fail_after: fail_reads_after,
                 delay: read_delay,

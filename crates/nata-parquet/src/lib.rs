@@ -13,14 +13,20 @@ pub mod filter;
 pub mod opener;
 pub mod parallel;
 pub mod reader;
+pub mod remote;
 pub mod schema;
 pub mod stats;
 
 pub use error::{ErrorKind, ScanError};
 pub use opener::{FsOpener, OpenFile, OpenFor, Opener};
 pub use parallel::{ParallelConfig, ScanCancel, run_parallel, run_parallel_with};
+pub use reader::remote_error as remote_scan_error;
 pub use reader::{
-    BatchMap, RowGroupCursor, RowGroupTask, ScanOptions, ScanPlan, ScanReport, TaskOutput,
-    TaskResult, TaskSink, TaskSinkFactory, read_leaves, run_serial,
+    BatchMap, CancelHook, RowGroupCursor, RowGroupTask, ScanOptions, ScanPlan, ScanReport,
+    TaskOutput, TaskResult, TaskSink, TaskSinkFactory, read_leaves, run_serial,
+};
+pub use remote::{
+    RemoteBytes, RemoteError, RemoteErrorKind, RemoteFile, RemoteIo, RemoteQuery,
+    is_remote_location,
 };
 pub use stats::ScanStats;
