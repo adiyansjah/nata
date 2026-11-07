@@ -74,6 +74,10 @@ try:
             record={'statement':i,'client':item['client'],'sql':nq}
             try:
                 po,pr=raw(pg,pquery);no,nr=raw(nata,nq)
+                # PG17 narrowed pg_statistic_ext.stxstattarget from int4 to int2; Nata follows PG17 (statements 8, 16 on the PG15 VM oracle).
+                if pg.info.server_version<170000:
+                    for col in po:
+                        if col[0]=='stxstattarget' and col[1]==23:col[1]=21;col[2]=2
                 if i==54:pr=[r for r in pr if r[0] in pg_oids and r[1] not in {'tableoid','cmax','xmax','cmin','xmin','ctid'}]
                 pr=project(i,pr)
                 if i==40:
