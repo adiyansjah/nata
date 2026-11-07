@@ -1,0 +1,220 @@
+diff --git a/crates/nata-kernels/src/decimal.rs b/crates/nata-kernels/src/decimal.rs
+index a1125ba..c5f04cb 100644
+--- a/crates/nata-kernels/src/decimal.rs
++++ b/crates/nata-kernels/src/decimal.rs
+@@ -1,5 +1,5 @@
+ //! Strict SQL numeric column kernels. Type-derived factors and bounds are
+-//! prepared once per column; every selected, non-NULL operation stays checked.
++//! prepared once per column; unproved batches retain the checked path.
+ #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+ pub enum Op {
+     Add,
+@@ -151,6 +151,41 @@ impl Decimal {
+         sel: &[u32],
+         out: &mut [i128],
+         valid: &mut [bool],
++    ) -> Result<(), Fail> {
++        if self.op == Op::Mul {
++            let (mut x, mut y) = (0, 0);
++            for &row in sel {
++                let i = row as usize;
++                if av[i] && bv[i] {
++                    x = x.max(a[i].unsigned_abs());
++                    y = y.max(b[i].unsigned_abs());
++                }
++            }
++            if product_fits(x, y, self.limit) {
++                return binary(a, av, b, bv, sel, out, valid, |x, y| {
++                    // product_fits proves both the machine and SQL bounds for
++                    // every jointly valid selected row in this batch.
++                    Ok(x.overflowing_mul(y).0)
++                });
++            }
++        }
++        self.column_checked(a, av, b, bv, sel, out, valid)
++    }
++
++    /// Generic control and fallback; preserves the first failing selected row.
++    #[allow(
++        clippy::too_many_arguments,
++        reason = "borrowed columns and output buffers"
++    )]
++    pub fn column_checked(
++        self,
++        a: &[i128],
++        av: &[bool],
++        b: &[i128],
++        bv: &[bool],
++        sel: &[u32],
++        out: &mut [i128],
++        valid: &mut [bool],
+     ) -> Result<(), Fail> {
+         match self.op {
+             Op::Mul => binary(a, av, b, bv, sel, out, valid, |x, y| {
+@@ -219,6 +254,21 @@ impl Decimal {
+     }
+ }
+
++/// Conservative product envelope. |x| < 2^bits(a), |y| < 2^bits(b),
++/// so |xy| < 2^(bits(a)+bits(b)) <= limit <= 10^38 < i128::MAX.
++/// Zero gets the same conservative envelope as other inputs; no special case
++/// can admit an out-of-domain operand. Called once per selected batch.
++#[allow(
++    clippy::arithmetic_side_effects,
++    reason = "bit lengths are at most 128; positive limit has at most 127 leading zeros"
++)]
++pub fn product_fits(a: u128, b: u128, limit: u128) -> bool {
++    let bits = (128 - a.leading_zeros()) + (128 - b.leading_zeros());
++    limit > 0
++        && limit <= 100_000_000_000_000_000_000_000_000_000_000_000_000
++        && bits <= 127 - limit.leading_zeros()
++}
++
+ pub fn integer(op: Op, x: i64, y: i64, lo: i64, hi: i64) -> Result<i64, Fail> {
+     let v = match op {
+         Op::Add => x.checked_add(y),
+diff --git a/crates/nata-kernels/tests/decimal_batch_bounds.rs b/crates/nata-kernels/tests/decimal_batch_bounds.rs
+new file mode 100644
+index 0000000..2785f1e
+--- /dev/null
++++ b/crates/nata-kernels/tests/decimal_batch_bounds.rs
+@@ -0,0 +1,85 @@
++use nata_kernels::decimal::{Decimal, Fail, Op, product_fits};
++
++#[test]
++fn product_envelope_boundaries() {
++    assert!(product_fits(100_000_000, 100, 10u128.pow(18)));
++    assert!(product_fits(100_000_000_000, 110, 10u128.pow(18)));
++    assert!(!product_fits(1_000_000_000, 1_000_000_000, 10u128.pow(18)));
++    assert!(!product_fits(1u128 << 126, 4, 10u128.pow(38)));
++    assert!(!product_fits(u128::MAX, u128::MAX, 10u128.pow(38)));
++    assert!(!product_fits(0, 0, 0));
++    assert!(!product_fits(0, 0, u128::MAX));
++}
++
++#[test]
++fn batch_product_keeps_overflow_and_its_row() {
++    for (p, x, y) in [
++        (18, 1_000_000_000, 1_000_000_000),
++        (38, 10i128.pow(38) - 1, 2),
++        (38, i128::MIN, -1),
++        (38, i128::MAX, 2),
++    ] {
++        for sign in [-1i128, 1] {
++            let x = if x == i128::MIN { x } else { x * sign };
++            let k = Decimal::new(Op::Mul, 0, 0, p, 0).expect("type");
++            let (a, b) = ([7, x, 9], [3, y, 2]);
++            let (mut out, mut valid) = ([0; 3], [false; 3]);
++            assert_eq!(
++                k.column(
++                    &a,
++                    &[true; 3],
++                    &b,
++                    &[true; 3],
++                    &[0, 1, 2],
++                    &mut out,
++                    &mut valid
++                ),
++                Err(Fail::Overflow)
++            );
++            assert_eq!(out[0], 21);
++            assert_eq!(valid, [true, false, false]);
++            // Invalid and unselected extremes must not become errors.
++            k.column(
++                &a,
++                &[true, false, true],
++                &b,
++                &[true; 3],
++                &[0, 1, 2],
++                &mut out,
++                &mut valid,
++            )
++            .expect("NULL masked");
++            k.column(
++                &a,
++                &[true; 3],
++                &b,
++                &[true; 3],
++                &[0, 2],
++                &mut out,
++                &mut valid,
++            )
++            .expect("selection masked");
++        }
++    }
++}
++
++#[test]
++fn batch_product_matches_generic_for_signs_masks_and_wide_zero() {
++    let k = Decimal::new(Op::Mul, 0, 0, 18, 0).expect("type");
++    for x in [-100_000_000i128, -1, 0, 1, 100_000_000, i128::MAX] {
++        for y in [-110i128, -1, 0, 1, 110] {
++            for mask in 0..16u8 {
++                let (a, b) = ([x, y], [y, x]);
++                let av = [mask & 1 != 0, mask & 2 != 0];
++                let bv = [mask & 4 != 0, mask & 8 != 0];
++                let (mut fast, mut fv, mut generic, mut gv) =
++                    ([0; 2], [false; 2], [0; 2], [false; 2]);
++                assert_eq!(
++                    k.column(&a, &av, &b, &bv, &[0, 1], &mut fast, &mut fv),
++                    k.column_checked(&a, &av, &b, &bv, &[0, 1], &mut generic, &mut gv)
++                );
++                assert_eq!((fast, fv), (generic, gv));
++            }
++        }
++    }
++}
+diff --git a/spikes/kani-nata-kernels/src/lib.rs b/spikes/kani-nata-kernels/src/lib.rs
+index 9369a59..ad0e32b 100644
+--- a/spikes/kani-nata-kernels/src/lib.rs
++++ b/spikes/kani-nata-kernels/src/lib.rs
+@@ -1457,3 +1457,49 @@ mod decimal_proofs {
+         kani::cover!(ok); kani::cover!(!ok);
+     }
+ }
++
++#[cfg(kani)]
++mod perf2c_proofs {
++    use super::decimal::product_fits;
++    #[kani::proof]
++    fn perf2c_product_envelope() {
++        let x: i128 = kani::any();
++        let y: i128 = kani::any();
++        let a: u128 = kani::any();
++        let b: u128 = kani::any();
++        let limit: u128 = kani::any();
++        kani::assume(x.unsigned_abs() <= a && y.unsigned_abs() <= b);
++        kani::assume(product_fits(a, b, limit));
++        let (value, overflow) = x.overflowing_mul(y);
++        assert!(!overflow);
++        assert!(value.unsigned_abs() < limit);
++        assert_eq!(Some(value), x.checked_mul(y));
++        kani::cover!(x < 0 && y > 0);
++        kani::cover!(x > 1_000_000_000 && y < -100);
++    }
++}
++
++// No accumulator check is elided by these induction lemmas. They establish
++// the n/p budget, not correctness of Arrow's i256 implementation.
++#[cfg(kani)]
++mod perf2c_accumulation_bounds {
++    #[kani::proof]
++    fn perf2c_decimal18_accumulation_induction() {
++        const M: i128 = 999_999_999_999_999_999;
++        let n: u64 = kani::any();
++        let sum: i128 = kani::any();
++        let value: i128 = kani::any();
++        kani::assume(n < u64::MAX - 1);
++        // 10^18-1 < 2^60. This conservative envelope avoids assuming
++        // anything about the sign or cancellation history of the sum.
++        let bound = i128::from(n) << 60;
++        kani::assume(sum >= -bound && sum <= bound);
++        kani::assume(value >= -M && value <= M);
++        let next_bound = i128::from(n + 1) << 60;
++        let next = sum.checked_add(value).unwrap();
++        assert!(next >= -next_bound && next <= next_bound);
++        assert!(next.unsigned_abs() < 100_000_000_000_000_000_000_000_000_000_000_000_000);
++        kani::cover!(n > (1u64 << 63) && sum < 0 && value < 0);
++        kani::cover!(n == 0 && sum == 0);
++    }
++}

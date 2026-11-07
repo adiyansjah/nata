@@ -1,0 +1,13 @@
+{
+  "harness": "perf2c_product_envelope",
+  "command": "CARGO_BUILD_JOBS=4 TMPDIR=/home/dev/perf2c/tmp timeout 180 cargo kani --harness perf2c_product_envelope",
+  "cwd": "spikes/kani-nata-kernels",
+  "exit": 124,
+  "verification": "NO RESULT; no completed summary",
+  "cap_seconds": 180,
+  "negative_control": "NOT RUN: required proof stop",
+  "mutants": "NOT RUN: no elision retained",
+  "timings": "NOT RUN: prove before measuring",
+  "retained_implementation_commits": [],
+  "baseline_binary_sha256": "9c5b1d1ada8a939ac6a7459e6c06b322422896a863eb9ae012a745f9ccbcbe69"
+}

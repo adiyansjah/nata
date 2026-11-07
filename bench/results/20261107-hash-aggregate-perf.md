@@ -1440,3 +1440,137 @@ syscalls), `replay::decode` collecting a `Vec<State>` per row 2.9% + 1.8%, `mall
 end to end with Parquet decode: 151 ms (x86-64) and 129 ms (ARM64) at one thread; Nata's full Q1 on the same machine types was 1.234 s
 and 0.993 s in the settled 2b runs, DuckDB 0.226 s and 0.217 s. The reduced query computes fewer aggregates, so this bounds the design
 gap only loosely; a settled like-for-like run belongs to card 0008.
+
+## Performance step 2c
+
+**2026-11-08 — STOPPED at the required proof guard; no check elision retained.**
+Base `3e413b8`. The first full-domain Kani proof for the candidate batch-product
+predicate did not complete within its 180-second cap (exit **124**, no verification
+summary). A timeout is neither a proof nor a counterexample. The checked
+production implementation was restored before handoff; no result/error change
+was observed, but query gates were not run in this stopped experiment. Step 2c
+is **incomplete**. No performance, mutation-coverage or target-pass claim follows.
+
+Frozen targets remain Q1 ≤1.5x DuckDB, hash queries ≤2x and spill ≤2x, with the
+original matched-budget/reference limitations. ADRs and decimal rules are
+unchanged. No GCP, new dependency, push or merge. Local performance evidence
+would be **unsettled**; this attempt collected no timings or profiles.
+
+### Actually called paths and bound inventory
+
+Source inspection at the base, rather than extrapolation from the older i64
+spike: eager aggregate `Program` → `eval::arith_into` → `Decimal::column`, then
+`Partial::resume` → `ExactSum::add`; resident and spilled states converge on
+`State::merge` → `ExactSum::merge`. [Detailed inventory and computed row limits](raw/20261108-hash-aggregate-perf2c/kernel-inventory.txt).
+
+| Path on Q1 / high-cardinality HAVING | Checks at the base; disposition |
+|---|---|
+| `1-discount`, Q1 `1+tax` | Each aligned operand: checked i128 scale multiplication and result-precision comparison; checked add/sub and result-precision comparison. Retained. |
+| Net-price multiply, Q1 charge multiply | Decimal64 result: i64 operand conversions and checked i64 product, otherwise checked i128 product; decimal result-precision comparison. Declared operand precision alone does not prove capped results fit. Retained. |
+| SUM and AVG updates | Input magnitude `<10^38`; count addition strictly below `u64::MAX`; checked i128 add. On overflow, checked i256 promotion/add and possible demotion. No premature SQL-result precision check. Retained. |
+| SQL COUNT updates and merge | Checked count addition plus BIGINT conversion. AVG's count is the separate exact-sum count. Retained. |
+| Resident partial merge | Checked count addition, checked i256 sum, possible i128 demotion. Retained. |
+| Spill state validation and merge | Count validity, checked i256 `(10^38-1)*count`, checked absolute sum within that envelope; then the same merge as resident states. Retained. |
+| Final SUM / AVG | Final SUM narrowing/precision check before HAVING; AVG type arithmetic, checked i256 scale-up/div-rem/remainder doubling/tie rounding, i128 narrowing/output precision. Retained. |
+
+**Reasoned accumulation bounds, not completed Kani proofs:** for unscaled
+DECIMAL(p,s), `M=10^p-1` and `|S_n|<=n*M`, independently of sign, scale and
+merge order. A sufficient 38-digit envelope is
+`n<=floor((10^38-1)/M)`; the i128 envelope uses `i128::MAX` in the numerator.
+For p=18 the former limit is **100000000000000000100**, greater than
+`u64::MAX`; the conservative induction envelope `n*2^60` also stays below
+`2^124` for every permitted count. For p=38 the 38-digit limit is **1**;
+two same-sign extreme inputs already require promotion, while later opposite
+inputs may cancel. Thus a check against 38 digits at the batch boundary must
+select the checked/promoting path, never raise a premature SUM error.
+
+For general valid p≤38 states and count below `u64::MAX`, magnitude is below
+`2^191`; AVG's at-most-six-place increase keeps it below `2^211`, inside i256.
+This arithmetic argument does **not** prove Arrow's i256 operations or the
+spill validator. No promotion, merge, replay or AVG check was removed.
+
+### 2c/1 — rejected batch-product envelope
+
+**Rule:** Elide the per-value product machine/decimal checks only after proving
+that a bound from the declared result precision and the actual jointly-valid,
+selected batch magnitudes makes those checks impossible. Otherwise run the
+unchanged checked loop, with the same selected-row prefix and error position.
+Proof and a failing negative control must precede measurement.
+
+Candidate rule: scan the two selected-valid magnitude maxima `A,B` once; let
+`bits(v)=128-leading_zeros(v)`. Admit only when
+`bits(A)+bits(B)<=floor(log2(10^P))`. This is a conservative power-of-two
+envelope, not a per-value decision. Multiplication would use the existing i128
+lane's `overflowing_mul(...).0`; there is no i64-lane or batch-size experiment.
+The generic fallback/control was exposed as `column_checked`.
+
+The harness includes production `decimal.rs` by path. It quantifies arbitrary
+signed i128 `x,y`, arbitrary u128 maxima and limit (up to `10^38`), assumes the
+actual values are within those maxima and the production predicate accepts,
+then asserts no machine overflow, magnitude below the result limit and equality
+with checked multiplication. No reduced i8/i64 range is substituted. Its two
+cover goals are not reported as satisfied without a completed Kani summary.
+The candidate also contained an unrun p≤18 accumulation induction harness and
+unrun tests planting 18-/38-digit overflow, `i128::MIN * -1`, machine overflow,
+NULL/selection masking and the unchanged prefix before the first failed row.
+
+**Numbers:** before/after/control timings **not run**; profile shares **not
+collected**. **Verdict: reject and restore checked code**, because the full-domain
+proof did not finish. The >3% regression guard was never reached. Add/sub,
+accumulation, promotion/merge/replay elision and cargo-mutants were not started
+past this explicit stop. Negative controls: **not run**; mutants caught/missed:
+**not measured**, not zero survivors. There are **no kept implementation SHAs**.
+The rejected source, tests and harnesses are preserved together as an
+[applyable patch](raw/20261108-hash-aggregate-perf2c/rejected-product.patch)
+against the base; no unproved helper remains in the production tree.
+
+[Raw Kani output](raw/20261108-hash-aggregate-perf2c/kani-product-timeout.txt),
+[exit status and verification limits](raw/20261108-hash-aggregate-perf2c/proof-status.json),
+[pre-measurement decision rules](raw/20261108-hash-aggregate-perf2c/experiment-plan.txt),
+[machine/input identity](raw/20261108-hash-aggregate-perf2c/machine.json).
+
+Reproduce the stopped proof in an isolated checkout of `3e413b8`:
+
+```sh
+git apply bench/results/raw/20261108-hash-aggregate-perf2c/rejected-product.patch
+cd spikes/kani-nata-kernels
+CARGO_BUILD_JOBS=4 TMPDIR=/home/dev/perf2c/tmp timeout 180 cargo kani --harness perf2c_product_envelope
+```
+
+One initial invocation used the spike directory as the working directory for
+root-relative copy paths and failed to load the candidate, producing an
+unresolved-import compilation error. This was corrected before the timed
+proof above; the invalid invocation is not a proof result or mutant catch.
+
+### Verification and handoff
+
+| Check | Result |
+|---|---|
+| Base `cargo build --locked --release -j 4 -p nata -p nata-check` | PASS, 6m46s; [log](raw/20261108-hash-aggregate-perf2c/baseline-build.txt) |
+| Fresh `gen-tpch.sh 0.01` and `gen-sql-check-data.sh` | PASS; external `/home/dev/perf2c/data` |
+| Candidate full-domain product Kani | NO RESULT, timeout 180s / exit 124; required stop |
+| Candidate proof negative controls / focused cargo-mutants | NOT RUN; no elision kept |
+| Candidate nata-exec/nata-kernels tests and clippy | NOT RUN after the proof stop; no implementation retained |
+| Aggregate 65/65, forced-spill 65/65, SQL 252/252, decimal gates | NOT RUN after the proof stop; no gate-pass claim |
+| Final fmt, source/lockfile restoration, rejected patch applicability | PASS; [log](raw/20261108-hash-aggregate-perf2c/final-evidence-checks.txt) |
+
+Build/proof work from this task was serialized and used four Cargo jobs. Disk
+remained above 20 GB free, so stale-output deletion was unnecessary. An immutable
+base binary was copied outside the worktree before editing; its SHA-256 is in
+`proof-status.json`. Neither the candidate nor another binary was timed.
+
+[Parent-only steps](../aggregate-perf2c.steps) are prepared, but **there is no
+retained implementation to benchmark**. Do not package this documentation-only
+HEAD as a performance fix. The exact future commands below require a proved,
+kept implementation commit first; use multiple cumulative `--fix` entries if
+independent changes are retained. None of these commands was run here. Both-CPU
+local trial/job-chain checks and cost approval remain prerequisites to cloud runs.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 3e413b8 --fix "perf2c=${KEPT_PERF2C_COMMIT:?supply a proved implementation commit}" --bundle .aggregate-perf2c-inputs
+cp bench/aggregate-perf2c.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2c-20261108-x86 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2c-20261108-x86 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2c-20261108-arm64 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2c-20261108-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
+```

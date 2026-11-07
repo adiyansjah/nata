@@ -1,0 +1,6 @@
+Base: 3e413b8. No dependencies, thresholds, ADRs or batch sizes change.
+1. Prove product_fits full admitted domain, including all signs and i128 machine/result bounds. Negative control: weaken the bit-budget comparison. If proof has no result within the short bound, retain checked code and report; do not count a timeout as a catch.
+2. Gate immutable base and product candidate against DuckDB. Five alternating local rounds (warm SF1, Q1 and high_cardinality_tpch, threads 1/8), immutable binaries and identical-before control; profile each arm. Keep only if gain exceeds control noise and no >3% regression without compensating gain.
+3. Independently prove and measure aligned Add/Sub if product is proved; same fallback and phase semantics. Accumulation/promotion/merge/spill checks remain unless full proof permits removal. No claim that p18 induction proves p38 or i256 primitives.
+4. Per retained implementation: serial -j4 tests, fmt, clippy, locked release binaries; fresh SF.01 aggregate 65/65 normal and forced, SQL 252/252, decimal set as supported. Any query value/error change triggers stop.
+5. Focused cargo-mutants on admission preconditions with planted overflow tests; no INVALID/timeout-as-catch. Leak scan staged before each authorized local commit. No GCP/push/merge.

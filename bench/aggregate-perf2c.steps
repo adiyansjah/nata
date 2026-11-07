@@ -1,0 +1,10 @@
+# Parent-only future comparison, separately on c3d-highcpu-8 and n4a-highcpu-8.
+# Baseline: 3e413b8. Kept implementation commits: NONE (proof stop).
+# Do not prepare a bundle from this documentation-only HEAD as an optimization.
+# After a future proved/kept implementation, prepare with:
+# python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 3e413b8 --fix "perf2c=${KEPT_PERF2C_COMMIT:?supply a proved implementation commit}" --bundle .aggregate-perf2c-inputs
+# Local timings remain unsettled; frozen targets and ADRs are unchanged.
+# No GCP identifiers or credentials belong in this file.
+prepare mkdir -p "$WORK/aggregate-perf2c/tmp"
+fixtures rm -rf "$WORK/aggregate-perf2c-sf1" && TMPDIR="$WORK/aggregate-perf2c/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2c-sf1"
+timings perf2c_machine=$(uname -m) && case "$perf2c_machine" in x86_64) perf2c_machine=c3d-highcpu-8 ;; aarch64) perf2c_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2c/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2c_machine" --bundle "$SRC/.aggregate-perf2c-inputs" --work "$WORK/aggregate-perf2c" --data "$WORK/aggregate-perf2c-sf1" --out "$RESULTS/aggregate-perf2c-$(date -u +%Y%m%dT%H%M%SZ)"

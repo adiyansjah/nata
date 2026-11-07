@@ -1,0 +1,13 @@
+Called path (base 3e413b8; production source inspection):
+Q1/high-cardinality -> Program::evaluate -> eval::arith_into -> Decimal::new/column.
+Q1 discount subtraction and tax addition: DECIMAL(15,2) with integer constant cast, result DECIMAL(16,2); each selected jointly valid row checks two aligned operands (i128 checked_mul then abs <10^P), i128 add/sub, result abs <10^P.
+Both queries net multiply, Q1 charge multiply: capped DECIMAL(18,4)/(18,6). product checks i64 conversions/checked_mul if result <=18 digits, otherwise i128 checked_mul, then abs <10^P. Precision alone cannot discharge capped products; observed batch bounds can.
+Partial::resume -> ExactSum::add for each non-NULL SUM and AVG: input abs<10^38; checked count+1 strictly below u64::MAX; narrow i128 checked_add; if it fails promote through checked i256 add, then to_i128 for opportunistic demotion. No 38-digit partial-result check (cancellation contract).
+COUNT(*)/COUNT(x): add_count -> checked_count plus finish_count i64 conversion on each update. AVG count is ExactSum count, not SQL COUNT.
+State::merge -> ExactSum::merge (also spill replay): checked count addition, checked i256 addition, possible demotion. All merges remain checked.
+Replay::decode -> ExactSum::from_spill: count !=u64::MAX, checked (10^38-1)*count in i256, checked absolute sum <= bound. Hostile state validation remains checked.
+Final SUM: i256->i128 and abs<10^38 (or i64 for narrow integer SUM); may error only at finalization before HAVING. AVG: checked type formula, i256 scaling by <=10^6, checked div/rem by count, abs(rem)*2, checked tie rounding, i128 conversion and output precision check. Remain checked.
+Inductive bound: |S_n| <= n*(10^p-1). Decimal p<=18 with n<u64::MAX fits i128: (2^64-2)*(10^18-1)<2^127. p=19 cannot be guaranteed for all such n. For general p, n<=floor((10^38-1)/(10^p-1)) guarantees <=38 digits, n<=floor(i128::MAX/(10^p-1)) guarantees the narrow lane. Bound uses unscaled integers so scale does not alter it.
+For p=38/count<u64::MAX, |sum|<2^191; AVG scaling <2^20 gives <2^211, far below signed i256. This is a mathematical bound, not a Kani certification of Arrow i256 or arbitrary malformed spill records. No removal in those paths without further proof.
+
+Computed maximum n for a 38-digit running sum: p=15: 100000000000000100000000; p=18: 100000000000000000100; p=19: 10000000000000000001; p=38: 1. These are sufficient absolute envelopes, not a requirement that SUM error at this boundary: promotion/cancellation remains legal.
