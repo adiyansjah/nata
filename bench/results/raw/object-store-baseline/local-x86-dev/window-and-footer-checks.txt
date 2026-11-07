@@ -1,0 +1,12 @@
+# local x86-64 development VM, fake endpoint with an injected 90 ms per request (not GCS): units-ahead window check
+# small1 proj (SF1, 293 row groups), 8 workers, 3 rounds each, wall seconds
+units_ahead=8: 3.6525 3.6643 3.6692
+units_ahead=16: 1.9858 1.9896 2.0062
+units_ahead=32: 1.9468 1.9582 1.9667
+units_ahead=64: 1.9721 1.9723 1.9773
+
+# footer-charge on the SF1 layouts (wire bytes of the footer, ParquetMetaData::memory_size)
+footer-charge big1 : row_groups=4 columns=16 wire_bytes=8008 parsed_memory_size=33178 ratio=4.14 entries_in_64MiB=2010
+footer-charge files100 : row_groups=1 columns=16 wire_bytes=2235 parsed_memory_size=12285 ratio=5.50 entries_in_64MiB=5375
+footer-charge mid1 : row_groups=49 columns=16 wire_bytes=91032 parsed_memory_size=346921 ratio=3.81 entries_in_64MiB=193
+footer-charge small1 : row_groups=293 columns=16 wire_bytes=531268 parsed_memory_size=2048071 ratio=3.86 entries_in_64MiB=32
