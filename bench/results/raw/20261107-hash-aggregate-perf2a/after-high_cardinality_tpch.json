@@ -1,0 +1,747 @@
+[
+  {
+    "percent": 14.91,
+    "samples": 146,
+    "symbol": "nata_exec::aggregate::hashing::key"
+  },
+  {
+    "percent": 7.76,
+    "samples": 76,
+    "symbol": "<nata_exec::aggregate::Partial>::resume"
+  },
+  {
+    "percent": 5.41,
+    "samples": 53,
+    "symbol": "<nata_exec::aggregate::State>::finalize"
+  },
+  {
+    "percent": 4.49,
+    "samples": 44,
+    "symbol": "unlink_chunk.isra.0"
+  },
+  {
+    "percent": 4.39,
+    "samples": 43,
+    "symbol": "malloc"
+  },
+  {
+    "percent": 3.17,
+    "samples": 31,
+    "symbol": "_int_free_chunk"
+  },
+  {
+    "percent": 2.76,
+    "samples": 27,
+    "symbol": "<nata_kernels::decimal::Decimal>::column"
+  },
+  {
+    "percent": 2.66,
+    "samples": 26,
+    "symbol": "cfree@GLIBC_2.2.5"
+  },
+  {
+    "percent": 2.45,
+    "samples": 24,
+    "symbol": "<hashbrown::raw::RawTable<usize>>::reserve_rehash::<<nata_exec::aggregate::Groups>::try_reserve::{closure#0}>"
+  },
+  {
+    "percent": 2.45,
+    "samples": 24,
+    "symbol": "_int_malloc"
+  },
+  {
+    "percent": 1.84,
+    "samples": 18,
+    "symbol": "malloc_consolidate"
+  },
+  {
+    "percent": 1.74,
+    "samples": 17,
+    "symbol": "<nata_exec::aggregate::Groups>::insert"
+  },
+  {
+    "percent": 1.74,
+    "samples": 17,
+    "symbol": "<arrow_buffer::buffer::immutable::Buffer>::slice_with_length"
+  },
+  {
+    "percent": 1.63,
+    "samples": 16,
+    "symbol": "<snap::decompress::Decoder>::decompress"
+  },
+  {
+    "percent": 1.53,
+    "samples": 15,
+    "symbol": "<nata_kernels::aggregate::ExactSum>::decimal_sum"
+  },
+  {
+    "percent": 1.53,
+    "samples": 15,
+    "symbol": "<nata_kernels::aggregate::ExactSum>::add"
+  },
+  {
+    "percent": 1.43,
+    "samples": 14,
+    "symbol": "nata_exec::aggregate::merge"
+  },
+  {
+    "percent": 1.43,
+    "samples": 14,
+    "symbol": "__memmove_avx_unaligned_erms"
+  },
+  {
+    "percent": 1.33,
+    "samples": 13,
+    "symbol": "nata_exec::aggregate::hashing::columns"
+  },
+  {
+    "percent": 1.23,
+    "samples": 12,
+    "symbol": "nata_exec::aggregate::batch"
+  },
+  {
+    "percent": 0.92,
+    "samples": 9,
+    "symbol": "core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>"
+  },
+  {
+    "percent": 0.92,
+    "samples": 9,
+    "symbol": "<nata_sql::texpr::Expr>::children"
+  },
+  {
+    "percent": 0.92,
+    "samples": 9,
+    "symbol": "<arrow_buffer::buffer::scalar::ScalarBuffer<i128>>::slice"
+  },
+  {
+    "percent": 0.92,
+    "samples": 9,
+    "symbol": "sysmalloc"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "<parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i32>"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "std::sys::backtrace::__rust_begin_short_backtrace::<nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#11}, nata_exec::aggregate::pipeline::accumulate::{closure#12}>::{closure#1}::{closure#0}, ()>"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "<arrow_buffer::buffer::scalar::ScalarBuffer<f64>>::slice"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "nata_parquet::csv::push_field"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "realloc"
+  },
+  {
+    "percent": 0.82,
+    "samples": 8,
+    "symbol": "syscall"
+  },
+  {
+    "percent": 0.72,
+    "samples": 7,
+    "symbol": "core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type>>"
+  },
+  {
+    "percent": 0.72,
+    "samples": 7,
+    "symbol": "<std::sys::sync::mutex::futex::Mutex>::lock_contended"
+  },
+  {
+    "percent": 0.72,
+    "samples": 7,
+    "symbol": "_int_free_create_chunk"
+  },
+  {
+    "percent": 0.61,
+    "samples": 6,
+    "symbol": "<hashbrown::raw::RawTable<usize>>::insert::<<nata_exec::aggregate::Groups>::insert::{closure#0}>"
+  },
+  {
+    "percent": 0.61,
+    "samples": 6,
+    "symbol": "__rustc::__rdl_alloc"
+  },
+  {
+    "percent": 0.61,
+    "samples": 6,
+    "symbol": "<alloc::sync::Arc<dyn arrow_array::array::Array>>::drop_slow"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "<nata_exec::value::Col>::from_arrow"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "nata_kernels::aggregate::add_count"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "nata_parquet::csv::format_decimal"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "nata_parquet::csv::cell"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::is_valid"
+  },
+  {
+    "percent": 0.51,
+    "samples": 5,
+    "symbol": "__memset_avx2_unaligned_erms"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#1}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>>>"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<nata_exec::output::ResultWriter<nata::sql::Out<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutLock>>>>::write_batch"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<u128>::_fmt_inner"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<alloc::vec::Vec<nata_exec::aggregate::Atom> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::Atom, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_exec::value::Col>, <nata_exec::aggregate::Partial>::resume::{closure#5}>>>::from_iter"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<alloc::vec::Vec<nata_exec::aggregate::State> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::State, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, <nata_exec::aggregate::State>::new>>>::from_iter"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::IntervalMonthDayNanoType> as arrow_array::array::Array>::is_valid"
+  },
+  {
+    "percent": 0.41,
+    "samples": 4,
+    "symbol": "_int_free_merge_chunk"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "nata_sched::cooperative::run::<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#11}, nata_exec::aggregate::pipeline::accumulate::{closure#12}>"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "core::ptr::drop_glue::<arrow_schema::datatype::DataType>"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "arrow_select::filter::filter_primitive::<arrow_array::types::Decimal64Type>"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "__rustc::__rust_dealloc"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "__rustc::__rust_no_alloc_shim_is_unstable_v2"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<std::sync::mpmc::waker::SyncWaker>::notify"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<nata_sched::memory::Chunks>::reserve"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::ScanState, core::result::Result<nata_sched::cooperative::Step<alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError>, alloc::boxed::Box<dyn core::any::Any + core::marker::Send>>)>>::send"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "nata_exec::aggregate::key_hash"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "nata_parquet::filter::evaluate"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::is_valid"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter_map::FilterMap<core::ops::range::Range<usize>, <nata_exec::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter::Filter<core::iter::adapters::copied::Copied<core::slice::iter::Iter<u32>>, <nata_exec::eval::Evaluator>::filter_rows::{closure#2}>>>::from_iter"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<i64 as alloc::string::SpecToString>::spec_to_string"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<arrow_schema::datatype::DataType as core::clone::Clone>::clone"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "<arrow_array::array::boolean_array::BooleanArray as core::convert::From<alloc::vec::Vec<bool>>>::from"
+  },
+  {
+    "percent": 0.31,
+    "samples": 3,
+    "symbol": "_int_realloc"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type>>"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "core::ptr::drop_glue::<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "__rustc::__rdl_dealloc"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "__rustc::__rdl_realloc"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<nata_exec::eval::Evaluator>::eval"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<nata_parquet::parallel::ScanCancel>::is_cancelled"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<u128>::_fmt"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<nata_exec::aggregate::Table>::reserve_bytes"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<parquet::util::bit_util::BitReader>::get_vlq_int"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<nata_exec::value::Col>::to_arrow"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<alloc::sync::Arc<[alloc::sync::Arc<arrow_schema::field::Field>]>>::drop_slow"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "alloc::fmt::format::format_inner"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<alloc::vec::Vec<nata_exec::value::Col> as alloc::vec::spec_from_iter::SpecFromIter<nata_exec::value::Col, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#3}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>>>>::from_iter"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::slice"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int64Type> as parquet::arrow::array_reader::ArrayReader>::read_records"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<parquet::encodings::decoding::PlainDecoder<parquet::data_type::Int64Type> as parquet::encodings::decoding::Decoder<parquet::data_type::Int64Type>>::get"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "<alloc::vec::Vec<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>), core::iter::adapters::take::Take<&mut alloc::vec::into_iter::IntoIter<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>>>>::from_iter"
+  },
+  {
+    "percent": 0.2,
+    "samples": 2,
+    "symbol": "clock_gettime@@GLIBC_2.17"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<parquet::util::bit_util::BitReader>::get_batch::<i32>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::record_batch::RecordBatch>::try_from_iter::<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, alloc::string::String>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i64>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int32Type>>::reinterpret_cast::<arrow_array::types::Date32Type>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "nata_exec::aggregate::eval_on_stack::<core::option::Option<(arrow_array::record_batch::RecordBatch, alloc::vec::Vec<usize>)>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}::{closure#1}>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<core::result::Result<(), std::sync::mpsc::SendError<(usize, nata_exec::aggregate::pipeline::ScanState, core::result::Result<nata_sched::cooperative::Step<alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError>, alloc::boxed::Box<dyn core::any::Any + core::marker::Send>>)>>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<arrow_schema::datatype::DataType>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<nata_exec::value::Data>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::ptr::drop_glue::<arrow_select::filter::FilterPredicate>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "arrow_select::filter::filter_native::<i32>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#4}>, core::option::Option<nata_exec::value::Col>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>, <core::result::Result<alloc::vec::Vec<core::option::Option<nata_exec::value::Col>>, nata_exec::error::EvalError> as core::iter::traits::collect::FromIterator<core::result::Result<core::option::Option<nata_exec::value::Col>, nata_exec::error::EvalError>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#4}>>::{closure#0}, alloc::vec::Vec<core::option::Option<nata_exec::value::Col>>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#3}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#3}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<nata_exec::value::Col, core::ops::control_flow::ControlFlow<nata_exec::value::Col>, core::ops::control_flow::ControlFlow<nata_exec::value::Col>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<nata_exec::value::Col>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<nata_exec::value::Col>>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <arrow_schema::schema::Schema>::project::{closure#0}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <arrow_schema::schema::Schema>::project::{closure#0}>, core::result::Result<core::convert::Infallible, arrow_schema::error::ArrowError>> as core::iter::traits::iterator::Iterator>::try_fold<(), core::iter::traits::iterator::Iterator::try_for_each::call<alloc::sync::Arc<arrow_schema::field::Field>, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>::Break>::{closure#0}, core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>>::{closure#0}, core::ops::control_flow::ControlFlow<core::ops::control_flow::ControlFlow<alloc::sync::Arc<arrow_schema::field::Field>>>>"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "nata_exec::aggregate::execute::<nata::sql::run_query::{closure#6}>::{closure#6}"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "nata_exec::aggregate::pipeline::accumulate::{closure#11}::{closure#0}::{closure#3}"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "__rustc::__rust_alloc"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata_exec::aggregate::Atom>::get"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_buffer::util::bit_chunk_iterator::UnalignedBitChunk>::new"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata_exec::aggregate::Partial>::evaluate"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_schema::schema::Schema>::index_of"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata_exec::value::Col>::empty"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata_sched::memory::MemoryManager>::request"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::record_batch::RecordBatch>::column_by_name"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::record_batch::RecordBatch>::slice"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<std::thread::thread::Thread>::park"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal64Type>>::try_new"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type>>::value"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type>>::try_new"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::ScanState, alloc::sync::Arc<nata_sched::cooperative::Signal>)>>::recv"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<u64>::_fmt"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::sync::Arc<arrow_schema::schema::Schema>>::drop_slow"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::sync::Arc<arrow_buffer::bytes::Bytes>>::drop_slow"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "nata_exec::eval::compare"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "nata_exec::aggregate::string_scratch"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "bytes::bytes::shared_clone"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "parquet::util::bit_pack::unpack32"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "parquet::arrow::array_reader::primitive_array::coerce_i64"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "parquet::arrow::array_reader::primitive_array::coerce_array"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "std::sys::sync::futex::unix::futex_wake"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<core::fmt::Formatter>::pad_integral::write_prefix"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::len"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as core::any::Any>::type_id"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)> as alloc::vec::spec_from_iter::SpecFromIter<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}::{closure#1}::{closure#1}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>>>>::from_iter"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::vec::Vec<(usize, nata_exec::aggregate::pipeline::ScanState, alloc::sync::Arc<nata_sched::cooperative::Signal>)> as alloc::vec::spec_from_iter::SpecFromIter<(usize, nata_exec::aggregate::pipeline::ScanState, alloc::sync::Arc<nata_sched::cooperative::Signal>), core::iter::adapters::map::Map<core::iter::adapters::take::Take<core::iter::adapters::filter::Filter<core::iter::adapters::filter::Filter<core::iter::adapters::enumerate::Enumerate<core::slice::iter::IterMut<nata_sched::cooperative::run::Slot<nata_exec::aggregate::pipeline::ScanState>>>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#11}, nata_exec::aggregate::pipeline::accumulate::{closure#12}>::{closure#1}::{closure#2}>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#11}, nata_exec::aggregate::pipeline::accumulate::{closure#12}>::{closure#1}::{closure#3}>>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#11}, nata_exec::aggregate::pipeline::accumulate::{closure#12}>::{closure#1}::{closure#4}>>>::from_iter"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<alloc::vec::Vec<usize> as alloc::vec::spec_from_iter::SpecFromIter<usize, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<u32>>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#5}>>>::from_iter"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<core::iter::adapters::GenericShunt<core::iter::adapters::filter_map::FilterMap<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<bool>>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#0}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>> as core::iter::traits::iterator::Iterator>::next"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type> as arrow_array::array::Array>::data_type"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date64Type> as arrow_array::array::Array>::len"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as arrow_array::array::Array>::slice"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int32Type> as parquet::arrow::array_reader::ArrayReader>::read_records"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int64Type> as parquet::arrow::array_reader::ArrayReader>::consume_batch"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_schema::datatype::DataType as core::clone::Clone>::clone"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata_exec::aggregate::Atom as core::slice::cmp::SlicePartialEq<nata_exec::aggregate::Atom>>::equal_same_length"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<arrow_array::record_batch::RecordBatch as core::convert::From<&arrow_array::array::struct_array::StructArray>>::from"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<parquet::arrow::array_reader::struct_array::StructArrayReader as parquet::arrow::array_reader::ArrayReader>::read_records"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "<nata::sql::Out<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutLock>> as core::io::write::Write>::write_all"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "__libc_calloc"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "__lll_lock_wake_private"
+  },
+  {
+    "percent": 0.1,
+    "samples": 1,
+    "symbol": "alloc_perturb"
+  }
+]

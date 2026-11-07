@@ -1,0 +1,46 @@
+control: CONTROL_OK
+tion ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+
+running 5 tests
+test arbitrary_precision_oracle_in_every_merge_order ... ok
+test empty_null_and_integer_result_edges ... ok
+test hostile_spilled_states_and_count_merges_are_checked ... ok
+test maximum_valid_count_rescales_before_dividing ... ok
+test wide_intermediates_cancel_and_avg_does_not_narrow_sum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (/home/dev/tmp-perf2a/kernel-mutant-target/139918925952896/debug/deps/nata_kernels-ffb8c4134fb366b7)
+     Running tests/aggregate.rs (/home/dev/tmp-perf2a/kernel-mutant-target/139918925952896/debug/deps/aggregate-17b2810f432d6d21)
+
+column-machine-overflow-not-checked: CAUGHT
+_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+failures:
+
+---- decimal::tests::selected_nulls_and_strict_bounds stdout ----
+
+thread 'decimal::tests::selected_nulls_and_strict_bounds' (3574751) panicked at src/decimal.rs:295:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Overflow)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    decimal::tests::selected_nulls_and_strict_bounds
+
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (/home/dev/tmp-perf2a/kernel-mutant-target/139918925952896/debug/deps/nata_kernels-ffb8c4134fb366b7)
+error: test failed, to rerun pass `--lib`

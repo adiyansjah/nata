@@ -6,7 +6,7 @@ use crate::exec::{AggregateStats, ExecConfig, ExecReport, Observed, OperatorStat
 use crate::value::{Col, Data, StrData};
 use arrow_array::RecordBatch;
 use hashbrown::HashTable;
-use nata_kernels::aggregate::ExactSum;
+use nata_kernels::aggregate::{ExactSum, add_count};
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
 mod hashing;
@@ -124,10 +124,7 @@ impl State {
     fn add(&mut self, value: Atom, a: &AggregateExpr) -> R<()> {
         match self {
             Self::Count(n) if a.arg.is_none() || value != Atom::Null => {
-                *n = n
-                    .checked_add(1)
-                    .filter(|n| *n <= i64::MAX as u64)
-                    .ok_or_else(|| overflow(a))?;
+                *n = add_count(*n, 1).map_err(|_| overflow(a))?;
             }
             Self::Sum(sum) => match value {
                 Atom::Int(v) => sum.add(i128::from(v)).map_err(|_| overflow(a))?,
@@ -149,12 +146,7 @@ impl State {
     }
     fn merge(&mut self, other: State, a: &AggregateExpr) -> R<()> {
         match (self, other) {
-            (Self::Count(n), Self::Count(m)) => {
-                *n = n
-                    .checked_add(m)
-                    .filter(|n| *n <= i64::MAX as u64)
-                    .ok_or_else(|| overflow(a))?
-            }
+            (Self::Count(n), Self::Count(m)) => *n = add_count(*n, m).map_err(|_| overflow(a))?,
             (Self::Sum(n), Self::Sum(m)) => n.merge(m).map_err(|_| overflow(a))?,
             (s @ Self::Extreme(_), Self::Extreme(v)) => s.add(v, a)?,
             _ => return Err(EvalError::internal("incompatible aggregate states")),
@@ -433,83 +425,144 @@ impl Partial {
             .as_ref()
             .ok_or_else(|| EvalError::internal("aggregate missing"))?;
         let start = evaluated.next;
-        while let Some(&r) = evaluated.rows.get(evaluated.next) {
+        while evaluated.next < evaluated.rows.len() {
             if (evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled() {
                 return Err(EvalError::at(nata_sql::Pos::NONE, "aggregate cancelled"));
             }
-            let i = r as usize;
-            let hash = evaluated.hashes[evaluated.next];
-            let partition = if self.shared.force_collisions {
-                0
-            } else {
-                hash
-            };
-            let p = usize::try_from(partition & 15).map_err(|_| resource())?;
-            let table = &mut self.tables[p];
-            let found = table.groups.find_row(hash, &evaluated.keys, i);
-            let old = found.map(|id| table.groups.entries[id].1.as_slice());
-            let extra = evaluated
-                .args
-                .iter()
-                .zip(&a.aggregates)
-                .enumerate()
-                .map(|(slot, (arg, agg))| {
-                    if (agg.name == "min" || agg.name == "max")
-                        && let Some(col) = arg
-                        && col.valid[i]
-                        && let Data::Str(text) = &col.data
-                    {
-                        let previous = old.and_then(|s| s.get(slot)).map_or(0, |s| {
-                            if let State::Extreme(Atom::Str(s)) = s {
-                                s.len()
+            // Stack storage is bounded independently of input and charged by
+            // the runtime/task reservation. IDs never survive a spill/rehash.
+            let mut groups = [(0usize, 0usize); CANCEL_ROWS];
+            let begin = evaluated.next;
+            let stop = evaluated.rows.len().min(begin + CANCEL_ROWS);
+            while evaluated.next < stop {
+                let r = evaluated.rows[evaluated.next];
+                let i = r as usize;
+                let hash = evaluated.hashes[evaluated.next];
+                let partition = if self.shared.force_collisions {
+                    0
+                } else {
+                    hash
+                };
+                let p = usize::try_from(partition & 15).map_err(|_| resource())?;
+                let table = &mut self.tables[p];
+                let found = table.groups.find_row(hash, &evaluated.keys, i);
+                let old = found.map(|id| table.groups.entries[id].1.as_slice());
+                let extra = evaluated
+                    .args
+                    .iter()
+                    .zip(&a.aggregates)
+                    .enumerate()
+                    .map(|(slot, (arg, agg))| {
+                        if (agg.name == "min" || agg.name == "max")
+                            && let Some(col) = arg
+                            && col.valid[i]
+                            && let Data::Str(text) = &col.data
+                        {
+                            let previous = old.and_then(|s| s.get(slot)).map_or(0, |s| {
+                                if let State::Extreme(Atom::Str(s)) = s {
+                                    s.len()
+                                } else {
+                                    0
+                                }
+                            });
+                            return text.get(i).len().saturating_sub(previous);
+                        }
+                        0
+                    })
+                    .sum();
+                if table.reserve_bytes(&self.shared.manager, extra).is_err() {
+                    break;
+                }
+                let id = if let Some(id) = found {
+                    id
+                } else {
+                    let strings = evaluated
+                        .keys
+                        .iter()
+                        .map(|c| {
+                            if c.valid[i]
+                                && let Data::Str(text) = &c.data
+                            {
+                                text.get(i).len()
                             } else {
                                 0
                             }
-                        });
-                        return text.get(i).len().saturating_sub(previous);
+                        })
+                        .sum();
+                    if table
+                        .reserve_entry(&self.shared.manager, evaluated.keys.len(), strings, a)
+                        .is_err()
+                    {
+                        break;
                     }
-                    0
-                })
-                .sum();
-            if table.reserve_bytes(&self.shared.manager, extra).is_err() {
+                    // Only a new group owns a key. Lookups borrow column values;
+                    // reservation precedes key/state allocation and table growth.
+                    let key = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
+                    let id = table.groups.len();
+                    table
+                        .groups
+                        .insert(key, a.aggregates.iter().map(State::new).collect());
+                    id
+                };
+                groups[evaluated.next - begin] = (p, id);
+                evaluated.next += 1;
+            }
+            let rows = &evaluated.rows[begin..evaluated.next];
+            let ids = &groups[..rows.len()];
+            // Dispatch argument representation and aggregate once per column,
+            // rather than constructing an Atom for every numeric addend.
+            for (slot, (agg, arg)) in a.aggregates.iter().zip(&evaluated.args).enumerate() {
+                match (agg.name.as_str(), arg.as_ref().map(|c| &c.data)) {
+                    ("sum" | "avg", Some(Data::Int(values))) => {
+                        let col = arg.as_ref().ok_or_else(resource)?;
+                        for (&row, &(p, id)) in rows.iter().zip(ids) {
+                            let i = row as usize;
+                            if col.valid[i]
+                                && let State::Sum(sum) =
+                                    &mut self.tables[p].groups.entries[id].1[slot]
+                            {
+                                sum.add(i128::from(values[i])).map_err(|_| overflow(agg))?;
+                            }
+                        }
+                    }
+                    ("sum" | "avg", Some(Data::Dec(values))) => {
+                        let col = arg.as_ref().ok_or_else(resource)?;
+                        for (&row, &(p, id)) in rows.iter().zip(ids) {
+                            let i = row as usize;
+                            if col.valid[i]
+                                && let State::Sum(sum) =
+                                    &mut self.tables[p].groups.entries[id].1[slot]
+                            {
+                                sum.add(values[i]).map_err(|_| overflow(agg))?;
+                            }
+                        }
+                    }
+                    ("count", _) => {
+                        for (&row, &(p, id)) in rows.iter().zip(ids) {
+                            if arg.as_ref().is_none_or(|c| c.valid[row as usize])
+                                && let State::Count(n) =
+                                    &mut self.tables[p].groups.entries[id].1[slot]
+                            {
+                                *n = add_count(*n, 1).map_err(|_| overflow(agg))?;
+                            }
+                        }
+                    }
+                    _ => {
+                        for (&row, &(p, id)) in rows.iter().zip(ids) {
+                            self.tables[p].groups.entries[id].1[slot].add(
+                                arg.as_ref()
+                                    .map_or(Atom::Null, |c| Atom::get(c, row as usize)),
+                                agg,
+                            )?;
+                        }
+                    }
+                }
+            }
+            // Commit every admitted prefix before spilling; the first row
+            // denied a grant stays unconsumed for replay against new tables.
+            if evaluated.next < stop {
                 return Ok(false);
             }
-            let id = if let Some(id) = found {
-                id
-            } else {
-                let strings = evaluated
-                    .keys
-                    .iter()
-                    .map(|c| {
-                        if c.valid[i]
-                            && let Data::Str(text) = &c.data
-                        {
-                            text.get(i).len()
-                        } else {
-                            0
-                        }
-                    })
-                    .sum();
-                if table
-                    .reserve_entry(&self.shared.manager, evaluated.keys.len(), strings, a)
-                    .is_err()
-                {
-                    return Ok(false);
-                }
-                // Only a new group owns a key. Lookups borrow column values;
-                // reservation precedes key/state allocation and table growth.
-                let key = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
-                let id = table.groups.len();
-                table
-                    .groups
-                    .insert(key, a.aggregates.iter().map(State::new).collect());
-                id
-            };
-            let states = &mut table.groups.entries[id].1;
-            for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&evaluated.args) {
-                state.add(arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i)), agg)?;
-            }
-            evaluated.next += 1;
         }
         Ok(true)
     }
@@ -947,6 +1000,52 @@ mod tests {
         drop(partial);
         assert_eq!(manager.snapshot().held, 0);
     }
+    #[test]
+    fn group_vector_keeps_selected_null_arguments_and_distinct_groups() {
+        let mut partial = counting_partial();
+        let shared = Arc::get_mut(&mut partial.shared).expect("unique");
+        let plan = Arc::get_mut(&mut shared.plan).expect("unique plan");
+        let agg = &mut plan.aggregate.as_mut().expect("aggregate").aggregates[0];
+        agg.name = "sum".into();
+        let keys = Col {
+            ty: SqlType::BigInt,
+            valid: vec![true; 6],
+            data: Data::Int(vec![2, 0, 1, 2, 1, 0]),
+        };
+        // Nonzero NULL junk must neither add to SUM nor increment AVG's count.
+        let args = Col {
+            ty: SqlType::BigInt,
+            valid: vec![true, true, false, true, true, true],
+            data: Data::Int(vec![5, 999, 777, 11, 999, 13]),
+        };
+        let rows = vec![0, 2, 3, 5];
+        let hashes = hashing::columns(std::slice::from_ref(&keys), &rows);
+        let mut evaluated = Evaluated {
+            rows,
+            hashes,
+            keys: vec![keys],
+            args: vec![Some(args)],
+            next: 0,
+        };
+        assert!(partial.resume(&mut evaluated, &|| false).expect("batch"));
+        let mut result = Vec::new();
+        for table in &partial.tables {
+            for (key, states) in &table.groups.entries {
+                let State::Sum(sum) = states[0] else {
+                    panic!("sum");
+                };
+                result.push((key.clone(), sum.integer_sum().expect("sum"), sum.count()));
+            }
+        }
+        assert_eq!(result.len(), 3);
+        for (key, sum, count) in [(0, Some(13), 1), (1, None, 0), (2, Some(16), 2)] {
+            assert!(
+                result.contains(&(vec![Atom::Int(key)], sum, count)),
+                "{result:?}"
+            );
+        }
+    }
+
     #[test]
     fn resident_finalization_also_polls_at_bounded_intervals() {
         use std::cell::Cell;

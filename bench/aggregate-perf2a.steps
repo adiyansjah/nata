@@ -1,0 +1,6 @@
+# Parent only: run independently on settled c3d-highcpu-8 and n4a-highcpu-8.
+# Prepare the git-free bundle with --baseline af2a5a2 --fix vector=FINAL_COMMIT.
+# Architecture selects the corresponding requested type; the parent chooses the actual VM.
+prepare mkdir -p "$WORK/aggregate-perf2a/tmp"
+fixtures rm -rf "$WORK/aggregate-perf2a-sf1" && TMPDIR="$WORK/aggregate-perf2a/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2a-sf1"
+timings perf2a_machine=$(uname -m) && case "$perf2a_machine" in x86_64) perf2a_machine=c3d-highcpu-8 ;; aarch64) perf2a_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2a/tmp" python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2a_machine" --bundle "$SRC/.aggregate-perf2a-inputs" --work "$WORK/aggregate-perf2a" --data "$WORK/aggregate-perf2a-sf1" --out "$RESULTS/aggregate-perf2a-$(date -u +%Y%m%dT%H%M%SZ)"

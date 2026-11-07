@@ -14,11 +14,13 @@ import threading
 ROOT = Path(__file__).resolve().parents[2]
 CRATE = ROOT / 'crates/nata-kernels'
 MUTANTS = {
+    'column-machine-overflow-not-checked': ('a.checked_mul(b).map(i128::from)', 'Some(i128::from(a.wrapping_mul(b)))'),
+    'column-overflow-not-checked': ('v.filter(|v| v.unsigned_abs() < self.limit)', 'v'),
     'sum-overflow-not-checked': ('if !fits(value, precision) {', 'if false {'),
     'average-tie-toward-zero': ('if twice >= denominator {', 'if twice > denominator {'),
     'merge-count-guard-removed': ('let count = checked_count(self.count, other.count)?;', 'let count = self.count;'),
     'partial-premature-narrowing': ('let count = checked_count(self.count, 1)?;', 'self.decimal_sum(38)?;\n        let count = checked_count(self.count, 1)?;'),
-    'merge-double-counts': ('.checked_add(other.sum)', '.checked_add(other.sum).and_then(|v| v.checked_add(other.sum))'),
+    'merge-double-counts': ('.checked_add(other.sum.wide())', '.checked_add(other.sum.wide()).and_then(|v| v.checked_add(other.sum.wide()))'),
     'spill-wide-state-ignored': ('let sum = i256::from_le_bytes(bytes);', 'let _ = bytes;\n        let sum = i256::ZERO;'),
 }
 
@@ -30,7 +32,7 @@ def command(args, cwd, env):
         return 124, 'timeout'
 
 def run(name):
-    with tempfile.TemporaryDirectory(prefix='nata-aggregate-mutant-', dir=ROOT / 'target') as temporary:
+    with tempfile.TemporaryDirectory(prefix='nata-aggregate-mutant-', dir=os.environ.get('TMPDIR', ROOT / 'target')) as temporary:
         path = Path(temporary)
         for directory in ['src', 'tests']:
             shutil.copytree(CRATE / directory, path / directory)
@@ -47,18 +49,18 @@ def run(name):
         (path / 'Cargo.toml').write_text(manifest + '\n[workspace]\n')
         shutil.copy(CRATE / 'clippy.toml', path / 'clippy.toml')
         shutil.copy(ROOT / 'Cargo.lock', path / 'Cargo.lock')
-        source = path / 'src/aggregate.rs'
+        source = path / ('src/decimal.rs' if name.startswith('column-') else 'src/aggregate.rs')
         text = source.read_text()
         if name != 'control':
             old, new = MUTANTS[name]
             if text.count(old) != 1:
                 return name, 'INVALID', 'anchor count'
             source.write_text(text.replace(old, new))
-        env = dict(os.environ, CARGO_TARGET_DIR=str(ROOT / 'target' / 'aggregate-mutant-build' / str(threading.get_ident())), CARGO_BUILD_JOBS='2')
-        rc, out = command(['cargo', 'test', '--offline', '--test', 'aggregate', '--no-run'], path, env)
+        env = dict(os.environ, CARGO_TARGET_DIR=str(Path(os.environ.get('NATA_MUTANT_TARGET', ROOT / 'target' / 'aggregate-mutant-build')) / str(threading.get_ident())), CARGO_BUILD_JOBS='2')
+        rc, out = command(['cargo', 'test', '--offline', '--lib', '--test', 'aggregate', '--no-run'], path, env)
         if rc:
             return name, 'INVALID', out[-1500:]
-        rc, out = command(['cargo', 'test', '--offline', '--test', 'aggregate', '--', '--test-threads=1'], path, env)
+        rc, out = command(['cargo', 'test', '--offline', '--lib', '--test', 'aggregate', '--', '--test-threads=1'], path, env)
         if name == 'control':
             return name, 'CONTROL_OK' if rc == 0 else 'CONTROL_FAILED', out[-1000:]
         # A failed assertion/test or an execution timeout counts; harness failures don't.

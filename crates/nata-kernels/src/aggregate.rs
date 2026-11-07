@@ -18,8 +18,32 @@ pub enum AggregateError {
 /// COUNT(*) is deliberately separate: its count includes NULL rows.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ExactSum {
-    sum: i256,
+    sum: Sum,
     count: u64,
+}
+
+/// Common partials stay in i128. Overflow promotes to the existing wide
+/// representation; it never narrows early or makes merge order observable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Sum {
+    Narrow(i128),
+    Wide(i256),
+}
+impl Default for Sum {
+    fn default() -> Self {
+        Self::Narrow(0)
+    }
+}
+impl Sum {
+    fn wide(self) -> i256 {
+        match self {
+            Self::Narrow(v) => i256::from_i128(v),
+            Self::Wide(v) => v,
+        }
+    }
+    fn from_wide(v: i256) -> Self {
+        v.to_i128().map_or(Self::Wide(v), Self::Narrow)
+    }
 }
 
 impl ExactSum {
@@ -30,11 +54,19 @@ impl ExactSum {
             return Err(AggregateError::InvalidState);
         }
         let count = checked_count(self.count, 1)?;
+        if let Sum::Narrow(sum) = &mut self.sum
+            && let Some(next) = sum.checked_add(value)
+        {
+            *sum = next;
+            self.count = count;
+            return Ok(());
+        }
         let sum = self
             .sum
+            .wide()
             .checked_add(i256::from_i128(value))
             .ok_or(AggregateError::Overflow)?;
-        self.sum = sum;
+        self.sum = Sum::from_wide(sum);
         self.count = count;
         Ok(())
     }
@@ -45,9 +77,10 @@ impl ExactSum {
         let count = checked_count(self.count, other.count)?;
         let sum = self
             .sum
-            .checked_add(other.sum)
+            .wide()
+            .checked_add(other.sum.wide())
             .ok_or(AggregateError::Overflow)?;
-        self.sum = sum;
+        self.sum = Sum::from_wide(sum);
         self.count = count;
         Ok(())
     }
@@ -59,7 +92,7 @@ impl ExactSum {
     /// Fixed little-endian wide state, never native Rust layout. IPC's trusted
     /// schema stores these bytes, not an externally visible SQL Decimal256.
     pub fn spill_sum(&self) -> [u8; 32] {
-        self.sum.to_le_bytes()
+        self.sum.wide().to_le_bytes()
     }
 
     /// Validate wide replay before merging. Even an IPC payload with a repaired
@@ -76,7 +109,10 @@ impl ExactSum {
         if sum.checked_abs().is_none_or(|v| v > bound) {
             return Err(AggregateError::InvalidState);
         }
-        Ok(Self { sum, count })
+        Ok(Self {
+            sum: Sum::from_wide(sum),
+            count,
+        })
     }
 
     /// SUM(DECIMAL) and SUM(BIGINT). Narrow exactly once, at group finalization,
@@ -89,7 +125,7 @@ impl ExactSum {
         if self.count == 0 {
             return Ok(None);
         }
-        let value = self.sum.to_i128().ok_or(AggregateError::Overflow)?;
+        let value = self.sum.wide().to_i128().ok_or(AggregateError::Overflow)?;
         if !fits(value, precision) {
             return Err(AggregateError::Overflow);
         }
@@ -116,6 +152,7 @@ impl ExactSum {
         let factor = i256::from_i128(decimal_limit(increase)?);
         let numerator = self
             .sum
+            .wide()
             .checked_mul(factor)
             .ok_or(AggregateError::Overflow)?;
         let denominator = i256::from_i128(i128::from(self.count));
@@ -173,6 +210,13 @@ pub fn checked_count(left: u64, right: u64) -> Result<u64, AggregateError> {
     left.checked_add(right)
         .filter(|&n| n < u64::MAX)
         .ok_or(AggregateError::Overflow)
+}
+
+/// Checked SQL COUNT update, shared by scalar, column and merge paths.
+pub fn add_count(left: u64, right: u64) -> Result<u64, AggregateError> {
+    let n = checked_count(left, right)?;
+    finish_count(n)?;
+    Ok(n)
 }
 
 /// SQL COUNT result is non-NULL BIGINT, with its own narrower final bound.

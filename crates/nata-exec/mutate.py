@@ -115,10 +115,33 @@ M = {
  "explain-analyze-project-rows-are-the-filters-rows": ("cli", [(EXP, "ops.project_rows,", "ops.filter_rows,")]),
 }
 
+# Step 2a moves strict arithmetic to the shared kernel crate. Keep the same
+# semantic mutants, now targeting the code SQL actually calls.
+DK = "crates/nata-kernels/src/decimal.rs"
+M.update({
+ "aggregate-cancel-poll-per-row": ("exec", [(AG, "let r = evaluated.rows[evaluated.next];", 'if cancelled() { return Err(EvalError::at(nata_sql::Pos::NONE, "aggregate cancelled")); } let r = evaluated.rows[evaluated.next];')]),
+
+ "decimal-division-truncates": ("exec", [(DK, "if r.unsigned_abs().checked_mul(2)? >= d.unsigned_abs() {", "if false {")]),
+ "decimal-division-by-zero-unchecked-as-zero": ("exec", [(DK, "Op::Div => { if y == 0 { return Err(Fail::DivZero); }", "Op::Div => { if y == 0 { return Ok(0); }")]),
+ "decimal-addition-operand-fit-unchecked": ("exec", [(DK, "Ok(( self.check(x.checked_mul(self.left))?, self.check(y.checked_mul(self.right))?, ))", "Ok((x.checked_mul(self.left).ok_or(Fail::Overflow)?, y.checked_mul(self.right).ok_or(Fail::Overflow)?))")]),
+ "decimal-result-digits-unchecked": ("exec", [(DK, "v.filter(|v| v.unsigned_abs() < self.limit).ok_or(Fail::Overflow)", "v.ok_or(Fail::Overflow)")]),
+
+ "error-raised-for-an-unselected-row": ("exec", [(DK, "for &row in sel { let i = row as usize; if av[i] && bv[i] { out[i] = op(a[i], b[i])?;", "for row in 0..a.len() as u32 { let i = row as usize; if av[i] && bv[i] { out[i] = op(a[i], b[i])?;")]),
+ "integer-overflow-wraps": ("exec", [(DK, "Op::Add => x.checked_add(y),", "Op::Add => x.checked_add(y).or(Some(x.wrapping_add(y))),")]),
+ "integer-range-of-the-type-unchecked": ("exec", [(DK, "v.filter(|v| *v >= lo && *v <= hi).ok_or(Fail::Overflow)", "v.ok_or(Fail::Overflow)")]),
+ "min-by-minus-one-allowed": ("exec", [(DK, "if y == -1 && x == lo {", "if false && y == -1 && x == lo {")]),
+ "remainder-takes-the-sign-of-the-divisor": ("exec", [(DK, "self.check(x.checked_rem(y))", "self.check(x.checked_rem(y).map(|r| if r != 0 && ((r < 0) != (y < 0)) { r + y } else { r }))")]),
+ "unary-minus-of-the-minimum-allowed": ("exec", [(EV, 'v.checked_neg().filter(|v| *v >= lo && *v <= hi).ok_or_else(|| int_overflow(e, "a unary minus"))', 'Ok::<_, EvalError>(v.checked_neg().unwrap_or(v))')]),
+ "decimal-to-integer-truncates": ("exec", [(CA, "rescale(v, scale, 0)", "v.checked_div(pow10(u32::from(scale)).unwrap_or(1))")]),
+ "cast-int-to-narrower-int-unchecked": ("exec", [(CA, "if v < lo || v > hi { Err(no_fit(pos, from, to)) } else { Ok(v) }", "Ok::<_, EvalError>(v)")]),
+ "aggregate-group-index-off-by-one": ("exec", [(AG, "groups[evaluated.next - begin] = (p, id);", "groups[evaluated.next - begin] = (p, id + 1);")]),
+ "aggregate-sum-null-bitmap-ignored": ("exec", [(AG, "if col.valid[i] && let State::Sum(sum) = &mut self.tables[p].groups.entries[id].1[slot] { sum.add(i128::from(values[i]))", "if let State::Sum(sum) = &mut self.tables[p].groups.entries[id].1[slot] { sum.add(i128::from(values[i]))")]),
+})
+
 
 def sha_tree():
     h = hashlib.sha256()
-    for crate in ("nata-exec", "nata-parquet", "nata"):
+    for crate in ("nata-exec", "nata-parquet", "nata", "nata-kernels"):
         for d, _, fs in sorted(os.walk(os.path.join(ROOT, "crates", crate))):
             if "target" in d.split(os.sep):
                 continue
@@ -134,13 +157,13 @@ def stage(work):
     shutil.rmtree(base, ignore_errors=True)
     os.makedirs(os.path.join(base, "crates"))
     root = open(os.path.join(ROOT, "Cargo.toml")).read()
-    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-exec", "crates/nata-parquet"]', root)
+    root = re.sub(r"members = \[[^\]]*\]", 'members = ["crates/nata", "crates/nata-exec", "crates/nata-parquet", "crates/nata-kernels"]', root)
     root = re.sub(r"exclude = \[[^\]]*\]\n", "", root)
     open(os.path.join(base, "Cargo.toml"), "w").write(root)
     shutil.copy(os.path.join(ROOT, "Cargo.lock"), os.path.join(base, "Cargo.lock"))
-    for dep in ["nata-sql", "nata-scan", "nata-sched", "nata-kernels", "nata-pgwire"]:
+    for dep in ["nata-sql", "nata-scan", "nata-sched", "nata-pgwire"]:
         os.symlink(os.path.join(ROOT, "crates", dep), os.path.join(base, "crates", dep))
-    for c in ["nata-exec", "nata-parquet", "nata"]:
+    for c in ["nata-exec", "nata-parquet", "nata", "nata-kernels"]:
         # copy2 would keep the old modification times, and cargo would trust the artifacts of an earlier (mutated) build
         shutil.copytree(os.path.join(ROOT, "crates", c), os.path.join(base, "crates", c),
                         ignore=shutil.ignore_patterns("target", "mutate.py", "__pycache__", "mutate*.log"), copy_function=shutil.copy)

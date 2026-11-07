@@ -1,0 +1,45 @@
+control: CONTROL_OK
+tion ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+
+running 5 tests
+test arbitrary_precision_oracle_in_every_merge_order ... ok
+test empty_null_and_integer_result_edges ... ok
+test hostile_spilled_states_and_count_merges_are_checked ... ok
+test maximum_valid_count_rescales_before_dividing ... ok
+test wide_intermediates_cancel_and_avg_does_not_narrow_sum ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (/home/dev/tmp-perf2a/kernel-mutant-target/140633855203200/debug/deps/nata_kernels-ffb8c4134fb366b7)
+     Running tests/aggregate.rs (/home/dev/tmp-perf2a/kernel-mutant-target/140633855203200/debug/deps/aggregate-17b2810f432d6d21)
+
+column-overflow-not-checked: CAUGHT
+l::tests::bounded_columns_match_an_independent_exact_reference' (3564722) panicked at src/decimal.rs:286:21:
+assertion `left == right` failed: Mul -12 -12
+  left: Ok(144)
+ right: Err(Overflow)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- decimal::tests::selected_nulls_and_strict_bounds stdout ----
+
+thread 'decimal::tests::selected_nulls_and_strict_bounds' (3564723) panicked at src/decimal.rs:326:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(Overflow)
+
+
+failures:
+    decimal::tests::bounded_columns_match_an_independent_exact_reference
+    decimal::tests::selected_nulls_and_strict_bounds
+
+test result: FAILED. 20 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (/home/dev/tmp-perf2a/kernel-mutant-target/140633855203200/debug/deps/nata_kernels-ffb8c4134fb366b7)
+error: test failed, to rerun pass `--lib`

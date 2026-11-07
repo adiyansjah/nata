@@ -472,3 +472,269 @@ Medians in seconds (min/quartiles/max and twins are in `summary.json`):
 **Verdict against the frozen targets: NOT MET in every cell** (Q1 ≤1.5x, hash queries ≤2x, spill ≤2x). Step 1 removed its overheads
 (about 25-30% on Q1, 13-21% on the high-cardinality query) but leaves the row-at-a-time computation (step 2a) and the spill volume
 (step 2d, almost untouched by step 1: -4% at 8 threads) as the gap.
+
+## Performance step 2a — shared column kernels and group vectors
+
+**Verdicts:** all required local checks pass; **7/7 focused runtime mutants are
+CAUGHT**, zero survivors/invalids; **4/4 Kani harnesses pass, 8/8 covers**, and a
+private Kani precision-check mutant is CAUGHT after its control passes. Full
+existing mutant sweeps remain for the parent heavy job. **No performance target
+is assessed or claimed met.** The final local sanity is slower, as recorded
+below; there are no local twins or settled-machine denominators.
+
+The frozen rule remains: full Q1 ≤1.5× DuckDB, agg_orderkey/agg_partkey ≤2×,
+spill ≤2× in matched-budget cells where DuckDB completes, SF10 8/1 scaling ≥5×
+ARM64 / ≥3.5× x86-64. No GCP run was made. Parent measurement is required.
+[Machine, toolchain and SF1 input identity](raw/20261107-hash-aggregate-perf2a/machine.json);
+[production source hashes](raw/20261107-hash-aggregate-perf2a/source-sha256.txt).
+
+### Fresh local profiles and sanity times
+
+SF1, eight requested threads, CPU-clock user self sampling at 199 Hz with DWARF
+call graphs. Shares are relative, functions changed, and work moved into the
+kernel; neither a disappearing symbol nor a lower share proves a lower latency.
+The historical step 1 profile is not reused as this comparison's denominator.
+
+| Self symbol | af2a5a2 before | Final |
+|---|---:|---:|
+| `nata_exec::eval::arith` | 12.87% | 0.21% |
+| `nata_exec::num::fits` | 7.54% | 0.00% |
+| `aggregate::Partial>::resume` | 9.62% | 15.51% |
+| `decimal::Decimal>::column` | 0.00% | 11.11% |
+| `aggregate::ExactSum>::add` | 5.18% | 4.30% |
+
+![Local Q1 self sample shares](raw/20261107-hash-aggregate-perf2a/profile-summary.svg)
+
+| Stage | One Q1 CLI sanity, s | Starting load (1 minute) |
+|---|---:|---:|
+| af2a5a2 | 1.136 | 3.23 |
+| Column kernels and group vectors | 1.064 | 1.53 |
+| Final: checked i64 multiply and in-place narrow SUM | 2.199 | 3.31 |
+
+**Indicative only:** one completion sanity per change, without alternating
+controls. Concurrent development work was present. The slower final observation
+is retained; it is not filtered out or attributed to a particular change.
+No further local timing rounds were run. The intermediate profile exposed SUM
+state reconstruction; assembly inspection motivated updating the narrow sum in
+place, with the same checks. There is no isolated timing claim for that fix.
+
+| Profile | Before samples / lost | Final samples / lost | Before / final load (1 min) |
+|---|---:|---:|---:|
+| Q1 memory | 676 / 0 | 954 / 0 | 3.23 / 3.31 |
+| HAVING memory | 1007 / 0 | 1522 / 0 | 3.61 / 3.13 |
+| HAVING 64 MiB | 2418 / 0 | 3663 / 0 | 3.32 / 3.12 |
+
+#### Final top 15: Q1 memory
+
+[All symbols and counters](raw/20261107-hash-aggregate-perf2a/inplace-q1.json); [text](raw/20261107-hash-aggregate-perf2a/inplace-q1.txt). Long names below are shortened after 180 characters.
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 15.51% | `<nata_exec::aggregate::Partial>::resume` |
+| 2 | 11.11% | `<nata_kernels::decimal::Decimal>::column` |
+| 3 | 4.30% | `<nata_kernels::aggregate::ExactSum>::add` |
+| 4 | 3.98% | `<nata_exec::value::Col>::from_arrow` |
+| 5 | 3.88% | `_int_malloc` |
+| 6 | 3.67% | `__memmove_avx_unaligned_erms` |
+| 7 | 3.56% | `malloc` |
+| 8 | 3.04% | `nata_exec::aggregate::hashing::columns` |
+| 9 | 2.31% | `std::sys::backtrace::__rust_begin_short_backtrace::<nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_pa...` |
+| 10 | 2.10% | `__memset_avx2_unaligned_erms` |
+| 11 | 2.10% | `cfree@GLIBC_2.2.5` |
+| 12 | 1.99% | `_int_free_chunk` |
+| 13 | 1.68% | `nata_exec::aggregate::hashing::value` |
+| 14 | 1.57% | `<std::sys::sync::mutex::futex::Mutex>::lock_contended` |
+| 15 | 1.57% | `<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::IntervalMonthDayNanoType> as arrow_array::array::Array>::is_valid` |
+
+#### Final top 15: HAVING memory
+
+[All symbols and counters](raw/20261107-hash-aggregate-perf2a/inplace-high_cardinality_tpch.json); [text](raw/20261107-hash-aggregate-perf2a/inplace-high_cardinality_tpch.txt). Long names below are shortened after 180 characters.
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 11.83% | `nata_exec::aggregate::hashing::key` |
+| 2 | 10.38% | `<nata_exec::aggregate::Partial>::resume` |
+| 3 | 5.19% | `malloc` |
+| 4 | 4.34% | `<nata_exec::aggregate::State>::finalize` |
+| 5 | 3.88% | `unlink_chunk.isra.0` |
+| 6 | 3.42% | `_int_malloc` |
+| 7 | 2.69% | `cfree@GLIBC_2.2.5` |
+| 8 | 2.56% | `_int_free_chunk` |
+| 9 | 2.50% | `<nata_kernels::decimal::Decimal>::column` |
+| 10 | 2.37% | `<hashbrown::raw::RawTable<usize>>::reserve_rehash::<<nata_exec::aggregate::Groups>::try_reserve::{closure#0}>` |
+| 11 | 2.30% | `__memmove_avx_unaligned_erms` |
+| 12 | 1.64% | `<nata_exec::aggregate::Groups>::insert` |
+| 13 | 1.38% | `<snap::decompress::Decoder>::decompress` |
+| 14 | 1.38% | `syscall` |
+| 15 | 1.18% | `<nata_kernels::aggregate::ExactSum>::decimal_sum` |
+
+#### Final top 15: HAVING 64 MiB
+
+[All symbols and counters](raw/20261107-hash-aggregate-perf2a/inplace-high_cardinality_tpch-64MiB.json); [text](raw/20261107-hash-aggregate-perf2a/inplace-high_cardinality_tpch-64MiB.txt). Long names below are shortened after 180 characters.
+
+| Rank | Self | Symbol |
+|---:|---:|---|
+| 1 | 5.95% | `_int_malloc` |
+| 2 | 5.02% | `malloc` |
+| 3 | 3.99% | `malloc_consolidate` |
+| 4 | 3.63% | `_int_free_chunk` |
+| 5 | 3.19% | `cfree@GLIBC_2.2.5` |
+| 6 | 2.87% | `__memmove_avx_unaligned_erms` |
+| 7 | 2.07% | `<nata_exec::aggregate::Partial>::resume` |
+| 8 | 1.91% | `<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, nata_exec::aggregate::replay::decode::{closure#2}> as core::iter::traits::iterator::Itera...` |
+| 9 | 1.77% | `flatbuffers::verifier::append_trace::<()>` |
+| 10 | 1.77% | `realloc` |
+| 11 | 1.77% | `unlink_chunk.isra.0` |
+| 12 | 1.58% | `__syscall_cancel_arch` |
+| 13 | 1.56% | `nata_exec::aggregate::replay::encode` |
+| 14 | 1.31% | `<flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::ge...` |
+| 15 | 1.28% | `__memset_avx2_unaligned_erms` |
+
+Reproduce profiles with a separately built baseline/final binary, on the same
+SF1 data (this runs each query once under perf and Q1 once as a completion sanity):
+
+```sh
+python3 scripts/profile-aggregate-perf1.py STAGE --sanity --candidate BINARY --data DATA_SF1 --out DISK_DIRECTORY
+```
+
+Implementation:
+
+- Arithmetic on integer and decimal argument columns now calls `nata-kernels`.
+  The decimal kernel prepares scale factors and the result limit once per
+  expression, dispatches ADD/SUB/MUL outside the selected-row loop, and retains
+  checked machine arithmetic, both ADD/SUB operand-fit checks, and the result
+  precision check. Decimal64 results use checked i64 multiplication after
+  checked operand conversions, with checked i128 fallback for wide operands.
+  A `2^59 * 32` sentinel catches a 64-bit wrap to zero. Errors retain the expression position and error class.
+  Numeric cast/negation and comparison traversal use shared selection/validity
+  adapters; exact rescaling/rounding helpers have one shared implementation.
+  Existing text/date/float conversion and comparator semantics remain in their
+  original adapters: this is not a claim that every scalar operation is proved.
+- Hashes still use step 1's canonical XXH3 columns and collision-resolving
+  `hashbrown` table. A bounded group-index vector resolves probe/insert first;
+  aggregate columns then update from those IDs, with separate validity per
+  argument. COUNT avoids constructing an Atom; SUM/AVG dispatch the input type
+  once per column. MIN/MAX make column-wise passes with their existing typed
+  comparator. Owned keys/state arenas and spill records remain compatible.
+- SUM/AVG use checked i128 partials, promoting to the existing checked i256
+  representation when i128 overflows. Promotion is exact, not an SQL overflow;
+  final precision is checked only after merge. All value/count checks remain.
+  Spill still writes the same 32 little-endian sum bytes plus non-NULL count;
+  the validated IPC reader is unchanged. Existing oracle/boundary tests cover
+  wide cancellation, AVG without narrowing SUM, and malformed replay.
+- Each admitted prefix is updated before pressure spills its table; the denied
+  row is retried with fresh IDs. A 1024-row vector is stack-bounded, and its
+  16 KiB is charged in each task's decode/expression grant before work starts.
+  Entry and 1024-row cancellation polls, string growth grants, partitioned
+  recursive merge and cleanup are retained. No custom dense-key table was added.
+
+### Checks and mutation evidence
+
+With disk-backed `TMPDIR`, fmt, workspace clippy with warnings denied, workspace
+tests, cargo deny, release build, scan **5/5**, SQL **252/252**, SQL differences
+**55/55**, aggregate **65/65**, forced-spill aggregate **65/65**, and all **16**
+memory loom models at bound 2 pass. No dependency or accepted ADR changed.
+[Check record](raw/20261107-hash-aggregate-perf2a/checks.txt). Staged leak scanning is recorded there.
+
+An unchanged scanner test initially reported `not_read=1, abandoned=0`: the slow
+task had not started when LIMIT completed. Its isolated rerun and the complete
+workspace rerun with `RUST_TEST_THREADS=1` pass, including all 15 parallel-scan
+tests. No scanner test or implementation was changed. [Failure](raw/20261107-hash-aggregate-perf2a/parallel-first-failure.txt),
+[isolated retry](raw/20261107-hash-aggregate-perf2a/parallel-retry.txt).
+
+The executor private control passes, then **5/5** targeted mutations are CAUGHT:
+selection ignored, SUM NULL bitmap ignored, group index off by one, decimal
+precision check removed, and the existing per-row cancel-poll mutant retargeted
+inside group resolution. [Results](raw/20261107-hash-aggregate-perf2a/mutants-exec.md).
+Both new kernel mutations are CAUGHT after private controls pass: [decimal
+precision](raw/20261107-hash-aggregate-perf2a/mutants-kernels.txt), [checked i64 multiply replaced by wrapping](raw/20261107-hash-aggregate-perf2a/mutants-kernel-machine.txt).
+The Kani precision-check negative control is [CAUGHT](raw/20261107-hash-aggregate-perf2a/kani-negative.txt), with
+[passing private control](raw/20261107-hash-aggregate-perf2a/kani-negative-control.txt) and [failing proof](raw/20261107-hash-aggregate-perf2a/kani-negative-mutant.txt).
+Timeouts/compile failures are not counted as catches in these results.
+
+All **66** executor mutation definitions have unique live anchors, verified by
+`test_mutate.py`; moved arithmetic/cast mutations target the called kernel code,
+and the kernel crate is copied privately before mutation. This is not a claim
+that the full 66-mutant sweep was rerun locally. Existing full sweeps remain
+pending for the parent, using a disk-backed working directory and one job at a
+time (the long sweeps belong on its approved heavy VM):
+
+```sh
+python3 crates/nata-exec/mutate.py --work WORK/exec --out RESULTS/exec.md
+python3 crates/nata-kernels/mutate.py --jobs 1
+python3 crates/nata-kernels/scripts/mutate_guards.py
+```
+
+### Proof coverage and limits
+
+All four new harnesses pass, with **8/8 covers satisfied** (two covers per
+harness). [MUL](raw/20261107-hash-aggregate-perf2a/kani-mul.txt), [ADD](raw/20261107-hash-aggregate-perf2a/kani-add.txt), [SUB](raw/20261107-hash-aggregate-perf2a/kani-sub.txt), [i128 boundary](raw/20261107-hash-aggregate-perf2a/kani-machine_overflow.txt). The harnesses include the actual production `decimal.rs` by path, following the
+existing Kani crate. The two-row ADD/SUB/MUL proof uses arbitrary signed 8-bit
+values, arbitrary validity vectors and all subset selections, a 2-digit result
+bound, and independent exact scalar formulas, with an unwind bound of 3. The
+machine-boundary harness (unwind 8) exercises both
+signed i128 machine-overflow boundaries and NULL masking. Covers require both
+error and successful selected/NULL paths.
+
+Trust points: full-domain i128 multiplication, arbitrary precision/scale
+combinations, integer type-range/MIN÷−1 logic, division/remainder and exact
+cast rescaling are not proved by
+these bounded harnesses. They retain checked std primitives and are exercised
+by the independent bounded scalar tests, existing expected-value and SQL
+boundary tests, and normal/forced-spill differential gates. The new i128-to-i256
+promotion and the shared COUNT helper are test-backed trust points: the proof
+spike has only a NullBuffer stub, not Arrow's real i256, so it cannot prove that
+path. The unchanged Arrow i256/count state bounds remain those of ADR 0010.
+No overflow check was removed under a reasoned bound (P5).
+
+Parent proof commands (also suitable for rechecking the local results):
+
+```sh
+cd spikes/kani-nata-kernels
+cargo kani --harness decimal_column_selected_null_and_bounds
+cargo kani --harness decimal_column_add_selected_null_and_bounds
+cargo kani --harness decimal_column_sub_selected_null_and_bounds
+cargo kani --harness decimal_column_machine_overflow
+```
+
+### Settled parent timing job
+
+The existing heavy harness accepts one to four cumulative revisions and an
+explicit `--machine` for either requested 8-vCPU architecture. With one fix it
+runs **16 Nata correctness cells before 240 timed processes**: Q1 and the
+high-cardinality HAVING query, 1/8 threads, 8 GiB/64 MiB, five alternating rounds,
+primary and twin for both Nata revisions and DuckDB. All engines include CLI
+startup, planning, decode and CSV to `/dev/null`. Budgets are matched; failed
+DuckDB cells have no denominator. Source archives, binary/input hashes, loads,
+spill counters, paired ratios and twin noise remain recorded. The extended
+inert self-test exercises both the old five-revision x86 job and the new
+two-revision ARM job, including gates preceding all timings.
+
+Prepare locally after committing, then let the parent copy the bundle with the
+source and run the command separately on a settled **c3d-highcpu-8** and
+**n4a-highcpu-8** (substitute the matching MACHINE and disk-backed WORK/RESULTS):
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline af2a5a2 --fix vector=HEAD --bundle .aggregate-perf2a-inputs
+python3 scripts/bench-aggregate-perf1-heavy.py run --machine MACHINE --bundle .aggregate-perf2a-inputs --work WORK --data DATA_SF1 --out RESULTS
+```
+
+[Parent heavy recipe](../aggregate-perf2a.steps). No target verdict follows from
+SF1 local profiles; the frozen SF10 scaling cells still need the parent's runs.
+
+### Following steps
+
+- **2b / P4:** independently measure expression-to-aggregate fusion, including
+  repeated argument materialization and scans of the group vector. Retain
+  selection, NULL and positioned-error phase semantics; keep a generic control.
+- **2c / P5:** prove bounds for the actual called kernels and promote/merge
+  paths, mutation-check those proofs, then independently measure any check
+  elision. Step 2a removes no checks.
+- **2d:** measure and reduce spill volume and allocator/IPC work at matched
+  budgets, while retaining reader validation, quota/FD bounds and recursive
+  cleanup. Step 2a intentionally retains the spill state format.
+
+R12/P11 have this implementation and its evidence. Their register entries stay
+open pending the parent's settled both-CPU verdict and the remaining
+text/date/float conversion adapters; the bounded proofs above do not certify
+those adapters or the full i128 input domain.

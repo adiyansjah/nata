@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package committed revisions, then benchmark on one settled c3d-highcpu-8.
+"""Package committed revisions, then benchmark on one settled c3d-highcpu-8 or n4a-highcpu-8.
 
 prepare runs locally and makes a git-free source bundle for the existing heavy
 job uploader. run is for the parent's approved VM only; --plan launches nothing.
@@ -69,8 +69,8 @@ def git(repo, *args):
 
 
 def prepare(args):
-    if len(args.fix) != 4:
-        raise ValueError('supply the four cumulative fix commits, in order')
+    if not 1 <= len(args.fix) <= 4:
+        raise ValueError('supply one to four cumulative fix commits, in order')
     entries = [('baseline', args.baseline)]
     for item in args.fix:
         label, ref = item.split('=', 1)
@@ -97,12 +97,12 @@ def prepare(args):
         previous = commit
     queries = {q: (args.repo / f'check/queries/aggregate/{q}.sql').read_text() for q in QUERIES}
     save(args.bundle / 'manifest.json', dict(version=1, revisions=revisions, queries=queries))
-    print('Prepared five committed source archives; the heavy job needs no .git directory.')
+    print(f'Prepared {len(revisions)} committed source archives; the heavy job needs no .git directory.')
 
 
 def manifest(bundle):
     value = json.loads((bundle / 'manifest.json').read_text())
-    if value['version'] != 1 or len(value['revisions']) != 5 or set(value['queries']) != set(QUERIES):
+    if value['version'] != 1 or not 2 <= len(value['revisions']) <= 5 or set(value['queries']) != set(QUERIES):
         raise ValueError('invalid bundle manifest')
     labels = set()
     for revision in value['revisions']:
@@ -234,8 +234,9 @@ def run(args):
     if args.plan:
         print(json.dumps(plan, indent=2))
         return
-    if platform.machine() != 'x86_64' or os.cpu_count() != 8:
-        raise ValueError('this run is specified for the parent\'s c3d-highcpu-8 (x86-64, 8 logical CPUs)')
+    expected_arch = {'c3d-highcpu-8': 'x86_64', 'n4a-highcpu-8': 'aarch64'}[args.machine]
+    if platform.machine() != expected_arch or os.cpu_count() != 8:
+        raise ValueError(f'this run requires {args.machine} ({expected_arch}, 8 logical CPUs)')
     if (out / 'timings.json').exists():
         raise ValueError('use a fresh output directory; never mix interrupted sessions')
     out.mkdir(parents=True, exist_ok=True)
@@ -267,7 +268,7 @@ def run(args):
         build_records.append(dict(**revision, binary_sha256=digest(binary)))
     parquet = args.data.resolve() / 'lineitem.parquet'
     sqls = {q: s.replace('{data}', str(args.data.resolve()).replace("'", "''")) for q,s in value['queries'].items()}
-    metadata = dict(queries=value['queries'], expected_machine='c3d-highcpu-8', architecture=platform.machine(), logical_cpus=os.cpu_count(), cpu_model=next(line.split(':',1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')), rustc=subprocess.check_output(['rustc','--version'],env=env,text=True).strip(), duckdb=subprocess.check_output(['duckdb','--version'],env=env,text=True).strip(), data_bytes=parquet.stat().st_size, data_sha256=digest(parquet), revisions=build_records, plan=plan, verdict='measurements only; parent judges attribution against twin noise and frozen targets')
+    metadata = dict(queries=value['queries'], expected_machine=args.machine, architecture=platform.machine(), logical_cpus=os.cpu_count(), cpu_model=next((line.split(':',1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith(('model name', 'Hardware', 'CPU part'))), platform.machine()), rustc=subprocess.check_output(['rustc','--version'],env=env,text=True).strip(), duckdb=subprocess.check_output(['duckdb','--version'],env=env,text=True).strip(), data_bytes=parquet.stat().st_size, data_sha256=digest(parquet), revisions=build_records, plan=plan, verdict='measurements only; parent judges attribution against twin noise and frozen targets')
     count_sql = "SELECT count(*) FROM '" + str(parquet).replace("'", "''") + "';"
     counted = subprocess.check_output(['duckdb','-csv','-c',count_sql],env=env,text=True)
     metadata['input_rows'] = int(list(csv.reader(counted.splitlines()))[1][0])
@@ -327,7 +328,7 @@ def run(args):
     print('COMPLETE: five rounds per primary/twin arm; failed DuckDB cells have no denominator. No automatic target verdict.')
 
 
-def simulated_run(directory, revisions):
+def simulated_run(directory, revisions, machine='c3d-highcpu-8'):
     """Exercise the full orchestration with inert engines, without cloud/timings."""
     import contextlib
     import io
@@ -349,7 +350,7 @@ def simulated_run(directory, revisions):
     data = directory/'simulation-data'
     data.mkdir()
     (data/'lineitem.parquet').write_bytes(b'inert self-test fixture')
-    args = argparse.Namespace(bundle=bundle, work=directory/'simulation-work', data=data, out=directory/'simulation-results', plan=False)
+    args = argparse.Namespace(machine=machine, bundle=bundle, work=directory/'simulation-work', data=data, out=directory/'simulation-results', plan=False)
     built, calls = [], []
 
     def process(argv, **kwargs):
@@ -378,17 +379,17 @@ def simulated_run(directory, revisions):
             destination.write_text('a,b,c,d,e,f,g,h,i,j\nA,F,1,2,3,4,5,6,0.1,10\n' if query == 'q1' else 'a,b,c,d\n1,2,3,4\n')
         return dict(seconds=1.0, load=[0,0,0], exit=0, counters=dict(peak_reservation=budget, spill_bytes_written=int(query=='high_cardinality_tpch' and budget==BUDGETS[1])))
 
-    with patch.object(platform,'machine',return_value='x86_64'), patch.object(os,'cpu_count',return_value=8), patch.object(subprocess,'run',side_effect=process), patch.object(subprocess,'check_output',side_effect=output), patch.dict(globals(),invoke=engine), contextlib.redirect_stdout(io.StringIO()):
+    with patch.object(platform,'machine',return_value='aarch64' if machine == 'n4a-highcpu-8' else 'x86_64'), patch.object(os,'cpu_count',return_value=8), patch.object(subprocess,'run',side_effect=process), patch.object(subprocess,'check_output',side_effect=output), patch.dict(globals(),invoke=engine), contextlib.redirect_stdout(io.StringIO()):
         run(args)
-    assert len(built) == len(set(built)) == 5
-    assert len(json.loads((args.out/'gates.json').read_text())) == 40
+    assert len(built) == len(set(built)) == len(revisions)
+    assert len(json.loads((args.out/'gates.json').read_text())) == 8 * len(revisions)
     samples = json.loads((args.out/'timings.json').read_text())
-    assert len(samples) == 480 and sum(timed for _,timed,_,_ in calls) == 480
+    assert len(samples) == 80 * (len(revisions) + 1) and sum(timed for _,timed,_,_ in calls) == len(samples)
     assert all(row['arms']['baseline-primary']['n']==5 for row in json.loads((args.out/'summary.json').read_text()))
     assert {s['budget'] for s in samples} == set(BUDGETS)
     assert {s['threads'] for s in samples} == {1,8}
-    assert all(not timed for _,timed,_,_ in calls[:44])
-    assert all(timed for _,timed,_,_ in calls[44:])
+    assert all(not timed for _,timed,_,_ in calls[:8 * len(revisions) + 4])
+    assert all(timed for _,timed,_,_ in calls[8 * len(revisions) + 4:])
 
 
 def self_test(args):
@@ -446,14 +447,16 @@ def self_test(args):
             if row['variant']=='duckdb':row['exit']=1
         assert not summarize(samples,[r['label'] for r in revisions])[0]['versus_duckdb']
         simulated_run(directory, revisions)
-    print('PASS: full inert orchestration (5 builds, 40 gates before all 480 timed arms); numeric multisets/multiplicity, alternating twins, distinct targets, matched budgets, paired ratios and incomplete DuckDB denominators; no engines launched.')
+        with tempfile.TemporaryDirectory(dir=directory) as step2:
+            simulated_run(Path(step2), revisions[:2], 'n4a-highcpu-8')
+    print('PASS: full inert orchestration (5 builds, 40 gates before all 480 timed arms); numeric multisets/multiplicity, alternating twins, distinct targets, matched budgets, paired ratios and incomplete DuckDB denominators; two-revision ARM simulation also passes; no engines launched.')
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     subs=parser.add_subparsers(dest='action',required=True)
     p=subs.add_parser('prepare');p.add_argument('--repo',type=Path,default=Path.cwd());p.add_argument('--baseline',default='e198d08');p.add_argument('--fix',action='append',default=[]);p.add_argument('--bundle',type=Path,required=True);p.set_defaults(function=prepare)
-    p=subs.add_parser('run');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--work',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--plan',action='store_true');p.set_defaults(function=run)
+    p=subs.add_parser('run');p.add_argument('--machine', choices=['c3d-highcpu-8','n4a-highcpu-8'], default='c3d-highcpu-8');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--work',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--plan',action='store_true');p.set_defaults(function=run)
     p=subs.add_parser('self-test');p.add_argument('--work',type=Path,required=True);p.set_defaults(function=self_test)
     args=parser.parse_args();args.function(args)
 

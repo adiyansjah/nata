@@ -1,49 +1,7 @@
 //! Exact number helpers: powers of ten, decimal fit checks, division rounded half away from zero, conversions between decimals, integers, doubles
 //! and text (`docs/decimal-rules.md` sections 2 and 6). Everything is checked; a value that does not fit is `None` or an `Err`, never a wrapped number.
 
-use std::cmp::Ordering;
-
-/// `10^n`, for n up to 38.
-pub fn pow10(n: u32) -> Option<i128> {
-    10i128.checked_pow(n)
-}
-
-/// Does `v` fit `DECIMAL(p, _)`: fewer than `p` digits? (`p` up to 38.)
-pub fn fits(v: i128, p: u8) -> bool {
-    match pow10(u32::from(p)) {
-        Some(limit) => v.unsigned_abs() < limit.unsigned_abs(),
-        None => false,
-    }
-}
-
-/// `n / d` rounded half away from zero; `None` for `d == 0` or the one overflowing quotient.
-pub fn div_round_away(n: i128, d: i128) -> Option<i128> {
-    let q = n.checked_div(d)?;
-    let r = n.checked_rem(d)?;
-    if r == 0 {
-        return Some(q);
-    }
-    let twice = r.unsigned_abs().checked_mul(2)?;
-    if twice >= d.unsigned_abs() {
-        // away from zero: the sign of the true quotient
-        if (n < 0) != (d < 0) {
-            q.checked_sub(1)
-        } else {
-            q.checked_add(1)
-        }
-    } else {
-        Some(q)
-    }
-}
-
-/// `v` (scale `from`) at scale `to`: multiplied, or divided with rounding half away from zero. `None` if the result does not fit an `i128`.
-pub fn rescale(v: i128, from: u8, to: u8) -> Option<i128> {
-    match to.cmp(&from) {
-        Ordering::Equal => Some(v),
-        Ordering::Greater => v.checked_mul(pow10(u32::from(to - from))?),
-        Ordering::Less => div_round_away(v, pow10(u32::from(from - to))?),
-    }
-}
+pub use nata_kernels::decimal::{div_round_away, fits, pow10, rescale};
 
 /// The text of an unscaled decimal with exactly `scale` fraction digits (no DuckDB leading-zero rule: see `nata_parquet::csv::format_decimal_typed`).
 pub fn plain_decimal(v: i128, scale: u8) -> String {

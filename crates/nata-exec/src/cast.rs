@@ -88,22 +88,25 @@ pub fn cast_col(c: &Col, to: SqlType, sel: &[u32], pos: Pos) -> R<Col> {
         // ---------------------------------------------------------------------------------------------- integers
         (Data::Int(s), t, Data::Int(d)) if t.is_integer() => {
             let (lo, hi) = int_range(t).ok_or_else(internal)?;
-            for &i in &rows {
-                if s[i] < lo || s[i] > hi {
-                    return Err(no_fit(pos, from, to));
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                if v < lo || v > hi {
+                    Err(no_fit(pos, from, to))
+                } else {
+                    Ok(v)
                 }
-                d[i] = s[i];
-            }
+            })?;
         }
         (Data::Int(s), SqlType::Decimal { precision, scale }, Data::Dec(d)) => {
             let p = pow10(u32::from(scale)).ok_or_else(internal)?;
-            for &i in &rows {
-                let v = i128::from(s[i])
+            let limit = pow10(u32::from(precision))
+                .ok_or_else(internal)?
+                .unsigned_abs();
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                i128::from(v)
                     .checked_mul(p)
-                    .filter(|v| fits(*v, precision))
-                    .ok_or_else(|| no_fit(pos, from, to))?;
-                d[i] = v;
-            }
+                    .filter(|v| v.unsigned_abs() < limit)
+                    .ok_or_else(|| no_fit(pos, from, to))
+            })?;
         }
         (Data::Int(s), SqlType::Double, Data::F64(d)) => {
             for &i in &rows {
@@ -126,24 +129,22 @@ pub fn cast_col(c: &Col, to: SqlType, sel: &[u32], pos: Pos) -> R<Col> {
                 return Err(internal());
             };
             let (lo, hi) = int_range(t).ok_or_else(internal)?;
-            for &i in &rows {
-                let v = rescale(s[i], scale, 0)
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                rescale(v, scale, 0)
                     .and_then(|v| i64::try_from(v).ok())
                     .filter(|v| *v >= lo && *v <= hi)
-                    .ok_or_else(|| no_fit(pos, from, to))?;
-                d[i] = v;
-            }
+                    .ok_or_else(|| no_fit(pos, from, to))
+            })?;
         }
         (Data::Dec(s), SqlType::Decimal { precision, scale }, Data::Dec(d)) => {
             let SqlType::Decimal { scale: s1, .. } = from else {
                 return Err(internal());
             };
-            for &i in &rows {
-                let v = rescale(s[i], s1, scale)
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                rescale(v, s1, scale)
                     .filter(|v| fits(*v, precision))
-                    .ok_or_else(|| no_fit(pos, from, to))?;
-                d[i] = v;
-            }
+                    .ok_or_else(|| no_fit(pos, from, to))
+            })?;
         }
         (Data::Dec(s), SqlType::Double, Data::F64(d)) => {
             let SqlType::Decimal { scale, .. } = from else {

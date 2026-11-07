@@ -1398,3 +1398,62 @@ mod proofs {
         check_filter::<i32, 4, 4>()
     }
 }
+
+#[path = "../../../crates/nata-kernels/src/decimal.rs"]
+mod decimal;
+
+#[cfg(kani)]
+mod decimal_proofs {
+    use super::decimal::{Decimal, Fail, Op};
+    // Two rows, arbitrary signed 8-bit values, both validity maps and every
+    // subset selection. The specification uses bounded exact i128 arithmetic.
+    fn selected_null_and_bounds(op: Op) {
+        let a = [i128::from(kani::any::<i8>()), i128::from(kani::any::<i8>())];
+        let b = [i128::from(kani::any::<i8>()), i128::from(kani::any::<i8>())];
+        let av: [bool;2] = kani::any();
+        let bv: [bool;2] = kani::any();
+        let selected: [bool;2] = kani::any();
+        let which = match op { Op::Add => 0, Op::Sub => 1, _ => 2 };
+        let mut sel = [0;2]; let mut n = 0;
+        let mut expected = [0;2]; let mut valid = [false;2]; let mut bad = false;
+        for i in 0..2 {
+            if selected[i] {
+                sel[n] = i as u32; n += 1;
+                if av[i] && bv[i] {
+                    let v = match op { Op::Add => a[i]+b[i], Op::Sub => a[i]-b[i], _ => a[i]*b[i] };
+                    bad |= a[i].unsigned_abs() >= 100 && which < 2;
+                    bad |= b[i].unsigned_abs() >= 100 && which < 2;
+                    bad |= v.unsigned_abs() >= 100;
+                    expected[i] = v; valid[i] = true;
+                }
+            }
+        }
+        let (mut got, mut gv) = ([0;2], [false;2]);
+        let result = Decimal::new(op,0,0,2,0).unwrap().column(&a,&av,&b,&bv,&sel[..n],&mut got,&mut gv);
+        assert_eq!(result.is_err(), bad);
+        if !bad {
+            for i in 0..2 { assert!(got[i] == expected[i]); assert!(gv[i] == valid[i]); }
+        }
+        kani::cover!(bad);
+        kani::cover!(!bad && valid[0] && !valid[1]);
+    }
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn decimal_column_selected_null_and_bounds() { selected_null_and_bounds(Op::Mul); }
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn decimal_column_add_selected_null_and_bounds() { selected_null_and_bounds(Op::Add); }
+    #[kani::proof]
+    #[kani::unwind(3)]
+    fn decimal_column_sub_selected_null_and_bounds() { selected_null_and_bounds(Op::Sub); }
+    #[kani::proof]
+    #[kani::unwind(8)]
+    fn decimal_column_machine_overflow() {
+        let x = if kani::any::<bool>() { i128::MAX } else { i128::MIN };
+        let ok: bool = kani::any();
+        let mut out = [0]; let mut valid = [false];
+        let result = Decimal::new(Op::Mul,0,0,38,0).unwrap().column(&[x],&[ok],&[2],&[true],&[0],&mut out,&mut valid);
+        assert_eq!(result, if ok { Err(Fail::Overflow) } else { Ok(()) });
+        kani::cover!(ok); kani::cover!(!ok);
+    }
+}

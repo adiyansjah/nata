@@ -24,8 +24,8 @@ use nata_sql::types::{ArithOp, SqlType};
 
 use crate::cast::cast_col;
 use crate::error::{EvalError, R};
-use crate::num::{div_round_away, fits, pow10};
 use crate::value::{Col, Data, StrData};
+use nata_kernels::decimal::{Decimal, Fail as DecFail, Op};
 
 #[cfg(test)]
 thread_local! {
@@ -596,13 +596,9 @@ fn compare(op: CmpOp, l: &Col, r: &Col, sel: &[u32], pos: Pos) -> R<Col> {
     let cmp = Comparer::new(l, r)?;
     let mut vals = vec![false; n];
     let mut valid = vec![false; n];
-    for &row in sel {
-        let i = row as usize;
-        if l.valid[i] && r.valid[i] {
-            valid[i] = true;
-            vals[i] = holds(op, cmp.order(l, r, i, pos)?);
-        }
-    }
+    nata_kernels::decimal::compare(&l.valid, &r.valid, sel, &mut vals, &mut valid, |i| {
+        cmp.order(l, r, i, pos).map(|o| holds(op, o))
+    })?;
     Ok(Col::bool_col(vals, valid))
 }
 
@@ -651,25 +647,17 @@ fn negate(c: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
                 e.ty.int_min().unwrap_or(i64::MIN),
                 e.ty.int_max().unwrap_or(i64::MAX),
             );
-            for &r in sel {
-                let i = r as usize;
-                if c.valid[i] {
-                    d[i] = s[i]
-                        .checked_neg()
-                        .filter(|v| *v >= lo && *v <= hi)
-                        .ok_or_else(|| int_overflow(e, "a unary minus"))?;
-                }
-            }
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                v.checked_neg()
+                    .filter(|v| *v >= lo && *v <= hi)
+                    .ok_or_else(|| int_overflow(e, "a unary minus"))
+            })?;
         }
         (Data::Dec(s), Data::Dec(d)) => {
-            for &r in sel {
-                let i = r as usize;
-                if c.valid[i] {
-                    d[i] = s[i]
-                        .checked_neg()
-                        .ok_or_else(|| dec_overflow(e, "a unary minus"))?;
-                }
-            }
+            nata_kernels::decimal::unary(s, &c.valid, sel, d, &mut out.valid, |v| {
+                v.checked_neg()
+                    .ok_or_else(|| dec_overflow(e, "a unary minus"))
+            })?;
         }
         _ => {
             return Err(EvalError::internal(
@@ -693,40 +681,20 @@ fn arith(op: ArithOp, l: &Col, r: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
                 e.ty.int_min().unwrap_or(i64::MIN),
                 e.ty.int_max().unwrap_or(i64::MAX),
             );
-            for &row in sel {
-                let i = row as usize;
-                if !(l.valid[i] && r.valid[i]) {
-                    continue;
-                }
-                let (x, y) = (a[i], b[i]);
-                let v = match op {
-                    ArithOp::Add => x.checked_add(y),
-                    ArithOp::Sub => x.checked_sub(y),
-                    ArithOp::Mul => x.checked_mul(y),
-                    ArithOp::Mod | ArithOp::IntDiv => {
-                        if y == 0 {
-                            return Err(div_zero(e, op));
-                        }
-                        // MIN % -1 and MIN // -1 are errors for every integer type (decimal-rules section 3), though the remainder would be 0
-                        if y == -1 && x == lo {
-                            return Err(int_overflow(e, &name));
-                        }
-                        if op == ArithOp::Mod {
-                            x.checked_rem(y)
-                        } else {
-                            x.checked_div(y)
-                        }
-                    }
-                    ArithOp::Div => {
-                        return Err(EvalError::internal(
-                            "an integer division `/` reached the evaluator (the binder types it as a decimal)",
-                        ));
-                    }
-                };
-                d[i] = v
-                    .filter(|v| *v >= lo && *v <= hi)
-                    .ok_or_else(|| int_overflow(e, &name))?;
-            }
+            nata_kernels::decimal::binary(
+                a,
+                &l.valid,
+                b,
+                &r.valid,
+                sel,
+                d,
+                &mut out.valid,
+                |x, y| nata_kernels::decimal::integer(kernel_op(op), x, y, lo, hi),
+            )
+            .map_err(|f| match f {
+                DecFail::Overflow => int_overflow(e, &name),
+                DecFail::DivZero => div_zero(e, op),
+            })?;
         }
         (Data::Dec(a), Data::Dec(b), Data::Dec(d)) => {
             let (
@@ -742,16 +710,12 @@ fn arith(op: ArithOp, l: &Col, r: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
                     "decimal arithmetic without decimal types",
                 ));
             };
-            for &row in sel {
-                let i = row as usize;
-                if !(l.valid[i] && r.valid[i]) {
-                    continue;
-                }
-                d[i] = dec_arith(op, a[i], sl, b[i], sr, p, s).map_err(|f| match f {
+            Decimal::new(kernel_op(op), sl, sr, p, s)
+                .and_then(|k| k.column(a, &l.valid, b, &r.valid, sel, d, &mut out.valid))
+                .map_err(|f| match f {
                     DecFail::Overflow => dec_overflow(e, &name),
                     DecFail::DivZero => div_zero(e, op),
                 })?;
-            }
         }
         _ => {
             return Err(EvalError::internal(format!(
@@ -760,66 +724,23 @@ fn arith(op: ArithOp, l: &Col, r: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
             )));
         }
     }
-    for &row in sel {
-        let i = row as usize;
-        out.valid[i] = l.valid[i] && r.valid[i];
-    }
     Ok(out)
 }
 
-enum DecFail {
-    Overflow,
-    DivZero,
+fn kernel_op(op: ArithOp) -> Op {
+    match op {
+        ArithOp::Add => Op::Add,
+        ArithOp::Sub => Op::Sub,
+        ArithOp::Mul => Op::Mul,
+        ArithOp::Div => Op::Div,
+        ArithOp::Mod => Op::Mod,
+        ArithOp::IntDiv => Op::IntDiv,
+    }
 }
 
-/// One decimal operation of `decimal-rules.md` section 3: operands `a` (scale `sa`) and `b` (scale `sb`), result `DECIMAL(p, s)`.
+#[cfg(test)]
 fn dec_arith(op: ArithOp, a: i128, sa: u8, b: i128, sb: u8, p: u8, s: u8) -> Result<i128, DecFail> {
-    let over = || DecFail::Overflow;
-    let up = |v: i128, from: u8| -> Result<i128, DecFail> {
-        let k = pow10(u32::from(s.saturating_sub(from))).ok_or_else(over)?;
-        v.checked_mul(k).ok_or_else(over)
-    };
-    let result = match op {
-        ArithOp::Add | ArithOp::Sub => {
-            // an operand that does not fit the result type once rescaled is an overflow even if the exact sum would fit
-            let (x, y) = (up(a, sa)?, up(b, sb)?);
-            if !fits(x, p) || !fits(y, p) {
-                return Err(DecFail::Overflow);
-            }
-            if op == ArithOp::Add {
-                x.checked_add(y)
-            } else {
-                x.checked_sub(y)
-            }
-            .ok_or_else(over)?
-        }
-        ArithOp::Mul => a.checked_mul(b).ok_or_else(over)?,
-        ArithOp::Div => {
-            if b == 0 {
-                return Err(DecFail::DivZero);
-            }
-            // a / 10^sa over b / 10^sb at scale s: a * 10^(s + sb - sa) / b, the numerator has at most p digits
-            let k = u32::from(s)
-                .checked_add(u32::from(sb))
-                .and_then(|v| v.checked_sub(u32::from(sa)))
-                .ok_or_else(over)?;
-            let num = a.checked_mul(pow10(k).ok_or_else(over)?).ok_or_else(over)?;
-            div_round_away(num, b).ok_or_else(over)?
-        }
-        ArithOp::Mod => {
-            let (x, y) = (up(a, sa)?, up(b, sb)?);
-            if y == 0 {
-                return Err(DecFail::DivZero);
-            }
-            x.checked_rem(y).ok_or_else(over)?
-        }
-        ArithOp::IntDiv => return Err(DecFail::Overflow),
-    };
-    if fits(result, p) {
-        Ok(result)
-    } else {
-        Err(DecFail::Overflow)
-    }
+    Decimal::new(kernel_op(op), sa, sb, p, s)?.scalar(a, b)
 }
 
 #[cfg(test)]

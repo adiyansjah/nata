@@ -1,0 +1,2633 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-d808bc4f/spikes/kani-nata-kernels)
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:336:21
+    |
+336 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: `#[warn(semicolon_in_expressions_from_non_local_macros)]` (part of `#[warn(future_incompatible)]`) on by default
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:354:21
+    |
+354 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:368:21
+    |
+368 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:382:21
+    |
+382 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:467:23
+    |
+467 |             Err(e) => assert!(is_zero_msg(&e) == want_zero),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:685:23
+    |
+685 |             Err(e) => assert!(!is_zero_msg(&e)),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: Found the following unsupported constructs:
+             - caller_location (1)
+             - foreign function (1)
+
+         Verification will fail if one or more of these constructs is reachable.
+         See https://model-checking.github.io/kani/rust-feature-support.html for more details.
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.12s
+warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-d808bc4f/spikes/kani-nata-kernels)
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+Checking harness decimal_proofs::decimal_column_machine_overflow...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file /home/dev/tmp-perf2a/kani-target/kani/x86_64-unknown-linux-gnu/debug/build/kani-nata-kernels/79a9c51199c77faa/out/kani_nata_kernels-79a9c51199c77faa__RNvNtCs7m2eH3CPdXC_17kani_nata_kernels14decimal_proofs31decimal_column_machine_overflow.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Unwinding loop _RNvMs2_NtCs8xvirJzNMvV_4core3numn11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 1 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs line 1874 column 13 function core::num::<impl i128>::checked_pow thread 0
+Unwinding loop _RNvMs2_NtCs8xvirJzNMvV_4core3numn11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 2 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs line 1874 column 13 function core::num::<impl i128>::checked_pow thread 0
+Unwinding loop _RNvMs2_NtCs8xvirJzNMvV_4core3numn11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 3 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs line 1874 column 13 function core::num::<impl i128>::checked_pow thread 0
+Unwinding loop _RNvMs2_NtCs8xvirJzNMvV_4core3numn11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 4 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs line 1874 column 13 function core::num::<impl i128>::checked_pow thread 0
+Unwinding loop _RNvMs2_NtCs8xvirJzNMvV_4core3numn11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 5 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs line 1874 column 13 function core::num::<impl i128>::checked_pow thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:182:18: 182:21}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i128>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i128, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels7decimal6binarynnNCNvMB2_NtB2_7Decimal6column0EB4_.0 iteration 1 file src/../../../crates/nata-kernels/src/decimal.rs line 64 column 5 function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}> thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq thread 0
+Runtime Symex: 0.943758s
+size of program expression: 5600 steps
+slicing removed 4114 assignments
+Generated 251 VCC(s), 25 remaining after simplification
+Runtime Postprocess Equation: 0.0149696s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.0806678s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 6.9155e-05s
+Solving with CaDiCaL 3.0.0
+18727 variables, 26988 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.00337222s
+Runtime decision procedure: 0.0866373s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+18728 variables, 26989 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.00209855s
+Runtime decision procedure: 0.00283913s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+18729 variables, 26990 clauses
+SAT checker: instance is UNSATISFIABLE
+Runtime Solver: 0.0063186s
+Runtime decision procedure: 0.0069131s
+
+RESULTS:
+Check 1: core::num::<impl i128>::unchecked_shl.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift by excessive shift distance"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1489:17 in function core::num::<impl i128>::unchecked_shl
+
+Check 2: kani::mem::cbmc::same_allocation.unsupported_construct.1
+	 - Status: SUCCESS
+	 - Description: "Kani does not support reasoning about pointer to unallocated memory"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::mem::cbmc::same_allocation
+
+Check 3: <std::option::Option<i128> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i128> as std::ops::Try>::branch
+
+Check 4: decimal::Decimal::new.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::Decimal::new
+
+Check 5: std::option::Option::<i128>::ok_or::<decimal::Fail>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<i128>::ok_or::<decimal::Fail>
+
+Check 6: <usize as kani::rustc_intrinsics::ToISize>::to_isize.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: library/kani_core/src/models.rs:203:17 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 7: <usize as kani::rustc_intrinsics::ToISize>::to_isize.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "Offset value overflows isize"
+	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 8: <usize as kani::rustc_intrinsics::ToISize>::to_isize.assertion.1
+	 - Status: SUCCESS
+	 - Description: "internal error: entered unreachable code"
+	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 9: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 10: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 11: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 12: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.3
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 13: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.4
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 14: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 15: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.5
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 16: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.assertion.6
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 17: std::fmt::Arguments::<'_>::from_str.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to shift left with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:820:38 in function std::fmt::Arguments::<'_>::from_str
+
+Check 18: core::panicking::panic_nounwind_fmt::runtime.unsupported_construct.1
+	 - Status: SUCCESS
+	 - Description: "call to foreign "Rust" function `_RNvCskSgPeDzUGbv_7___rustc17rust_begin_unwind` is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/new/choose"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panicking.rs:110:17 in function core::panicking::panic_nounwind_fmt::runtime
+
+Check 19: core::num::<impl u128>::ilog2.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1808:9 in function core::num::<impl u128>::ilog2
+
+Check 20: decimal::Decimal::product.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:173:5 in function decimal::Decimal::product
+
+Check 21: std::panic::Location::<'_>::caller.unsupported_construct.1
+	 - Status: SUCCESS
+	 - Description: "caller_location is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/374"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panic/location.rs:181:9 in function std::panic::Location::<'_>::caller
+
+Check 22: kani::rustc_intrinsics::offset::<u32, *mut u32, usize>.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "Offset in bytes overflows isize"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u32, *mut u32, usize>
+
+Check 23: kani::rustc_intrinsics::offset::<u32, *mut u32, usize>.safety_check.2
+	 - Status: SUCCESS
+	 - Description: "Offset result address must equal original pointer address plus offset"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u32, *mut u32, usize>
+
+Check 24: kani::rustc_intrinsics::offset::<u32, *mut u32, usize>.safety_check.3
+	 - Status: SUCCESS
+	 - Description: "Offset result and original pointer must point to the same allocation"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u32, *mut u32, usize>
+
+Check 25: core::num::<impl i128>::checked_div.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to divide with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
+
+Check 26: core::num::<impl i128>::checked_div.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
+
+Check 27: <std::option::Option<u128> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u128> as std::ops::Try>::branch
+
+Check 28: core::num::imp::int_log10::panic_for_nonpositive_argument.assertion.1
+	 - Status: SUCCESS
+	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/imp/int_log10.rs:170:5 in function core::num::imp::int_log10::panic_for_nonpositive_argument
+
+Check 29: core::num::<impl u32>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u32>::checked_add
+
+Check 30: std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:206:62: 206:65}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:206:62: 206:65}>
+
+Check 31: std::num::NonZero::<u128>::ilog2.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
+
+Check 32: std::num::NonZero::<u128>::ilog2.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
+
+Check 33: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 34: std::option::Option::<u32>::ok_or::<decimal::Fail>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<u32>::ok_or::<decimal::Fail>
+
+Check 35: decimal::Decimal::scalar.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::Decimal::scalar
+
+Check 36: <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 37: core::num::<impl i128>::checked_pow.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
+
+Check 38: core::num::<impl i128>::checked_pow.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
+
+Check 39: core::num::<impl i128>::checked_pow.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
+
+Check 40: core::num::<impl i128>::checked_pow.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
+
+Check 41: core::num::<impl i128>::checked_pow.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
+
+Check 42: core::num::<impl i128>::checked_pow.arithmetic_overflow.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
+
+Check 43: core::num::<impl i128>::checked_pow.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function core::num::<impl i128>::checked_pow
+
+Check 44: decimal::div_round_away.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::div_round_away
+
+Check 45: decimal::Decimal::column::{closure#1}.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 46: std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap
+
+Check 47: core::num::<impl u32>::checked_sub.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_sub` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1096:31 in function core::num::<impl u32>::checked_sub
+
+Check 48: std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1162:15 in function std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>
+
+Check 49: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.1
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 50: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.2
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 51: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.3
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 52: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.4
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 53: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 54: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.5
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 55: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.assertion.6
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 56: std::ptr::NonNull::<u32>::as_ref::<'_>.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "misaligned pointer to reference cast: address must be a multiple of its type's alignment"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 57: std::ptr::NonNull::<u32>::as_ref::<'_>.safety_check.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 58: <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 59: core::num::<impl i128>::checked_rem.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
+
+Check 60: core::num::<impl i128>::checked_rem.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
+
+Check 61: <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 62: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 63: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 64: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.3
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 65: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.4
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 66: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 67: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.5
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 68: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.assertion.6
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 69: decimal::Decimal::column::{closure#2}.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 70: std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:182:18: 182:21}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1574:5 in function std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:182:18: 182:21}>
+
+Check 71: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch
+
+Check 72: std::result::unwrap_failed.assertion.1
+	 - Status: SUCCESS
+	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1871:5 in function std::result::unwrap_failed
+
+Check 73: std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:125:31: 125:34}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:125:31: 125:34}>
+
+Check 74: core::num::<impl u128>::checked_ilog2.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u128>::checked_ilog2
+
+Check 75: decimal::Decimal::aligned.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::Decimal::aligned
+
+Check 76: core::num::<impl usize>::unchecked_sub.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_sub` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1192:17 in function core::num::<impl usize>::unchecked_sub
+
+Check 77: <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch
+
+Check 78: <std::result::Result<i128, decimal::Fail> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<i128, decimal::Fail> as std::ops::Try>::branch
+
+Check 79: decimal_proofs::decimal_column_machine_overflow.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: result == if ok { Err(Fail::Overflow) } else { Ok(()) }"
+	 - Location: src/lib.rs:1456:9 in function decimal_proofs::decimal_column_machine_overflow
+
+Check 80: decimal_proofs::decimal_column_machine_overflow.cover.1
+	 - Status: SATISFIED
+	 - Description: "cover condition: ok"
+	 - Location: src/lib.rs:1457:9 in function decimal_proofs::decimal_column_machine_overflow
+
+Check 81: decimal_proofs::decimal_column_machine_overflow.cover.2
+	 - Status: SATISFIED
+	 - Description: "cover condition: !ok"
+	 - Location: src/lib.rs:1457:27 in function decimal_proofs::decimal_column_machine_overflow
+
+Check 82: <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
+
+Check 83: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 84: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 85: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.3
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 86: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.4
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 87: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 88: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.5
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 89: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.assertion.6
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 90: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:17 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 91: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 92: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 93: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 94: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 95: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 96: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 97: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 98: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 99: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 100: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 101: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 102: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 103: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 104: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 105: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 106: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 107: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 108: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 109: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 110: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 111: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 112: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 113: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 114: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 115: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 116: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 117: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 118: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 119: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 120: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 121: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 122: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 123: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 124: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 125: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 126: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.37
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 127: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.38
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 128: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.39
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 129: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.40
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 130: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.41
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 131: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.42
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 132: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.43
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 133: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>.pointer_dereference.44
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:71:5 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:156:62: 156:68}>
+
+Check 134: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:17 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 135: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 136: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 137: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 138: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 139: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 140: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 141: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 142: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 143: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 144: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 145: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 146: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 147: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 148: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 149: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 150: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 151: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 152: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 153: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 154: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 155: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 156: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 157: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 158: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 159: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 160: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 161: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 162: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 163: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 164: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 165: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 166: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 167: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 168: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 169: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 170: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.37
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 171: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.38
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 172: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.39
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 173: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.40
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 174: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.41
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 175: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.42
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 176: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.43
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 177: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>.pointer_dereference.44
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:71:5 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:163:62: 163:68}>
+
+Check 178: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:17 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 179: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 180: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 181: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 182: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 183: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 184: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 185: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 186: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 187: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 188: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 189: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 190: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 191: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 192: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 193: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 194: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 195: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 196: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 197: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 198: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 199: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 200: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 201: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 202: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 203: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 204: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 205: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 206: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 207: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 208: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 209: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 210: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 211: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 212: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 213: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 214: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.37
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 215: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.38
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 216: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.39
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 217: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.40
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 218: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.41
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 219: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.42
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 220: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.43
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 221: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>.pointer_dereference.44
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:71:5 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:167:56: 167:62}>
+
+Check 222: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:17 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 223: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 224: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 225: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 226: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 227: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 228: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:64:10 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 229: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 230: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 231: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 232: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 233: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 234: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:12 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 235: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 236: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 237: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 238: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 239: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 240: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:66:21 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 241: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 242: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 243: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 244: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 245: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 246: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:25 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 247: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 248: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 249: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 250: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 251: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 252: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.31
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:31 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 253: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.32
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 254: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.33
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 255: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.34
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 256: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.35
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 257: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.36
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 258: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.37
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:67:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 259: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.38
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 260: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.39
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 261: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.40
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 262: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.41
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 263: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.42
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 264: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.43
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:68:13 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 265: decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>.pointer_dereference.44
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:71:5 in function decimal::binary::<i128, i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:159:62: 159:68}>
+
+Check 266: decimal::Decimal::new::{closure#0}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 267: decimal::Decimal::new::{closure#0}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 268: decimal::Decimal::new::{closure#0}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 269: decimal::Decimal::new::{closure#0}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 270: decimal::Decimal::new::{closure#0}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 271: decimal::Decimal::new::{closure#0}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:125:59 in function decimal::Decimal::new::{closure#0}
+
+Check 272: decimal::Decimal::check::{closure#0}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 273: decimal::Decimal::check::{closure#0}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 274: decimal::Decimal::check::{closure#0}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 275: decimal::Decimal::check::{closure#0}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 276: decimal::Decimal::check::{closure#0}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 277: decimal::Decimal::check::{closure#0}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:22 in function decimal::Decimal::check::{closure#0}
+
+Check 278: decimal::Decimal::check::{closure#0}.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 279: decimal::Decimal::check::{closure#0}.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 280: decimal::Decimal::check::{closure#0}.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 281: decimal::Decimal::check::{closure#0}.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 282: decimal::Decimal::check::{closure#0}.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 283: decimal::Decimal::check::{closure#0}.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:182:41 in function decimal::Decimal::check::{closure#0}
+
+Check 284: decimal::Decimal::column::{closure#0}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 285: decimal::Decimal::column::{closure#0}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 286: decimal::Decimal::column::{closure#0}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 287: decimal::Decimal::column::{closure#0}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 288: decimal::Decimal::column::{closure#0}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 289: decimal::Decimal::column::{closure#0}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 290: decimal::Decimal::column::{closure#0}.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 291: decimal::Decimal::column::{closure#0}.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 292: decimal::Decimal::column::{closure#0}.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 293: decimal::Decimal::column::{closure#0}.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 294: decimal::Decimal::column::{closure#0}.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 295: decimal::Decimal::column::{closure#0}.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:17 in function decimal::Decimal::column::{closure#0}
+
+Check 296: decimal::Decimal::column::{closure#0}.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 297: decimal::Decimal::column::{closure#0}.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 298: decimal::Decimal::column::{closure#0}.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 299: decimal::Decimal::column::{closure#0}.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 300: decimal::Decimal::column::{closure#0}.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 301: decimal::Decimal::column::{closure#0}.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:157:28 in function decimal::Decimal::column::{closure#0}
+
+Check 302: decimal::Decimal::column::{closure#2}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 303: decimal::Decimal::column::{closure#2}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 304: decimal::Decimal::column::{closure#2}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 305: decimal::Decimal::column::{closure#2}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 306: decimal::Decimal::column::{closure#2}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 307: decimal::Decimal::column::{closure#2}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 308: decimal::Decimal::column::{closure#2}.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 309: decimal::Decimal::column::{closure#2}.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 310: decimal::Decimal::column::{closure#2}.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 311: decimal::Decimal::column::{closure#2}.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 312: decimal::Decimal::column::{closure#2}.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 313: decimal::Decimal::column::{closure#2}.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:164:30 in function decimal::Decimal::column::{closure#2}
+
+Check 314: decimal::Decimal::column::{closure#2}.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 315: decimal::Decimal::column::{closure#2}.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 316: decimal::Decimal::column::{closure#2}.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 317: decimal::Decimal::column::{closure#2}.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 318: decimal::Decimal::column::{closure#2}.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 319: decimal::Decimal::column::{closure#2}.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 320: decimal::Decimal::column::{closure#2}.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 321: decimal::Decimal::column::{closure#2}.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 322: decimal::Decimal::column::{closure#2}.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 323: decimal::Decimal::column::{closure#2}.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 324: decimal::Decimal::column::{closure#2}.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 325: decimal::Decimal::column::{closure#2}.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:165:17 in function decimal::Decimal::column::{closure#2}
+
+Check 326: decimal::Decimal::column::{closure#3}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 327: decimal::Decimal::column::{closure#3}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 328: decimal::Decimal::column::{closure#3}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 329: decimal::Decimal::column::{closure#3}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 330: decimal::Decimal::column::{closure#3}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 331: decimal::Decimal::column::{closure#3}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 332: decimal::Decimal::column::{closure#3}.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 333: decimal::Decimal::column::{closure#3}.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 334: decimal::Decimal::column::{closure#3}.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 335: decimal::Decimal::column::{closure#3}.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 336: decimal::Decimal::column::{closure#3}.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 337: decimal::Decimal::column::{closure#3}.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:167:63 in function decimal::Decimal::column::{closure#3}
+
+Check 338: decimal::Decimal::column::{closure#1}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 339: decimal::Decimal::column::{closure#1}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 340: decimal::Decimal::column::{closure#1}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 341: decimal::Decimal::column::{closure#1}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 342: decimal::Decimal::column::{closure#1}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 343: decimal::Decimal::column::{closure#1}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 344: decimal::Decimal::column::{closure#1}.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 345: decimal::Decimal::column::{closure#1}.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 346: decimal::Decimal::column::{closure#1}.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 347: decimal::Decimal::column::{closure#1}.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 348: decimal::Decimal::column::{closure#1}.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 349: decimal::Decimal::column::{closure#1}.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:160:30 in function decimal::Decimal::column::{closure#1}
+
+Check 350: decimal::Decimal::column::{closure#1}.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 351: decimal::Decimal::column::{closure#1}.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 352: decimal::Decimal::column::{closure#1}.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 353: decimal::Decimal::column::{closure#1}.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 354: decimal::Decimal::column::{closure#1}.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 355: decimal::Decimal::column::{closure#1}.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 356: decimal::Decimal::column::{closure#1}.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 357: decimal::Decimal::column::{closure#1}.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 358: decimal::Decimal::column::{closure#1}.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 359: decimal::Decimal::column::{closure#1}.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 360: decimal::Decimal::column::{closure#1}.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 361: decimal::Decimal::column::{closure#1}.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:161:17 in function decimal::Decimal::column::{closure#1}
+
+Check 362: decimal::Decimal::scalar::{closure#0}.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 363: decimal::Decimal::scalar::{closure#0}.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 364: decimal::Decimal::scalar::{closure#0}.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 365: decimal::Decimal::scalar::{closure#0}.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 366: decimal::Decimal::scalar::{closure#0}.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 367: decimal::Decimal::scalar::{closure#0}.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:206:84 in function decimal::Decimal::scalar::{closure#0}
+
+Check 368: std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap
+
+Check 369: std::num::NonZero::<u128>::leading_zeros.bit_count.1
+	 - Status: SUCCESS
+	 - Description: "count leading zeros is undefined for value zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:598:21 in function std::num::NonZero::<u128>::leading_zeros
+
+Check 370: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 371: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 372: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 373: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 374: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 375: std::ptr::NonNull::<u32>::as_ref::<'_>.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:20 in function std::ptr::NonNull::<u32>::as_ref::<'_>
+
+Check 376: core::num::<impl i128>::checked_div.division-by-zero.1
+	 - Status: SUCCESS
+	 - Description: "division by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
+
+Check 377: core::num::<impl i128>::checked_rem.division-by-zero.1
+	 - Status: SUCCESS
+	 - Description: "division by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
+
+Check 378: core::num::<impl u128>::checked_ilog2.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u128>::checked_ilog2
+
+Check 379: decimal_proofs::decimal_column_machine_overflow.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/lib.rs:1456:65 in function decimal_proofs::decimal_column_machine_overflow
+
+Check 380: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 381: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 382: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 383: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 384: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 385: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:161:27 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 386: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 387: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 388: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 389: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 390: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 391: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:162:34 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 392: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:169:36 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 393: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 394: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 395: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 396: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 397: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 398: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:175:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 399: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:181:36 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 400: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 401: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 402: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 403: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 404: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 405: <std::slice::Iter<'_, u32> as std::iter::Iterator>::next.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/iter/macros.rs:185:25 in function <std::slice::Iter<'_, u32> as std::iter::Iterator>::next
+
+Check 406: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 407: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 408: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 409: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 410: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 411: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 412: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 413: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 414: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 415: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 416: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 417: <decimal::Op as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:3:30 in function <decimal::Op as std::cmp::PartialEq>::eq
+
+Check 418: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 419: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 420: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 421: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 422: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 423: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 424: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 425: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 426: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 427: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 428: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 429: std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &decimal::Fail>::eq
+
+Check 430: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 431: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 432: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 433: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 434: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 435: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:27 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 436: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 437: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 438: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 439: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 440: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 441: std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/cmp.rs:2399:34 in function std::cmp::impls::<impl std::cmp::PartialEq for &()>::eq
+
+Check 442: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 443: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 444: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 445: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 446: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 447: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 448: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 449: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 450: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 451: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 452: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 453: <decimal::Fail as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:12:30 in function <decimal::Fail as std::cmp::PartialEq>::eq
+
+Check 454: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 455: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 456: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 457: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 458: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 459: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:9 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 460: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 461: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 462: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 463: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 464: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 465: <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:1663:26 in function <std::ptr::NonNull<u32> as std::cmp::PartialEq>::eq
+
+Check 466: <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2193:23 in function <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 467: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.1
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 468: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 469: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.3
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 470: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.4
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 471: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.5
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 472: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.6
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 473: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.7
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 474: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.8
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 475: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.9
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 476: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.10
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 477: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.11
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 478: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.12
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 479: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.13
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 480: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.14
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 481: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.15
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 482: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.16
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 483: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.17
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 484: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.18
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 485: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.19
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 486: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.20
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 487: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.21
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 488: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.22
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 489: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.23
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 490: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.24
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 491: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.25
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer NULL"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 492: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.26
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 493: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.27
+	 - Status: SUCCESS
+	 - Description: "dereference failure: deallocated dynamic object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 494: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.28
+	 - Status: SUCCESS
+	 - Description: "dereference failure: dead object"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 495: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.29
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer outside object bounds"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+Check 496: <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq.pointer_dereference.30
+	 - Status: SUCCESS
+	 - Description: "dereference failure: invalid integer address"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:554:16 in function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq
+
+
+SUMMARY:
+ ** 0 of 494 failed (25 unreachable)
+
+ ** 2 of 2 cover properties satisfied
+
+
+VERIFICATION:- SUCCESSFUL
+Verification Time: 2.244425s
+
+Manual Harness Summary:
+Complete - 1 successfully verified harnesses, 0 failures, 1 total.

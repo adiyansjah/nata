@@ -1,0 +1,33 @@
+Final Rust implementation: all required commands pass, sequentially, with disk-backed TMPDIR.
+RUST_TEST_THREADS=1 for the final full workspace run; CARGO_BUILD_JOBS=2.
+
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: PASS
+cargo deny check: PASS (existing unmatched-license-allowance warnings only)
+cargo build --locked --release -p nata -p nata-check: PASS
+nata-check --data DATA_SF0.01 --queries check/queries/scan: 5/5 PASS
+nata-check --data DATA_SF0.01 --queries check/queries/sql: 252/252 PASS
+nata-check --data DATA_SF0.01 --queries check/queries/sql-differences: 55/55 PASS
+nata-check --data DATA_SF0.01 --queries check/queries/aggregate: 65/65 PASS
+nata-check --data DATA_SF0.01 --queries check/queries/aggregate --force-aggregate-spill: 65/65 PASS
+LOOM_MAX_PREEMPTIONS=2 crates/nata-sched/run_memory_loom.sh: 16/16 PASS
+Kani new MUL/ADD/SUB/overflow harnesses: 4/4 PASS; 8/8 covers satisfied
+Kani private precision-check-removal mutant: CAUGHT, private control PASS
+Focused executor/CLI runner: 5/5 CAUGHT, zero invalid/survived, private exec suite PASS
+Focused kernel runner: 2/2 CAUGHT, zero invalid/survived, both private controls PASS
+python3 crates/nata-exec/test_mutate.py: 2/2 PASS (includes all 66 live anchors)
+python3 scripts/bench-aggregate-perf1-heavy.py self-test: PASS (5-revision x86 and 2-revision ARM simulations)
+bash -n bench/aggregate-perf2a.steps: PASS
+scripts/gcp/test/test-job-chains.sh: PASS (stub runner; no cloud calls)
+scripts/check-leaks.sh --staged: PASS
+
+One unchanged scanner test had a start-order assumption fail under contention:
+not_read=1, abandoned=0 rather than abandoned=1. Isolated retry PASS, complete
+serial workspace retry PASS, including all 15 parallel-scan tests. No scanner
+source or test changed. See the adjacent failure/retry records.
+
+Full existing executor/kernel/guard mutation sweeps remain pending for the
+parent heavy job. Unique anchors and focused catches do not stand in for a
+completed full sweep. No GCP, nightly fuzz, bound-3 loom or sanitizer campaign
+was launched by this implementation task.
