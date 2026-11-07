@@ -10,6 +10,8 @@ rust-version.workspace = true
 [dependencies]
 clap.workspace = true
 anyhow.workspace = true
+nata-objfake = { path = "../nata-objfake" }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 
 [lints]
 workspace = true

@@ -29,6 +29,7 @@ Every example runs: `check/queries/sql/` runs 251 of them against DuckDB (`nata-
 |---|---|
 | `SELECT <list> FROM '<file or glob>'`; a trailing `;` | `SELECT l_orderkey, l_quantity FROM 'lineitem.parquet';` |
 | a glob: the files in byte order of their names, one schema (the first file's footer binds the query; a later file whose schema differs is an error naming it, found when the scan reaches it) | `SELECT id FROM 'data/parts/*.parquet'` |
+| an object in S3, MinIO or GCS, or a glob of them (`s3://bucket/key`, `gs://bucket/key`; walking skeleton of slice 11): the same rows as the identical local file. Credentials only from the environment (`AWS_*`, `AWS_PROFILE` with static keys in the shared credentials file, the instance metadata; `GOOGLE_*`, the metadata server), never from SQL or the command line; TLS for real stores, plain http only with `AWS_ALLOW_HTTP=true` for a local endpoint. At most 100,000 objects per glob; a registered `nata serve` table may name one object | `SELECT l_orderkey FROM 's3://bucket/lineitem/*.parquet' WHERE l_orderkey > 0 LIMIT 10` |
 | `*` | `SELECT * FROM 'nation.parquet'` |
 | unquoted names fold to lower case, `"quoted"` names are exact | `SELECT L_ORDERKEY, "l_quantity" FROM 'lineitem.parquet'` |
 | `AS` alias (required for an alias) | `SELECT l_extendedprice * (1 - l_discount) AS net FROM 'lineitem.parquet'` |
@@ -91,7 +92,7 @@ names are case-sensitive, `1 = '1'` is a bind error, a string is cast only from 
 | an expression in an `IN` list, `TRY_CAST`, `CAST(x AS TINYINT / SMALLINT / REAL)` | `... WHERE a IN (id, 2)` | not specified yet |
 | non-literal `LIMIT`/`OFFSET`, `OFFSET` without `LIMIT`, `LIMIT ALL` | `LIMIT 1 + 1` | not specified yet |
 | `TIMESTAMP`, `BLOB`, unsigned integer and nested columns | a column of such a type, when the query reads it | later slices |
-| remote paths (`s3://`, `https://`) | `FROM 's3://bucket/x.parquet'` | slice 12 and later |
+| `https://` paths, Azure and R2 locations, a remote table that is a glob in `nata serve`'s registry, an Iceberg table | `FROM 'https://host/x.parquet'` | slice 12 and later |
 
 An unknown column is a bind error with a suggestion, not a `not supported yet`.
 

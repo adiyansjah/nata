@@ -8,7 +8,10 @@
 //! Conventions both engines must follow:
 //! - Reference: `duckdb -csv -c <sql>`
 //! - Candidate: `nata sql --csv -c <sql>`, or, with a `-- scan:` directive, `nata scan <args> --csv`
-//! - `{data}` in a query is replaced by the absolute data directory.
+//! - `{data}` in a query is replaced by the absolute data directory. With `--object-store`, the reference still reads that directory but the candidate reads
+//!   the same bytes from object storage: `{data}` becomes `s3://nata-check` served by an in-process fake endpoint (`--object-store fake`, loopback, access
+//!   key required on every request), or the given `s3://bucket/prefix` / `gs://bucket/prefix` of a real store that holds a copy of the data directory
+//!   (the credentials come from the environment, as for `nata sql`).
 //!
 //! Per-query directives, in `--` comment lines at the top of the `.sql` file:
 //! - `-- expect-error`: both engines must fail; Nata must not answer with a result.
@@ -62,6 +65,17 @@ struct Args {
     /// Run SQL aggregates at 16 MiB and force every input batch through spill.
     #[arg(long)]
     force_aggregate_spill: bool,
+    /// Read the data from object storage in the candidate (the reference reads `--data`): `fake` serves a copy of `--data` from an in-process loopback
+    /// endpoint; `s3://bucket/prefix` or `gs://bucket/prefix` names a store that already holds a copy.
+    #[arg(long)]
+    object_store: Option<String>,
+}
+
+/// How the candidate is launched: the binary, extra environment, and what `{data}` means to it.
+struct Candidate {
+    program: PathBuf,
+    env: Vec<(String, String)>,
+    data: String,
 }
 
 #[derive(Debug, PartialEq)]
@@ -233,11 +247,13 @@ fn run(args: Args) -> Result<bool> {
         .data
         .canonicalize()
         .with_context(|| format!("data directory {}", args.data.display()))?;
-    let candidate = match args.candidate {
+    let candidate = match args.candidate.clone() {
         Some(c) => c,
         None => default_candidate()?,
     };
 
+    // the fake endpoint lives as long as this function (it is dropped, and with it the listening socket, when the run ends)
+    let (_runtime, fake, cand) = candidate_setup(&args, &data, candidate)?;
     let queries = list_queries(&args.queries)?;
     if queries.is_empty() {
         bail!("no *.sql files in {}", args.queries.display());
@@ -256,14 +272,16 @@ fn run(args: Args) -> Result<bool> {
             parse_directives(&sql).map_err(|e| anyhow::anyhow!("{}: {e}", path.display()))?;
         if let Some(args) = &mut directives.scan {
             for a in args.iter_mut() {
-                *a = substitute_data(a, &data);
+                *a = a.replace("{data}", &cand.data);
             }
         }
+        let cand_sql = sql.replace("{data}", &cand.data);
         let sql = substitute_data(&sql, &data);
         let outcome = check_query(
             &args.reference,
-            &candidate,
+            &cand,
             &sql,
+            &cand_sql,
             &directives,
             args.force_aggregate_spill,
         );
@@ -317,6 +335,14 @@ fn run(args: Args) -> Result<bool> {
     if !unknown.is_empty() {
         println!("PENDING lists queries that do not exist: {unknown:?}");
     }
+    if let Some(f) = &fake {
+        // the evidence that the candidate really read the objects: what the endpoint served (every request had to carry the expected access key)
+        println!(
+            "object store (in-process endpoint): {} GET and {} HEAD requests served",
+            f.gets(),
+            f.heads()
+        );
+    }
     Ok(pass + pending_ok == queries.len() && pending_bad == 0 && unknown.is_empty())
 }
 
@@ -334,6 +360,77 @@ fn read_pending(dir: &Path) -> Result<std::collections::BTreeSet<String>> {
         .filter(|l| !l.is_empty())
         .map(str::to_string)
         .collect())
+}
+
+/// The candidate's launch settings; with `--object-store fake`, also the endpoint serving a copy of `data` (kept alive by the returned values).
+fn candidate_setup(
+    args: &Args,
+    data: &Path,
+    program: PathBuf,
+) -> Result<(
+    Option<tokio::runtime::Runtime>,
+    Option<nata_objfake::FakeS3>,
+    Candidate,
+)> {
+    let plain = |data: String| Candidate {
+        program: program.clone(),
+        env: Vec::new(),
+        data,
+    };
+    match args.object_store.as_deref() {
+        None => Ok((None, None, plain(data.to_string_lossy().into_owned()))),
+        Some("fake") => {
+            let rt = tokio::runtime::Builder::new_multi_thread()
+                .worker_threads(2)
+                .enable_all()
+                .build()
+                .context("starting the fake endpoint's runtime")?;
+            let fake = rt.block_on(nata_objfake::FakeS3::start("nata-check"));
+            fn walk(base: &Path, dir: &Path, fake: &nata_objfake::FakeS3) -> Result<usize> {
+                let mut n = 0;
+                for entry in
+                    std::fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))?
+                {
+                    let path = entry?.path();
+                    if path.is_dir() {
+                        n += walk(base, &path, fake)?;
+                    } else if let Ok(rel) = path.strip_prefix(base) {
+                        fake.put(&rel.to_string_lossy(), std::fs::read(&path)?);
+                        n += 1;
+                    }
+                }
+                Ok(n)
+            }
+            let n = walk(data, data, &fake)?;
+            // every request must be signed with this key: the candidate's credential chain is part of what is checked
+            fake.require_access_key("AKIDNATACHECK");
+            eprintln!(
+                "nata-check: serving {n} objects of the data directory from an in-process endpoint"
+            );
+            let env = vec![
+                ("AWS_ENDPOINT".to_string(), fake.addr.clone()),
+                ("AWS_ALLOW_HTTP".to_string(), "true".to_string()),
+                ("AWS_ACCESS_KEY_ID".to_string(), "AKIDNATACHECK".to_string()),
+                (
+                    "AWS_SECRET_ACCESS_KEY".to_string(),
+                    "nata-check-secret".to_string(),
+                ),
+                ("AWS_REGION".to_string(), "us-east-1".to_string()),
+            ];
+            let cand = Candidate {
+                program,
+                env,
+                data: "s3://nata-check".to_string(),
+            };
+            Ok((Some(rt), Some(fake), cand))
+        }
+        Some(uri) if uri.starts_with("s3://") || uri.starts_with("gs://") => {
+            Ok((None, None, plain(uri.trim_end_matches('/').to_string())))
+        }
+        Some(other) => bail!(
+            "--object-store takes `fake`, s3://bucket/prefix or gs://bucket/prefix, not {other:?}"
+        ),
+    }
 }
 
 fn default_candidate() -> Result<PathBuf> {
@@ -364,7 +461,11 @@ enum Run {
 }
 
 fn run_engine(program: &Path, args: &[&str]) -> Run {
-    match exec(program, args) {
+    run_engine_env(program, args, &[])
+}
+
+fn run_engine_env(program: &Path, args: &[&str], env: &[(String, String)]) -> Run {
+    match exec(program, args, env) {
         Ok(out) if out.status.success() => {
             Run::Rows(String::from_utf8_lossy(&out.stdout).into_owned())
         }
@@ -373,8 +474,8 @@ fn run_engine(program: &Path, args: &[&str]) -> Run {
     }
 }
 
-fn run_spilling_engine(program: &Path, args: &[&str]) -> Run {
-    match exec(program, args) {
+fn run_spilling_engine(program: &Path, args: &[&str], env: &[(String, String)]) -> Run {
+    match exec(program, args, env) {
         Ok(out) if out.status.success() => {
             let rows = String::from_utf8_lossy(&out.stdout).into_owned();
             let report = String::from_utf8_lossy(&out.stderr);
@@ -398,17 +499,19 @@ fn run_spilling_engine(program: &Path, args: &[&str]) -> Run {
 
 fn check_query(
     reference: &Path,
-    candidate: &Path,
+    cand: &Candidate,
     sql: &str,
+    cand_sql: &str,
     d: &Directives,
     force_spill: bool,
 ) -> Outcome {
+    let (candidate, env) = (cand.program.as_path(), cand.env.as_slice());
     let run_candidate = || match &d.scan {
         Some(scan_args) => {
             let mut args: Vec<&str> = vec!["scan"];
             args.extend(scan_args.iter().map(String::as_str));
             args.push("--csv");
-            run_engine(candidate, &args)
+            run_engine_env(candidate, &args, env)
         }
         None if force_spill => run_spilling_engine(
             candidate,
@@ -420,10 +523,11 @@ fn check_query(
                 "--aggregate-memory-bytes",
                 "16777216",
                 "-c",
-                sql,
+                cand_sql,
             ],
+            env,
         ),
-        None => run_engine(candidate, &["sql", "--csv", "-c", sql]),
+        None => run_engine_env(candidate, &["sql", "--csv", "-c", cand_sql], env),
     };
 
     // Deliberate difference in the rows: the reference is not consulted.
@@ -496,9 +600,10 @@ fn check_query(
     }
 }
 
-fn exec(program: &Path, args: &[&str]) -> Result<Output> {
+fn exec(program: &Path, args: &[&str], env: &[(String, String)]) -> Result<Output> {
     Command::new(program)
         .env_remove("AI_AGENT")
+        .envs(env.iter().map(|(k, v)| (k, v)))
         .args(args)
         .output()
         .with_context(|| format!("running {}", program.display()))

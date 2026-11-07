@@ -1366,6 +1366,8 @@ dependencies = [
  "arrow-array",
  "clap",
  "nata-exec",
+ "nata-objfake",
+ "nata-objstore",
  "nata-parquet",
  "nata-pgwire",
  "nata-sql",
@@ -1389,6 +1391,8 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "nata-objfake",
+ "tokio",
 ]
 
 [[package]]

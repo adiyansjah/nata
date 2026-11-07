@@ -19,7 +19,7 @@ use nata_exec::{ExecConfig, execute};
 use nata_parquet::schema::Leaf;
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sql::ast::ExplainMode;
-use nata_sql::{BindOptions, FsSource, SourceProvider, plan_sql_with};
+use nata_sql::{BindOptions, FsSource, RoutedSource, SourceProvider, plan_sql_with};
 use signal_hook::consts::SIGINT;
 use signal_hook::iterator::Signals;
 
@@ -40,6 +40,7 @@ pub struct SqlArgs {
     pub spill_disk_bytes: Option<u64>,
     pub spill_directory: Option<PathBuf>,
     pub force_aggregate_spill: bool,
+    pub object_memory_bytes: Option<usize>,
 }
 
 /// Wraps stdout and remembers that the reader went away.
@@ -168,9 +169,20 @@ fn run_query(
     let source = InterruptibleSource {
         interrupted: Arc::clone(interrupted),
     };
+    // `s3://` and `gs://` paths and globs: read through the object-store reader, which starts on first use with the credentials of the environment
+    let remote: Arc<dyn nata_parquet::RemoteIo> = Arc::new(nata_objstore::LazyObjectIo::from_env(
+        a.object_memory_bytes
+            .unwrap_or_else(|| crate::default_object_memory(1)),
+    ));
+    let stop = || interrupted.load(Ordering::SeqCst);
+    let routed = RoutedSource {
+        local: &source,
+        remote: remote.as_ref(),
+        cancel: &stop,
+    };
     let planned = match plan_sql_with(
         sql,
-        &source,
+        &routed,
         BindOptions {
             all_footers: a.bind_all_footers,
         },
@@ -210,6 +222,18 @@ fn run_query(
     cfg.ordered = !a.unordered;
     cfg.late_materialization = a.late;
     cfg.footers_ahead = a.footers_ahead;
+    cfg.remote = Some(Arc::clone(&remote));
+    if planned
+        .plan
+        .scan
+        .files
+        .iter()
+        .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location))
+    {
+        // one waiting worker per request in flight (ADR 0011's attempt cap of 16): the bridge parks nothing yet, so the workers ARE the unit window
+        cfg.threads = cfg.threads.max(16);
+        cfg.window = a.window.unwrap_or_else(|| cfg.threads.saturating_mul(2));
+    }
     let names: Vec<String> = planned.output.iter().map(|c| c.name.clone()).collect();
     let types: Vec<_> = planned.output.iter().map(|c| c.ty).collect();
     let plan = Arc::new(planned.plan);

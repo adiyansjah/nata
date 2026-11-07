@@ -57,6 +57,10 @@ enum Command {
         spill_directory: Option<PathBuf>,
         #[arg(long, hide = true)]
         force_aggregate_spill: bool,
+        /// Response bytes one query may hold from object storage (`s3://`, `gs://`): the query's memory budget for reads. Default: the node pool over max-queries,
+        /// at most 1 GiB. Developer option.
+        #[arg(long)]
+        object_memory_bytes: Option<usize>,
     },
     /// Remove abandoned aggregate spill files, skipping locked live queries.
     CleanupSpill { directory: PathBuf },
@@ -107,6 +111,9 @@ enum Command {
         /// Differential-test mode: route aggregate states through spill IPC.
         #[arg(long, hide = true)]
         force_aggregate_spill: bool,
+        /// Response bytes the query may hold from object storage (`s3://`, `gs://`). Default: the memory pool, at most 1 GiB. Developer option.
+        #[arg(long)]
+        object_memory_bytes: Option<usize>,
     },
     /// Developer command: read Parquet files and print the rows as CSV (slice 3). stdout is the CSV (header row, then data rows; NULL as `NULL`),
     /// stderr gets a one-line report: files, row groups total / skipped / read, bytes read, morsel size, whether pruning was applied.
@@ -200,6 +207,12 @@ struct ScanArgs {
     window: Option<usize>,
 }
 
+/// The response bytes one query may hold from object storage (ADR 0009's budget `B` for reads): the node memory pool over the admitted queries, between 64 MiB
+/// and 1 GiB.
+pub fn default_object_memory(queries: usize) -> usize {
+    (nata_exec::default_memory_pool() / queries.max(1)).clamp(64 << 20, 1 << 30)
+}
+
 fn scan(a: ScanArgs) -> ExitCode {
     let ScanArgs {
         late,
@@ -237,8 +250,29 @@ fn scan(a: ScanArgs) -> ExitCode {
         late_materialization: late,
         strict_schema: false,
     };
+    // `s3://` and `gs://` files are read through the object-store reader (started on first use)
+    let remote: Arc<dyn nata_parquet::RemoteIo> = Arc::new(nata_objstore::LazyObjectIo::from_env(
+        default_object_memory(1),
+    ));
+    let threads = if files
+        .iter()
+        .any(|f| f.to_str().is_some_and(nata_parquet::is_remote_location))
+    {
+        // one waiting worker per request in flight (ADR 0011's attempt cap of 16) until the parked bridge of the next step of slice 11
+        threads.max(16)
+    } else {
+        threads
+    };
     let result = (|| {
-        let plan = Arc::new(ScanPlan::open(&files, &options)?);
+        let plan = Arc::new(ScanPlan::open_remote(
+            &files,
+            &options,
+            Arc::new(nata_parquet::FsOpener),
+            None,
+            None,
+            None,
+            Some(&remote),
+        )?);
         let names: Vec<String> = plan.out_schema().iter().map(|(n, _)| n.clone()).collect();
         let stdout = std::io::stdout();
         let mut out = BufWriter::new(stdout.lock());
@@ -311,13 +345,27 @@ fn main() -> ExitCode {
             spill_disk_bytes,
             spill_directory,
             force_aggregate_spill,
+            object_memory_bytes,
         } => {
             std::panic::set_hook(Box::new(|_| {
                 let _ = writeln!(std::io::stderr(), "error: internal server error");
             }));
+            // `s3://` and `gs://` locations: the reader starts on first use, with the credentials of the process environment
+            let remote: Arc<dyn nata_parquet::RemoteIo> = Arc::new(
+                nata_objstore::LazyObjectIo::from_env(object_memory_bytes.unwrap_or_else(|| {
+                    default_object_memory(max_queries.unwrap_or_else(|| {
+                        threads.unwrap_or_else(|| {
+                            std::thread::available_parallelism().map_or(1, usize::from)
+                        })
+                    }))
+                })),
+            );
             let config = nata_pgwire::server::Config {
                 catalog: match catalog {
-                    Some(path) => match nata_pgwire::catalog::Snapshot::load(&path) {
+                    Some(path) => match nata_pgwire::catalog::Snapshot::load_with(
+                        &path,
+                        Some(remote.as_ref()),
+                    ) {
                         Ok(s) => Arc::new(s),
                         Err(_) => {
                             let _ = writeln!(
@@ -346,6 +394,7 @@ fn main() -> ExitCode {
                     e.aggregate_spill_disk_bytes = spill_disk_bytes;
                     e.aggregate_spill_directory = spill_directory;
                     e.aggregate_force_spill = force_aggregate_spill;
+                    e.remote = Some(Arc::clone(&remote));
                     e
                 },
                 metrics: None,
@@ -380,6 +429,7 @@ fn main() -> ExitCode {
             spill_disk_bytes,
             spill_directory,
             force_aggregate_spill,
+            object_memory_bytes,
         } => {
             return sql::run(sql::SqlArgs {
                 command,
@@ -395,6 +445,7 @@ fn main() -> ExitCode {
                 spill_disk_bytes,
                 spill_directory,
                 force_aggregate_spill,
+                object_memory_bytes,
             });
         }
         Command::Scan {

@@ -510,7 +510,7 @@ fn every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_s
         format!("SELECT id FROM '{p}' OFFSET 2"),
         format!("SELECT id FROM '{p}' LIMIT ALL"),
         format!("SELECT id FROM '{p}' LIMIT 1 + 1"),
-        "SELECT id FROM 's3://bucket/x.parquet'".to_string(),
+        "SELECT id FROM 'https://host.example/x.parquet'".to_string(),
         format!("SELECT id FROM '{p}' WHERE a IN (id, 2)"),
         format!("SELECT DISTINCT id FROM '{p}'"),
         "WITH x AS (SELECT 1) SELECT * FROM x".to_string(),

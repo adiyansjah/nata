@@ -14,6 +14,7 @@ clap.workspace = true
 nata-parquet = { path = "../nata-parquet", default-features = false }
 nata-sql = { path = "../nata-sql" }
 nata-exec = { path = "../nata-exec" }
+nata-objstore = { path = "../nata-objstore" }
 # SIGINT (Ctrl-C) cancels the running query: the one place that needs a signal handler, and the workspace forbids `unsafe` in our own code
 signal-hook = "0.4"
 
@@ -27,6 +28,7 @@ page-crc = ["nata-parquet/page-crc"]
 [dev-dependencies]
 arrow-array = "60"
 parquet = "60"
+nata-objfake = { path = "../nata-objfake" }
 
 [lints]
 workspace = true
