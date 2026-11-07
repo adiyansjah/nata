@@ -26,6 +26,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "canonical-hash-recursion-seed-lost": ("exec", [("crates/nata-exec/src/aggregate/hashing.rs", "SEED ^ u64::from(depth)", "SEED ^ u64::from(depth).min(0)")]),
  "owner-initialization-cleanup-skipped": ("exec", [(SPILL, "let _ = fs::remove_dir(&directory);", "// abandoned initialization directory")]),
  "restart-cleanup-skipped": ("exec", [("crates/nata-exec/src/spill/cleanup.rs", "let mut removed = 0;", 'return Ok(0); #[allow(unreachable_code, reason = "mutation")] let mut removed = 0;')]),
  "spill-recursion-bound-removed": ("exec", [(PIPE, "if depth >= 8 {", "if depth >= 8 && false {")]),

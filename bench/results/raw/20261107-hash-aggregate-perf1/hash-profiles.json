@@ -1,0 +1,39 @@
+{
+  "stage": "hash",
+  "binary_sha256": "71d1c9347a3736cd7e134d15b824f9a08943a3944ea813d1156df99b5cba549e",
+  "observations": [
+    {
+      "query": "q1",
+      "spill": false,
+      "load": [
+        0.9443359375,
+        2.37060546875,
+        3.673828125
+      ],
+      "profiled_seconds": 3.1782502319838386,
+      "counters": "aggregate: partial_ns=8208569314 merge_ns=37083 partial_groups=32 largest_partial=4 rehashes=24 reservation_calls=23499 reservation_releases=23499 memory_lock_wait_ns=9640201 peak_reservation=152135208 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16"
+    },
+    {
+      "query": "high_cardinality_tpch",
+      "spill": false,
+      "load": [
+        0.9443359375,
+        2.37060546875,
+        3.673828125
+      ],
+      "profiled_seconds": 5.2008914400066715,
+      "counters": "aggregate: partial_ns=8025878269 merge_ns=4666568059 partial_groups=1493439 largest_partial=212083 rehashes=1664 reservation_calls=2592 reservation_releases=2592 memory_lock_wait_ns=380380 peak_reservation=2721478576 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16"
+    },
+    {
+      "query": "high_cardinality_tpch",
+      "spill": true,
+      "load": [
+        1.349609375,
+        2.43115234375,
+        3.6865234375
+      ],
+      "profiled_seconds": 17.205334683007095,
+      "counters": "aggregate: partial_ns=2234417394 merge_ns=3124750098 partial_groups=1493508 largest_partial=6514 rehashes=41509 reservation_calls=30689 reservation_releases=30444 memory_lock_wait_ns=3873131 peak_reservation=67108864 spill_bytes_written=960271032 spill_bytes_read=1219619872 partitions_spilled=4368 recursion_depth=2 spill_files_opened=300673"
+    }
+  ]
+}

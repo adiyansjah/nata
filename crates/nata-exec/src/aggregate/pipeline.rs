@@ -123,6 +123,7 @@ pub(super) fn accumulate(
                 .min(256)
                 .checked_mul(super::expression_slots(&shared.plan))
                 .and_then(|n| n.checked_mul(128))
+                .and_then(|n| n.checked_add(256 * 8))
                 .ok_or_else(|| scan_error("expression minimum working set overflow"))?;
             decode_bytes = decode_bytes.max(
                 task.cursor_bytes(256)

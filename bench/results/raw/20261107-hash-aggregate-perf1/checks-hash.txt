@@ -1,0 +1,14 @@
+All commands exited 0, sequentially, with disk TMPDIR and RUST_TEST_THREADS=2:
+
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cargo deny check
+cargo build --release -p nata -p nata-check
+nata-check scan: 5/5
+nata-check sql: 252/252
+nata-check sql-differences: 54/54
+nata-check aggregate: 65/65
+nata-check aggregate --force-aggregate-spill: 65/65
+crates/nata-sched/run_memory_loom.sh: 16 models, bound 2
+scripts/check-leaks.sh --staged: clean

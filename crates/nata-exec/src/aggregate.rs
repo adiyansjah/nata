@@ -9,18 +9,18 @@ use hashbrown::HashTable;
 use nata_kernels::aggregate::ExactSum;
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
+mod hashing;
 mod pipeline;
 mod replay;
 mod storage;
 use nata_sql::bind::{Aggregate, AggregateExpr};
 use nata_sql::plan::LogicalPlan;
 use nata_sql::types::SqlType;
-use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const PARTITIONS: usize = 16;
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Atom {
     Null,
     Bool(bool),
@@ -201,9 +201,7 @@ fn grant(manager: &Arc<MemoryManager>, bytes: usize) -> R<Grant> {
     }
 }
 fn key_hash(key: &[Atom]) -> u64 {
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    key.hash(&mut h);
-    h.finish()
+    hashing::key(key, 0)
 }
 /// Reused probing table of group IDs, with owned typed key/state arenas.
 struct Groups {
@@ -230,21 +228,22 @@ impl Groups {
     fn capacity(&self) -> usize {
         self.index.capacity().min(self.entries.capacity())
     }
+    #[cfg(test)]
     fn contains_key(&self, key: &[Atom]) -> bool {
-        self.index
-            .find((self.hash)(key), |&i| self.entries[i].0 == key)
-            .is_some()
+        self.get(key).is_some()
     }
     fn get(&self, key: &[Atom]) -> Option<&[State]> {
-        let i = *self
-            .index
-            .find((self.hash)(key), |&i| self.entries[i].0 == key)?;
+        self.get_hashed(key, (self.hash)(key))
+    }
+    fn get_hashed(&self, key: &[Atom], hash: u64) -> Option<&[State]> {
+        let i = *self.index.find(hash, |&i| self.entries[i].0 == key)?;
         Some(&self.entries[i].1)
     }
     fn get_mut(&mut self, key: &[Atom]) -> Option<&mut Vec<State>> {
-        let i = *self
-            .index
-            .find((self.hash)(key), |&i| self.entries[i].0 == key)?;
+        self.get_mut_hashed(key, (self.hash)(key))
+    }
+    fn get_mut_hashed(&mut self, key: &[Atom], hash: u64) -> Option<&mut Vec<State>> {
+        let i = *self.index.find(hash, |&i| self.entries[i].0 == key)?;
         Some(&mut self.entries[i].1)
     }
     fn insert(&mut self, key: Vec<Atom>, states: Vec<State>) {
@@ -325,6 +324,7 @@ struct Shared {
     manager: Arc<MemoryManager>,
     metrics: Mutex<AggregateStats>,
     hash: fn(&[Atom], u8) -> u64,
+    force_collisions: bool,
 }
 struct Partial {
     shared: Arc<Shared>,
@@ -332,6 +332,7 @@ struct Partial {
 }
 struct Evaluated {
     rows: Vec<u32>,
+    hashes: Vec<u64>,
     keys: Vec<Col>,
     args: Vec<Option<Col>>,
     next: usize,
@@ -357,7 +358,7 @@ impl Partial {
             } else {
                 ev.all_rows()
             };
-            let keys = a
+            let keys: Vec<_> = a
                 .keys
                 .iter()
                 .map(|e| ev.eval(e, &rows).map(|c| (*c).clone()))
@@ -372,8 +373,10 @@ impl Partial {
                         .transpose()
                 })
                 .collect::<R<Vec<_>>>()?;
+            let hashes = hashing::columns(&keys, &rows);
             Ok(Evaluated {
                 rows,
+                hashes,
                 keys,
                 args,
                 next: 0,
@@ -396,9 +399,15 @@ impl Partial {
             }
             let i = r as usize;
             let key: Vec<_> = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
-            let p = usize::try_from((self.shared.hash)(&key, 0) & 15).map_err(|_| resource())?;
+            let hash = evaluated.hashes[evaluated.next];
+            let partition = if self.shared.force_collisions {
+                0
+            } else {
+                hash
+            };
+            let p = usize::try_from(partition & 15).map_err(|_| resource())?;
             let table = &mut self.tables[p];
-            let old = table.groups.get(&key);
+            let old = table.groups.get_hashed(&key, hash);
             let extra = evaluated
                 .args
                 .iter()
@@ -425,7 +434,7 @@ impl Partial {
             if table.reserve_bytes(&self.shared.manager, extra).is_err() {
                 return Ok(false);
             }
-            if !table.groups.contains_key(&key) {
+            if table.groups.get_hashed(&key, hash).is_none() {
                 if table.reserve(&self.shared.manager, &key, a).is_err() {
                     return Ok(false);
                 }
@@ -433,7 +442,7 @@ impl Partial {
                     .groups
                     .insert(key.clone(), a.aggregates.iter().map(State::new).collect());
             }
-            if let Some(states) = table.groups.get_mut(&key) {
+            if let Some(states) = table.groups.get_mut_hashed(&key, hash) {
                 for ((state, agg), arg) in states.iter_mut().zip(&a.aggregates).zip(&evaluated.args)
                 {
                     state.add(arg.as_ref().map_or(Atom::Null, |c| Atom::get(c, i)), agg)?;
@@ -466,10 +475,7 @@ fn string_scratch(batch: &RecordBatch, plan: &LogicalPlan) -> R<usize> {
         .ok_or_else(resource)
 }
 fn partition_hash(key: &[Atom], depth: u8) -> u64 {
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    depth.hash(&mut h);
-    key.hash(&mut h);
-    h.finish()
+    hashing::key(key, depth)
 }
 fn merge(
     mut tables: Vec<Table>,
@@ -641,6 +647,7 @@ pub(crate) fn execute(
         plan: Arc::clone(&plan),
         manager: Arc::clone(&manager),
         metrics: Mutex::new(AggregateStats::default()),
+        force_collisions: cfg.aggregate_spill_force_collisions,
         hash: if cfg.aggregate_spill_force_collisions {
             |_, _| 0
         } else {

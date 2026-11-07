@@ -8,6 +8,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+twox-hash = { version = "=2.1.5", default-features = false, features = ["xxhash3_64"] }
 hashbrown = { version = "=0.17.1", default-features = false }
 nata-sched = { path = "../nata-sched" }
 nata-sql = { path = "../nata-sql" }

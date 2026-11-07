@@ -1,0 +1,341 @@
+CPU-clock user self samples; sorted by share; no elapsed-time attribution.
+  6.35%    175 _int_malloc
+  4.64%    128 malloc
+  4.21%    116 _int_free_chunk
+  4.10%    113 <core::hash::sip::Hasher<core::hash::sip::Sip13Rounds> as core::hash::Hasher>::write
+  3.26%     90 cfree@GLIBC_2.2.5
+  3.23%     89 __memmove_avx_unaligned_erms
+  3.12%     86 malloc_consolidate
+  2.18%     60 <nata_parquet::parallel::ScanCancel>::is_cancelled
+  1.85%     51 realloc
+  1.78%     49 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::Field>>>, &str>
+  1.67%     46 <core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, nata_exec::aggregate::replay::decode::{closure#2}>, core::result::Result<core::convert::Infallible, core::io::error::Error>> as core::iter::traits::iterator::Iterator>::next
+  1.63%     45 unlink_chunk.isra.0
+  1.49%     41 <nata_exec::aggregate::Partial>::resume
+  1.41%     39 <nata_exec::aggregate::Atom as core::hash::Hash>::hash_slice::<std::hash::random::DefaultHasher>
+  1.41%     39 __syscall_cancel_arch
+  1.38%     38 nata_exec::aggregate::replay::encode
+  1.34%     37 <core::iter::adapters::chain::Chain<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_exec::aggregate::Atom>, nata_exec::aggregate::replay::atom_size>, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_exec::aggregate::State>, nata_exec::aggregate::replay::size::{closure#0}>> as core::iter::traits::iterator::Iterator>::try_fold::<usize, nata_exec::aggregate::replay::size::{closure#1}, core::result::Result<usize, core::io::error::Error>>
+  1.23%     34 <flatbuffers::verifier::TableVerifier>::deref
+  1.23%     34 nata_exec::aggregate::key_hash
+  1.16%     32 syscall
+  1.12%     31 flatbuffers::verifier::append_trace::<()>
+  1.12%     31 _int_free_create_chunk
+  1.05%     29 nata_exec::eval::arith
+  0.91%     25 <nata_exec::aggregate::storage::Storage>::repartition
+  0.87%     24 <nata_exec::spill::ipc::Workspace>::preflight
+  0.87%     24 _mid_memalign.isra.0
+  0.83%     23 nata_exec::aggregate::partition_hash
+  0.83%     23 crc32fast::specialized::pclmulqdq::calculate_avx2
+  0.80%     22 nata_exec::num::fits
+  0.80%     22 __memcmp_avx2_movbe
+  0.76%     21 <arrow_buffer::buffer::immutable::Buffer>::slice_with_length
+  0.73%     20 <flatbuffers::builder::FlatBufferBuilder>::write_vtable
+  0.69%     19 <nata_exec::aggregate::Groups>::get
+  0.69%     19 <flatbuffers::vtable::VTable>::get
+  0.65%     18 <alloc::vec::Vec<nata_exec::aggregate::State> as alloc::vec::spec_from_iter::SpecFromIter<nata_exec::aggregate::State, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, nata_exec::aggregate::replay::decode::{closure#2}>, core::result::Result<core::convert::Infallible, core::io::error::Error>>>>::from_iter
+  0.65%     18 <nata_exec::aggregate::Atom as core::slice::cmp::SlicePartialEq<nata_exec::aggregate::Atom>>::equal_same_length
+  0.62%     17 <nata_exec::aggregate::State>::add
+  0.58%     16 <nata_kernels::aggregate::ExactSum>::from_spill
+  0.58%     16 __memset_avx2_unaligned_erms
+  0.54%     15 <std::sys::sync::mutex::futex::Mutex>::lock_contended
+  0.54%     15 statx
+  0.51%     14 <alloc::sync::Arc<[alloc::sync::Arc<arrow_schema::field::Field>]>>::from_iter_exact::<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<arrow_schema::field::Field>, <alloc::sync::Arc<arrow_schema::field::Field>>::new>>
+  0.51%     14 <arrow_data::data::ArrayDataBuilder>::build
+  0.51%     14 llseek@GLIBC_2.2.5
+  0.47%     13 <arrow_ipc::reader::RecordBatchDecoder>::create_primitive_array
+  0.47%     13 <snap::decompress::Decoder>::decompress
+  0.47%     13 <flatbuffers::verifier::Verifier>::visit_table
+  0.44%     12 <nata_exec::aggregate::Atom>::get
+  0.44%     12 _int_realloc
+  0.40%     11 __rustc::__rdl_alloc
+  0.40%     11 __rustc::__rust_no_alloc_shim_is_unstable_v2
+  0.40%     11 <alloc::vec::Vec<nata_exec::aggregate::Atom> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::Atom, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_exec::value::Col>, <nata_exec::aggregate::Partial>::resume::{closure#1}>>>::from_iter
+  0.40%     11 _int_free_merge_chunk
+  0.36%     10 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.36%     10 __rustc::__rust_dealloc
+  0.36%     10 <alloc::sync::Arc<dyn arrow_array::array::Array>>::drop_slow
+  0.36%     10 <alloc::sync::Arc<[alloc::sync::Arc<arrow_schema::field::Field>]>>::drop_slow
+  0.36%     10 <alloc::vec::Vec<nata_exec::aggregate::Atom> as alloc::vec::spec_from_iter::SpecFromIter<nata_exec::aggregate::Atom, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, nata_exec::aggregate::replay::decode::{closure#1}>, core::result::Result<core::convert::Infallible, core::io::error::Error>>>>::from_iter
+  0.33%      9 <arrow_ipc::reader::RecordBatchDecoder>::next_buffer
+  0.33%      9 <alloc::vec::Vec<u8> as arrow_ipc::writer::IpcRecordBatchSink>::write_record_batch
+  0.33%      9 __libc_calloc
+  0.29%      8 <hashbrown::raw::RawTable<usize>>::reserve_rehash::<<nata_exec::aggregate::Groups>::try_reserve::{closure#0}>
+  0.29%      8 core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, nata_exec::aggregate::replay::decode::{closure#1}>, nata_exec::aggregate::Atom, core::result::Result<core::convert::Infallible, core::io::error::Error>, <core::result::Result<alloc::vec::Vec<nata_exec::aggregate::Atom>, core::io::error::Error> as core::iter::traits::collect::FromIterator<core::result::Result<nata_exec::aggregate::Atom, core::io::error::Error>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, nata_exec::aggregate::replay::decode::{closure#1}>>::{closure#0}, alloc::vec::Vec<nata_exec::aggregate::Atom>>
+  0.29%      8 <nata_exec::aggregate::pipeline::merge_step::{closure#5} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0}
+  0.29%      8 <arrow_data::data::ArrayData>::validate
+  0.29%      8 core::str::converts::from_utf8
+  0.29%      8 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::slice
+  0.29%      8 <flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Message::RecordBatch> as flatbuffers::verifier::Verifiable>::run_verifier
+  0.25%      7 <flatbuffers::verifier::Verifier>::verify_union_variant::<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::Schema>, &str>
+  0.25%      7 core::ptr::drop_glue::<[arrow_buffer::buffer::immutable::Buffer; 3: usize]>
+  0.25%      7 __rustc::__rust_alloc
+  0.25%      7 <arrow_ipc::reader::RecordBatchDecoder>::create_array
+  0.25%      7 <nata_exec::aggregate::Groups>::insert
+  0.25%      7 <nata_exec::spill::ipc::Workspace>::read
+  0.25%      7 <nata_exec::spill::registry::SpillHandle>::size
+  0.25%      7 <arrow_ipc::reader::MessageReader<core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>>::maybe_next
+  0.25%      7 nata_exec::aggregate::replay::kind
+  0.25%      7 nata_exec::aggregate::storage::record
+  0.25%      7 <flatbuffers::builder::DefaultAllocator as flatbuffers::builder::Allocator>::grow_downwards
+  0.25%      7 _int_memalign
+  0.22%      6 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::DictionaryEncoding>, &str>
+  0.22%      6 arrow_ipc::reader::read_body_bounded::<core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>
+  0.22%      6 core::ptr::drop_glue::<arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>>>
+  0.22%      6 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.22%      6 std::sys::backtrace::__rust_begin_short_backtrace::<nata_sched::cooperative::run<nata_exec::aggregate::pipeline::ScanState, alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::accumulate::{closure#8}, nata_exec::aggregate::pipeline::accumulate::{closure#9}>::{closure#1}::{closure#0}, ()>
+  0.22%      6 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.22%      6 <arrow_ipc::writer::IpcDataGenerator>::collect_all_dicts
+  0.22%      6 <arrow_buffer::buffer::scalar::ScalarBuffer<i64>>::slice
+  0.22%      6 <arrow_ipc::reader::StreamReader<core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>>::try_new
+  0.22%      6 arrow_ipc::writer::write_array_data
+  0.22%      6 arrow_data::data::layout
+  0.22%      6 std::sys::fs::unix::try_statx
+  0.22%      6 <arrow_schema::metadata::Metadata as core::convert::From<std::collections::hash::map::HashMap<alloc::string::String, alloc::string::String>>>::from
+  0.22%      6 <nata_exec::spill::registry::SpillHandle as alloc::io::read::Read>::read
+  0.18%      5 <nata_exec::aggregate::replay::Reader>::fixed::<8: usize>
+  0.18%      5 core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type>>
+  0.18%      5 std::sys::backtrace::__rust_begin_short_backtrace::<<nata_exec::spill::disk_io::IoService<nata_exec::aggregate::storage::Completion>>::new::{closure#4}, ()>
+  0.18%      5 <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.18%      5 <core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<i32>>, <arrow_data::data::ArrayData>::validate_each_offset<i32, <arrow_data::data::ArrayData>::validate_offsets_full<i32>::{closure#0}>::{closure#0}> as core::iter::traits::iterator::Iterator>::try_fold::<(), <core::iter::adapters::scan::Scan<_, _, _> as core::iter::traits::iterator::Iterator>::try_fold::scan<core::result::Result<(usize, usize), arrow_schema::error::ArrowError>, usize, core::result::Result<(usize, core::ops::range::Range<usize>), arrow_schema::error::ArrowError>, (), core::result::Result<(), arrow_schema::error::ArrowError>, <arrow_data::data::ArrayData>::validate_each_offset<i32, <arrow_data::data::ArrayData>::validate_offsets_full<i32>::{closure#0}>::{closure#1}, core::iter::traits::iterator::Iterator::try_for_each::call<core::result::Result<(usize, core::ops::range::Range<usize>), arrow_schema::error::ArrowError>, core::result::Result<(), arrow_schema::error::ArrowError>, <arrow_data::data::ArrayData>::validate_each_offset<i32, <arrow_data::data::ArrayData>::validate_offsets_full<i32>::{closure#0}>::{closure#2}>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<core::result::Result<(), arrow_schema::error::ArrowError>>>
+  0.18%      5 <nata_exec::aggregate::storage::Storage>::write
+  0.18%      5 <nata_exec::spill::registry::SpillHandle>::append
+  0.18%      5 <nata_exec::value::Col>::from_arrow
+  0.18%      5 <arrow_array::record_batch::RecordBatch>::try_new_impl
+  0.18%      5 <arrow_ipc::reader::StreamReader<core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>>::maybe_next
+  0.18%      5 <alloc::sync::Arc<arrow_schema::field::Field>>::drop_slow
+  0.18%      5 arrow_ipc::convert::try_field_from
+  0.18%      5 arrow_ipc::convert::try_fb_to_schema
+  0.18%      5 nata_parquet::filter::evaluate
+  0.18%      5 arrow_array::array::make_array
+  0.18%      5 nata_exec::spill::ipc::schema
+  0.18%      5 nata_exec::aggregate::replay::decode
+  0.18%      5 nata_exec::aggregate::replay::put_atom
+  0.18%      5 crc32fast::specialized::pclmulqdq::calculate
+  0.18%      5 <nata_sched::cooperative::Signal as nata_sched::memory::Wake>::wake
+  0.18%      5 __lll_lock_wait_private
+  0.15%      4 <nata_exec::aggregate::replay::Reader>::fixed::<3: usize>
+  0.15%      4 <parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i32>
+  0.15%      4 core::ptr::drop_glue::<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>
+  0.15%      4 core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, nata_exec::aggregate::replay::decode::{closure#2}>, nata_exec::aggregate::State, core::result::Result<core::convert::Infallible, core::io::error::Error>, <core::result::Result<alloc::vec::Vec<nata_exec::aggregate::State>, core::io::error::Error> as core::iter::traits::collect::FromIterator<core::result::Result<nata_exec::aggregate::State, core::io::error::Error>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, nata_exec::aggregate::replay::decode::{closure#2}>>::{closure#0}, alloc::vec::Vec<nata_exec::aggregate::State>>
+  0.15%      4 <arrow_ipc::gen::Message::Message as flatbuffers::verifier::Verifiable>::run_verifier::{closure#0}
+  0.15%      4 __rustc::__rdl_realloc
+  0.15%      4 <nata_exec::output::ResultWriter<nata::sql::Out<alloc::io::buffered::bufwriter::BufWriter<std::io::stdio::StdoutLock>>>>::write_batch
+  0.15%      4 <nata_exec::spill::registry::Registry>::acquire
+  0.15%      4 <nata_exec::spill::ipc::Workspace>::write
+  0.15%      4 <nata_exec::spill::registry::SpillFile>::open
+  0.15%      4 <alloc::raw_vec::RawVecInner>::try_allocate_in
+  0.15%      4 <arrow_ipc::writer::IpcDataGenerator>::record_batch_to_bytes
+  0.15%      4 <nata_sql::texpr::Expr>::children
+  0.15%      4 <std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::MergeTask, core::result::Result<nata_sched::cooperative::Step<nata_exec::aggregate::pipeline::Merged, nata_parquet::error::ScanError>, alloc::boxed::Box<dyn core::any::Any + core::marker::Send>>)>>::recv
+  0.15%      4 arrow_ipc::writer::encode_sink_buffer
+  0.15%      4 arrow_ipc::convert::get_data_type
+  0.15%      4 nata_parquet::csv::push_field
+  0.15%      4 <flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::Int> as flatbuffers::verifier::Verifiable>::run_verifier
+  0.15%      4 <alloc::vec::Vec<nata_exec::aggregate::State> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<nata_exec::aggregate::State, core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::bind::AggregateExpr>, <nata_exec::aggregate::State>::new>>>::from_iter
+  0.15%      4 <std::fs::File as core::io::seek::Seek>::seek
+  0.15%      4 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::IntervalMonthDayNanoType> as arrow_array::array::Array>::is_valid
+  0.15%      4 __lll_lock_wake_private
+  0.11%      3 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::KeyValue>>>, &str>
+  0.11%      3 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<&str>, &str>
+  0.11%      3 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>>>::from_iter_values::<&alloc::vec::Vec<u8>, core::slice::iter::Iter<alloc::vec::Vec<u8>>>
+  0.11%      3 core::ptr::drop_glue::<arrow_data::data::ArrayData>
+  0.11%      3 alloc::io::read::default_read_exact::<nata_exec::spill::registry::SpillHandle>
+  0.11%      3 alloc::io::read::default_read_to_end::<core::io::util::Take<&mut core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>>
+  0.11%      3 <alloc::collections::btree::map::BTreeMap<alloc::string::String, alloc::string::String> as core::iter::traits::collect::FromIterator<(alloc::string::String, alloc::string::String)>>::from_iter::<std::collections::hash::map::IntoIter<alloc::string::String, alloc::string::String>>
+  0.11%      3 <nata_exec::eval::Evaluator>::eval
+  0.11%      3 <nata_exec::aggregate::replay::Reader>::atom
+  0.11%      3 <std::sync::mpmc::waker::SyncWaker>::notify
+  0.11%      3 <nata_exec::aggregate::Table>::reserve
+  0.11%      3 <arrow_data::data::ArrayDataBuilder>::buffers
+  0.11%      3 <flatbuffers::vtable::VTable>::as_bytes
+  0.11%      3 <arrow_ipc::reader::RecordBatchDecoder>::read_record_batch
+  0.11%      3 <nata_exec::value::Col>::to_arrow
+  0.11%      3 <std::thread::thread::Thread>::park
+  0.11%      3 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>>>::value
+  0.11%      3 <arrow_buffer::buffer::scalar::ScalarBuffer<u64>>::new
+  0.11%      3 <std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::MergeTask, alloc::sync::Arc<nata_sched::cooperative::Signal>)>>::send
+  0.11%      3 <arrow_ipc::writer::StreamWriter<alloc::vec::Vec<u8>>>::write
+  0.11%      3 arrow_ipc::writer::ensure_supported_ipc_schema
+  0.11%      3 nata_exec::num::pow10
+  0.11%      3 nata_parquet::csv::format_decimal
+  0.11%      3 alloc::sync::arcinner_layout_for_value_layout
+  0.11%      3 nata_exec::aggregate::storage::flush
+  0.11%      3 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as core::any::Any>::type_id
+  0.11%      3 <alloc::vec::Vec<(usize, nata_exec::aggregate::pipeline::MergeTask, alloc::sync::Arc<nata_sched::cooperative::Signal>)> as alloc::vec::spec_from_iter::SpecFromIter<(usize, nata_exec::aggregate::pipeline::MergeTask, alloc::sync::Arc<nata_sched::cooperative::Signal>), core::iter::adapters::map::Map<core::iter::adapters::take::Take<core::iter::adapters::filter::Filter<core::iter::adapters::filter::Filter<core::iter::adapters::enumerate::Enumerate<core::slice::iter::IterMut<nata_sched::cooperative::run::Slot<nata_exec::aggregate::pipeline::MergeTask>>>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::MergeTask, nata_exec::aggregate::pipeline::Merged, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#4}, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#5}>::{closure#1}::{closure#2}>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::MergeTask, nata_exec::aggregate::pipeline::Merged, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#4}, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#5}>::{closure#1}::{closure#3}>>, nata_sched::cooperative::run<nata_exec::aggregate::pipeline::MergeTask, nata_exec::aggregate::pipeline::Merged, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#4}, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}>::{closure#5}>::{closure#1}::{closure#4}>>>::from_iter
+  0.11%      3 <alloc::vec::Vec<u32> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<u32, core::iter::adapters::filter_map::FilterMap<core::ops::range::Range<usize>, <nata_exec::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter
+  0.11%      3 <parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int64Type> as parquet::arrow::array_reader::ArrayReader>::read_records
+  0.11%      3 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>> as core::convert::From<arrow_data::data::ArrayData>>::from
+  0.11%      3 <arrow_schema::datatype::DataType as core::cmp::PartialEq>::eq
+  0.11%      3 <alloc::vec::Vec<alloc::sync::Arc<dyn arrow_array::array::Array>> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<alloc::sync::Arc<dyn arrow_array::array::Array>, core::iter::adapters::map::Map<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, <arrow_array::record_batch::RecordBatch>::slice::{closure#0}>>>::from_iter
+  0.11%      3 <std::fs::File as core::io::write::Write>::write
+  0.11%      3 __GI___libc_open
+  0.11%      3 __internal_syscall_cancel
+  0.11%      3 __posix_memalign
+  0.07%      2 <arrow_data::data::ArrayData>::typed_buffer::<i32>
+  0.07%      2 <flatbuffers::builder::FlatBufferBuilder>::create_vector::<flatbuffers::primitives::WIPOffset<arrow_ipc::gen::Schema::Field>>
+  0.07%      2 <flatbuffers::builder::FlatBufferBuilder>::create_vector::<arrow_ipc::gen::Schema::Buffer>
+  0.07%      2 <flatbuffers::verifier::Verifier>::verify_union_variant::<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::Binary>, &str>
+  0.07%      2 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::KeyValue>>>, &str>
+  0.07%      2 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<arrow_ipc::gen::Schema::Buffer>>, &str>
+  0.07%      2 <flatbuffers::verifier::TableVerifier>::visit_field::<flatbuffers::primitives::ForwardsUOffset<flatbuffers::vector::Vector<arrow_ipc::gen::Schema::Feature>>, &str>
+  0.07%      2 <hashbrown::raw::RawTable<usize>>::insert::<<nata_exec::aggregate::Groups>::insert::{closure#0}>
+  0.07%      2 <arrow_array::record_batch::RecordBatch>::try_from_iter::<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, alloc::string::String>
+  0.07%      2 <parquet::encodings::rle::RleDecoder>::get_batch_with_dict::<i64>
+  0.07%      2 core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::UInt64Type>>
+  0.07%      2 core::ptr::drop_glue::<arrow_schema::datatype::DataType>
+  0.07%      2 core::ptr::drop_glue::<nata_exec::value::Data>
+  0.07%      2 core::ptr::drop_glue::<arrow_array::record_batch::RecordBatch>
+  0.07%      2 std::thread::scoped::scope::<nata_sched::cooperative::run<nata_exec::aggregate::pipeline::MergeTask, nata_exec::aggregate::pipeline::Merged, nata_parquet::error::ScanError, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}>::{closure#4}, nata_exec::aggregate::pipeline::finalize<nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}>::{closure#5}>::{closure#1}, core::result::Result<(), nata_parquet::error::ScanError>>
+  0.07%      2 <arrow_ipc::gen::Schema::Field as flatbuffers::verifier::Verifiable>::run_verifier::{closure#0}
+  0.07%      2 <nata_kernels::aggregate::ExactSum>::add
+  0.07%      2 <std::sync::nonpoison::condvar::Condvar>::notify_one
+  0.07%      2 <arrow_buffer::buffer::mutable::MutableBuffer>::try_reallocate
+  0.07%      2 <std::sync::mpmc::waker::SyncWaker>::notify
+  0.07%      2 <std::sync::mpmc::waker::SyncWaker>::register
+  0.07%      2 <flatbuffers::builder::FlatBufferBuilder>::create_byte_string
+  0.07%      2 <nata_sched::memory::Chunks>::reserve
+  0.07%      2 <arrow_data::data::ArrayDataBuilder>::nulls
+  0.07%      2 <alloc::raw_vec::RawVec<arrow_buffer::buffer::immutable::Buffer>>::grow_one
+  0.07%      2 <arrow_ipc::reader::RecordBatchDecoder>::try_new
+  0.07%      2 <arrow_array::record_batch::RecordBatch>::slice
+  0.07%      2 <arrow_array::record_batch::RecordBatch>::project
+  0.07%      2 <std::sync::mpmc::array::Channel<nata_exec::spill::disk_io::Work<nata_exec::aggregate::storage::Completion>>>::recv
+  0.07%      2 <alloc::sync::Arc<arrow_buffer::bytes::Bytes>>::drop_slow
+  0.07%      2 arrow_ipc::convert::build_field
+  0.07%      2 arrow_ipc::convert::get_fb_field_type
+  0.07%      2 parquet::util::bit_pack::unpack32
+  0.07%      2 parquet::arrow::array_reader::primitive_array::coerce_array
+  0.07%      2 std::sys::sync::futex::unix::futex_wake
+  0.07%      2 <alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::data_type
+  0.07%      2 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>> as core::any::Any>::type_id
+  0.07%      2 <alloc::vec::Vec<i64> as alloc::vec::spec_from_iter::SpecFromIter<i64, core::iter::adapters::flatten::Flatten<core::option::IntoIter<flatbuffers::vector::Vector<i64>>>>>::from_iter
+  0.07%      2 <core::iter::adapters::GenericShunt<core::iter::adapters::filter_map::FilterMap<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<bool>>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#0}>, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>> as core::iter::traits::iterator::Iterator>::next
+  0.07%      2 <nata_exec::spill::registry::Descriptor as core::ops::drop::Drop>::drop
+  0.07%      2 <nata_sched::memory::Grant as core::ops::drop::Drop>::drop
+  0.07%      2 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>> as arrow_array::array::Array>::to_data
+  0.07%      2 <arrow_data::data::ArrayData as core::convert::From<arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>>>>::from
+  0.07%      2 <parquet::encodings::decoding::PlainDecoder<parquet::data_type::Int64Type> as parquet::encodings::decoding::Decoder<parquet::data_type::Int64Type>>::get
+  0.07%      2 <alloc::vec::Vec<nata_exec::aggregate::Atom> as core::clone::Clone>::clone
+  0.07%      2 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::is_valid
+  0.07%      2 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::TimestampMicrosecondType> as arrow_array::array::Array>::is_valid
+  0.07%      2 clock_gettime@@GLIBC_2.17
+  0.07%      2 pthread_create@GLIBC_2.2.5
+  0.04%      1 <arrow_data::data::ArrayData>::validate_offsets_full::<i32>
+  0.04%      1 <nata_exec::aggregate::replay::Reader>::fixed::<32: usize>
+  0.04%      1 <flatbuffers::builder::FlatBufferBuilder>::finish_with_opts::<arrow_ipc::gen::Message::Message>
+  0.04%      1 <flatbuffers::builder::FlatBufferBuilder>::push_slot_always::<flatbuffers::primitives::WIPOffset<flatbuffers::vector::Vector<flatbuffers::primitives::ForwardsUOffset<arrow_ipc::gen::Schema::Field>>>>
+  0.04%      1 <flatbuffers::builder::FlatBufferBuilder>::push_slot::<arrow_ipc::gen::Schema::MetadataVersion>
+  0.04%      1 <flatbuffers::builder::FlatBufferBuilder>::push_slot::<i64>
+  0.04%      1 <arrow_array::record_batch::RecordBatch>::try_from_iter::<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, alloc::string::String>
+  0.04%      1 <parquet::column::reader::GenericColumnReader<parquet::column::reader::decoder::RepetitionLevelDecoderImpl, parquet::arrow::record_reader::definition_levels::DefinitionLevelBufferDecoder, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int32Type>>>::read_records_with_reservation::<<parquet::arrow::record_reader::GenericRecordReader<alloc::vec::Vec<i32>, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int32Type>>>::read_one_batch::{closure#1}>
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type>>::reinterpret_cast::<arrow_array::types::Decimal64Type>
+  0.04%      1 <alloc::collections::btree::map::BTreeMap<u64, (usize, usize)>>::remove::<u64>
+  0.04%      1 flatbuffers::verifier::verify_vector_range::<arrow_ipc::gen::Message::FieldNode>
+  0.04%      1 flatbuffers::verifier::verify_vector_range::<u8>
+  0.04%      1 arrow_ipc::writer::reencode_offsets::<i32>
+  0.04%      1 arrow_array::array::get_offsets_from_buffer::<i32>
+  0.04%      1 core::ptr::drop_glue::<arrow_ipc::reader::StreamReader<core::io::cursor::Cursor<&alloc::vec::Vec<u8>>>>
+  0.04%      1 core::ptr::drop_glue::<alloc::sync::Arc<dyn nata_sched::memory::Wake>>
+  0.04%      1 core::ptr::drop_glue::<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type>>
+  0.04%      1 core::ptr::drop_glue::<nata_exec::aggregate::pipeline::merge_step::{closure#5}>
+  0.04%      1 core::ptr::drop_glue::<arrow_schema::datatype::DataType>
+  0.04%      1 core::ptr::drop_glue::<arrow_schema::datatype::DataType>
+  0.04%      1 core::ptr::drop_glue::<nata_exec::value::Col>
+  0.04%      1 core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}::{closure#1}::{closure#1}>, (alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>, <core::result::Result<alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>, nata_exec::error::EvalError> as core::iter::traits::collect::FromIterator<core::result::Result<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>), nata_exec::error::EvalError>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::plan::ProjectExpr>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#6}>::{closure#6}::{closure#1}::{closure#1}>>::{closure#0}, alloc::vec::Vec<(alloc::string::String, alloc::sync::Arc<dyn arrow_array::array::Array>)>>
+  0.04%      1 core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#3}>, nata_exec::value::Col, core::result::Result<core::convert::Infallible, nata_exec::error::EvalError>, <core::result::Result<alloc::vec::Vec<nata_exec::value::Col>, nata_exec::error::EvalError> as core::iter::traits::collect::FromIterator<core::result::Result<nata_exec::value::Col, nata_exec::error::EvalError>>>::from_iter<core::iter::adapters::map::Map<core::slice::iter::Iter<nata_sql::texpr::Expr>, <nata_exec::aggregate::Partial>::evaluate::{closure#1}::{closure#3}>>::{closure#0}, alloc::vec::Vec<nata_exec::value::Col>>
+  0.04%      1 <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.04%      1 <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+  0.04%      1 <std::sync::mpmc::array::Channel<core::result::Result<nata_exec::aggregate::Table, nata_parquet::error::ScanError>>>::recv::{closure#1}
+  0.04%      1 <std::sync::mpmc::array::Channel<nata_exec::spill::disk_io::Work<nata_exec::aggregate::storage::Completion>>>::recv::{closure#1}
+  0.04%      1 __rustc::__rdl_alloc_zeroed
+  0.04%      1 __rustc::__rust_alloc_zeroed
+  0.04%      1 <nata_kernels::aggregate::ExactSum>::spill_sum
+  0.04%      1 <arrow_data::data::ArrayData>::validate_nulls
+  0.04%      1 <arrow_data::data::ArrayData>::validate_values
+  0.04%      1 <parquet::arrow::record_reader::GenericRecordReader<alloc::vec::Vec<i32>, parquet::column::reader::decoder::ColumnValueDecoderImpl<parquet::data_type::Int32Type>>>::read_records
+  0.04%      1 <std::sys::pal::unix::time::Timespec>::sub_timespec
+  0.04%      1 <arrow_buffer::buffer::mutable::MutableBuffer>::try_from_len_zeroed
+  0.04%      1 <u128>::_fmt_inner
+  0.04%      1 <u128>::_fmt
+  0.04%      1 <std::sys::thread::unix::Thread>::new
+  0.04%      1 <nata_sched::memory::Chunks>::reserved
+  0.04%      1 <arrow_data::data::ArrayDataBuilder>::add_buffer
+  0.04%      1 <arrow_data::data::ArrayDataBuilder>::build_unchecked
+  0.04%      1 <arrow_select::filter::FilterBuilder>::new
+  0.04%      1 <flatbuffers::verifier::Verifier>::visit_table
+  0.04%      1 <alloc::vec::Vec<core::option::Option<alloc::rc::Rc<nata_exec::value::Col>>>>::extend_with
+  0.04%      1 <alloc::raw_vec::RawVec<arrow_ipc::gen::Message::FieldNode>>::grow_one
+  0.04%      1 <alloc::raw_vec::RawVec<u32>>::grow_one
+  0.04%      1 <alloc::collections::btree::map::entry::VacantEntry<u64, (usize, usize)>>::insert_entry
+  0.04%      1 <arrow_schema::field::Field>::fields
+  0.04%      1 <arrow_schema::schema::Schema>::column_with_name
+  0.04%      1 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.04%      1 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.04%      1 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.04%      1 <alloc::raw_vec::RawVecInner>::finish_grow
+  0.04%      1 <parquet::util::bit_util::BitReader>::get_vlq_int
+  0.04%      1 <nata_parquet::reader::RowGroupCursor>::next_batch
+  0.04%      1 <arrow_ipc::gen::Message::Message>::bodyLength
+  0.04%      1 <nata_sched::memory::MemoryManager>::request
+  0.04%      1 <arrow_array::array::boolean_array::BooleanArray>::true_count
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::UInt64Type>>::value
+  0.04%      1 <arrow_buffer::buffer::scalar::ScalarBuffer<u32>>::new
+  0.04%      1 <arrow_buffer::buffer::boolean::BooleanBuffer>::new
+  0.04%      1 <std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::MergeTask, alloc::sync::Arc<nata_sched::cooperative::Signal>)>>::recv
+  0.04%      1 <std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::ScanState, alloc::sync::Arc<nata_sched::cooperative::Signal>)>>::recv
+  0.04%      1 <std::sync::mpmc::array::Channel<(usize, nata_exec::aggregate::pipeline::ScanState, alloc::sync::Arc<nata_sched::cooperative::Signal>)>>::send
+  0.04%      1 <core::fmt::Formatter>::pad_integral
+  0.04%      1 <std::sync::mpmc::Receiver<(usize, nata_exec::aggregate::pipeline::ScanState, core::result::Result<nata_sched::cooperative::Step<alloc::vec::Vec<nata_exec::aggregate::Table>, nata_parquet::error::ScanError>, alloc::boxed::Box<dyn core::any::Any + core::marker::Send>>)>>::recv
+  0.04%      1 <std::sys::fs::unix::File>::open_c
+  0.04%      1 <alloc::sync::Arc<arrow_schema::schema::Schema>>::drop_slow
+  0.04%      1 <alloc::collections::btree::map::IntoIter<alloc::string::String, alloc::string::String>>::dying_next
+  0.04%      1 arrow_ipc::writer::estimate_encoded_buffer_count
+  0.04%      1 nata_exec::exec::max_depth
+  0.04%      1 nata_exec::aggregate::batch
+  0.04%      1 nata_parquet::csv::cell
+  0.04%      1 bytes::bytes::shared_clone
+  0.04%      1 arrow_select::filter::filter_array
+  0.04%      1 nata_exec::spill::ipc::buffer
+  0.04%      1 nata_exec::aggregate::pipeline::submit_write
+  0.04%      1 parquet::arrow::array_reader::primitive_array::coerce_i64
+  0.04%      1 <alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::as_any
+  0.04%      1 <alloc::sync::Arc<dyn arrow_array::array::Array> as arrow_array::array::Array>::is_valid
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::UInt64Type> as core::any::Any>::type_id
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int32Type> as core::any::Any>::type_id
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Int64Type> as core::any::Any>::type_id
+  0.04%      1 <alloc::vec::Vec<alloc::sync::Arc<dyn arrow_array::array::Array>> as alloc::vec::spec_from_iter::SpecFromIter<alloc::sync::Arc<dyn arrow_array::array::Array>, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<usize>, <arrow_array::record_batch::RecordBatch>::project::{closure#0}>, core::result::Result<core::convert::Infallible, arrow_schema::error::ArrowError>>>>::from_iter
+  0.04%      1 <alloc::vec::Vec<usize> as alloc::vec::spec_from_iter::SpecFromIter<usize, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<u32>>, nata_exec::aggregate::execute<nata::sql::run_query::{closure#4}>::{closure#6}::{closure#1}::{closure#5}>>>::from_iter
+  0.04%      1 <alloc::vec::Vec<(usize, usize)> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<(usize, usize), arrow_select::filter::SlicesIterator>>::from_iter
+  0.04%      1 <alloc::collections::btree::map::BTreeMap<alloc::string::String, alloc::string::String> as core::ops::drop::Drop>::drop
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type> as arrow_array::array::Array>::data_type
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Date32Type> as arrow_array::array::Array>::data_type
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::UInt64Type> as arrow_array::array::Array>::as_any
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::as_any
+  0.04%      1 <parquet::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet::data_type::Int64Type> as parquet::arrow::array_reader::ArrayReader>::consume_batch
+  0.04%      1 <core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<alloc::sync::Arc<arrow_schema::field::Field>>, alloc::vec::Vec<&arrow_schema::field::Field>, <arrow_schema::schema::Schema>::flattened_fields::{closure#0}> as core::iter::traits::iterator::Iterator>::next
+  0.04%      1 <arrow_schema::datatype::DataType as core::clone::Clone>::clone
+  0.04%      1 <parquet::encodings::decoding::DictDecoder<parquet::data_type::Int32Type> as parquet::encodings::decoding::Decoder<parquet::data_type::Int32Type>>::get
+  0.04%      1 <arrow_schema::fields::Fields as core::convert::From<alloc::vec::Vec<arrow_schema::field::Field>>>::from
+  0.04%      1 <flatbuffers::builder::FlatBufferBuilder as core::default::Default>::default
+  0.04%      1 <nata_exec::value::Col as core::clone::Clone>::clone
+  0.04%      1 <arrow_schema::datatype::DataType as core::cmp::PartialEq>::eq
+  0.04%      1 <arrow_schema::datatype::DataType as core::cmp::PartialEq>::eq
+  0.04%      1 <alloc::vec::drain::Drain<std::sync::mpmc::waker::Entry> as core::ops::drop::Drop>::drop
+  0.04%      1 <arrow_buffer::buffer::mutable::MutableBuffer as core::ops::drop::Drop>::drop
+  0.04%      1 <hashbrown::raw::RawIntoIter<(alloc::string::String, alloc::string::String)> as core::ops::drop::Drop>::drop
+  0.04%      1 <arrow_schema::field::Field as core::cmp::PartialEq>::eq
+  0.04%      1 <alloc::vec::Vec<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>), core::iter::adapters::take::Take<&mut alloc::vec::into_iter::IntoIter<(alloc::vec::Vec<nata_exec::aggregate::Atom>, alloc::vec::Vec<nata_exec::aggregate::State>)>>>>::from_iter
+  0.04%      1 <std::fs::File as alloc::io::read::Read>::read
+  0.04%      1 <alloc::vec::into_iter::IntoIter<arrow_schema::field::Field> as core::ops::drop::Drop>::drop
+  0.04%      1 <std::io::stdio::StdoutLock as core::io::write::Write>::write
+  0.04%      1 <arrow_array::array::byte_array::GenericByteArray<arrow_array::types::GenericBinaryType<i32>> as arrow_array::array::Array>::null_count
+  0.04%      1 <arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::Decimal128Type> as arrow_array::array::Array>::null_count
+  0.04%      1 <<arrow_array::record_batch::RecordBatch>::try_new_impl::{closure#3} as core::ops::function::FnOnce<(&(usize, (&arrow_schema::datatype::DataType, &arrow_schema::datatype::DataType)),)>>::call_once
+  0.04%      1 __GI___clone3
+  0.04%      1 __close
+  0.04%      1 __syscall_cancel
+  0.04%      1 __vdso_clock_gettime
+  0.04%      1 _dl_allocate_tls_init
+  0.04%      1 _int_free_maybe_consolidate.part.0
+  0.04%      1 memset@plt

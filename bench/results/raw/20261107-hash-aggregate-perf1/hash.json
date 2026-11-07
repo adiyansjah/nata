@@ -1,0 +1,1034 @@
+[
+  {
+    "kind": "gate",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "counters": {
+      "partial_ns": 6773566395,
+      "merge_ns": 8065,
+      "partial_groups": 4,
+      "largest_partial": 4,
+      "rehashes": 3,
+      "reservation_calls": 23471,
+      "reservation_releases": 23471,
+      "memory_lock_wait_ns": 5521464,
+      "peak_reservation": 31546871,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      7.2021484375,
+      5.43994140625,
+      5.32763671875
+    ],
+    "seconds": 8.569255770999007,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      6.708984375,
+      5.39208984375,
+      5.31298828125
+    ],
+    "seconds": 0.4865055510017555,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      6.708984375,
+      5.39208984375,
+      5.31298828125
+    ],
+    "seconds": 0.6857382849848364,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      6.708984375,
+      5.39208984375,
+      5.31298828125
+    ],
+    "seconds": 8.718306647991994,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      6.93310546875,
+      5.47900390625,
+      5.341796875
+    ],
+    "seconds": 5.8512742730090395,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      6.53759765625,
+      5.4208984375,
+      5.32373046875
+    ],
+    "seconds": 0.3127697729796637,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      6.53759765625,
+      5.4208984375,
+      5.32373046875
+    ],
+    "seconds": 0.3234966440068092,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      6.53759765625,
+      5.4208984375,
+      5.32373046875
+    ],
+    "seconds": 5.397835134994239,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      6.333984375,
+      5.39697265625,
+      5.31640625
+    ],
+    "seconds": 5.185271696012933,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      5.74755859375,
+      5.30126953125,
+      5.28564453125
+    ],
+    "seconds": 0.41540898897801526,
+    "exit": 0
+  },
+  {
+    "kind": "gate",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "counters": {
+      "partial_ns": 13422047553,
+      "merge_ns": 58127,
+      "partial_groups": 32,
+      "largest_partial": 4,
+      "rehashes": 24,
+      "reservation_calls": 23499,
+      "reservation_releases": 23499,
+      "memory_lock_wait_ns": 8962081,
+      "peak_reservation": 152135410,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      5.74755859375,
+      5.30126953125,
+      5.28564453125
+    ],
+    "seconds": 3.3304337419976946,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      5.84814453125,
+      5.32958984375,
+      5.294921875
+    ],
+    "seconds": 0.16320206801174209,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      5.84814453125,
+      5.32958984375,
+      5.294921875
+    ],
+    "seconds": 0.16832681599771604,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      5.84814453125,
+      5.32958984375,
+      5.294921875
+    ],
+    "seconds": 3.455685988999903,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      5.69970703125,
+      5.30712890625,
+      5.28759765625
+    ],
+    "seconds": 3.933367296005599,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      5.6435546875,
+      5.3017578125,
+      5.28564453125
+    ],
+    "seconds": 0.22635582101065665,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      5.6435546875,
+      5.3017578125,
+      5.28564453125
+    ],
+    "seconds": 0.21279572299681604,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      5.6435546875,
+      5.3017578125,
+      5.28564453125
+    ],
+    "seconds": 3.768692354002269,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      5.6435546875,
+      5.3017578125,
+      5.28564453125
+    ],
+    "seconds": 3.4955640800180845,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "q1",
+    "spill": false,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      5.75244140625,
+      5.330078125,
+      5.294921875
+    ],
+    "seconds": 0.20992885902523994,
+    "exit": 0
+  },
+  {
+    "kind": "gate",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "counters": {
+      "partial_ns": 3282974517,
+      "merge_ns": 318315515,
+      "partial_groups": 1493405,
+      "largest_partial": 1493405,
+      "rehashes": 256,
+      "reservation_calls": 1344,
+      "reservation_releases": 1344,
+      "memory_lock_wait_ns": 220326,
+      "peak_reservation": 1554482163,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      4.5302734375,
+      5.07373046875,
+      5.20947265625
+    ],
+    "seconds": 6.750144829013152,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      4.24755859375,
+      5.005859375,
+      5.1865234375
+    ],
+    "seconds": 1.8735992510046344,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      4.24755859375,
+      5.005859375,
+      5.1865234375
+    ],
+    "seconds": 1.6305381519778166,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      4.0673828125,
+      4.95556640625,
+      5.1689453125
+    ],
+    "seconds": 6.748521918983897,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      3.9013671875,
+      4.90625,
+      5.15185546875
+    ],
+    "seconds": 6.434587156021735,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      3.7490234375,
+      4.85791015625,
+      5.134765625
+    ],
+    "seconds": 1.6318547039991245,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      3.68896484375,
+      4.82666015625,
+      5.123046875
+    ],
+    "seconds": 1.7337378159863874,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      3.68896484375,
+      4.82666015625,
+      5.123046875
+    ],
+    "seconds": 7.053037110017613,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      3.6337890625,
+      4.7958984375,
+      5.111328125
+    ],
+    "seconds": 5.419288339006016,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      3.5029296875,
+      4.7490234375,
+      5.09423828125
+    ],
+    "seconds": 1.445057135017123,
+    "exit": 0
+  },
+  {
+    "kind": "gate",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "counters": {
+      "partial_ns": 10729025704,
+      "merge_ns": 6374034412,
+      "partial_groups": 1493439,
+      "largest_partial": 212250,
+      "rehashes": 1664,
+      "reservation_calls": 2592,
+      "reservation_releases": 2592,
+      "memory_lock_wait_ns": 445357,
+      "peak_reservation": 2660696362,
+      "spill_bytes_written": 0,
+      "spill_bytes_read": 0,
+      "partitions_spilled": 0,
+      "recursion_depth": 0,
+      "spill_files_opened": 16
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      2.86962890625,
+      4.47021484375,
+      4.9892578125
+    ],
+    "seconds": 6.669044525013305,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      3.36083984375,
+      4.5458984375,
+      5.01123046875
+    ],
+    "seconds": 2.4875895990116987,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      4.453125,
+      4.7529296875,
+      5.07568359375
+    ],
+    "seconds": 1.5343604949885048,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      4.453125,
+      4.7529296875,
+      5.07568359375
+    ],
+    "seconds": 6.0912968660122715,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      4.5771484375,
+      4.77392578125,
+      5.0810546875
+    ],
+    "seconds": 5.511659850017168,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      4.24755859375,
+      4.6982421875,
+      5.05322265625
+    ],
+    "seconds": 1.5629585930146277,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      4.24755859375,
+      4.6982421875,
+      5.05322265625
+    ],
+    "seconds": 1.3531424700049683,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      4.24755859375,
+      4.6982421875,
+      5.05322265625
+    ],
+    "seconds": 5.618658614024753,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      4.30810546875,
+      4.70361328125,
+      5.052734375
+    ],
+    "seconds": 6.473634733993094,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": false,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      4.0263671875,
+      4.630859375,
+      5.02490234375
+    ],
+    "seconds": 1.6010612150130328,
+    "exit": 0
+  },
+  {
+    "kind": "gate",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "counters": {
+      "partial_ns": 1472870459,
+      "merge_ns": 1873651443,
+      "partial_groups": 1493405,
+      "largest_partial": 31914,
+      "rehashes": 7692,
+      "reservation_calls": 14387,
+      "reservation_releases": 14340,
+      "memory_lock_wait_ns": 1381656,
+      "peak_reservation": 67108864,
+      "spill_bytes_written": 603859856,
+      "spill_bytes_read": 692131960,
+      "partitions_spilled": 272,
+      "recursion_depth": 1,
+      "spill_files_opened": 143628
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      1.5380859375,
+      3.55224609375,
+      4.5888671875
+    ],
+    "seconds": 14.130410854995716,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      1.34423828125,
+      3.41015625,
+      4.525390625
+    ],
+    "seconds": 1.5116460830031428,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      1.31640625,
+      3.3701171875,
+      4.50634765625
+    ],
+    "seconds": 1.4806904490105808,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      1.31640625,
+      3.3701171875,
+      4.50634765625
+    ],
+    "seconds": 13.915188187005697,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      1.31396484375,
+      3.26953125,
+      4.45458984375
+    ],
+    "seconds": 15.20265297300648,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      1.30615234375,
+      3.17333984375,
+      4.40380859375
+    ],
+    "seconds": 1.5428785560070537,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      1.30615234375,
+      3.17333984375,
+      4.40380859375
+    ],
+    "seconds": 1.4792052560078446,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      1.30615234375,
+      3.17333984375,
+      4.40380859375
+    ],
+    "seconds": 17.800236572977155,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      1.73046875,
+      3.14599609375,
+      4.3671875
+    ],
+    "seconds": 18.52315307801473,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 1,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      1.73388671875,
+      3.0546875,
+      4.310546875
+    ],
+    "seconds": 1.6409503799804952,
+    "exit": 0
+  },
+  {
+    "kind": "gate",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "counters": {
+      "partial_ns": 2341960073,
+      "merge_ns": 3558828401,
+      "partial_groups": 1493501,
+      "largest_partial": 6632,
+      "rehashes": 41485,
+      "reservation_calls": 30646,
+      "reservation_releases": 30404,
+      "memory_lock_wait_ns": 4482758,
+      "peak_reservation": 67108864,
+      "spill_bytes_written": 960176600,
+      "spill_bytes_read": 1219504440,
+      "partitions_spilled": 4368,
+      "recursion_depth": 2,
+      "spill_files_opened": 300672
+    }
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "nata",
+    "load": [
+      1.9404296875,
+      2.966796875,
+      4.23388671875
+    ],
+    "seconds": 22.898790433973772,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 0,
+    "engine": "duckdb",
+    "load": [
+      2.4189453125,
+      3.0009765625,
+      4.2109375
+    ],
+    "seconds": 2.5144313299970236,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "duckdb",
+    "load": [
+      2.4189453125,
+      3.0009765625,
+      4.2109375
+    ],
+    "seconds": 1.6304454449855257,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 1,
+    "engine": "nata",
+    "load": [
+      2.38525390625,
+      2.98388671875,
+      4.19873046875
+    ],
+    "seconds": 22.597535126988078,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "nata",
+    "load": [
+      3.361328125,
+      3.1513671875,
+      4.22607421875
+    ],
+    "seconds": 18.054532784008188,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 2,
+    "engine": "duckdb",
+    "load": [
+      2.75244140625,
+      3.0263671875,
+      4.16162109375
+    ],
+    "seconds": 1.7383989649824798,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "duckdb",
+    "load": [
+      2.75244140625,
+      3.0263671875,
+      4.16162109375
+    ],
+    "seconds": 1.51644697698066,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 3,
+    "engine": "nata",
+    "load": [
+      2.75244140625,
+      3.0263671875,
+      4.16162109375
+    ],
+    "seconds": 18.313983462023316,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "nata",
+    "load": [
+      3.3212890625,
+      3.138671875,
+      4.17431640625
+    ],
+    "seconds": 18.107221058016876,
+    "exit": 0
+  },
+  {
+    "kind": "timing",
+    "query": "having",
+    "spill": true,
+    "threads": 8,
+    "repeat": 4,
+    "engine": "duckdb",
+    "load": [
+      3.01416015625,
+      3.08056640625,
+      4.1328125
+    ],
+    "seconds": 1.6853808470186777,
+    "exit": 0
+  }
+]
