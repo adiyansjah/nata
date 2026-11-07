@@ -1,0 +1,16 @@
+# From repository root. Builds serial, four jobs; separate native target.
+export CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+export CARGO_TARGET_DIR="$HOME/tmp-s10-api/target" TMPDIR="$HOME/tmp-s10-api/tmp"
+export PATH="$HOME/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/bin:$HOME/tmp-4b/clients/root/usr/lib/jvm/java-21-openjdk-amd64/bin:/usr/lib/postgresql/17/bin:$PATH"
+export WORK="$HOME/tmp-slice-close/clients" RESULTS="$HOME/tmp-s10-api/results"
+cargo test --locked -p nata-pgwire -j 4
+cargo fmt --all --check
+cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings
+python3 -m py_compile scripts/wire-skeleton/matrix.py
+python3 bench/results/raw/20261108-wire-catalog-close/client-api/check-gate.py
+bash scripts/wire-skeleton/run.sh # non-PASS cells MUST still yield exit 1
+mkdir -p "$HOME/tmp-s10-api/oracle-work"
+ln -s "$WORK/wire-skeleton-venv" "$HOME/tmp-s10-api/oracle-work/wire-skeleton-venv"
+WORK="$HOME/tmp-s10-api/oracle-work" bash scripts/wire-browse/run-oracle.sh
+# Read matrix.json, versions.json, oracle JSON and logs before recording verdicts.
+# No timing, PG16 installer, GCP command, push or merge was run.

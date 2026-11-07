@@ -8,6 +8,8 @@ ap=argparse.ArgumentParser(description=__doc__)
 ap.add_argument('--nata',type=Path,required=True); ap.add_argument('--work',type=Path,required=True)
 ap.add_argument('--jdk',type=Path); ap.add_argument('--jar',type=Path)
 a=ap.parse_args(); a.work.mkdir(parents=True,exist_ok=True)
+api_limits=json.loads((Path(__file__).with_name('api-limits.json')).read_text())
+(a.work/'api-limits.json').write_text(json.dumps(api_limits,indent=2)+'\n')
 root=Path(__file__).resolve().parents[2]; results={}
 (a.work/'versions.json').write_text(json.dumps({n:importlib.metadata.version(n) for n in ['psycopg','pgcli','adbc-driver-postgresql','pyarrow']},indent=2)+'\n')
 def record(name,fn):
@@ -93,6 +95,7 @@ try:
             time.sleep(.02)
     def cli(q):return subprocess.run(['psql',dsn,'-c',q],capture_output=True,check=True,timeout=20).stdout
     for name,q in [('connect','SELECT 1'),('select',query),('d','\\d public.all_types'),('dt','\\dt'),('dn','\\dn'),('df','\\df'),('l','\\l')]: record('psql '+name,lambda q=q:cli(q))
+    record('psql chunked-delivery',lambda:eq(subprocess.run(['psql',dsn,'-qAt','-v','FETCH_COUNT=2','-c',query],capture_output=True,check=True,timeout=20).stdout,b'0\n1\n2\n'))
     record('psql copy',lambda:eq(cli(f'COPY ({query}) TO STDOUT (FORMAT binary)'),expected))
     def copy_sql(form):
         if form=='table':return 'COPY nata.public.all_types TO STDOUT WITH (FORMAT csv, HEADER true)'
@@ -125,6 +128,15 @@ try:
         with psycopg.connect(dsn) as c:
             if action=='select':
                 for _ in range(10):checked_rows(c.execute(query).fetchall())
+            elif action=='sql-cursor-refusal':
+                try:
+                    with c.cursor(name='matrix_cursor') as cur:cur.execute(query)
+                    raise AssertionError('SQL cursor unexpectedly accepted')
+                except psycopg.errors.FeatureNotSupported:pass
+                c.rollback();checked_rows(c.execute(query).fetchall())
+            elif action=='fetchmany-client-buffer':
+                with c.cursor() as cur:
+                    cur.execute(query);eq(cur.fetchmany(2),[(0,),(1,)]);eq(cur.fetchmany(2),[(2,)]);eq(cur.fetchmany(2),[])
             elif action=='tables':eq(c.execute('SELECT table_name FROM information_schema.tables').fetchall(),[('all_types',)])
             elif action=='columns':eq(c.execute('SELECT column_name FROM information_schema.columns').fetchall(),[('v',)])
             elif action in ('tables-filtered','columns-filtered'):
@@ -153,7 +165,7 @@ try:
                     if t:t.join()
                 c.rollback();c.execute('SET statement_timeout=0');checked_rows(c.execute(query).fetchall())
     record('psycopg connect',lambda:psycopg.connect(dsn).close())
-    for action in ('select','tables','columns','tables-filtered','columns-filtered','types','copy','copy-text','copy-csv','copy-table','timeout','cancel','recovery'):record('psycopg '+action,lambda action=action:psy_action(action))
+    for action in ('select','sql-cursor-refusal','fetchmany-client-buffer','tables','columns','tables-filtered','columns-filtered','types','copy','copy-text','copy-csv','copy-table','timeout','cancel','recovery'):record('psycopg '+action,lambda action=action:psy_action(action))
     record('raw fixture-byte-comparison',raw_checks)
     record('raw suspended-fixture-projections',suspended_checks)
     record('raw malformed-frame',malformed)
@@ -169,6 +181,9 @@ try:
                 with p.conn.cursor() as c:c.execute(query);checked_rows(c.fetchall())
             elif action=='copy':
                 with p.conn.cursor().copy(f'COPY ({query}) TO STDOUT (FORMAT binary)') as cp:eq(b''.join(bytes(x) for x in cp),expected)
+            elif action=='fetchmany-client-buffer':
+                with p.conn.cursor() as cur:
+                    cur.execute(query);eq(cur.fetchmany(2),[(0,),(1,)]);eq(cur.fetchmany(2),[(2,)]);eq(cur.fetchmany(2),[])
             elif action=='recovery':
                 try:p.conn.execute('SELECT v/0 FROM nata.public.all_types LIMIT 1');raise AssertionError('no error')
                 except psycopg.errors.DivisionByZero:pass
@@ -194,13 +209,16 @@ try:
                     if e is not None:failure=e
                 if failure is not None:raise failure
         finally:p.conn.close()
-    for action in ('connect','select','completion','copy','timeout','cancel','recovery'):record('pgcli '+action,lambda action=action:pgcli(action))
+    for action in ('connect','select','fetchmany-client-buffer','completion','copy','timeout','cancel','recovery'):record('pgcli '+action,lambda action=action:pgcli(action))
     def adbc(action):
         import adbc_driver_postgresql.dbapi as db
         with db.connect(f'postgresql://nata@127.0.0.1:{port}/nata') as c:
             if action=='connect':pass
             elif action=='info':
                 info=c.adbc_get_info();eq(info['vendor_name'],'PostgreSQL');assert info['vendor_version']
+            elif action=='fetchmany-client-buffer':
+                with c.cursor() as cur:
+                    cur.execute(query);eq(cur.fetchmany(2),[(0,),(1,)]);eq(cur.fetchmany(2),[(2,)]);eq(cur.fetchmany(2),[])
             elif action in ('select','copy'):
                 with c.cursor() as cur:cur.execute(query);eq(cur.fetch_arrow_table().column(0).to_pylist(),[0,1,2])
             elif action in ('timeout','cancel','recovery'):
@@ -219,7 +237,7 @@ try:
             elif action=='schema':eq(c.adbc_get_table_schema('all_types',db_schema_filter='public').names,['v'])
             else:
                 with c.adbc_get_objects(depth=action.split('-',1)[1]) as r:r.read_all()
-    for action in ('connect','info','select','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
+    for action in ('connect','info','select','fetchmany-client-buffer','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
     if a.jar:
         javac=str(a.jdk/'javac') if a.jdk else 'javac'; java=str(a.jdk/'java') if a.jdk else 'java'
         subprocess.run([javac,'-cp',str(a.jar),'-d',str(a.work),str(root/'scripts/wire-skeleton/Clients.java')],check=True,capture_output=True)
@@ -232,7 +250,8 @@ finally:
     for client in ('psql','pgjdbc','psycopg','pgcli','ADBC'):
         for action in ('positive-fetch','copy','timeout','cancel','recovery','malformed-frame'):
             key=client+' '+action
-            if key not in results:results[key]='not run: client-specific probe absent; raw/protocol suite is separate evidence'
+            if key not in results:
+                results[key]='not run: '+api_limits.get(key,{}).get('reason','client-specific probe absent; raw/protocol suite is separate evidence')
     p.terminate()
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:p.kill();p.wait()

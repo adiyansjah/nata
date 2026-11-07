@@ -657,3 +657,100 @@ bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --dat
 bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
 bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
 ```
+
+## Slice-close continuation: item 4 and resource-rule stop (2026-11-08)
+
+**Slice 10 remains OPEN; stopped at item 3 under the brief's rule-change stop
+condition.** This continuation starts at main `7719aca` on
+`t3/slice-10-wire-gates`. Item 4's API investigation is complete, but acceptance
+still fails: no client chunking or raw frame injection is relabelled as a positive
+wire-fetch/client malformed-frame PASS. No ADR, target, dependency, production
+Rust code or matrix exit rule changed. No GCP, timing benchmark, push or merge.
+
+| Item | Rule | Numbers / verdict | Command / remaining work |
+|---|---|---|---|
+| 4. Client API cells | All mandatory rows PASS, or owner-recorded explicit deviations; matrix exits 1 for any non-PASS | **81 PASS / 0 FAIL / 9 not run; exit 1 (acceptance FAIL)**. Four positive-fetch APIs cannot set wire Execute.max_rows; five client APIs cannot emit invalid framing. All nine have individual source-backed reasons in `scripts/wire-skeleton/api-limits.json`. Extra chunk/buffer/refusal checks are separate evidence | `WORK=... RESULTS=... bash scripts/wire-skeleton/run.sh`; propose deviations below, not applied |
+| 3. Resources | Freeze reference-derived RSS budget before new Nata measurements (card §2/§3); retain 16 MiB metadata, bounded bridge, 5 s expiry, 2 s cleanup, 64 sessions and 1/8 workers | **STOP / NOT PREPARED.** Reference resource decision explicitly leaves RSS and metadata scratch adequacy unfrozen; later correction freezes streaming only. Both item-1 and item-2 handoffs retain the gap. No numerical process RSS ceiling is supplied | Parent must supply the reference-only RSS/adequacy freeze. A scratch/queue cap is not an RSS bound; inventing a ceiling or accepting without it would change the card rule |
+| 5. PG16 | Official PGDG bookworm-pgdg install; verify major and replay | **NOT STARTED after stop**; PG17 check below is not PG16 certification | Existing `pg16-parity` blocker remains |
+| 7. P16 | Per-client matched PG ≤1.10x and paired pre-change small-query ≤1.20x, primary/twin alternating, 1/8 workers, settled VMs | **NOT STARTED after stop**; no timings run | Existing performance blocker remains; no target relaxation |
+| 6. DBeaver / R24 | Shipped pgjdbc/init/navigator source replay, real UI for UI certification | **NOT STARTED after stop; R24 OPEN** | Existing DBeaver blocker remains; generic JDBC is separate evidence |
+
+### Client API evidence and proposed deviation
+
+psql **17.11** uses `PQsetChunkedRowsMode` for FETCH_COUNT; older psql used
+SQL DECLARE/FETCH. Neither exposes a wire Execute row-limit option. psycopg
+**3.3.8** and pgcli **4.7.1** use libpq (its extended builder emits Execute with
+row limit zero); ServerCursor uses the explicitly excluded SQL cursor path.
+ADBC PostgreSQL **1.13.0**, libraries release **25**, defaults to COPY; Arrow
+batch sizes are not portal row credits. PGConnection/JDBC **42.7.14** has the
+existing positive-fetch probe, but no public malformed-header API. psycopg
+socket descriptors and JDBC socket factories can support separate transport
+fault injection, not a client framing-emission claim. The nine precise reasons
+and primary-source links are preserved in each matrix artifact, with API details
+and limits in `scripts/wire-skeleton/API-LIMITS.md`.
+
+New checks verify psql FETCH_COUNT=2 output, psycopg/pgcli/ADBC fetchmany(2)
+values/count/exhaustion, and psycopg ServerCursor's 0A000 followed by rollback
+and healthy reuse. They do not pass the nine unresolved cells. Raw malformed
+framing and the byte-exact positive-fetch fixtures remain independent rows.
+
+**Proposed mechanism for parent approval, not implemented as an acceptance
+bypass:** a per-cell record with exact client/version/action, source/API reason,
+substitute evidence and its limits, decision owner/date, tested commit and
+revisit trigger. Retain original matrix JSON/exit 1. The separate owner closeout
+verdict may cite accepted deviations; never rewrite rows to PASS, omit them or
+make the matrix return zero. Suggested substitutes: existing pgjdbc/raw wire
+fixtures for positive-fetch, raw/native codec/fuzz controls for malformed frames.
+
+### Checks and controls
+
+**PASS:** `cargo test --locked -p nata-pgwire -j 4`: **66 passed**, zero
+failed/ignored (16 lib, 3 codec, 7 model/native, 36 protocol, 4 reliability).
+`cargo fmt --all --check`, all-target pgwire clippy with warnings denied, Python
+compilation and whitespace check PASS. Local matrix exit **1**, as required:
+**81 PASS / 0 FAIL / 9 not run**. Local PostgreSQL **17.11** oracle exit **0**:
+**56/56** browse statements, **3/3** binary controls, **95/95** helper cases and
+**36/36** inventory classifications PASS. Nata marker remains **16.0**; no PG16
+certification. x86-64, rustc **1.99.1**, JDK **21.0.13**, pyarrow **26.0.1**;
+client versions in raw evidence. All local builds serial at four jobs with a
+separate target. Disk fell to 19.78 GiB: after checking active cargo/rustc
+commands, removed only the inactive old worktree's incremental cache, restoring
+25.41 GiB. No active target or source was removed. Staged leak scan PASS.
+
+Focused acceptance controls: **12/12 PASS**, covering every unresolved cell
+individually and a failed cell alongside PASS. **2 CAUGHT / 0 MISSED** gate
+mutants (`any`→`all`, ignore `not run`) fail those controls. These are harness
+acceptance mutants, not production concurrency/codec mutants. No production
+code changed; full 96-mutant/bound-3 and closing-commit deep campaigns are NOT
+RUN and remain in the heavy template. Raw evidence stays small in
+[client-api evidence](raw/20261108-wire-catalog-close/client-api/), including
+exact commands, versions, matrix outcomes, oracle summaries and deciding logs.
+
+### GCP preparation remains blocked
+
+The five explicit blocked gates in `slice-close.steps.example` are intentionally
+retained. Do not run the partial template as acceptance. Making every gate
+prepared would require resolving item 3's missing reference freeze first.
+The inherited **n4a-highcpu-16 / c3d-highcpu-16**, **60 GB data disk**, **2-hour
+cap per CPU** are only the prior prefix's reasoned sizing: eight query workers,
+four build jobs and actors, with separate native/private caches. They are not a
+validated duration estimate for all remaining heavy work. Parent must re-plan
+hours after preparing those gates; obtain the cost bound from plan, not from an
+invented dollar estimate. Machine type still comes from instance metadata;
+every `.exit`, matrix exit 1, bound-3 loom and full mutant sweep remain gates.
+
+Exact inherited commands below are **not executed and not runnable closeout
+acceptance until blockers are resolved**:
+
+```sh
+cp scripts/wire-browse/slice-close.steps.example heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
+```
+
+Closeout still requires approved API deviations (or supported probes for all
+cells), item 3's reference freeze and loaded gates, items 5/7/6, real DBeaver UI,
+R25's full timeout-fixture decision, both-CPU and closing-commit deep evidence.
+Commit SHA is supplied in the handoff, avoiding self-reference.
