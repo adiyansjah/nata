@@ -271,6 +271,72 @@ pub(crate) fn query(
 mod tests {
     use super::*;
     #[test]
+    fn snapshot_columns_preserve_every_field_in_order() {
+        use nata_sql::source::{SourceColumn, SourceInfo};
+        let columns = [
+            ("id", SqlType::Integer),
+            (
+                "Mixed Column",
+                SqlType::Decimal {
+                    precision: 10,
+                    scale: 2,
+                },
+            ),
+            ("txt", SqlType::Varchar),
+        ]
+        .into_iter()
+        .map(|(name, ty)| SourceColumn {
+            name: name.into(),
+            kind: Ok(nata_parquet::schema::Kind::Utf8),
+            ty: Ok(ty),
+        })
+        .collect();
+        let snapshot = Snapshot {
+            tables: vec![crate::catalog::Table {
+                catalog: "nata".into(),
+                schema: "public".into(),
+                name: "example".into(),
+                oid: 16384,
+                schema_oid: 16385,
+                source: SourceInfo {
+                    pattern: String::new(),
+                    files: vec![],
+                    columns,
+                },
+            }],
+            ..Snapshot::default()
+        };
+        let r = query(&snapshot, "nata", "SELECT column_name,ordinal_position,numeric_precision,numeric_scale FROM information_schema.columns ORDER BY ordinal_position")
+            .unwrap_or_else(|_| panic!("metadata")).expect("response");
+        assert_eq!(
+            r.rows,
+            vec![
+                vec![
+                    Some("id".into()),
+                    Some("1".into()),
+                    Some("32".into()),
+                    Some("0".into())
+                ],
+                vec![
+                    Some("Mixed Column".into()),
+                    Some("2".into()),
+                    Some("10".into()),
+                    Some("2".into())
+                ],
+                vec![Some("txt".into()), Some("3".into()), None, None],
+            ]
+        );
+        assert_eq!(r.command, "SELECT 3");
+        let other = query(
+            &snapshot,
+            "empty",
+            "SELECT column_name FROM information_schema.columns",
+        )
+        .unwrap_or_else(|_| panic!("metadata"))
+        .expect("response");
+        assert!(other.rows.is_empty());
+    }
+    #[test]
     fn seeded_metadata_fuzz() {
         let cases = std::env::var("NATA_METADATA_CASES")
             .ok()

@@ -129,12 +129,16 @@ impl Run {
         metrics: &Option<Arc<Metrics>>,
         snapshot: &Arc<crate::catalog::Snapshot>,
         state: &session::State,
+        deadline: Option<Instant>,
         portal: &Portal,
         limit: i32,
         disconnected: &mut watch::Receiver<bool>,
     ) -> Result<(), WireError> {
         self.expire();
         self.expiry.take();
+        if deadline.is_some_and(|d| Instant::now() >= d) {
+            return Err(WireError::timeout());
+        }
         if self.expired {
             return Err(WireError::new("34000", "suspended portal expired"));
         }
@@ -145,8 +149,8 @@ impl Run {
                 write.flush().await
             };
             return match tokio::time::timeout(
-                state
-                    .timeout()
+                deadline
+                    .map(|d| d.saturating_duration_since(Instant::now()))
                     .unwrap_or(Duration::from_secs(2))
                     .min(Duration::from_secs(2)),
                 writing,
@@ -175,7 +179,10 @@ impl Run {
             stop,
             cancelled: Arc::clone(&cancelled),
         });
-        let _deadline = Deadline::start(state.timeout(), &registered.session);
+        let _deadline = Deadline::start(
+            deadline.map(|d| d.saturating_duration_since(Instant::now())),
+            &registered.session,
+        );
         let result = async {
             if self.execution.is_none() {
                 let permit = tokio::select! {
@@ -243,6 +250,7 @@ impl Run {
                         }
                     }
                     Event::Suspended => {
+                        if deadline.is_some_and(|d| Instant::now() >= d) { return Err(WireError::timeout()); }
                         // Remove the cancel target BEFORE publishing suspension. Keep
                         // its sender alive until the final write completes so receiver
                         // closure cannot masquerade as a CancelRequest.
@@ -255,6 +263,7 @@ impl Run {
                     }
                     Event::Finished(result) => {
                         result?;
+                        if deadline.is_some_and(|d| Instant::now() >= d) { return Err(WireError::timeout()); }
                         terminal(write, &codec::packet(b'C', format!("SELECT {rows}\0").as_bytes()).map_err(|_| WireError::internal())?, &mut stopped, disconnected).await?;
                         self.execution.take(); self.complete = true;
                         return Ok(());

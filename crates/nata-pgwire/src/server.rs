@@ -463,7 +463,16 @@ async fn session_loop(
     let mut objects = Objects::new(metrics.clone());
     let mut runs: HashMap<String, fetch::Run> = HashMap::new();
     let mut failed = false;
+    let mut statement_deadline: Option<Instant> = None;
     loop {
+        if !failed && statement_deadline.is_some_and(|d| Instant::now() >= d) {
+            registered.session.finish();
+            runs.clear();
+            objects.portals.clear();
+            state.failed();
+            failed = true;
+            send_wire_error(&mut write, &WireError::timeout(), "").await;
+        }
         runs.retain(|name, _| objects.portals.get(name).is_some());
         for run in runs.values_mut() {
             run.expire();
@@ -473,7 +482,11 @@ async fn session_loop(
             Ok(m) => m,
             Err(_) => {
                 write.flush().await?;
-                let lease = runs.values().filter_map(fetch::Run::deadline).min();
+                let lease = runs
+                    .values()
+                    .filter_map(fetch::Run::deadline)
+                    .chain(statement_deadline.filter(|_| !failed))
+                    .min();
                 let received = if let Some(lease) = lease {
                     match tokio::time::timeout_at(lease.into(), input.recv()).await {
                         Ok(m) => m,
@@ -497,6 +510,7 @@ async fn session_loop(
             return Ok(());
         }
         if matches!(m, Message::Sync) {
+            statement_deadline = None;
             failed = false;
             if state.transaction == b'I' {
                 objects.portals.clear();
@@ -513,6 +527,18 @@ async fn session_loop(
         if matches!(m, Message::Flush) {
             write.flush().await?;
             continue;
+        }
+        // PostgreSQL's extended statement timer starts with the first protocol
+        // message and runs through Flush and suspension until Sync (ADR 0015).
+        if matches!(
+            m,
+            Message::Parse { .. }
+                | Message::Bind { .. }
+                | Message::Describe(..)
+                | Message::Execute(..)
+        ) && statement_deadline.is_none()
+        {
+            statement_deadline = state.timeout().map(|d| Instant::now() + d);
         }
         if let Message::Execute(name, limit) = &m
             && let Some(p) = objects.portals.get(name).cloned()
@@ -550,18 +576,21 @@ async fn session_loop(
                     &metrics,
                     &catalog,
                     &state,
+                    statement_deadline,
                     &p,
                     *limit,
                     &mut disconnected,
                 )
                 .await
             };
+            // Suspension preserves the statement deadline until Sync.
             if let Err(e) = result {
                 if e.code == "08006" {
                     return Ok(());
                 }
                 state.failed();
                 failed = true;
+                let e = deadline_error(e, statement_deadline);
                 send_wire_error(&mut write, &e, &p.statement.sql).await;
                 runs.clear();
                 objects.portals.clear();
@@ -570,6 +599,11 @@ async fn session_loop(
         }
         let started = Instant::now();
         let simple = matches!(m, Message::Query(_));
+        let operation_deadline = if simple {
+            state.timeout().map(|d| started + d)
+        } else {
+            statement_deadline
+        };
         // Modes: 0 executes, 1 validates Parse, 2 describes a statement, 3 describes a portal.
         let mut mode = 0;
         let mut params = Vec::new();
@@ -716,6 +750,7 @@ async fn session_loop(
         if let Some(e) = error {
             state.failed();
             failed = !simple;
+            let e = deadline_error(e, operation_deadline);
             send_wire_error(&mut write, &e, &sql).await;
             let _ = writeln!(
                 io::stderr(),
@@ -740,7 +775,7 @@ async fn session_loop(
                     }
                 })
             };
-            if mode == 0 && state.timeout().is_some_and(|d| started.elapsed() >= d) {
+            if operation_deadline.is_some_and(|d| Instant::now() >= d) {
                 chatter = Err(WireError::new(
                     "57014",
                     "canceling statement due to statement timeout",
@@ -765,15 +800,10 @@ async fn session_loop(
                 // Metadata CPU is bounded by the snapshot/query limits. Check the
                 // wall deadline before output; a stalled/partial output closes the
                 // socket rather than appending an error inside a frame.
-                let response_budget = if mode == 0 {
-                    state
-                        .timeout()
-                        .map(|d| d.saturating_sub(started.elapsed()))
-                        .unwrap_or(Duration::from_secs(2))
-                        .min(Duration::from_secs(2))
-                } else {
-                    Duration::from_secs(2)
-                };
+                let response_budget = operation_deadline
+                    .map(|d| d.saturating_duration_since(Instant::now()))
+                    .unwrap_or(Duration::from_secs(2))
+                    .min(Duration::from_secs(2));
                 let responding = async {
                     if empty {
                         if mode == 0 {
@@ -882,6 +912,7 @@ async fn session_loop(
                 if let Err(e) = result {
                     state.failed();
                     failed = !simple;
+                    let e = deadline_error(e, operation_deadline);
                     send_wire_error(&mut write, &e, &sql).await;
                 } else if mode == 1 {
                     if let Some(mut s) = parsed {
@@ -916,11 +947,10 @@ async fn session_loop(
                     stop,
                     cancelled: Arc::clone(&cancelled),
                 });
-                let _deadline = if mode == 0 {
-                    fetch::Deadline::start(state.timeout(), &registered.session)
-                } else {
-                    None
-                };
+                let _deadline = fetch::Deadline::start(
+                    operation_deadline.map(|d| d.saturating_duration_since(Instant::now())),
+                    &registered.session,
+                );
                 let queued = Instant::now();
                 let permit = tokio::select! {
                     p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(&queries).acquire_owned()) => p.ok().and_then(Result::ok),
@@ -1051,6 +1081,11 @@ async fn session_loop(
                     Err(WireError::new("53300", "query admission timeout"))
                 };
                 registered.session.finish();
+                let result = if operation_deadline.is_some_and(|d| Instant::now() >= d) {
+                    Err(WireError::timeout())
+                } else {
+                    result
+                };
                 let rows = match &result {
                     Ok(n) => *n,
                     Err(_) => 0,
@@ -1101,12 +1136,13 @@ async fn session_loop(
                     Err(e) => {
                         state.failed();
                         failed = !simple;
+                        let e = deadline_error(e, operation_deadline);
                         send_wire_error(&mut write, &e, &sql).await;
                     }
                 }
             }
         }
-        if state.transaction == b'E' {
+        if failed || state.transaction == b'E' {
             runs.clear();
             objects.portals.clear();
         }
@@ -1126,6 +1162,13 @@ async fn session_loop(
         }
     }
     Ok(())
+}
+fn deadline_error(error: WireError, deadline: Option<Instant>) -> WireError {
+    if error.code == "57014" && deadline.is_some_and(|d| Instant::now() >= d) {
+        WireError::timeout()
+    } else {
+        error
+    }
 }
 async fn send_wire_error<W: tokio::io::AsyncWrite + Unpin>(w: &mut W, e: &WireError, sql: &str) {
     let mut packet = codec::error(e.code, &e.message, e.pos.map(|p| codec::position(sql, p)));
@@ -1166,6 +1209,9 @@ impl WireError {
     }
     pub(crate) fn unsupported(what: &str) -> Self {
         Self::new("0A000", format!("not supported yet: {what}"))
+    }
+    fn timeout() -> Self {
+        Self::new("57014", "canceling statement due to statement timeout")
     }
     fn cancel() -> Self {
         Self::new("57014", "canceling statement due to user request")
@@ -1333,7 +1379,7 @@ fn produce(
     let inner = crate::copy::query(sql)?;
     let copying = inner.is_some();
     let p = nata_sql::plan_parameters(
-        inner.unwrap_or(sql),
+        inner.as_ref().map_or(sql, |c| c.sql.as_ref()),
         params,
         &Source(
             cancelled,
@@ -1348,9 +1394,8 @@ fn produce(
     }
     let p = p.map_err(|e| {
         let mut e = WireError::sql(e);
-        if let Some(inner) = inner {
+        if let Some(offset) = inner.as_ref().and_then(|c| c.offset) {
             // Error positions remain relative to the entire COPY command.
-            let offset = inner.as_ptr() as usize - sql.as_ptr() as usize;
             if let Some(pos) = &mut e.pos {
                 let prefix = &sql[..offset];
                 if pos.line == 1 {
@@ -1358,6 +1403,11 @@ fn produce(
                 }
                 pos.line += prefix.bytes().filter(|b| *b == b'\n').count() as u32;
             }
+        }
+        if inner.as_ref().is_some_and(|c| c.offset.is_none()) {
+            // The table form lowers to SELECT; do not report a generated offset
+            // as though it pointed into the original COPY command.
+            e.pos = None;
         }
         if !params.is_empty() && !matches!(e.code, "42703" | "42P01" | "42883" | "0A000") {
             e.message = "invalid parameterized query".into();
@@ -1418,13 +1468,28 @@ fn produce(
         return Ok(n);
     }
     let fields: Vec<_> = p.output.iter().map(|c| (c.name.clone(), c.ty)).collect();
+    let binary_copy = inner
+        .as_ref()
+        .is_some_and(|c| c.format == crate::copy::Format::Binary);
     if copying {
-        let mut response = vec![1];
+        let mut response = vec![u8::from(binary_copy)];
         response.extend((fields.len() as i16).to_be_bytes());
         for _ in &fields {
-            response.extend(1i16.to_be_bytes());
+            response.extend(i16::from(binary_copy).to_be_bytes());
         }
         send(encode(codec::packet(b'H', &response))?)?;
+        if let Some(c) = &inner
+            && c.header
+        {
+            let names = fields
+                .iter()
+                .map(|(n, _)| Some(n.clone()))
+                .collect::<Vec<_>>();
+            send(encode(codec::packet(
+                b'd',
+                &crate::copy::record(&names, c.format)?,
+            ))?)?;
+        }
     } else {
         send(encode(codec::description(&fields))?)?;
     }
@@ -1433,6 +1498,7 @@ fn produce(
     let mut config = execution.clone();
     config.opener = metrics.and_then(|m| m.opener.clone());
     let mut observed = nata_exec::Observed::default();
+    let mut copy_error = None;
     let result = nata_exec::execute_observed(
         Arc::new(p.plan),
         &config,
@@ -1476,31 +1542,51 @@ fn produce(
                         value.map(|s| wire_text(*ty, s)).transpose()
                     })
                     .collect::<Result<Vec<_>, ScanError>>()?;
-                let bytes = codec::row(&values).map_err(|_| {
-                    ScanError::new(ErrorKind::Eval {
-                        message: "unrepresentable text".into(),
-                        line: 1,
-                        column: 1,
-                    })
-                })?;
-                let bytes = crate::binary::packet(
-                    bytes,
-                    &description,
-                    if copying { &[1] } else { result_formats },
-                )
-                .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
-                let bytes = if copying {
-                    // PostgreSQL (and ADBC's reader) puts the header and first
-                    // tuple in the same CopyData; later messages carry one tuple.
-                    let mut body = if rows == 0 {
-                        crate::copy::HEADER.to_vec()
-                    } else {
-                        Vec::new()
-                    };
-                    body.extend_from_slice(&bytes[5..]);
-                    codec::packet(b'd', &body).expect("checked row size")
+                let bytes = if let Some(c) = &inner
+                    && !binary_copy
+                {
+                    let body = crate::copy::record(&values, c.format).map_err(|e| {
+                        copy_error = Some(e);
+                        ScanError::new(ErrorKind::Eval {
+                            message: "unrepresentable COPY value".into(),
+                            line: 1,
+                            column: 1,
+                        })
+                    })?;
+                    codec::packet(b'd', &body).map_err(|_| {
+                        ScanError::new(ErrorKind::Eval {
+                            message: "COPY row exceeds frame limit".into(),
+                            line: 1,
+                            column: 1,
+                        })
+                    })?
                 } else {
-                    bytes
+                    let bytes = codec::row(&values).map_err(|_| {
+                        ScanError::new(ErrorKind::Eval {
+                            message: "unrepresentable text".into(),
+                            line: 1,
+                            column: 1,
+                        })
+                    })?;
+                    let bytes = crate::binary::packet(
+                        bytes,
+                        &description,
+                        if copying { &[1] } else { result_formats },
+                    )
+                    .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
+                    if copying {
+                        // PostgreSQL (and ADBC's reader) puts the header and first
+                        // tuple in the same CopyData; later messages carry one tuple.
+                        let mut body = if rows == 0 {
+                            crate::copy::HEADER.to_vec()
+                        } else {
+                            Vec::new()
+                        };
+                        body.extend_from_slice(&bytes[5..]);
+                        codec::packet(b'd', &body).expect("checked row size")
+                    } else {
+                        bytes
+                    }
                 };
                 // A single wide row may span buffers. Never increase the bridge byte bound.
                 for chunk in bytes.chunks(OUTPUT_BYTES) {
@@ -1568,15 +1654,20 @@ fn produce(
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());
     }
+    if let Some(e) = copy_error {
+        return Err(e);
+    }
     result.map_err(WireError::scan)?;
     if copying {
-        let mut tail = if rows == 0 {
-            crate::copy::HEADER.to_vec()
-        } else {
-            Vec::new()
-        };
-        tail.extend_from_slice(crate::copy::TRAILER);
-        send(encode(codec::packet(b'd', &tail))?)?;
+        if binary_copy {
+            let mut tail = if rows == 0 {
+                crate::copy::HEADER.to_vec()
+            } else {
+                Vec::new()
+            };
+            tail.extend_from_slice(crate::copy::TRAILER);
+            send(encode(codec::packet(b'd', &tail))?)?;
+        }
         send(encode(codec::packet(b'c', b""))?)?;
     }
     Ok(rows)

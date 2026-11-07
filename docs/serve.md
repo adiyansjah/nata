@@ -31,7 +31,9 @@ fetch and positive-limit EXPLAIN are explicit 0A000 boundaries in this skeleton.
 COPY retains its existing utility stream behavior; max-rows does not limit CopyData.
 Suspension retains the admission, worker share and bounded bridge. A five-second
 idle lease releases them; the next Execute reports 34000. Cancellation while
-suspended is inert; each executing Execute gets a fresh statement_timeout.
+suspended is inert. statement_timeout starts at the first query-related extended-protocol
+message (Parse/Bind/Describe/Execute) and keeps running through suspension until Sync; the next exchange
+reports 57014 and drains to Sync. Expiry and timeout release retained work.
 Named SQL DECLARE/FETCH/CLOSE remain 0A000, including psycopg ServerCursor.
 
 Parameters are substituted as literal AST nodes, never pasted into the query.
@@ -76,7 +78,7 @@ multi-statement messages return `0A000`.
 | `SET client_encoding = 'UTF8'` | UTF8 / UTF-8 only; report UTF8 |
 | `SET TimeZone = '...'`, `SET TIME ZONE '...'` | store only; Date32 has no timezone; report TimeZone |
 | `SET search_path = ...` | comma-separated schema names for registered table lookup; quoted file sources are unchanged |
-| `SET statement_timeout = ...` | checked integer milliseconds, or quoted ms/s/min suffix; 0 disables, maximum 2147483647 ms; enforced per Query/Execute; stalled metadata/session output may close the socket |
+| `SET statement_timeout = ...` | checked integer milliseconds, or quoted ms/s/min suffix; 0 disables, maximum 2147483647 ms; enforced per simple Query, or from the first Parse/Bind/Describe/Execute through Sync (including suspension); stalled metadata/session output may close the socket |
 | `SET standard_conforming_strings = on` | on only, ParameterStatus |
 | `SET default_transaction_read_only = off` | off only |
 | `SET default_transaction_isolation = 'read committed'` | read committed only |
@@ -192,8 +194,21 @@ returns 0A000. Default Arrow fetch now uses bounded binary COPY:
 COPY (SELECT * FROM 'data/example.parquet') TO STDOUT (FORMAT binary);
 ```
 
-Only that read-only query wrapper is supported, with optional `WITH` and quoted
-`'binary'`. COPY FROM, files, text/CSV and other options return a clear 0A000.
+Read-only query and registered-table `TO STDOUT` forms support default text,
+`(FORMAT text)`, `(FORMAT csv)` and `(FORMAT binary)`, with optional `WITH` and
+quoted format values. CSV accepts `HEADER`, `HEADER true` and `HEADER false`.
+NULL is `\N` in text and an unquoted empty field in CSV; empty strings remain
+empty in text and quoted in CSV. Text escapes control characters and backslashes;
+CSV quotes commas, quotes, CR/LF and the single-column end marker. Headers also
+appear for empty results. Examples:
+
+```sql
+COPY public.example TO STDOUT;
+COPY (SELECT * FROM public.example LIMIT 10) TO STDOUT (FORMAT csv, HEADER true);
+```
+
+COPY FROM, files, PROGRAM, table column lists and other options return 0A000.
+No result is collected or spooled; every format uses the existing bounded bridge.
 Simple and extended execution share the DataRow admission, byte buffers,
 backpressure, send deadline and cancellation path. Numeric remains the driver's
 opaque Arrow extension with exact string storage; TINYINT maps to text.

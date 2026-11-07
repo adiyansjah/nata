@@ -1,0 +1,76 @@
+psql connect PASS
+psql select PASS
+psql d FAIL 1
+psql dt FAIL 1
+psql dn FAIL 1
+psql df FAIL 1
+psql l FAIL 1
+psql copy PASS
+psql copy-text PASS
+psql copy-csv PASS
+psql copy-table PASS
+psql timeout PASS
+psql cancel PASS
+psql recovery PASS
+psycopg connect PASS
+psycopg select PASS
+psycopg tables PASS
+psycopg columns PASS
+psycopg tables-filtered FAIL 0A000
+psycopg columns-filtered FAIL 0A000
+psycopg types FAIL 0A000
+psycopg copy PASS
+psycopg copy-text PASS
+psycopg copy-csv PASS
+psycopg copy-table PASS
+psycopg timeout PASS
+psycopg cancel PASS
+psycopg recovery PASS
+raw fixture-byte-comparison PASS
+raw suspended-fixture-projections PASS
+raw malformed-frame PASS
+pgcli connect PASS
+pgcli select PASS
+pgcli completion schemata FAIL 0A000
+pgcli completion tables FAIL 0A000
+pgcli completion views FAIL 0A000
+pgcli completion types FAIL 0A000
+pgcli completion databases FAIL 0A000
+pgcli completion casing PASS
+pgcli completion functions FAIL 0A000
+pgcli completion FAIL 0A000
+pgcli copy PASS
+pgcli timeout PASS
+pgcli cancel PASS
+pgcli recovery PASS
+ADBC connect PASS
+ADBC info PASS
+ADBC select PASS
+ADBC copy PASS
+ADBC objects-all FAIL 0A000
+ADBC objects-catalogs FAIL 0A000
+ADBC objects-db_schemas FAIL 0A000
+ADBC objects-tables FAIL 0A000
+ADBC objects-columns FAIL 0A000
+ADBC schema FAIL 0A000
+ADBC timeout PASS
+ADBC cancel PASS
+ADBC recovery PASS
+connect: PASS driver=42.7.7
+select: PASS
+getCatalogs: FAIL 0A000
+getSchemas: FAIL 0A000
+getTables: FAIL 0A000
+getColumns: FAIL 0A000
+getPrimaryKeys: FAIL 0A000
+getIndexInfo: FAIL 0A000
+getTypeInfo: FAIL 0A000
+getFunctions: FAIL 0A000
+positive-fetch: PASS
+timeout: PASS
+cancel: PASS
+copy-text: PASS
+copy-csv: PASS
+copy-table: PASS
+copy: PASS
+recovery: PASS

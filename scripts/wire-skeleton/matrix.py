@@ -45,6 +45,41 @@ def raw_checks():
             for t,b in front:c.send(t,bytes.fromhex(b))
             eq(c.until(('s','C','E')),step['backend'])
         c.query('ROLLBACK');c.close()
+def suspended_checks():
+    sys.path.insert(0,str(root/'scripts/wirecapture')); from protocol import Conn,i
+    outcomes={}
+    def error_without_source(body):
+        fields=bytes.fromhex(body).split(b'\0')
+        return b'\0'.join(f for f in fields if not f[:1] in (b'F',b'L',b'R')).hex()
+    for cpu in ('arm','x86'):
+        for name in ('suspended-cancel','suspended-timeout-restart'):
+            fixture=json.loads((root/f'fixtures/wirecapture/postgresql-15.19-{cpu}/{name}.json').read_text())
+            c=Conn(port)
+            try:
+                for step in fixture['steps']:
+                    if 'sleep_ms' in step:time.sleep(step['sleep_ms']/1000)
+                    if 'concurrent' in step:
+                        with socket.create_connection(('127.0.0.1',port)) as k:
+                            k.sendall(i(16)+i(80877102)+c.key);eq(k.recv(1),b'')
+                    front=step['frontend'];front=front if isinstance(front[0],list) else [front]
+                    for tag,body in front:
+                        body=bytes.fromhex(body)
+                        if tag=='P':
+                            query='SELECT v + 1 AS i'+(", CAST('' AS VARCHAR) AS pg_sleep" if name=='suspended-timeout-restart' else '')+' FROM nata.public.all_types LIMIT 3'
+                            body=b's\0'+query.encode()+b'\0\0\0'
+                        c.send(tag,body)
+                    if 'backend' not in step:continue
+                    expected=step['backend'];actual=c.until((expected[-1][0],))
+                    # generate_series is replaced with the same ordered Parquet
+                    # rows. pg_sleep's empty void result becomes empty text; its
+                    # wire OID/size differ. PG implementation-source error fields
+                    # are not fabricated by Nata. All other payload bytes agree.
+                    if name=='suspended-timeout-restart':
+                        expected=[[t,error_without_source(b) if t=='E' else b.replace('000008e60004','00000019ffff') if t=='T' else b] for t,b in expected]
+                    eq(actual,expected)
+                outcomes[cpu+' '+name]='PASS: exact bytes' if name=='suspended-cancel' else 'PASS after declared void description and PG error-source projection; full byte parity remains open'
+            finally:c.close()
+    (a.work/'suspended-fixtures.json').write_text(json.dumps(outcomes,indent=2)+'\n')
 def malformed():
     sys.path.insert(0,str(root/'scripts/wirecapture')); from protocol import Conn,i,frame
     c=Conn(port);c.s.sendall(b'Q'+i(3));tag,body=frame(c.s);assert tag=='E' and b'C08P01\0' in body;c.s.close();healthy=Conn(port);eq(healthy.query('SELECT 1')[-1][0],'Z');healthy.close()
@@ -120,6 +155,7 @@ try:
     record('psycopg connect',lambda:psycopg.connect(dsn).close())
     for action in ('select','tables','columns','tables-filtered','columns-filtered','types','copy','copy-text','copy-csv','copy-table','timeout','cancel','recovery'):record('psycopg '+action,lambda action=action:psy_action(action))
     record('raw fixture-byte-comparison',raw_checks)
+    record('raw suspended-fixture-projections',suspended_checks)
     record('raw malformed-frame',malformed)
     def pgcli(action):
         from pgcli.pgexecute import PGExecute
@@ -163,6 +199,8 @@ try:
         import adbc_driver_postgresql.dbapi as db
         with db.connect(f'postgresql://nata@127.0.0.1:{port}/nata') as c:
             if action=='connect':pass
+            elif action=='info':
+                info=c.adbc_get_info();eq(info['vendor_name'],'PostgreSQL');assert info['vendor_version']
             elif action in ('select','copy'):
                 with c.cursor() as cur:cur.execute(query);eq(cur.fetch_arrow_table().column(0).to_pylist(),[0,1,2])
             elif action in ('timeout','cancel','recovery'):
@@ -181,7 +219,7 @@ try:
             elif action=='schema':eq(c.adbc_get_table_schema('all_types',db_schema_filter='public').names,['v'])
             else:
                 with c.adbc_get_objects(depth=action.split('-',1)[1]) as r:r.read_all()
-    for action in ('connect','select','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
+    for action in ('connect','info','select','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
     if a.jar:
         javac=str(a.jdk/'javac') if a.jdk else 'javac'; java=str(a.jdk/'java') if a.jdk else 'java'
         subprocess.run([javac,'-cp',str(a.jar),'-d',str(a.work),str(root/'scripts/wire-skeleton/Clients.java')],check=True,capture_output=True)

@@ -1,0 +1,18 @@
+connect: PASS driver=42.7.7
+select: PASS
+getCatalogs: FAIL 0A000
+getSchemas: FAIL 0A000
+getTables: FAIL 0A000
+getColumns: FAIL 0A000
+getPrimaryKeys: FAIL 0A000
+getIndexInfo: FAIL 0A000
+getTypeInfo: FAIL 0A000
+getFunctions: FAIL 0A000
+positive-fetch: PASS
+timeout: PASS
+cancel: PASS
+copy-text: PASS
+copy-csv: PASS
+copy-table: PASS
+copy: PASS
+recovery: PASS

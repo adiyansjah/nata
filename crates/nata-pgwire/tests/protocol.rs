@@ -988,8 +988,6 @@ fn copy_binary_framing_types_nulls_extended_and_refusals() {
             .any(|v| v == [0, 2, 255, 255, 255, 255, 255, 255, 255, 255])
     );
     for bad in [
-        format!("COPY ({query}) TO STDOUT (FORMAT csv)"),
-        format!("COPY ({query}) TO STDOUT"),
         format!("COPY ({query}) TO '/file' (FORMAT binary)"),
         "COPY t FROM STDIN (FORMAT binary)".into(),
         format!("COPY ({query}; SELECT 1) TO STDOUT (FORMAT binary)"),
@@ -1553,7 +1551,7 @@ fn skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope() {
     park(&mut c);
     std::thread::sleep(Duration::from_millis(1100));
     cancel(&s, c.key);
-    assert_eq!(tags(&fetched(&mut c, 0)), b"DDC"); // Fresh Execute deadline; idle time excluded.
+    assert_code(&fetched(&mut c, 0), "57014"); // Deadline includes suspended time until Sync.
     c.sync();
     c.query("ROLLBACK");
     c.query("BEGIN");
@@ -1908,4 +1906,91 @@ fn bounded_aggregate_keeps_admitted_spill_configuration() {
     drop(samples);
     drop(s);
     std::fs::remove_dir(dir).expect("removed");
+}
+
+#[test]
+fn copy_text_csv_null_empty_escaping_header_and_empty_results() {
+    let s = Server::start(3);
+    let mut c = s.client();
+    let q = format!("SELECT s FROM '{}'", fixture());
+    for (options, expected) in [
+        ("", b"\nsecret-cell-a,b\\n\xc3\xa9\n\\N\n".as_slice()),
+        (
+            "(FORMAT text)",
+            b"\nsecret-cell-a,b\\n\xc3\xa9\n\\N\n".as_slice(),
+        ),
+        (
+            "WITH (FORMAT csv, HEADER true)",
+            b"s\n\"\"\n\"secret-cell-a,b\n\xc3\xa9\"\n\n".as_slice(),
+        ),
+    ] {
+        let sql = format!("COPY ({q}) TO STDOUT {options}");
+        let r = c.query(&sql);
+        assert_eq!(r[0].0, b'H', "{r:?}");
+        assert_eq!(r[0].1, [0, 0, 1, 0, 0]);
+        let data: Vec<_> = r
+            .iter()
+            .filter(|m| m.0 == b'd')
+            .flat_map(|m| m.1.clone())
+            .collect();
+        assert_eq!(data, expected);
+        assert_eq!(r[r.len() - 2].1, b"COPY 3\0");
+        c.parse(&sql, &[]);
+        c.bind(&[], 0, 0);
+        c.execute(0);
+        let extended = c.sync();
+        let data: Vec<_> = extended
+            .iter()
+            .filter(|m| m.0 == b'd')
+            .flat_map(|m| m.1.clone())
+            .collect();
+        assert_eq!(data, expected);
+    }
+    let r = c.query(&format!(
+        "COPY ({q} LIMIT 0) TO STDOUT (FORMAT csv, HEADER)"
+    ));
+    assert_eq!(tags(&r), b"HdcCZ");
+    assert_eq!(r[1].1, b"s\n");
+    for options in [
+        "(FORMAT text, HEADER false)",
+        "(FORMAT csv, DELIMITER ';')",
+        "(FORMAT csv, HEADER true, HEADER false)",
+        "(FORMAT binary, FORMAT csv)",
+    ] {
+        assert_code(
+            &c.query(&format!("COPY ({q}) TO STDOUT {options}")),
+            "0A000",
+        );
+    }
+}
+
+#[test]
+fn extended_timeout_covers_parse_flush_idle_until_sync_then_restarts() {
+    let s = Server::start(3);
+    let mut c = s.client();
+    c.query("SET statement_timeout = 80");
+    c.parse(&format!("SELECT i FROM '{}'", fixture()), &[]);
+    c.frame(b'H', b"");
+    assert_eq!(read(&mut c.socket).0, b'1');
+    std::thread::sleep(Duration::from_millis(120));
+    c.bind(&[], 0, 0);
+    c.execute(0);
+    let r = c.sync();
+    assert_eq!(tags(&r), b"EZ");
+    assert_eq!(error_field(&r[0].1, b'C'), Some("57014"));
+    assert_eq!(
+        error_field(&r[0].1, b'M'),
+        Some("canceling statement due to statement timeout")
+    );
+    c.parse("SELECT 1", &[]);
+    c.bind(&[], 0, 0);
+    c.execute(0);
+    assert_eq!(tags(&c.sync()), b"12DCZ");
+    c.parse(&format!("SELECT i FROM '{}'", fixture()), &[]);
+    c.bind(&[], 0, 0);
+    assert_eq!(tags(&fetched(&mut c, 1)), b"12Ds");
+    std::thread::sleep(Duration::from_millis(120));
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert_eq!(s.metrics.admitted.now(), 0);
+    assert_eq!(tags(&c.sync()), b"EZ");
 }

@@ -165,6 +165,9 @@ MUTANTS.update({
 })
 
 MUTANTS.update({
+ 'information-schema-column-missing': ('crates/nata-pgwire/src/metadata.rs', 'for (i, c) in t.source.columns.iter().enumerate() {', 'for (i, c) in t.source.columns.iter().enumerate().skip(1) {', 'lib'),
+ 'refused-catalog-answers-rows': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query; only exact ADBC type bootstrap is supported",\n        ));', 'out.rows.push(vec![Some("invented".into())]); return Ok(Some(out));', 'protocol'),
+ 'statement-timeout-restart-per-execute': (SERVER, '// Suspension preserves the statement deadline until Sync.', 'if result.is_ok() { statement_deadline = None; }', 'protocol'),
  'portal-idle-wake-missing': ('crates/nata-pgwire/src/server/fetch.rs', 'let _ = resume.send(0);', 'let _ = resume;', 'lib'),
  'exact-end-suspension-missing': ('crates/nata-pgwire/src/server/fetch.rs', "codec::packet(b's', b\"\")", "codec::packet(b'C', b\"SELECT 0\\0\")", 'protocol'),
  'statement-timeout-not-enforced': ('crates/nata-pgwire/src/session.rs', '(ms != 0).then(', 'false.then(', 'protocol'),
@@ -182,6 +185,7 @@ def fingerprint():
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('names', nargs='*')
+    ap.add_argument('--filter', help='Run one focused test control; omitted for the full required sweep')
     ap.add_argument('--work', type=Path, default=ROOT/'target/mutwork-pgwire')
     a = ap.parse_args()
     a.work = a.work.resolve()
@@ -195,7 +199,7 @@ def main():
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.work/'target'), CARGO_TERM_COLOR='never')
     def test(suite):
         try:
-            p = subprocess.run(['cargo','test','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite]), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
+            p = subprocess.run(['cargo','test','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite])+([a.filter] if a.filter else []), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
             return p.returncode, p.stdout+p.stderr
         except subprocess.TimeoutExpired:
             return 99, 'timeout'

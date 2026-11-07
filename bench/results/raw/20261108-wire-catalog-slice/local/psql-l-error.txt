@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 95, in <lambda>
+    for name,q in [('connect','SELECT 1'),('select',query),('d','\\d public.all_types'),('dt','\\dt'),('dn','\\dn'),('df','\\df'),('l','\\l')]: record('psql '+name,lambda q=q:cli(q))
+                                                                                                                                                                               ^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 94, in cli
+    def cli(q):return subprocess.run(['psql',dsn,'-c',q],capture_output=True,check=True,timeout=20).stdout
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', 'host=127.0.0.1 port=44347 user=nata dbname=nata', '-c', '\\l']' returned non-zero exit status 1.
+b'ERROR:  not supported yet: captured catalog helper outside the skeleton metadata contract\n'

@@ -1,0 +1,19 @@
+Base: fa3d4dc; branch: t3/catalog-browsing-timeout-copy
+Disk TMPDIR: ~/tmp-s10/tmp; local Rust/heavy checks run sequentially.
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: 553 passed, zero failed/ignored, 82 summaries
+cargo deny check: PASS (inherited unmatched license allowance warnings)
+Protocol suite: 36 PASS; included in workspace tests.
+wirecapture Python unit tests: 3 PASS; shell/Python syntax checks PASS; job-chain stubs PASS.
+13 ARM/x86 committed wire fixture pairs: byte-identical offline.
+COPY oracle: 40 complete backend-byte comparisons PASS against PG17.11; 3 frozen PG15 COPY sequences PASS; wrapper also PASS.
+Matrix: 47 PASS / 29 FAIL / 9 not run; exit 1. DBeaver UI unavailable, outside these scripted cells.
+Mutants: four requested focused controls CAUGHT, zero INVALID; all 75 anchors apply once. Full inherited sweep NOT RUN locally.
+No GCP/push/merge; Cargo.lock unchanged.
+nata-check --data ~/tmp-s10/data --queries check/queries/scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check --data ~/tmp-s10/data --queries check/queries/sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check --data ~/tmp-s10/data --queries check/queries/sql-differences: 55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check --data ~/tmp-s10/data --queries check/queries/aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+Staged leak scan: PASS; staged whitespace check: PASS after preserving deny output in gzip.
+COPY option-name refusal: known-bad pre-guard test FAILS as expected; final guarded workspace PASS.

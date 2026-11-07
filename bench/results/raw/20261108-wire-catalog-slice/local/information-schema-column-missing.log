@@ -1,0 +1,24 @@
+
+running 1 test
+test metadata::tests::snapshot_columns_preserve_every_field_in_order ... FAILED
+
+failures:
+
+---- metadata::tests::snapshot_columns_preserve_every_field_in_order stdout ----
+
+thread 'metadata::tests::snapshot_columns_preserve_every_field_in_order' (4042634) panicked at crates/nata-pgwire/src/metadata.rs:311:9:
+assertion `left == right` failed
+  left: [[Some("Mixed Column"), Some("2"), Some("10"), Some("2")], [Some("txt"), Some("3"), None, None]]
+ right: [[Some("id"), Some("1"), Some("32"), Some("0")], [Some("Mixed Column"), Some("2"), Some("10"), Some("2")], [Some("txt"), Some("3"), None, None]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    metadata::tests::snapshot_columns_preserve_every_field_in_order
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-s10/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.08s
+     Running unittests src/lib.rs (/home/dev/tmp-s10/mutants/target/debug/deps/nata_pgwire-fc1e69ef8cad2ee7)
+error: test failed, to rerun pass `-p nata-pgwire --lib`

@@ -95,8 +95,9 @@ def sequences(out):
             steps.append(dict(frontend=[['E',(b'p\0'+i(2)).hex()],['H','']],backend=c.until(('s','C','E'))))
         exchange('S',b''); exchange('C',b'Pp\0',('3',)); exchange('S',b'')
         exchange('Q',b'ROLLBACK\0'); c.close(); save('execute-limit-'+str(rows),steps)
-    # Parent amendment: cancel is inert while suspended; timeout is per Execute,
-    # and excludes time awaiting the next Execute. Keys are never persisted.
+    # ADR 0015 correction: cancel is inert while suspended; statement_timeout
+    # keeps running until Sync. Capture the rule rather than assuming it. Keys
+    # are never persisted.
     for name in ('suspended-cancel', 'suspended-timeout-restart'):
         c=Conn(); steps=[]
         def exchange(t,b,ends=('Z',)):

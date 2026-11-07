@@ -3,9 +3,9 @@
 set -euo pipefail
 : "${WORK:?}" "${RESULTS:?}"
 root=$(cd "$(dirname "$0")/../.." && pwd)
-if ! command -v javac >/dev/null || ! command -v psql >/dev/null; then
+if ! command -v javac >/dev/null || ! command -v psql >/dev/null || ! command -v pg_config >/dev/null || [ ! -x "$(pg_config --bindir)/initdb" ]; then
     sudo apt-get update -qq
-    sudo apt-get install -y default-jdk-headless postgresql-client python3-venv
+    sudo apt-get install -y default-jdk-headless postgresql postgresql-client libpq-dev python3-venv
 fi
 export TMPDIR="$WORK/wire-skeleton-tmp"
 mkdir -p "$TMPDIR" "$RESULTS/wire-skeleton"

@@ -1,0 +1,22 @@
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-df51a901/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.30s
+     Running unittests src/lib.rs (target/debug/deps/nata_pgwire-fc1e69ef8cad2ee7)
+
+running 1 test
+test copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded ... FAILED
+
+failures:
+
+---- copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded stdout ----
+
+thread 'copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded' (3799323) panicked at crates/nata-pgwire/src/copy.rs:343:13:
+COPY t TO STDOUT ('format' csv)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nata-pgwire --lib`

@@ -1,0 +1,53 @@
+
+running 1 test
+test skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope ... FAILED
+
+failures:
+
+---- skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope stdout ----
+
+thread 'skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope' (4044559) panicked at crates/nata-pgwire/tests/support/mod.rs:330:58:
+error
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 35 filtered out; finished in 1.24s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-s10/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.49s
+     Running tests/protocol.rs (/home/dev/tmp-s10/mutants/target/debug/deps/protocol-a764388a9b1f74b1)
+nata serve listening=127.0.0.1:33445 max_connections=4 query_admission=2 workers=2
+aggregate_node_pool=8387985408 aggregate_query_budget=4193992704 aggregate_disk_share=16775970816 memory_source=physical-cgroup
+session=1 duration_us=29 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=1058
+session=1 duration_us=1217 rows=0 state=00000 queue_wait_us=4 worker_share=1
+session=1 duration_us=53 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=2 duration_us=38 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=677
+session=2 duration_us=807 rows=0 state=00000 queue_wait_us=3 worker_share=1
+session=2 duration_us=51 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=3 duration_us=22 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=591
+session=3 duration_us=670 rows=0 state=00000 queue_wait_us=4 worker_share=1
+session=3 duration_us=66 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=5 duration_us=44 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=940
+session=5 duration_us=1147 rows=0 state=00000 queue_wait_us=4 worker_share=1
+session=5 duration_us=89 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=7 duration_us=65 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=727
+session=7 duration_us=817 rows=0 state=00000 queue_wait_us=5 worker_share=1
+session=8 duration_us=38 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=493
+session=8 duration_us=533 rows=0 state=00000 queue_wait_us=2 worker_share=1
+session=9 duration_us=56 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=9 duration_us=21323 rows=0 state=57014 queue_wait_us=21263 worker_share=1
+session=9 duration_us=113 rows=1 state=00000 queue_wait_us=0 worker_share=0
+session=9 duration_us=117 rows=0 state=00000 queue_wait_us=0 worker_share=0
+session=9 duration_us=30 rows=0 state=00000 queue_wait_us=0 worker_share=0
+scan_end_us=736
+session=9 duration_us=875 rows=0 state=00000 queue_wait_us=6 worker_share=1
+error: test failed, to rerun pass `-p nata-pgwire --test protocol`

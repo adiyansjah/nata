@@ -3,11 +3,15 @@
 matrix bash scripts/wire-skeleton/run.sh
 protocol cargo test -p nata-pgwire --test protocol -- --nocapture
 wire-fuzz NATA_PGWIRE_CASES=1000000 NATA_PGWIRE_SEED=20261107 cargo test -p nata-pgwire --test codec seeded_decoder_fuzz -- --nocapture
+copy-fuzz NATA_COPY_CASES=1000000 cargo test -p nata-pgwire --lib seeded_copy_fuzz -- --nocapture
 metadata-fuzz NATA_METADATA_CASES=1000000 cargo test -p nata-pgwire --lib seeded_metadata_fuzz -- --nocapture
 live NATA_PGWIRE_SCENARIOS=4000 NATA_PGWIRE_LIVE_CASES=20000 NATA_PGWIRE_CONTENTION=8 cargo test --release -p nata-pgwire --test reliability -- --nocapture
-skeleton-mutants python3 crates/nata-pgwire/mutate.py catalog-wrong-oid exact-end-suspension-missing statement-timeout-not-enforced refused-catalog-silent-empty cancel-applied-while-suspended portal-idle-wake-missing --work "$WORK/wire-skeleton-mutants"
+wire-mutants python3 crates/nata-pgwire/mutate.py --work "$WORK/wire-slice-mutants"
 file-fuzz NATA_FUZZ_CASES=30000 NATA_FUZZ_SEED=20261107 cargo test --release -p nata-parquet --features page-crc --test fuzz_files -- --nocapture
 # Existing SQL/deep gates retain their own adapters and setup requirements.
 # Full slice closeout still needs a real-code portal loom bound-3 target,
 # metadata scratch/RSS under fresh limits, sanitizers and frozen paired timings.
 # These targets are not implemented by this skeleton; this file is not closeout.
+# Slice-10 COPY oracle. The full wire-mutants step above includes all inherited
+# mutants; INVALID is an error. The still-red matrix exit remains a gate.
+copy-oracle bash scripts/wire-skeleton/run-copy-oracle.sh

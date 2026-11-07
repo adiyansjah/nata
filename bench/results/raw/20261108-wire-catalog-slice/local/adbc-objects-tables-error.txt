@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 222, in <lambda>
+    for action in ('connect','info','select','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
+                                                                                                                                                                                                                                ^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-df51a901/scripts/wire-skeleton/matrix.py", line 221, in adbc
+    with c.adbc_get_objects(depth=action.split('-',1)[1]) as r:r.read_all()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-s10/venv/lib/python3.12/site-packages/adbc_driver_manager/dbapi.py", line 547, in adbc_get_objects
+    handle = _blocking_call(
+             ^^^^^^^^^^^^^^^
+  File "adbc_driver_manager/_lib.pyx", line 1968, in adbc_driver_manager._lib._blocking_call_impl
+  File "adbc_driver_manager/_lib.pyx", line 1961, in adbc_driver_manager._lib._blocking_call_impl
+  File "adbc_driver_manager/_lib.pyx", line 1042, in adbc_driver_manager._lib.AdbcConnection.get_objects
+  File "adbc_driver_manager/_lib.pyx", line 262, in adbc_driver_manager._lib.check_error
+adbc_driver_manager.NotSupportedError: NOT_IMPLEMENTED: [libpq] Failed to execute query 'SELECT datname FROM pg_catalog.pg_database': ERROR:  not supported yet: catalog query; only exact ADBC type bootstrap is supported
+. SQLSTATE: 0A000
