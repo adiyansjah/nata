@@ -6,12 +6,16 @@ use sqlparser::{
     tokenizer::{Token, Tokenizer},
 };
 use std::collections::BTreeMap;
+mod helpers;
 #[derive(Clone)]
 pub(crate) struct State {
     pub transaction: u8,
     pub database: String,
     pub catalog: std::sync::Arc<crate::catalog::Snapshot>,
     settings: BTreeMap<String, String>,
+    reset_settings: BTreeMap<String, String>,
+    changed: std::collections::BTreeSet<String>,
+    startup_keys: std::collections::BTreeSet<String>,
 }
 pub(crate) struct Response {
     pub fields: Vec<(String, SqlType)>,
@@ -46,6 +50,9 @@ impl Default for State {
             transaction: b'I',
             database: "nata".into(),
             catalog: std::sync::Arc::default(),
+            reset_settings: BTreeMap::new(),
+            changed: Default::default(),
+            startup_keys: Default::default(),
             settings: [
                 ("server_version", "16.0"),
                 ("server_version_num", "160000"),
@@ -95,6 +102,9 @@ impl State {
             }
             self.set(&k.to_ascii_lowercase(), v)?;
         }
+        self.startup_keys = self.changed.clone();
+        self.reset_settings = self.settings.clone();
+        self.changed.clear();
         Ok(())
     }
     pub fn set(&mut self, key: &str, value: &str) -> Result<Option<(String, String)>, WireError> {
@@ -119,10 +129,22 @@ impl State {
         }
         let value: String = match key {
             "client_encoding" => "UTF8".into(),
-            "datestyle" => "ISO, MDY".into(),
+            "datestyle" => {
+                if l.contains("dmy") || (l == "iso" && self.settings["datestyle"].contains("DMY")) {
+                    "ISO, DMY"
+                } else {
+                    "ISO, MDY"
+                }
+                .into()
+            }
             "statement_timeout" => timeout_ms(value).expect("validated").to_string(),
+            "standard_conforming_strings"
+            | "default_transaction_read_only"
+            | "default_transaction_deferrable"
+            | "default_transaction_isolation" => l,
             _ => value.into(),
         };
+        self.changed.insert(key.into());
         self.settings.insert(key.into(), value.clone());
         if let Some(name) = status_name(key) {
             return Ok(Some((name.into(), value)));
@@ -149,6 +171,9 @@ impl State {
                 "25P02",
                 "current transaction is aborted; use ROLLBACK",
             ));
+        }
+        if let Some(response) = self.helpers(sql)? {
+            return Ok(Some(response));
         }
         refuse_helpers(sql)?;
         if let Some(response) = bootstrap(sql, &self.catalog, &self.database)? {
@@ -278,9 +303,15 @@ impl State {
                         [Token::SingleQuotedString(s)] => s.clone(),
                         tokens => tokens
                             .iter()
-                            .map(ToString::to_string)
+                            .map(|t| match t {
+                                Token::Word(w) if w.quote_style.is_none() => {
+                                    w.value.to_ascii_lowercase()
+                                }
+                                _ => t.to_string(),
+                            })
                             .collect::<Vec<_>>()
-                            .join(" "),
+                            .join(" ")
+                            .replace(" , ", ", "),
                     }
                 } else {
                     words[3..].join(" ")
@@ -291,14 +322,11 @@ impl State {
                 out.command = "SET".into();
             }
             ["show", key] => {
-                let value = self
-                    .settings
-                    .get(*key)
-                    .ok_or_else(|| WireError::unsupported("SHOW parameter"))?
-                    .clone();
-                out.fields.push((words[1].clone(), SqlType::Varchar));
+                let value = self.display_setting(key)?;
+                out.fields
+                    .push((status_name(key).unwrap_or(key).into(), SqlType::Varchar));
                 out.rows.push(vec![Some(value)]);
-                out.command = "SELECT 1".into();
+                out.command = "SHOW".into();
             }
             ["select", "1"] => {
                 out.fields.push(("?column?".into(), SqlType::Integer));
@@ -309,27 +337,6 @@ impl State {
                 out.fields.push(("version".into(), SqlType::Varchar));
                 out.rows
                     .push(vec![Some("PostgreSQL 16.0 (Nata compatibility)".into())]);
-                out.command = "SELECT 1".into();
-            }
-            ["select", "current_schema", "(", ")"] => {
-                out.fields.push(("current_schema".into(), SqlType::Varchar));
-                out.rows.push(vec![Some("public".into())]);
-                out.command = "SELECT 1".into();
-            }
-            ["select", "current_setting", "(", key, ")"] => {
-                if !matches!(group.get(3), Some(Token::SingleQuotedString(_))) {
-                    return Err(WireError::unsupported(
-                        "current_setting requires a string literal",
-                    ));
-                }
-                let value = self
-                    .settings
-                    .get(*key)
-                    .ok_or_else(|| WireError::unsupported("current_setting parameter"))?
-                    .clone();
-                out.fields
-                    .push(("current_setting".into(), SqlType::Varchar));
-                out.rows.push(vec![Some(value)]);
                 out.command = "SELECT 1".into();
             }
             _ => return Err(WireError::unsupported("session statement")),

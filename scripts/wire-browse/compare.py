@@ -5,6 +5,7 @@ remove unrelated PostgreSQL storage/builtins; every projection is recorded.
 """
 import argparse,json,re,socket,subprocess,time
 from pathlib import Path
+from helpers import compare_helpers
 import psycopg
 from psycopg import ClientCursor
 ap=argparse.ArgumentParser(description=__doc__)
@@ -46,13 +47,14 @@ def project(i,rows):
     if i==42:rows=[r for r in rows if r[0]=='pg_catalog' and r[1] in types]
     if i==55:rows=[r for r in rows if r[1] in types]
     return rows
-report=[];binary_report=[]
+report=[];binary_report=[];helper_report=[]
 try:
     for _ in range(200):
         try:
             with socket.create_connection(('127.0.0.1',port),timeout=.1):break
         except OSError:time.sleep(.02)
     with psycopg.connect(a.postgres,autocommit=True) as pg,psycopg.connect(f'host=127.0.0.1 port={port} dbname=nata user=nata',autocommit=True) as nata:
+        (a.work/'oracle-context.json').write_text(json.dumps(dict(postgres_version=pg.info.server_version,postgres_version_string=raw(pg,'SELECT version()')[1],nata_marker=raw(nata,'SHOW server_version')[1],settings_projection='15 supported entries only. SHOW/pg_settings descriptors and values compared where equal; Nata descriptions/category, restricted domains, boot/reset defaults, version marker and source policy are documented Nata metadata, not normalized PostgreSQL claims.'),indent=2)+'\n')
         pg_oids={};nata_oids={}
         for ns,name in [('public','all_types'),('other','all_types'),('Quoted Schema','Mixed Table'),('public','million')]:
             q=corpus[4]['sql'].replace('^(all_types)$','^('+name+')$').replace('^(public)$','^('+ns+')$')
@@ -119,8 +121,12 @@ try:
             result=dict(action=label,verdict='PASS' if po==no and pr==nr else 'FAIL',postgres_fields=po,nata_fields=no,postgres_rows_hex=hexadecimal(pr),nata_rows_hex=hexadecimal(nr))
             binary_report.append(result);print('binary '+label,result['verdict'],flush=True)
 
+        helper_report=compare_helpers(pg,nata,raw,binary_rows)
+        for r in helper_report:print("helper",r["sql"],r["verdict"],flush=True)
+
 finally:
     server.terminate();server.wait(timeout=10);log.close()
+    (a.work/'helper-comparison.json').write_text(json.dumps(helper_report,indent=2)+'\n')
     (a.work/'binary-comparison.json').write_text(json.dumps(binary_report,indent=2)+'\n')
     (a.work/'comparison.json').write_text(json.dumps(report,indent=2)+'\n')
     inventory=json.loads((root/'bench/results/raw/20261107-wire-catalog-reference/wcap-x86-1107-r2/inventory/inventory.json').read_text())
@@ -134,4 +140,4 @@ finally:
     assert len(classified)==36
     (a.work/'inventory-36.json').write_text(json.dumps(classified,indent=2)+'\n')
 
-raise SystemExit(int(any(r['verdict']!='PASS' for r in report) or any(r['verdict']!='PASS' for r in classified) or len(binary_report)!=3 or any(r['verdict']!='PASS' for r in binary_report)))
+raise SystemExit(int(not helper_report or any(r['verdict']!='PASS' for r in helper_report) or any(r['verdict']!='PASS' for r in report) or any(r['verdict']!='PASS' for r in classified) or len(binary_report)!=3 or any(r['verdict']!='PASS' for r in binary_report)))

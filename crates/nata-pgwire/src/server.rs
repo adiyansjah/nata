@@ -1228,6 +1228,10 @@ impl WireError {
             hint: None,
         }
     }
+    pub(crate) fn at(mut self, pos: Pos) -> Self {
+        self.pos = Some(pos);
+        self
+    }
     pub(crate) fn unsupported(what: &str) -> Self {
         Self::new("0A000", format!("not supported yet: {what}"))
     }

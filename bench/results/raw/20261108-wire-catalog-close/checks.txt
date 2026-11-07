@@ -1,0 +1,24 @@
+Code content SHA256: 224dfaa80ac330b2dfab67ef125a45706c3414b96b26564b0cbd885c5ff05aa9
+Base: 3e413b8; branch t3/wire-catalog-slice-close.
+Cargo env: CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+CARGO_TARGET_DIR=$HOME/tmp-slice-close/target; TMPDIR=$HOME/tmp-slice-close/tmp
+Final package clean after private-copy mutation cache contamination (cache-clean.log).
+cargo test --locked -p nata-pgwire -j 4: exit 0; 16 lib + 3 codec + 36 protocol + 4 reliability = 59 PASS, 0 FAIL/ignored.
+cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings: exit 0.
+cargo fmt --all --check: exit 0.
+cargo build --locked -p nata -j 4: exit 0; fresh real-source server for final matrix/oracle.
+WORK=$HOME/tmp-slice-close/clients RESULTS=$HOME/tmp-slice-close/matrix-verified bash scripts/wire-skeleton/run.sh: exit 1; 76 PASS, 0 FAIL, 9 not run.
+PATH used installed Python 3.12 (system 3.13 lacks ensurepip) and extracted JDK 21. Pinned client versions in versions.json.
+$WORK/wire-skeleton-venv/bin/python scripts/wire-browse/compare.py --nata $CARGO_TARGET_DIR/debug/nata --work $HOME/tmp-slice-close/oracle-verified --postgres <loopback PG17 fixture>: exit 0.
+PostgreSQL 17.11: 56/56 corpus; 3/3 inherited binary; 95/95 helpers (85 paired including 9 binary, 1 internal consistency, 9 negative); 36/36 coverage classifications.
+Wrong-setup oracle control: 3 FAIL, oracle exit 1; SET search_path string-literal quoting corrected to identifier syntax. Separate oracle-wrong-setup-control.json.
+python3 crates/nata-pgwire/mutate.py <seven new names> --filter helpers --work $HOME/tmp-slice-close/mutants: exit 0; 7 CAUGHT, 0 SURVIVED/MISSED, 0 INVALID; unmutated lib control PASS (three focused tests).
+All 85 mutation anchors occur exactly once. Full 85-mutant replay NOT RUN.
+Private mutation cache shared dependency artifacts through a local symlink; a final mutant test artifact contaminated a follow-up test run. Real sources were restored and unchanged. Package clean and final full tests/clippy/server rebuild passed. Do not share this target with future mutation work.
+python3 -m py_compile scripts/wire-browse/compare.py scripts/wire-browse/helpers.py crates/nata-pgwire/mutate.py: PASS.
+12 heavy step shell syntax checks: PASS. All six unprepared gate commands locally return exit 1, as required. Metadata service was NOT called locally.
+git diff --check: PASS. Cargo.lock unchanged. No new crates/unsafe code.
+No GCP, push, merge, model-bound-2/3, loaded resource, PG16, DBeaver or performance runs.
+Local PostgreSQL stopped after capture. Disk remained above 20 GB free; no stale-output deletion was needed for disk pressure.
+Local loopback endpoint spellings are pseudonymized in saved raw logs; no cloud identifiers were collected.
+scripts/check-leaks.sh --staged: PASS; git diff --cached --check: PASS after trimming log EOF blank lines.

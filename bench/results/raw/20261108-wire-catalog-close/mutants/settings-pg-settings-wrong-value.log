@@ -1,0 +1,35 @@
+
+running 3 tests
+test binary::tests::helpers_name_arrays_match_pg17_send_bytes ... ok
+test session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing ... ok
+test session::helpers::tests::settings_registry_reset_helpers_and_refusals ... FAILED
+
+failures:
+
+---- session::helpers::tests::settings_registry_reset_helpers_and_refusals stdout ----
+
+thread 'session::helpers::tests::settings_registry_reset_helpers_and_refusals' (2128479) panicked at crates/nata-pgwire/src/session/helpers.rs:692:9:
+assertion `left == right` failed
+  left: [[Some("statement_timeout"), Some("invented"), Some("ms"), Some("session"), Some("0"), Some("f")]]
+ right: [[Some("statement_timeout"), Some("1000"), Some("ms"), Some("session"), Some("0"), Some("f")]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    session::helpers::tests::settings_registry_reset_helpers_and_refusals
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-slice-close/mutants/ws/crates/nata-pgwire)
+warning: unused variable: `value`
+   --> crates/nata-pgwire/src/session/helpers.rs:544:19
+    |
+544 |         for (key, value) in entries {
+    |                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_value`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `nata-pgwire` (lib test) generated 1 warning (run `cargo fix --lib -p nata-pgwire --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 2.44s
+     Running unittests src/lib.rs (/home/dev/tmp-slice-close/mutants/target/debug/deps/nata_pgwire-30599b056c38b7df)
+error: test failed, to rerun pass `-p nata-pgwire --lib`

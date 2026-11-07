@@ -89,6 +89,8 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
             };
             oid.to_be_bytes().to_vec()
         }
+        // Metadata-only name[] from current_schemas. This does not add array SQL.
+        1003 => encode_names(s)?,
         23 | 26 => s
             .parse::<i32>()
             .map_err(|_| invalid())?
@@ -169,6 +171,65 @@ fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
         _ => return Err(WireError::unsupported("binary result type OID")),
     })
 }
+// Parse the server-generated PostgreSQL array spelling, preserving quoted names,
+// escaped quotes/backslashes and empty arrays. No NULL elements are generated.
+fn encode_names(s: &str) -> Result<Vec<u8>, WireError> {
+    let inner = s
+        .strip_prefix('{')
+        .and_then(|s| s.strip_suffix('}'))
+        .ok_or_else(invalid)?;
+    let mut names = vec![];
+    let mut chars = inner.chars().peekable();
+    while chars.peek().is_some() {
+        let mut name = String::new();
+        if chars.peek() == Some(&'"') {
+            chars.next();
+            loop {
+                match chars.next() {
+                    Some('"') => break,
+                    Some('\\') => name.push(chars.next().ok_or_else(invalid)?),
+                    Some(c) => name.push(c),
+                    None => return Err(invalid()),
+                }
+            }
+        } else {
+            while chars.peek().is_some_and(|c| *c != ',') {
+                name.push(chars.next().expect("peek"));
+            }
+            if name.is_empty() || name.eq_ignore_ascii_case("null") {
+                return Err(invalid());
+            }
+        }
+        names.push(name);
+        match chars.next() {
+            None => break,
+            Some(',') if chars.peek().is_some() => {}
+            _ => return Err(invalid()),
+        }
+    }
+    let mut out = vec![];
+    let dims = if names.is_empty() { 0i32 } else { 1 };
+    for n in [dims, 0, 19] {
+        out.extend(n.to_be_bytes());
+    }
+    if !names.is_empty() {
+        out.extend(
+            i32::try_from(names.len())
+                .map_err(|_| invalid())?
+                .to_be_bytes(),
+        );
+        out.extend(1i32.to_be_bytes());
+        for name in names {
+            out.extend(
+                i32::try_from(name.len())
+                    .map_err(|_| invalid())?
+                    .to_be_bytes(),
+            );
+            out.extend(name.as_bytes());
+        }
+    }
+    Ok(out)
+}
 // Only server-generated, checked packets enter this conversion.
 pub(crate) fn packet(mut p: Vec<u8>, desc: &[u8], fs: &[i16]) -> Result<Vec<u8>, WireError> {
     if fs.iter().all(|f| *f == 0) {
@@ -221,4 +282,29 @@ pub(crate) fn packet(mut p: Vec<u8>, desc: &[u8], fs: &[i16]) -> Result<Vec<u8>,
         out.extend(value);
     }
     codec::packet(b'D', &out).map_err(|_| invalid())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn helpers_name_arrays_match_pg17_send_bytes() {
+        // PostgreSQL 17.11: SELECT encode(array_send(current_schemas(...)),'hex')
+        // public/default, quoted schema, and empty search_path, respectively.
+        for (text, expected) in [
+            (
+                "{pg_catalog,public}",
+                "00000001000000000000001300000002000000010000000a70675f636174616c6f67000000067075626c6963",
+            ),
+            (
+                "{\"Quoted Schema\"}",
+                "00000001000000000000001300000001000000010000000d51756f74656420536368656d61",
+            ),
+            ("{}", "000000000000000000000013"),
+        ] {
+            let bytes = encode(1003, text).unwrap_or_else(|_| panic!("metadata names"));
+            let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
+            assert_eq!(hex, expected);
+        }
+    }
 }

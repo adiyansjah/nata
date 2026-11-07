@@ -1,0 +1,109 @@
+{
+  "verdict": "FAIL as required",
+  "failures": 3,
+  "reason": "SQL SET treats a single-quoted schema name as one identifier. The harness wrongly embedded double quotes inside that literal. Correct quoted identifier syntax is SET search_path=\"Quoted Schema\". These failures are not part of the final matched corpus.",
+  "records": [
+    {
+      "sql": "SELECT current_schema()",
+      "setup": "SET search_path='\"Quoted Schema\"'",
+      "format": "binary",
+      "verdict": "FAIL",
+      "postgres_fields": [
+        [
+          "current_schema",
+          19,
+          64,
+          -1,
+          1
+        ]
+      ],
+      "nata_fields": [
+        [
+          "current_schema",
+          19,
+          64,
+          -1,
+          1
+        ]
+      ],
+      "postgres_rows_hex": [
+        [
+          null
+        ]
+      ],
+      "nata_rows_hex": [
+        [
+          "51756f74656420536368656d61"
+        ]
+      ]
+    },
+    {
+      "sql": "SELECT current_schemas(true)",
+      "setup": "SET search_path='\"Quoted Schema\"'",
+      "format": "binary",
+      "verdict": "FAIL",
+      "postgres_fields": [
+        [
+          "current_schemas",
+          1003,
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "nata_fields": [
+        [
+          "current_schemas",
+          1003,
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "postgres_rows_hex": [
+        [
+          "00000001000000000000001300000001000000010000000a70675f636174616c6f67"
+        ]
+      ],
+      "nata_rows_hex": [
+        [
+          "00000001000000000000001300000002000000010000000a70675f636174616c6f670000000d51756f74656420536368656d61"
+        ]
+      ]
+    },
+    {
+      "sql": "SELECT current_schemas(false)",
+      "setup": "SET search_path='\"Quoted Schema\"'",
+      "format": "binary",
+      "verdict": "FAIL",
+      "postgres_fields": [
+        [
+          "current_schemas",
+          1003,
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "nata_fields": [
+        [
+          "current_schemas",
+          1003,
+          -1,
+          -1,
+          1
+        ]
+      ],
+      "postgres_rows_hex": [
+        [
+          "000000000000000000000013"
+        ]
+      ],
+      "nata_rows_hex": [
+        [
+          "00000001000000000000001300000001000000010000000d51756f74656420536368656d61"
+        ]
+      ]
+    }
+  ]
+}

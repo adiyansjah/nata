@@ -1,0 +1,4096 @@
+[
+  {
+    "sql": "SHOW application_name",
+    "postgres_sql": "SHOW application_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "paired"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "paired"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('application_name')",
+    "postgres_sql": "SELECT current_setting('application_name')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "paired"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "paired"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='application_name' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='application_name' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "application_name",
+        "paired",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "application_name",
+        "paired",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW client_encoding",
+    "postgres_sql": "SHOW client_encoding",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "client_encoding",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "client_encoding",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "UTF8"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "UTF8"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('client_encoding')",
+    "postgres_sql": "SELECT current_setting('client_encoding')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "UTF8"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "UTF8"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='client_encoding' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='client_encoding' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "client_encoding",
+        "UTF8",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "client_encoding",
+        "UTF8",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW DateStyle",
+    "postgres_sql": "SHOW DateStyle",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('DateStyle')",
+    "postgres_sql": "SELECT current_setting('DateStyle')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='DateStyle' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='DateStyle' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "DateStyle",
+        "ISO, MDY",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "DateStyle",
+        "ISO, MDY",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW TimeZone",
+    "postgres_sql": "SHOW TimeZone",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "TimeZone",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "TimeZone",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "UTC"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "UTC"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('TimeZone')",
+    "postgres_sql": "SELECT current_setting('TimeZone')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "UTC"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "UTC"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='TimeZone' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='TimeZone' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "TimeZone",
+        "UTC",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "TimeZone",
+        "UTC",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW extra_float_digits",
+    "postgres_sql": "SHOW extra_float_digits",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "extra_float_digits",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "extra_float_digits",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "3"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('extra_float_digits')",
+    "postgres_sql": "SELECT current_setting('extra_float_digits')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "3"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "3"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='extra_float_digits' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='extra_float_digits' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "extra_float_digits",
+        "3",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "extra_float_digits",
+        "3",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW search_path",
+    "postgres_sql": "SHOW search_path",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "search_path",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "search_path",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "public"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "public"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('search_path')",
+    "postgres_sql": "SELECT current_setting('search_path')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "public"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "public"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='search_path' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='search_path' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "search_path",
+        "public",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "search_path",
+        "public",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW statement_timeout",
+    "postgres_sql": "SHOW statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "0"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('statement_timeout')",
+    "postgres_sql": "SELECT current_setting('statement_timeout')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "0"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='statement_timeout' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='statement_timeout' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "statement_timeout",
+        "0",
+        "ms",
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "statement_timeout",
+        "0",
+        "ms",
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW standard_conforming_strings",
+    "postgres_sql": "SHOW standard_conforming_strings",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "standard_conforming_strings",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "standard_conforming_strings",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "on"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "on"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('standard_conforming_strings')",
+    "postgres_sql": "SELECT current_setting('standard_conforming_strings')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "on"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "on"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='standard_conforming_strings' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='standard_conforming_strings' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "standard_conforming_strings",
+        "on",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "standard_conforming_strings",
+        "on",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW integer_datetimes",
+    "postgres_sql": "SHOW integer_datetimes",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "integer_datetimes",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "integer_datetimes",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "on"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "on"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('integer_datetimes')",
+    "postgres_sql": "SELECT current_setting('integer_datetimes')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "on"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "on"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='integer_datetimes' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='integer_datetimes' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "integer_datetimes",
+        "on",
+        null,
+        "internal",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "integer_datetimes",
+        "on",
+        null,
+        "internal",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW default_transaction_read_only",
+    "postgres_sql": "SHOW default_transaction_read_only",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "default_transaction_read_only",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "default_transaction_read_only",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('default_transaction_read_only')",
+    "postgres_sql": "SELECT current_setting('default_transaction_read_only')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_read_only' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_read_only' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "default_transaction_read_only",
+        "off",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "default_transaction_read_only",
+        "off",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW default_transaction_isolation",
+    "postgres_sql": "SHOW default_transaction_isolation",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "default_transaction_isolation",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "default_transaction_isolation",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "read committed"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "read committed"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('default_transaction_isolation')",
+    "postgres_sql": "SELECT current_setting('default_transaction_isolation')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "read committed"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "read committed"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_isolation' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_isolation' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "default_transaction_isolation",
+        "read committed",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "default_transaction_isolation",
+        "read committed",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW default_transaction_deferrable",
+    "postgres_sql": "SHOW default_transaction_deferrable",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "default_transaction_deferrable",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "default_transaction_deferrable",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('default_transaction_deferrable')",
+    "postgres_sql": "SELECT current_setting('default_transaction_deferrable')",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_deferrable' ORDER BY name",
+    "postgres_sql": "SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_deferrable' ORDER BY name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "setting",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "unit",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "context",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "pending_restart",
+        16,
+        1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "default_transaction_deferrable",
+        "off",
+        null,
+        "user",
+        "f"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "default_transaction_deferrable",
+        "off",
+        null,
+        "user",
+        "f"
+      ]
+    ]
+  },
+  {
+    "sql": "SET statement_timeout='1s'",
+    "postgres_sql": "SET statement_timeout='1s'",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW statement_timeout",
+    "postgres_sql": "SHOW statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "1s"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "1s"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('statement_timeout', false)",
+    "postgres_sql": "SELECT current_setting('statement_timeout', false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "1s"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "1s"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT set_config('statement_timeout','1500ms',false)",
+    "postgres_sql": "SELECT set_config('statement_timeout','1500ms',false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "1500ms"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "1500ms"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW statement_timeout",
+    "postgres_sql": "SHOW statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "1500ms"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "1500ms"
+      ]
+    ]
+  },
+  {
+    "sql": "RESET statement_timeout",
+    "postgres_sql": "RESET statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW statement_timeout",
+    "postgres_sql": "SHOW statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "0"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT set_config('application_name','helper',false)",
+    "postgres_sql": "SELECT set_config('application_name','helper',false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "helper"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "helper"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('APPLICATION_NAME',true)",
+    "postgres_sql": "SELECT current_setting('APPLICATION_NAME',true)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "helper"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "helper"
+      ]
+    ]
+  },
+  {
+    "sql": "RESET application_name",
+    "postgres_sql": "RESET application_name",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW application_name",
+    "postgres_sql": "SHOW application_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        ""
+      ]
+    ],
+    "nata_rows": [
+      [
+        ""
+      ]
+    ]
+  },
+  {
+    "sql": "SET DateStyle='ISO, DMY'",
+    "postgres_sql": "SET DateStyle='ISO, DMY'",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW DateStyle",
+    "postgres_sql": "SHOW DateStyle",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "ISO, DMY"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "ISO, DMY"
+      ]
+    ]
+  },
+  {
+    "sql": "SET DateStyle='ISO'",
+    "postgres_sql": "SET DateStyle='ISO'",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW DateStyle",
+    "postgres_sql": "SHOW DateStyle",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "ISO, DMY"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "ISO, DMY"
+      ]
+    ]
+  },
+  {
+    "sql": "SET DateStyle=DEFAULT",
+    "postgres_sql": "SET DateStyle=DEFAULT",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW DateStyle",
+    "postgres_sql": "SHOW DateStyle",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "DateStyle",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "ISO, MDY"
+      ]
+    ]
+  },
+  {
+    "sql": "SET search_path=other, public",
+    "postgres_sql": "SET search_path=other, public",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW search_path",
+    "postgres_sql": "SHOW search_path",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "search_path",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "search_path",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "other, public"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "other, public"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schema()",
+    "postgres_sql": "SELECT current_schema()",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "other"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "other"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(false)",
+    "postgres_sql": "SELECT current_schemas(false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "{other,public}"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "{other,public}"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(true)",
+    "postgres_sql": "SELECT current_schemas(true)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "{pg_catalog,other,public}"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "{pg_catalog,other,public}"
+      ]
+    ]
+  },
+  {
+    "sql": "SET search_path='missing'",
+    "postgres_sql": "SET search_path='missing'",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SELECT current_schema()",
+    "postgres_sql": "SELECT current_schema()",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        null
+      ]
+    ],
+    "nata_rows": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(false)",
+    "postgres_sql": "SELECT current_schemas(false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "{}"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "{}"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_setting('not_a_setting',true)",
+    "postgres_sql": "SELECT current_setting('not_a_setting',true)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_setting",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        null
+      ]
+    ],
+    "nata_rows": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT set_config('default_transaction_read_only','OFF',false)",
+    "postgres_sql": "SELECT set_config('default_transaction_read_only','OFF',false)",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "set_config",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW default_transaction_read_only",
+    "postgres_sql": "SHOW default_transaction_read_only",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "default_transaction_read_only",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "default_transaction_read_only",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "off"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "off"
+      ]
+    ]
+  },
+  {
+    "sql": "RESET ALL",
+    "postgres_sql": "RESET ALL",
+    "verdict": "PASS",
+    "postgres_fields": [],
+    "nata_fields": [],
+    "postgres_rows": [],
+    "nata_rows": []
+  },
+  {
+    "sql": "SHOW application_name",
+    "postgres_sql": "SHOW application_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "application_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        ""
+      ]
+    ],
+    "nata_rows": [
+      [
+        ""
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW statement_timeout",
+    "postgres_sql": "SHOW statement_timeout",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "statement_timeout",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "0"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "0"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schema()",
+    "setup": "SET search_path=public",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "7075626c6963"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "7075626c6963"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(true)",
+    "setup": "SET search_path=public",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "00000001000000000000001300000002000000010000000a70675f636174616c6f67000000067075626c6963"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "00000001000000000000001300000002000000010000000a70675f636174616c6f67000000067075626c6963"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(false)",
+    "setup": "SET search_path=public",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "0000000100000000000000130000000100000001000000067075626c6963"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "0000000100000000000000130000000100000001000000067075626c6963"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schema()",
+    "setup": "SET search_path=\"Quoted Schema\"",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "51756f74656420536368656d61"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "51756f74656420536368656d61"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(true)",
+    "setup": "SET search_path=\"Quoted Schema\"",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "00000001000000000000001300000002000000010000000a70675f636174616c6f670000000d51756f74656420536368656d61"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "00000001000000000000001300000002000000010000000a70675f636174616c6f670000000d51756f74656420536368656d61"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(false)",
+    "setup": "SET search_path=\"Quoted Schema\"",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "00000001000000000000001300000001000000010000000d51756f74656420536368656d61"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "00000001000000000000001300000001000000010000000d51756f74656420536368656d61"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schema()",
+    "setup": "SET search_path=''",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schema",
+        19,
+        64,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        null
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        null
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(true)",
+    "setup": "SET search_path=''",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "00000001000000000000001300000001000000010000000a70675f636174616c6f67"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "00000001000000000000001300000001000000010000000a70675f636174616c6f67"
+      ]
+    ]
+  },
+  {
+    "sql": "SELECT current_schemas(false)",
+    "setup": "SET search_path=''",
+    "format": "binary",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "current_schemas",
+        1003,
+        -1,
+        -1,
+        1
+      ]
+    ],
+    "postgres_rows_hex": [
+      [
+        "000000000000000000000013"
+      ]
+    ],
+    "nata_rows_hex": [
+      [
+        "000000000000000000000013"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW CATALOGS",
+    "postgres_sql": "SELECT catalog_name::text FROM information_schema.information_schema_catalog_name ORDER BY catalog_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "nata"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "nata"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW SCHEMAS",
+    "postgres_sql": "SELECT catalog_name::text,schema_name::text FROM information_schema.schemata WHERE schema_name IN ('empty','other','public','Quoted Schema') ORDER BY catalog_name,schema_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "schema_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "schema_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "nata",
+        "Quoted Schema"
+      ],
+      [
+        "nata",
+        "empty"
+      ],
+      [
+        "nata",
+        "other"
+      ],
+      [
+        "nata",
+        "public"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "nata",
+        "Quoted Schema"
+      ],
+      [
+        "nata",
+        "empty"
+      ],
+      [
+        "nata",
+        "other"
+      ],
+      [
+        "nata",
+        "public"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW SCHEMAS FROM nata",
+    "postgres_sql": "SELECT catalog_name::text,schema_name::text FROM information_schema.schemata WHERE schema_name IN ('empty','other','public','Quoted Schema') ORDER BY catalog_name,schema_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "schema_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "catalog_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "schema_name",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "nata",
+        "Quoted Schema"
+      ],
+      [
+        "nata",
+        "empty"
+      ],
+      [
+        "nata",
+        "other"
+      ],
+      [
+        "nata",
+        "public"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "nata",
+        "Quoted Schema"
+      ],
+      [
+        "nata",
+        "empty"
+      ],
+      [
+        "nata",
+        "other"
+      ],
+      [
+        "nata",
+        "public"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW TABLES",
+    "postgres_sql": "SELECT table_catalog::text,table_schema::text,table_name::text,table_type::text FROM information_schema.tables WHERE table_schema='public' ORDER BY table_catalog,table_schema,table_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "table_catalog",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_schema",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_type",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "table_catalog",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_schema",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_type",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "nata",
+        "public",
+        "all_types",
+        "BASE TABLE"
+      ],
+      [
+        "nata",
+        "public",
+        "million",
+        "BASE TABLE"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "nata",
+        "public",
+        "all_types",
+        "BASE TABLE"
+      ],
+      [
+        "nata",
+        "public",
+        "million",
+        "BASE TABLE"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW TABLES FROM nata.public",
+    "postgres_sql": "SELECT table_catalog::text,table_schema::text,table_name::text,table_type::text FROM information_schema.tables WHERE table_schema='public' ORDER BY table_catalog,table_schema,table_name",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "table_catalog",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_schema",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_type",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "table_catalog",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_schema",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "table_type",
+        25,
+        -1,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "nata",
+        "public",
+        "all_types",
+        "BASE TABLE"
+      ],
+      [
+        "nata",
+        "public",
+        "million",
+        "BASE TABLE"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "nata",
+        "public",
+        "all_types",
+        "BASE TABLE"
+      ],
+      [
+        "nata",
+        "public",
+        "million",
+        "BASE TABLE"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW COLUMNS FROM public.all_types",
+    "postgres_sql": "SELECT column_name::text,data_type::text,is_nullable::text,ordinal_position::int4,numeric_precision::int4,numeric_scale::int4 FROM information_schema.columns WHERE table_schema='public' AND table_name='all_types' ORDER BY ordinal_position",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "tiny",
+        "text",
+        "YES",
+        "1",
+        null,
+        null
+      ],
+      [
+        "b",
+        "boolean",
+        "YES",
+        "2",
+        null,
+        null
+      ],
+      [
+        "s",
+        "smallint",
+        "YES",
+        "3",
+        "16",
+        "0"
+      ],
+      [
+        "i",
+        "integer",
+        "YES",
+        "4",
+        "32",
+        "0"
+      ],
+      [
+        "l",
+        "bigint",
+        "YES",
+        "5",
+        "64",
+        "0"
+      ],
+      [
+        "f",
+        "real",
+        "YES",
+        "6",
+        "24",
+        null
+      ],
+      [
+        "d",
+        "double precision",
+        "YES",
+        "7",
+        "53",
+        null
+      ],
+      [
+        "n",
+        "numeric",
+        "YES",
+        "8",
+        "18",
+        "3"
+      ],
+      [
+        "day",
+        "date",
+        "YES",
+        "9",
+        null,
+        null
+      ],
+      [
+        "txt",
+        "text",
+        "YES",
+        "10",
+        null,
+        null
+      ]
+    ],
+    "nata_rows": [
+      [
+        "tiny",
+        "text",
+        "YES",
+        "1",
+        null,
+        null
+      ],
+      [
+        "b",
+        "boolean",
+        "YES",
+        "2",
+        null,
+        null
+      ],
+      [
+        "s",
+        "smallint",
+        "YES",
+        "3",
+        "16",
+        "0"
+      ],
+      [
+        "i",
+        "integer",
+        "YES",
+        "4",
+        "32",
+        "0"
+      ],
+      [
+        "l",
+        "bigint",
+        "YES",
+        "5",
+        "64",
+        "0"
+      ],
+      [
+        "f",
+        "real",
+        "YES",
+        "6",
+        "24",
+        null
+      ],
+      [
+        "d",
+        "double precision",
+        "YES",
+        "7",
+        "53",
+        null
+      ],
+      [
+        "n",
+        "numeric",
+        "YES",
+        "8",
+        "18",
+        "3"
+      ],
+      [
+        "day",
+        "date",
+        "YES",
+        "9",
+        null,
+        null
+      ],
+      [
+        "txt",
+        "text",
+        "YES",
+        "10",
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "sql": "DESCRIBE public.all_types",
+    "postgres_sql": "SELECT column_name::text,data_type::text,is_nullable::text,ordinal_position::int4,numeric_precision::int4,numeric_scale::int4 FROM information_schema.columns WHERE table_schema='public' AND table_name='all_types' ORDER BY ordinal_position",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "tiny",
+        "text",
+        "YES",
+        "1",
+        null,
+        null
+      ],
+      [
+        "b",
+        "boolean",
+        "YES",
+        "2",
+        null,
+        null
+      ],
+      [
+        "s",
+        "smallint",
+        "YES",
+        "3",
+        "16",
+        "0"
+      ],
+      [
+        "i",
+        "integer",
+        "YES",
+        "4",
+        "32",
+        "0"
+      ],
+      [
+        "l",
+        "bigint",
+        "YES",
+        "5",
+        "64",
+        "0"
+      ],
+      [
+        "f",
+        "real",
+        "YES",
+        "6",
+        "24",
+        null
+      ],
+      [
+        "d",
+        "double precision",
+        "YES",
+        "7",
+        "53",
+        null
+      ],
+      [
+        "n",
+        "numeric",
+        "YES",
+        "8",
+        "18",
+        "3"
+      ],
+      [
+        "day",
+        "date",
+        "YES",
+        "9",
+        null,
+        null
+      ],
+      [
+        "txt",
+        "text",
+        "YES",
+        "10",
+        null,
+        null
+      ]
+    ],
+    "nata_rows": [
+      [
+        "tiny",
+        "text",
+        "YES",
+        "1",
+        null,
+        null
+      ],
+      [
+        "b",
+        "boolean",
+        "YES",
+        "2",
+        null,
+        null
+      ],
+      [
+        "s",
+        "smallint",
+        "YES",
+        "3",
+        "16",
+        "0"
+      ],
+      [
+        "i",
+        "integer",
+        "YES",
+        "4",
+        "32",
+        "0"
+      ],
+      [
+        "l",
+        "bigint",
+        "YES",
+        "5",
+        "64",
+        "0"
+      ],
+      [
+        "f",
+        "real",
+        "YES",
+        "6",
+        "24",
+        null
+      ],
+      [
+        "d",
+        "double precision",
+        "YES",
+        "7",
+        "53",
+        null
+      ],
+      [
+        "n",
+        "numeric",
+        "YES",
+        "8",
+        "18",
+        "3"
+      ],
+      [
+        "day",
+        "date",
+        "YES",
+        "9",
+        null,
+        null
+      ],
+      [
+        "txt",
+        "text",
+        "YES",
+        "10",
+        null,
+        null
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW COLUMNS FROM nata.\"Quoted Schema\".\"Mixed Table\"",
+    "postgres_sql": "SELECT column_name::text,data_type::text,is_nullable::text,ordinal_position::int4,numeric_precision::int4,numeric_scale::int4 FROM information_schema.columns WHERE table_schema='Quoted Schema' AND table_name='Mixed Table' ORDER BY ordinal_position",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "Mixed Column",
+        "numeric",
+        "YES",
+        "1",
+        "10",
+        "2"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "Mixed Column",
+        "numeric",
+        "YES",
+        "1",
+        "10",
+        "2"
+      ]
+    ]
+  },
+  {
+    "sql": "DESCRIBE nata.\"Quoted Schema\".\"Mixed Table\"",
+    "postgres_sql": "SELECT column_name::text,data_type::text,is_nullable::text,ordinal_position::int4,numeric_precision::int4,numeric_scale::int4 FROM information_schema.columns WHERE table_schema='Quoted Schema' AND table_name='Mixed Table' ORDER BY ordinal_position",
+    "verdict": "PASS",
+    "postgres_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "nata_fields": [
+      [
+        "column_name",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "data_type",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "is_nullable",
+        25,
+        -1,
+        -1
+      ],
+      [
+        "ordinal_position",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_precision",
+        23,
+        4,
+        -1
+      ],
+      [
+        "numeric_scale",
+        23,
+        4,
+        -1
+      ]
+    ],
+    "postgres_rows": [
+      [
+        "Mixed Column",
+        "numeric",
+        "YES",
+        "1",
+        "10",
+        "2"
+      ]
+    ],
+    "nata_rows": [
+      [
+        "Mixed Column",
+        "numeric",
+        "YES",
+        "1",
+        "10",
+        "2"
+      ]
+    ]
+  },
+  {
+    "sql": "SHOW ALL registry consistency",
+    "verdict": "PASS",
+    "rows": [
+      [
+        "application_name",
+        "",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "client_encoding",
+        "UTF8",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "DateStyle",
+        "ISO, MDY",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "default_transaction_deferrable",
+        "off",
+        "Compatibility value; no writes or transaction isolation guarantees."
+      ],
+      [
+        "default_transaction_isolation",
+        "read committed",
+        "Compatibility value; no writes or transaction isolation guarantees."
+      ],
+      [
+        "default_transaction_read_only",
+        "off",
+        "Compatibility value; no writes or transaction isolation guarantees."
+      ],
+      [
+        "extra_float_digits",
+        "3",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "integer_datetimes",
+        "on",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "search_path",
+        "public",
+        "Registered schema resolution order."
+      ],
+      [
+        "server_encoding",
+        "UTF8",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "server_version",
+        "16.0",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "server_version_num",
+        "160000",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "standard_conforming_strings",
+        "on",
+        "Restricted Nata PostgreSQL compatibility setting; see serve.md."
+      ],
+      [
+        "statement_timeout",
+        "0",
+        "Statement deadline through Sync, including suspended portals."
+      ],
+      [
+        "TimeZone",
+        "UTC",
+        "Compatibility value; Date32 has no time zone."
+      ]
+    ],
+    "registry": [
+      [
+        "DateStyle",
+        "ISO, MDY"
+      ],
+      [
+        "TimeZone",
+        "UTC"
+      ],
+      [
+        "application_name",
+        ""
+      ],
+      [
+        "client_encoding",
+        "UTF8"
+      ],
+      [
+        "default_transaction_deferrable",
+        "off"
+      ],
+      [
+        "default_transaction_isolation",
+        "read committed"
+      ],
+      [
+        "default_transaction_read_only",
+        "off"
+      ],
+      [
+        "extra_float_digits",
+        "3"
+      ],
+      [
+        "integer_datetimes",
+        "on"
+      ],
+      [
+        "search_path",
+        "public"
+      ],
+      [
+        "server_encoding",
+        "UTF8"
+      ],
+      [
+        "server_version",
+        "16.0"
+      ],
+      [
+        "server_version_num",
+        "160000"
+      ],
+      [
+        "standard_conforming_strings",
+        "on"
+      ],
+      [
+        "statement_timeout",
+        "0"
+      ]
+    ]
+  },
+  {
+    "sql": "SET work_mem=1024",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "RESET work_mem",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "SHOW work_mem",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "SELECT set_config('application_name','local',true)",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "SET LOCAL application_name=local",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "SELECT * FROM pg_settings",
+    "verdict": "PASS",
+    "sqlstate": "0A000",
+    "expected": "0A000",
+    "position": null
+  },
+  {
+    "sql": "DESCRIBE public.missing",
+    "verdict": "PASS",
+    "sqlstate": "42P01",
+    "expected": "42P01",
+    "position": "10"
+  },
+  {
+    "sql": "SHOW TABLES FROM missing",
+    "verdict": "PASS",
+    "sqlstate": "3F000",
+    "expected": "3F000",
+    "position": "18"
+  },
+  {
+    "sql": "SHOW SCHEMAS FROM missing",
+    "verdict": "PASS",
+    "sqlstate": "3D000",
+    "expected": "3D000",
+    "position": "19"
+  }
+]

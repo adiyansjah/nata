@@ -432,3 +432,122 @@ The three oracle failures were version gaps in the comparison script, not Nata: 
 target) uses int2, and statements 8 and 16 return no rows either way. Fixed in `a956048` and `ba2df5a`; the PG17 local run
 still passes 56/56 plus the three binary cases. The fixed oracle is rerun on both CPU types as the last steps of the step 2b
 timing job (runs `perf2b-c3d`, `perf2b-n4a`). PG15 is not PG16: PG16 parity stays open.
+
+## Slice-close implementation handoff: item 1 (2026-11-08)
+
+**Partial; slice 10 remains OPEN.** Item 1 is implemented and checked locally.
+Stop under the brief's one-turn limit before item 2: a production lifecycle model
+requires extracting the real `server/fetch.rs` Gate/Run/Deadline transitions and
+`server.rs` cancel-slot/Sync deadline ownership behind a loom-compatible seam,
+then demonstrating reachable races and mutant failures. A separate toy model
+would not satisfy the card. Items 2–7 are recorded below, not silently omitted.
+No GCP, push, merge, timing run, new dependency, Cargo.lock change, unsafe code,
+ADR amendment or target change. R22, R24, R25, P14 and P16 remain open.
+
+| Item | Rule | Numbers / verdict | Command / remaining implementation |
+|---|---|---|---|
+| 1. SHOW/DESCRIBE/settings | Snapshot-backed values and exact typed metadata; one validated session registry; unsupported settings fail clearly; zero unexplained PG17 mismatches | **PASS for the documented bounded grammar**: 95/95 new cases (85 PG pairs, including 9 binary cases; 1 registry-consistency check; 9 explicit refusals). Existing corpus 56/56, binary controls 3/3, missing-inventory classifications 36/36 remain PASS. Oracle PostgreSQL 17.11 from `/usr/lib/postgresql/17`. | `scripts/wire-browse/compare.py` command below; raw `oracle/` |
+| 2. Real portal loom | Bound 2 local / 3 heavy; inert suspended cancel, timeout through Sync, exactly-once cleanup, token replacement, lost-wake/double-release/stale-token mutants | **NOT RUN / NOT PREPARED**; existing 36 protocol tests remain passing evidence, not a loom substitute | Heavy `portal-loom-bound-3` is an explicit exit-1 blocker. Implement the production seam and race mutants before replacing it. Loom is already in Cargo.lock; no dependency approval was assumed. |
+| 3. Loaded resources / large catalog | 16 MiB metadata cap; inherited two 64 KiB queued buffers, 5 s idle expiry and 2 s cleanup/send bounds; 64 sessions, 1/8 workers; 64/1,024/10,000 tables, many schemas/columns; fresh/default and forced FD limits; healthy-query admission progress | **NOT RUN / NOT PREPARED**. Reference record explicitly leaves new RSS/scratch adequacy and full-client contention budgets unfrozen; no invented RSS threshold | Heavy `resource-gates` exits 1. Add independent scratch/RSS/FD/admission sampling, cap-removal controls and large-catalog reference controls; settle any required reference-derived budget with the parent before Nata measurements. |
+| 4. Nine API cells | Matrix exits 1 unless every row is PASS; raw protocol probes never relabel a client-specific gap | **76 PASS / 0 FAIL / 9 not run; exit 1, acceptance NOT MET**. No client-specific new probes in this turn | `WORK=... RESULTS=... bash scripts/wire-skeleton/run.sh` below. Remaining: positive-fetch for psql/psycopg/pgcli/ADBC; malformed-frame for all five clients. Determine APIs/probe feasibility individually, record precise inability reasons where applicable; keep exit rule. Heavy `client-api-gaps` exits 1. |
+| 5. PG16 | Official PGDG apt repository on Debian 12; record actual major/version and compare the same corpus, no PG15 substitution | **NOT RUN / NOT PREPARED**, including installer dry-run | Heavy `pg16-parity` exits 1. Add explicit version-selected installation/cluster mode to the oracle wrapper, package/source verification, local dry-run controls and both-CPU replay. PG17 evidence does not certify the advertised PG16 marker. |
+| 6. DBeaver / R24 | Shipped driver/version plus connection-init and navigator SQL captured faithfully; actual UI mandatory for UI certification | **NOT RUN / NOT PREPARED**; real UI unavailable, R24 OPEN | Heavy `dbeaver-r24` exits 1. Identify the actual shipped pgjdbc and DBeaver source version, replay its documented init/navigator queries headlessly, disclose the lack of UI capture; generic JDBC remains separate evidence. |
+| 7. P16 | Frozen streaming median ≤1.10x matched PG per client/arm/CPU at 1/8 workers; paired pre-change small-query regression ≤1.20x, planted slowdown fails | **NOT RUN / NOT PREPARED**; no local timing, no threshold changes | Heavy `p16-streaming-and-regression` exits 1. Build the same-client/fixture/sink alternating primary/twin harness, correct-output controls, min/median/spread and miss profiles; run only on the parent's two heavy VMs. |
+
+The item-1 grammar adds the card's SHOW forms and DESCRIBE with qualified/quoted
+registered names, search-path resolution and positioned missing-object errors.
+The same live registry supplies SET, RESET name/ALL, SET name=DEFAULT, SHOW ALL,
+current_setting's missing_ok and literal set_config(...,false), plus explicit
+pg_settings projections with optional `WHERE name='literal'` / `ORDER BY name`.
+Transaction-local settings and unsupported shapes stay 0A000. pg_settings reports
+Nata's restricted domains, defaults, descriptions and version marker, rather
+than pretending to expose PostgreSQL's entire configuration. Startup values are
+retained for RESET. Timeout SHOW/current_setting uses PostgreSQL's display units;
+pg_settings retains milliseconds. ISO DateStyle retains MDY/DMY reporting and
+ISO alone preserves the current order. `current_schema()` no longer invents
+public without a registered schema; current_schemas uses the effective path,
+including exact PostgreSQL name-array text/binary output.
+
+**Checks:** `cargo test --locked -p nata-pgwire -j 4`: **59 PASS**
+(16 library, 3 codec, 36 protocol, 4 reliability; zero failed/ignored).
+`cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings`,
+workspace fmt check, Python compilation, all 12 heavy-step shell syntax checks,
+whitespace and staged leak scan PASS. Metadata fuzz smoke now also evaluates
+session helpers; the million-case heavy command is retained, not run locally.
+The local matrix exit **1** is a real remaining acceptance failure.
+
+**Mutants:** **7 CAUGHT / 0 MISSED / 0 INVALID**, with the unmutated focused
+three-test control PASS: settings-name-array-wrong-element,
+settings-reset-loses-startup, settings-missing-ok-invented-empty,
+settings-timeout-display-units, settings-datestyle-ignores-dmy,
+show-describe-loses-column, settings-pg-settings-wrong-value.
+All **85/85** mutation anchors apply once. Full 85-mutant and both-CPU runs are
+NOT RUN; the parent's prior 78/78 CPU results do not certify these additions.
+The oracle also rejected three incorrectly quoted harness setup cases; corrected
+identifier syntax passes. That red control is retained separately. Sharing a
+local target cache with the private-copy mutant run left a mutant test artifact;
+package-specific clean and final real-source tests/clippy remove that cache
+contamination. Sources were unchanged by the private-copy runner. Raw commands,
+logs and the distinction between controls and final passes are in
+[raw evidence](raw/20261108-wire-catalog-close/).
+
+Reproduce serially (Python 3.12 here because system Python lacked ensurepip;
+extracted local JDK 21, pgjdbc 42.7.14 and the script's pinned clients):
+
+```sh
+export CARGO_BUILD_JOBS=4 CARGO_INCREMENTAL=0
+export CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+export CARGO_TARGET_DIR="$HOME/tmp-slice-close/target"
+export TMPDIR="$HOME/tmp-slice-close/tmp"
+export WORK="$HOME/tmp-slice-close/clients"
+export RESULTS="$HOME/tmp-slice-close/matrix"
+# PATH must contain a Python with venv/ensurepip, JDK 21, psql and pg_config.
+bash scripts/wire-skeleton/run.sh  # expected exit 1: nine non-PASS cells
+cargo test --locked -p nata-pgwire -j 4
+cargo clippy --locked -p nata-pgwire --all-targets -j 4 -- -D warnings
+cargo fmt --all --check
+# Initialize a local PG17 trust cluster with scripts/wirecapture/fixture.sql first.
+"$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/compare.py \
+  --nata "$CARGO_TARGET_DIR/debug/nata" \
+  --work "$HOME/tmp-slice-close/oracle-replay" \
+  --postgres 'host=localhost port=55432 user=nata dbname=nata'
+CARGO_BUILD_JOBS=4 python3 crates/nata-pgwire/mutate.py \
+  settings-name-array-wrong-element settings-reset-loses-startup \
+  settings-missing-ok-invented-empty settings-timeout-display-units \
+  settings-datestyle-ignores-dmy show-describe-loses-column \
+  settings-pg-settings-wrong-value --filter helpers \
+  --work "$HOME/tmp-slice-close/private-mutants"
+# Keep private-mutants/target separate from the real target cache.
+```
+
+All GCP preparation for this handoff is in
+`scripts/wire-browse/slice-close.steps.example`. Its first six steps are runnable;
+the six remaining steps deliberately exit 1 and state what is unprepared. Every
+`.exit` is a gate, including matrix exit 1. **Do not launch this partial template
+as slice-close acceptance.** After implementing the missing gates, the parent's
+exact plan/run commands are below (not executed here). n4a-highcpu-16 and
+c3d-highcpu-16 retain the prior clean-VM CPU classes with room for eight query
+workers and four build jobs. The two-hour cap per CPU gives the prepared prefix
+margin over the earlier 1.5-hour allowance for seven more mutants/new oracle
+cases; it is a spend ceiling, not a guarantee for unimplemented deep checks.
+A 60 GB data disk gives the real/private build caches and retained logs headroom.
+The first heavy step records actual machine type from instance metadata; do not
+infer it from a run-id. Parent obtains the cost bound from `plan` and supplies
+approved budgets; this handoff authorizes no spend.
+
+```sh
+cp scripts/wire-browse/slice-close.steps.example heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_ARM_RUN" --approved-usd "$S10_CLOSE_ARM_BUDGET"
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id "$S10_CLOSE_X86_RUN" --approved-usd "$S10_CLOSE_X86_BUDGET"
+```
+
+In addition to items 2–7, closeout still needs closing-commit deep/fuzz/sanitizer
+checks and the unchanged R25 full timeout-fixture decision. This is the item-1
+implementation/evidence commit on `t3/wire-catalog-slice-close`, base `3e413b8`;
+its SHA is supplied in the handoff. The local PostgreSQL cluster is stopped after
+preserving evidence; scratch/build caches are local and contain no cloud data.
+
+Item-1 tested code-content SHA-256 (`scripts/code-tree.sh`):
+`224dfaa80ac330b2dfab67ef125a45706c3414b96b26564b0cbd885c5ff05aa9`.

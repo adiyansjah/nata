@@ -26,7 +26,11 @@ impl BoundedRows {
         Ok(())
     }
 }
-fn relation(snapshot: &Snapshot, database: &str, name: &str) -> Result<Relation, WireError> {
+pub(crate) fn relation(
+    snapshot: &Snapshot,
+    database: &str,
+    name: &str,
+) -> Result<Relation, WireError> {
     let mut rows = BoundedRows::default();
     let columns: &[(&str, SqlType)] = match name {
         "information_schema.information_schema_catalog_name" => {
@@ -359,6 +363,20 @@ mod tests {
         let mut seed = 20261107u64;
         let pieces = [
             "SELECT ",
+            "SHOW ",
+            "DESCRIBE ",
+            "RESET ",
+            "SET ",
+            "ALL ",
+            "current_setting ",
+            "set_config ",
+            "current_schemas ",
+            "pg_settings ",
+            "name ",
+            "= ",
+            "true ",
+            "false ",
+            "'statement_timeout' ",
             "FROM ",
             "information_schema.",
             "tables ",
@@ -384,6 +402,7 @@ mod tests {
                 sql.push_str(pieces[(seed >> 32) as usize % pieces.len()]);
             }
             let _ = query_with(&Snapshot::default(), "nata", &["public".into()], &sql, &[]);
+            let _ = crate::session::State::default().evaluate(&sql);
         }
     }
 }

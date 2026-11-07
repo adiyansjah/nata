@@ -1,0 +1,48 @@
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-55e7dc12/crates/nata-pgwire)
+warning: unused variable: `value`
+   --> crates/nata-pgwire/src/session/helpers.rs:544:19
+    |
+544 |         for (key, value) in entries {
+    |                   ^^^^^ help: if this is intentional, prefix it with an underscore: `_value`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `nata-pgwire` (lib test) generated 1 warning (run `cargo fix --lib -p nata-pgwire --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized] target(s) in 3.60s
+     Running unittests src/lib.rs (/home/dev/tmp-slice-close/target/debug/deps/nata_pgwire-30599b056c38b7df)
+
+running 16 tests
+test binary::tests::helpers_name_arrays_match_pg17_send_bytes ... ok
+test copy::tests::copy_table_identifiers_are_preserved_and_destinations_are_bounded ... ok
+test date::tests::exceptional_dates_and_postgres_endpoints ... ok
+test metadata::tests::snapshot_columns_preserve_every_field_in_order ... ok
+test copy::tests::seeded_copy_fuzz ... ok
+test server::resource_error_tests::memory_limit_preserves_sqlstate_message_and_position ... ok
+test browse::tests::shape_matching_cannot_change_semantics_or_reach_user_tables ... ok
+test session::helpers::tests::settings_registry_reset_helpers_and_refusals ... FAILED
+test session::tests::quoted_search_path_preserves_case_and_empty_path_is_valid ... ok
+test browse::tests::snapshot_filters_identity_types_and_ordering ... ok
+test session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing ... ok
+test server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling ... ok
+test browse::tests::captured_shapes_are_total_and_keep_descriptors ... ok
+test server::fetch::tests::deadline_is_pinned_to_its_execution_not_a_replacement ... ok
+test copy::tests::text_csv_escapes_match_postgres_and_reject_zero ... ok
+test metadata::tests::seeded_metadata_fuzz ... ok
+
+failures:
+
+---- session::helpers::tests::settings_registry_reset_helpers_and_refusals stdout ----
+
+thread 'session::helpers::tests::settings_registry_reset_helpers_and_refusals' (2129294) panicked at crates/nata-pgwire/src/session/helpers.rs:692:9:
+assertion `left == right` failed
+  left: [[Some("statement_timeout"), Some("invented"), Some("ms"), Some("session"), Some("0"), Some("f")]]
+ right: [[Some("statement_timeout"), Some("1000"), Some("ms"), Some("session"), Some("0"), Some("f")]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    session::helpers::tests::settings_registry_reset_helpers_and_refusals
+
+test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p nata-pgwire --lib`

@@ -1,0 +1,26 @@
+
+running 3 tests
+test binary::tests::helpers_name_arrays_match_pg17_send_bytes ... FAILED
+test session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing ... ok
+test session::helpers::tests::settings_registry_reset_helpers_and_refusals ... ok
+
+failures:
+
+---- binary::tests::helpers_name_arrays_match_pg17_send_bytes stdout ----
+
+thread 'binary::tests::helpers_name_arrays_match_pg17_send_bytes' (2127890) panicked at crates/nata-pgwire/src/binary.rs:307:13:
+assertion `left == right` failed
+  left: "00000001000000000000001900000002000000010000000a70675f636174616c6f67000000067075626c6963"
+ right: "00000001000000000000001300000002000000010000000a70675f636174616c6f67000000067075626c6963"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    binary::tests::helpers_name_arrays_match_pg17_send_bytes
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-slice-close/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 4.20s
+     Running unittests src/lib.rs (/home/dev/tmp-slice-close/mutants/target/debug/deps/nata_pgwire-30599b056c38b7df)
+error: test failed, to rerun pass `-p nata-pgwire --lib`

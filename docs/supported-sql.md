@@ -126,3 +126,11 @@ for the exact corpus. These shapes do not extend ordinary data SQL. Catalog SQL
 outside that surface returns 0A000. Typed empty results describe absent Nata
 capabilities only for the recognized queries. SQL DECLARE/FETCH/CLOSE remain
 explicit unsupported errors.
+
+The wire session also exposes snapshot-backed `SHOW CATALOGS`,
+`SHOW SCHEMAS [FROM catalog]`, `SHOW TABLES [FROM [catalog.]schema]`,
+`SHOW COLUMNS FROM table` and `DESCRIBE table`. For example,
+`SHOW TABLES FROM public` and `DESCRIBE public.example` agree with the
+registered catalog views. These commands are served by the bounded wire
+metadata adapter; settings helpers and their exact restrictions are documented
+in [serve.md](serve.md#session-compatibility-statements).

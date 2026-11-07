@@ -1,0 +1,15 @@
+# Copy to heavy.steps before packaging. Each exit is a gate; read ALL *.exit.
+# Partial item-1 handoff: explicit blocked gates prevent accidental closeout.
+# No timings are run by this prepared prefix. Do not infer acceptance from it.
+machine-type bash -o pipefail -c 'curl -fsS -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s,.*/,,"'
+matrix CARGO_BUILD_JOBS=4 bash scripts/wire-skeleton/run.sh
+browse-oracle CARGO_BUILD_JOBS=4 bash scripts/wire-browse/run-oracle.sh
+protocol cargo test --locked -j 4 -p nata-pgwire --test protocol -- --nocapture
+metadata-fuzz NATA_METADATA_CASES=1000000 cargo test --locked -j 4 -p nata-pgwire --lib seeded_metadata_fuzz -- --nocapture
+wire-mutants CARGO_BUILD_JOBS=4 python3 crates/nata-pgwire/mutate.py --work "$WORK/wire-browse-mutants"
+portal-loom-bound-3 bash -c 'echo "BLOCKED: item 2 production portal lifecycle loom and race mutants not prepared; bound 3 must cover suspended cancel inertness and timeout through Sync"; exit 1'
+resource-gates bash -c 'echo "BLOCKED: item 3 loaded metadata scratch/RSS/FD/admission fairness and 64/1024/10000-table gates not prepared; no frozen RSS/browse budget inferred"; exit 1'
+client-api-gaps bash -c 'echo "BLOCKED: item 4 nine non-PASS cells remain; matrix exit 1 is retained"; exit 1'
+pg16-parity bash -c 'echo "BLOCKED: item 5 official PGDG Debian 12 PG16 installer/oracle mode not prepared; default distro PG15 does not certify PG16"; exit 1'
+dbeaver-r24 bash -c 'echo "BLOCKED: item 6 shipped driver/init/navigator headless capture not prepared; real UI unavailable and R24 open"; exit 1'
+p16-streaming-and-regression bash -c 'echo "BLOCKED: item 7 per-client 1.10x PG and paired 1.20x small-query harness not prepared; no timing authorized locally"; exit 1'

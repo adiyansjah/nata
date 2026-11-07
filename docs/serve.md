@@ -74,7 +74,7 @@ multi-statement messages return `0A000`.
 |---|---|
 | `SET extra_float_digits = ...` (or `TO`) | 1, 2, 3; PostgreSQL shortest round-trip; values below 1 return 0A000 |
 | `SET application_name = '...'` | store for SHOW and report ParameterStatus |
-| `SET DateStyle = 'ISO'` | ISO / ISO, MDY / ISO, DMY accepted; report canonical ISO, MDY |
+| `SET DateStyle = 'ISO'` | ISO / ISO, MDY / ISO, DMY accepted; retain MDY/DMY order in the reported value (Date32 output is ISO) |
 | `SET client_encoding = 'UTF8'` | UTF8 / UTF-8 only; report UTF8 |
 | `SET TimeZone = '...'`, `SET TIME ZONE '...'` | store only; Date32 has no timezone; report TimeZone |
 | `SET search_path = ...` | comma-separated schema names for registered table lookup; quoted file sources are unchanged |
@@ -87,7 +87,12 @@ multi-statement messages return `0A000`.
 | `DEALLOCATE [PREPARE] name`, `DEALLOCATE ALL` | release prepared statements; quoted names preserve case |
 | `SELECT 1` | integer 1 (pgcli connection probe) |
 | `SELECT version()` | PostgreSQL 16.0 (Nata compatibility) |
-| `SELECT current_setting('setting')` | same setting table; literal argument only |
+| `SELECT current_setting('setting'[, missing_ok])` | same registry and SHOW formatting; literal arguments; true returns NULL for an unknown setting |
+| `SELECT set_config('setting','value',false)` | same validation/ParameterStatus as SET; transaction-local true is refused |
+| `RESET name`, `RESET ALL`, `SET name = DEFAULT` | restore startup values, otherwise Nata defaults; read-only internal settings cannot be changed |
+| `SHOW ALL` | name, setting, description for the 15 supported entries only |
+| `SELECT columns FROM [pg_catalog.]pg_settings [WHERE name='literal'] [ORDER BY name]` | explicit columns from ADR 0014's inventory; settings use base units (timeout ms), restricted Nata domains/descriptions/defaults; no wildcard/general filters |
+| `SELECT current_schemas(true/false)` | registered effective search path (name array), optionally implicit pg_catalog; deduplicated, missing schemas omitted |
 | `SELECT current_schema()` | public (compatibility marker, not a catalog) |
 | `BEGIN [WORK/TRANSACTION]`, `COMMIT [WORK]`, `ROLLBACK [WORK]` | auto-commit no-ops; command tags BEGIN/COMMIT/ROLLBACK |
 
@@ -287,8 +292,18 @@ nullability, with exact numeric precision/scale. Simple explicit projections
 from the original adapter remain supported. Wildcards outside the captured
 shapes remain refused for incomplete views.
 
-SHOW catalogs/tables, DESCRIBE, arbitrary metadata SQL, the remaining settings
-helpers and positive metadata-row fetch remain separate slice-10 work. The
+`SHOW CATALOGS`, `SHOW SCHEMAS [FROM catalog]`, `SHOW TABLES [FROM [catalog.]schema]`,
+`SHOW COLUMNS FROM table` and `DESCRIBE table` read those same snapshot relations.
+Unqualified SHOW TABLES uses the first effective search-path schema; DESCRIBE
+uses ordinary registered-name resolution. Qualified and quoted names work;
+missing catalog/schema/table targets have positioned errors. Columns/DESCRIBE
+returns column_name, data_type, is_nullable, ordinal_position, numeric_precision,
+numeric_scale in ordinal order. `current_schema()` is NULL for an empty effective
+path. Unsupported settings and metadata shapes return 0A000. pg_settings exposes
+Nata's supported domains (for example extra_float_digits 1..3), compatibility
+transaction values, and version marker rather than claiming the full PostgreSQL
+configuration or transaction semantics. RESET is session-wide, not transactional.
+Arbitrary metadata SQL and positive metadata-row fetch remain separate slice-10 work. The
 new adapter charges result rows, spare vector capacity, sorting and predicate
 scratch against 16 MiB and checks the inherited elapsed deadline before output.
 Stalled metadata/session writes close after the statement deadline or the

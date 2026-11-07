@@ -1,0 +1,154 @@
+0 PASS
+1 PASS
+2 PASS
+3 PASS
+4 PASS
+5 PASS
+6 PASS
+7 PASS
+8 PASS
+9 PASS
+10 PASS
+11 PASS
+12 PASS
+13 PASS
+14 PASS
+15 PASS
+16 PASS
+17 PASS
+18 PASS
+19 PASS
+20 PASS
+21 PASS
+22 PASS
+26 PASS
+27 PASS
+28 PASS
+29 PASS
+30 PASS
+31 PASS
+32 PASS
+33 PASS
+34 PASS
+35 PASS
+36 PASS
+37 PASS
+40 PASS
+41 PASS
+42 PASS
+45 PASS
+46 PASS
+47 PASS
+48 PASS
+49 PASS
+50 PASS
+51 PASS
+52 PASS
+54 PASS
+55 PASS
+57 PASS
+58 PASS
+59 PASS
+60 PASS
+61 PASS
+62 PASS
+65 PASS
+66 PASS
+binary type-bootstrap PASS
+binary public-attributes PASS
+binary quoted-attributes PASS
+helper SHOW application_name PASS
+helper SELECT current_setting('application_name') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='application_name' ORDER BY name PASS
+helper SHOW client_encoding PASS
+helper SELECT current_setting('client_encoding') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='client_encoding' ORDER BY name PASS
+helper SHOW DateStyle PASS
+helper SELECT current_setting('DateStyle') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='DateStyle' ORDER BY name PASS
+helper SHOW TimeZone PASS
+helper SELECT current_setting('TimeZone') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='TimeZone' ORDER BY name PASS
+helper SHOW extra_float_digits PASS
+helper SELECT current_setting('extra_float_digits') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='extra_float_digits' ORDER BY name PASS
+helper SHOW search_path PASS
+helper SELECT current_setting('search_path') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='search_path' ORDER BY name PASS
+helper SHOW statement_timeout PASS
+helper SELECT current_setting('statement_timeout') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='statement_timeout' ORDER BY name PASS
+helper SHOW standard_conforming_strings PASS
+helper SELECT current_setting('standard_conforming_strings') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='standard_conforming_strings' ORDER BY name PASS
+helper SHOW integer_datetimes PASS
+helper SELECT current_setting('integer_datetimes') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='integer_datetimes' ORDER BY name PASS
+helper SHOW default_transaction_read_only PASS
+helper SELECT current_setting('default_transaction_read_only') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_read_only' ORDER BY name PASS
+helper SHOW default_transaction_isolation PASS
+helper SELECT current_setting('default_transaction_isolation') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_isolation' ORDER BY name PASS
+helper SHOW default_transaction_deferrable PASS
+helper SELECT current_setting('default_transaction_deferrable') PASS
+helper SELECT name,setting,unit,context,pending_restart FROM pg_catalog.pg_settings WHERE name='default_transaction_deferrable' ORDER BY name PASS
+helper SET statement_timeout='1s' PASS
+helper SHOW statement_timeout PASS
+helper SELECT current_setting('statement_timeout', false) PASS
+helper SELECT set_config('statement_timeout','1500ms',false) PASS
+helper SHOW statement_timeout PASS
+helper RESET statement_timeout PASS
+helper SHOW statement_timeout PASS
+helper SELECT set_config('application_name','helper',false) PASS
+helper SELECT current_setting('APPLICATION_NAME',true) PASS
+helper RESET application_name PASS
+helper SHOW application_name PASS
+helper SET DateStyle='ISO, DMY' PASS
+helper SHOW DateStyle PASS
+helper SET DateStyle='ISO' PASS
+helper SHOW DateStyle PASS
+helper SET DateStyle=DEFAULT PASS
+helper SHOW DateStyle PASS
+helper SET search_path=other, public PASS
+helper SHOW search_path PASS
+helper SELECT current_schema() PASS
+helper SELECT current_schemas(false) PASS
+helper SELECT current_schemas(true) PASS
+helper SET search_path='missing' PASS
+helper SELECT current_schema() PASS
+helper SELECT current_schemas(false) PASS
+helper SELECT current_setting('not_a_setting',true) PASS
+helper SELECT set_config('default_transaction_read_only','OFF',false) PASS
+helper SHOW default_transaction_read_only PASS
+helper RESET ALL PASS
+helper SHOW application_name PASS
+helper SHOW statement_timeout PASS
+helper SELECT current_schema() PASS
+helper SELECT current_schemas(true) PASS
+helper SELECT current_schemas(false) PASS
+helper SELECT current_schema() PASS
+helper SELECT current_schemas(true) PASS
+helper SELECT current_schemas(false) PASS
+helper SELECT current_schema() PASS
+helper SELECT current_schemas(true) PASS
+helper SELECT current_schemas(false) PASS
+helper SHOW CATALOGS PASS
+helper SHOW SCHEMAS PASS
+helper SHOW SCHEMAS FROM nata PASS
+helper SHOW TABLES PASS
+helper SHOW TABLES FROM nata.public PASS
+helper SHOW COLUMNS FROM public.all_types PASS
+helper DESCRIBE public.all_types PASS
+helper SHOW COLUMNS FROM nata."Quoted Schema"."Mixed Table" PASS
+helper DESCRIBE nata."Quoted Schema"."Mixed Table" PASS
+helper SHOW ALL registry consistency PASS
+helper SET work_mem=1024 PASS
+helper RESET work_mem PASS
+helper SHOW work_mem PASS
+helper SELECT set_config('application_name','local',true) PASS
+helper SET LOCAL application_name=local PASS
+helper SELECT * FROM pg_settings PASS
+helper DESCRIBE public.missing PASS
+helper SHOW TABLES FROM missing PASS
+helper SHOW SCHEMAS FROM missing PASS

@@ -1,0 +1,26 @@
+
+running 3 tests
+test binary::tests::helpers_name_arrays_match_pg17_send_bytes ... ok
+test session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing ... FAILED
+test session::helpers::tests::settings_registry_reset_helpers_and_refusals ... ok
+
+failures:
+
+---- session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing stdout ----
+
+thread 'session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing' (2128271) panicked at crates/nata-pgwire/src/session/helpers.rs:782:9:
+assertion `left == right` failed
+  left: [[Some("Mixed Column"), Some("numeric"), Some("YES"), Some("1"), Some("2"), Some("10")]]
+ right: [[Some("Mixed Column"), Some("numeric"), Some("YES"), Some("1"), Some("10"), Some("2")]]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    session::helpers::tests::show_describe_snapshot_qualified_quoted_and_missing
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+   Compiling nata-pgwire v0.0.0 (/home/dev/tmp-slice-close/mutants/ws/crates/nata-pgwire)
+    Finished `test` profile [unoptimized] target(s) in 2.35s
+     Running unittests src/lib.rs (/home/dev/tmp-slice-close/mutants/target/debug/deps/nata_pgwire-30599b056c38b7df)
+error: test failed, to rerun pass `-p nata-pgwire --lib`

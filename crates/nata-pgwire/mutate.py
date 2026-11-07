@@ -181,6 +181,16 @@ MUTANTS.update({
  'browse-wrong-column-order': ('crates/nata-pgwire/src/browse.rs', 'ordered.sort_by_key(|t| (&t.schema, &t.name));', 'ordered.sort_by_key(|t| std::cmp::Reverse((&t.schema, &t.name)));', 'lib'),
 })
 
+MUTANTS.update({
+ 'settings-name-array-wrong-element': ('crates/nata-pgwire/src/binary.rs', 'for n in [dims, 0, 19]', 'for n in [dims, 0, 25]', 'lib'),
+ 'settings-reset-loses-startup': ('crates/nata-pgwire/src/session/helpers.rs', '.reset_settings\n            .get(key)', '.settings\n            .get(key)', 'lib'),
+ 'settings-missing-ok-invented-empty': ('crates/nata-pgwire/src/session/helpers.rs', 'else if missing_ok {\n                        None', 'else if missing_ok {\n                        Some(String::new())', 'lib'),
+ 'settings-timeout-display-units': ('crates/nata-pgwire/src/session/helpers.rs', 'if key == "statement_timeout" {', 'if false {', 'lib'),
+ 'settings-datestyle-ignores-dmy': (SESSION, 'l.contains("dmy")', 'false', 'lib'),
+ 'show-describe-loses-column': ('crates/nata-pgwire/src/session/helpers.rs', 'let selected = [3, 6, 5, 4, 7, 8];', 'let selected = [3, 6, 5, 4, 8, 7];', 'lib'),
+ 'settings-pg-settings-wrong-value': ('crates/nata-pgwire/src/session/helpers.rs', 'Some(value.clone()),', 'Some("invented".into()),', 'lib'),
+})
+
 def fingerprint():
     h = hashlib.sha256()
     for p in sorted((ROOT/'crates').rglob('*.rs')):
@@ -205,7 +215,7 @@ def main():
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.work/'target'), CARGO_TERM_COLOR='never')
     def test(suite):
         try:
-            p = subprocess.run(['cargo','test','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite])+([a.filter] if a.filter else []), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
+            p = subprocess.run(['cargo','test','--locked','-j','4','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite])+([a.filter] if a.filter else []), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
             return p.returncode, p.stdout+p.stderr
         except subprocess.TimeoutExpired:
             return 99, 'timeout'

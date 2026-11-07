@@ -440,11 +440,15 @@ fn session_chatter_status_and_transaction_markers() {
         ("SHOW application_name", "driver"),
         ("SHOW TIME ZONE", "UTC"),
         ("SELECT current_setting('client_encoding')", "UTF8"),
-        ("SELECT current_schema()", "public"),
         ("SELECT version()", "PostgreSQL 16.0 (Nata compatibility)"),
     ] {
         assert_eq!(values(&c.query(q)), vec![vec![Some(v.into())]]);
     }
+    // No registered schemas in this server: current_schema must not invent public.
+    assert_eq!(
+        values(&c.query("SELECT current_schema()")),
+        vec![vec![None]]
+    );
     for q in [
         "SET statement_timeout = -1",
         "SET client_encoding = 'LATIN1'",
