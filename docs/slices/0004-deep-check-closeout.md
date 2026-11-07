@@ -1,6 +1,6 @@
 # 0004: Deep-check closeout of slices 4 and 4b
 
-Status: accepted (by the assistant under the owner's delegation, 2026-11-07)
+Status: closed 2026-11-07 (every item done; the nightly passed on the closing commit)
 Date: 2026-11-07
 ADRs: 0003 (overflow is an error), 0006 (testing), 0007 (dialect), 0008 (client protocol); amends none unless an item below says so
 
@@ -52,8 +52,8 @@ register items, so the "growth triggers payback" rule applies.
 
 ## 6. Closeout (fill in when done)
 
-- Results file:
-- Nightly run on the closing commit:
-- Cards 0002 and 0003 part-6 lines added:
-- Register updated:
+- Results files: `bench/results/20261107-deep-check-parquet.md` (A, B), `bench/results/20261107-deep-check-sql.md` (C, D), `bench/results/20261107-deep-check-tsan.md` (F); raw nightly-size outputs in `bench/results/raw/20261107-card0004-heavy/`. E (loom m21 time box) and G (two stale Iceberg script tests) are in commits `de1e721` and `dbd1cbf`.
+- Nightly run on the closing commit: GitHub Actions run 42341615107 on `84e9c83` (all code of A-G merged), **31 of 31 jobs passed**: loom at bound 3 for every model (m09 38 min; m21 66 min, inside its new 5.5-hour box: the old 50-minute box was too short, as item E found), the SQL subset fuzzer at 100,000 queries on both CPU types, and the damaged-file fuzz at nightly size. The same nightly-size fuzz runs also passed on GCP for two seeds each (`card0004-heavy3`).
+- Cards 0002 and 0003 part-6 lines added: yes, a "Deep checks on the closing commit" line in each.
+- Register updated: R15 done (scoped Tokio suppression, a trust point like R10); R6d records the upstream status of both parquet-rs findings; R4 records the page-header limit of page checksums; R22 links the ADBC report.
 - Upstream reports posted (with the owner's yes): ADBC: apache/arrow-adbc#4999 (2026-11-07). parquet-rs: none needed. The loop is fixed on `main` by apache/arrow-rs#11923 (not yet released), and the unchecked reservation is already open as apache/arrow-rs#12100 (register R6d).

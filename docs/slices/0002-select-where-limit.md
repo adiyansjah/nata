@@ -123,3 +123,4 @@ dependency resolution and fresh certification. Initial failures, the one correct
 retry, mutation controls, costs and cleanup are recorded there.
 Earlier deviations remain historical evidence; this follow-up changes only the
 register items it explicitly certifies, with no performance target relaxation.
+- Deep checks on the closing commit (added 2026-11-07 by card 0004): the first nightly found a damaged-file hang, a double-negation overflow, a BETWEEN difference and a loom time box; card 0004 fixed or classified each. The nightly then passed in full (31 of 31 jobs, run 42341615107) on `84e9c83`, which contains this slice's code with those fixes.
