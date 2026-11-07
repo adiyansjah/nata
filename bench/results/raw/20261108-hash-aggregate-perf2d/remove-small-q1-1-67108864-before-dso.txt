@@ -1,0 +1,20 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock'
+# Event count (approx.): 3174348672
+#
+# Overhead  Shared Object    
+# ........  .................
+#
+    85.86%  before           
+    10.35%  libc.so.6        
+     3.41%  [kernel.kallsyms]
+     0.19%  [virtio_net]     
+
+
+#
+# (Tip: To not accumulate CPU time of children symbols add --no-children)
+#

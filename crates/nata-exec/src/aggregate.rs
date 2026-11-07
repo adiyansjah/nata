@@ -265,14 +265,7 @@ impl Groups {
                     .zip(columns)
                     .all(|(v, c)| v.matches_column(c, row))
         };
-        // A bounded scan of the existing arena avoids probing for tiny groups.
-        // Keep the reused index populated so crossing the cap needs neither a
-        // migration allocation nor a new grant; collisions still use full keys.
-        if self.entries.len() <= 8 {
-            (0..self.entries.len()).find(|&id| matches(id))
-        } else {
-            self.index.find(hash, |&id| matches(id)).copied()
-        }
+        self.index.find(hash, |&id| matches(id)).copied()
     }
 
     fn insert(&mut self, key: Vec<Atom>, states: Vec<State>) {
@@ -1112,7 +1105,7 @@ mod tests {
         assert!(Atom::float(f64::NAN).matches_column(&columns[1], 1));
     }
     #[test]
-    fn small_lookup_falls_back_without_losing_groups() {
+    fn borrowed_lookup_keeps_groups_across_table_growth() {
         let col = Col {
             ty: SqlType::BigInt,
             data: Data::Int((0..20).collect()),

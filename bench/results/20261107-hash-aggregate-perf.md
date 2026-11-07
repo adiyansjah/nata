@@ -1905,3 +1905,117 @@ scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id per
 scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2c-retry-20261108-arm64 --data-gb 80 --max-vm-hours 10
 scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2c-retry-20261108-arm64 --data-gb 80 --max-vm-hours 10 --approved-usd "$APPROVED_USD_ARM64"
 ```
+
+## Performance step 2d
+
+Work starts at `10acff0`; frozen targets and accepted ADRs remain unchanged.
+The clean-VM spill profile above is the motivation, not a denominator for local
+measurements. Local observations below are **unsettled**, warm SF1, shared
+x86-64 host, whole CLI including startup/planning and CSV rendering to `/dev/null`.
+The runner value-gates every before/after/control cell against DuckDB before
+five alternating rounds. The control is the identical immutable before binary,
+not a build from another day. Both Q1 and high-cardinality cells use 1/8 threads
+and 8 GiB/64 MiB; every observation retains spill counters and load.
+Profiles use whole-system `cpu-clock` samples, with DSO shares and the first 90
+symbol report lines retained; full perf data is discarded. No local number
+certifies either CPU's frozen target. No GCP job was run.
+
+Evidence: [host and limits](raw/20261108-hash-aggregate-perf2d/environment.json),
+runner `scripts/bench-aggregate-perf2d-local.py`. Source binaries are copied out
+of the build tree before timing; summary files record their SHA256 hashes.
+All local build/test commands use `-j 4`, serially, with the reused
+`CARGO_TARGET_DIR=/home/dev/perf2b/target`; no dependencies are added.
+
+### 0. Remove the small-group lookup
+
+Rule: always probe the existing hashbrown index with full canonical key equality;
+remove the `entries.len() <= 8` linear scan from `c1eafb2`. Keep collision,
+NULL-junk, canonical-float and growing-table lookup tests; rename the former
+fallback test to describe table growth.
+
+**Verdict: kept as the directed cleanup supported by the settled two-CPU
+no-gain verdict. Local results are mixed, not a regression-free speed claim.**
+The paired Q1/8/64 MiB gain is 7.3%, while Q1/1/64 MiB and high-cardinality/1/
+8 GiB regress 11.1% and 11.5%. Those regressions are retained explicitly;
+the latter's identical control also moves by -12.3%, and another control moves
++14.3%. The compensating Q1/8 spill-budget gain permits retention under the
+brief's no-compensating-gain guard, but settled validation remains required.
+Spill itself shows no established improvement (0.996x/0.988x versus controls
+1.050x/0.958x).
+
+Seconds, medians; paired ratios are medians of per-round ratios (not ratios
+of medians). Min/quartiles/max, all five observations and binary hashes are
+in the linked summary/samples.
+
+| Query | Threads | MiB | Before | After | Control | Paired A/B | Paired C/B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 8192 | 2.584 | 2.741 | 2.771 | 1.034 | 1.038 |
+| q1 | 8 | 8192 | 0.935 | 0.912 | 0.957 | 0.986 | 1.043 |
+| q1 | 1 | 64 | 2.191 | 2.965 | 2.574 | 1.111 | 0.968 |
+| q1 | 8 | 64 | 1.222 | 1.141 | 1.255 | 0.927 | 1.000 |
+| high_cardinality_tpch | 1 | 8192 | 5.555 | 6.067 | 5.109 | 1.115 | 0.877 |
+| high_cardinality_tpch | 8 | 8192 | 4.266 | 4.574 | 4.861 | 0.995 | 1.143 |
+| high_cardinality_tpch | 1 | 64 | 12.785 | 12.732 | 13.442 | 0.996 | 1.050 |
+| high_cardinality_tpch | 8 | 64 | 34.582 | 33.636 | 33.135 | 0.988 | 0.958 |
+
+At 64 MiB, high-cardinality counters (decimal MB):
+
+| Threads | Arm | Written MB range | Read MB range | Partitions | Depth |
+|---|---|---:|---:|---:|---:|
+| 1 | all three | 603.860 | 692.132 | 272 | 1 |
+| 8 | before | 959.047–959.190 | 1218.312–1218.485 | 4368 | 2 |
+| 8 | after | 959.070–959.402 | 1218.324–1218.681 | 4368 | 2 |
+| 8 | control | 959.006–959.365 | 1218.254–1218.684 | 4368 | 2 |
+
+Local whole-system self-sample shares, Nata/kernel/libc, before → after:
+1-thread spill **46.18/29.94/23.66% → 45.83/30.15/23.72%**;
+8-thread spill **46.45/25.23/28.05% → 45.57/26.15/28.11%**.
+This isolates removal; it does not establish any repair of the spill bottleneck.
+DSO/symbol reports for every cell are in the raw directory.
+
+[Summary/hashes](raw/20261108-hash-aggregate-perf2d/remove-small-summary.json),
+[samples/counters/load](raw/20261108-hash-aggregate-perf2d/remove-small-samples.json),
+[24 DuckDB gates](raw/20261108-hash-aggregate-perf2d/remove-small-gates.json),
+[checks](raw/20261108-hash-aggregate-perf2d/remove-small-checks.txt).
+Checks: `cargo test --locked --release -j 4 -p nata-exec` (including unchanged
+spill fault/cleanup/corruption tests), fmt, clippy of nata-exec/all targets,
+release CLI/check build, aggregate 65/65, forced-spill aggregate 65/65,
+SQL 252/252: **PASS**. No loom model or scheduler/service primitive is changed.
+
+```sh
+python3 scripts/bench-aggregate-perf2d-local.py remove-small --before /home/dev/perf2d/before --after /home/dev/perf2d/remove-small --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2d --profile
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2d/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2d/mutants-remove-small -p nata-exec -f crates/nata-exec/src/aggregate.rs -F 'find_row' --timeout 180
+```
+
+Focused cargo-mutants on `Groups::find_row`: **5 caught, 0 missed, 0 timeout,
+0 unviable**; unmutated baseline passes. [Outcomes](raw/20261108-hash-aggregate-perf2d/remove-small-mutants-outcomes.json),
+[deciding log](raw/20261108-hash-aggregate-perf2d/remove-small-mutants.txt).
+
+### Step 2 boundary: accepted fan-out rule
+
+ADR 0010's accepted spill decision says: “initial fanout 16, fanout 16 per
+recursion and maximum depth 8.” Product code implements that choice in
+`PARTITIONS`, `files`, the repartitioner and typed replay's `hash & 15`
+membership check. A budget-sized logical fan-out that exceeds 16 changes that
+accepted decision. Per this task's stop rule, **step 2 and the subsequent
+ordered steps 3–5 are not implemented**. Validation guarantees and ADR text are
+unchanged. This is a design stop, not a result mismatch or a dependency stop.
+
+Proposed amendment for owner acceptance (not applied):
+
+> Permit a power-of-two logical spill fan-out from 16 through 256. Estimate
+> resident state bytes from expected partial rows and charged key/state/table
+> capacity, using serialized spill bytes only as supporting evidence; serialized
+> bytes alone underestimate hash-table memory. Choose the smallest fan-out whose
+> estimated resident partition fits half the available merge-table budget.
+> Clamp at 256 and reduce simultaneous merge partitions when the estimate
+> exceeds their grants. FD and disk quotas, parent/child overlap accounting,
+> the 64 KiB scratch floor, canonical XXH3 hashing and validated Arrow IPC remain
+> mandatory. Reader partition-membership checks must use the trusted fan-out
+> chosen by the query, not an unchecked value from disk. Recursive fan-out stays
+> bounded at 16 with depth at most 8 for estimation error/skew; exhausted depth,
+> no progress and oversize records still fail cleanly. No grant is bypassed.
+
+The follow-on implementation must test estimator overflow, min/max clamps,
+partition membership under hostile input, skew/collision/no-progress, FD/quota
+bounds and reduction of merge concurrency before any performance verdict.
