@@ -1577,6 +1577,14 @@ scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id per
 
 ## Performance step 2c (retry)
 
+**Closeout:** only aligned add/sub is retained, as a **provisional** candidate
+(`0118a85`). The exact-binary run has material regressions and an eight-thread
+Q1 gain; it does not establish a regression-free win. Product admission is
+rejected for no established gain on the capped workload, and the independently
+measured SUM implementation is rejected for cost. Supported correctness gates
+pass; all local timing remains unsettled. The canonical decimal set stays pending.
+
+
 The owner-authorized retry replaces the stopped arbitrary-i128 SAT obligation
 with separately checked admission, reduced-width arithmetic lemmas, i128
 boundary properties and a named full-width arithmetic trust point (R26).
@@ -1687,8 +1695,9 @@ This can reject a safe batch; rejection is never an SQL error.
 All four existing decimal column harnesses also pass. Each of the 12 completed
 harnesses satisfies both cover goals: **12/12 proofs, 24/24 covers**. Raw logs
 are `retry-kani-HARNESS.txt` under the [raw directory](raw/20261108-hash-aggregate-perf2c/).
-The proofs import production source; the rejected product's precision predicate
-is explicitly imported from its preserved candidate snapshot.
+The retained add/sub proofs import production source; the rejected product's
+precision predicate and the rejected SUM envelope are explicitly imported from
+their preserved candidate snapshots.
 
 Four independently weakened predicates all produce real verification failures
 (exit 1 and `VERIFICATION:- FAILED`, not compilation failure/timeout): allow
@@ -1728,4 +1737,171 @@ Focused cargo-mutants on `aligned_precision|batch_magnitudes`: **28 caught,
 CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2c-retry/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2c-retry/mutants-aligned -p nata-kernels -f crates/nata-kernels/src/decimal.rs -F 'aligned_precision|batch_magnitudes' --timeout 180
 rustc --edition 2024 --test bench/results/raw/20261108-hash-aggregate-perf2c/retry-product-decimal.rs -o /home/dev/perf2c-retry/product-properties
 /home/dev/perf2c-retry/product-properties
+```
+
+### Exact-binary add/sub confirmation
+
+The added boundary/mutation tests changed the rebuilt binary's hash (production
+arithmetic logic unchanged). This second complete five-round run uses the exact
+release binary that passed the checks above: SHA-256
+`2d7b8e6f17042c80d3e6d46b3471a89fc7c97ffbf247160d348c32812d07151a`.
+These numbers describe the kept commit `0118a85`; the earlier run remains
+historical evidence rather than being silently replaced.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 2.453 | 2.542 | 2.734 | 1.095 | 1.072 |
+| q1 | 8 | 1.062 | 1.041 | 1.029 | 0.929 | 0.968 |
+| high_cardinality_tpch | 1 | 6.628 | 6.152 | 6.452 | 1.180 | 0.952 |
+| high_cardinality_tpch | 8 | 4.549 | 4.430 | 4.054 | 1.053 | 0.982 |
+
+**Verdict:** retain only as an unsettled candidate for the parent's settled
+comparison, not an established win. The exact-binary run has +9.5% one-thread
+Q1 and +18.0%/+5.3% many-group paired regressions, with a compensating -7.1%
+eight-thread Q1 cell. The stated no-compensating-gain rejection condition is not
+met, but regression-free performance is not established. Whole-process elapsed
+times also moved substantially within this shared session; the control ratios
+and individual rounds must be considered. Ratios are medians of paired rounds,
+so they need not equal the ratios of the marginal time medians.
+
+Q1 one-thread self shares, before→after: Decimal::column **11.65%→9.20%**,
+ExactSum::add **5.58%→5.12%**, Partial::resume **19.44%→18.70%**.
+[Final summary/hashes](raw/20261108-hash-aggregate-perf2c/retry-aligned-final-summary.json),
+[samples](raw/20261108-hash-aggregate-perf2c/retry-aligned-final-samples.json),
+[value gates](raw/20261108-hash-aggregate-perf2c/retry-aligned-final-gates.json),
+[source hashes](raw/20261108-hash-aggregate-perf2c/retry-aligned-source-sha256.json).
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py retry-aligned-final --before /home/dev/perf2c-retry/before --after /home/dev/perf2c-retry/aligned-final --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2c --profile
+```
+
+### Retry C — SUM batch envelope
+
+**Rule:** For each selected valid decimal batch, first validate values against
+the declared precision. For a narrow state, round the row-count upper bound n
+upward to a power of two and require
+`|current|+rounded_n*(10^p-1)<2^127`, with checked u128 addition and a
+leading-zero guard before shifting. Also guard the existing strict count bound.
+This stronger envelope implies the requested n-based bound for every prefix.
+It may decline an otherwise safe batch; that always invokes the existing
+checked/promoting update, never a premature SUM error.
+
+The executor candidate tries this only for at most eight touched groups, using
+fixed stack storage. It preflights every touched group and all selected input
+values before any update; on any failure it keeps original row order. Successful
+admission permits group-at-a-time batch updates without any possible data/count
+error. Larger group sets retain the original one-pass path. Integer input updates,
+merge, spill replay, final SUM narrowing and AVG finalization stay checked.
+No grants, batch sizes, spill formats or dependencies change.
+
+The 26 kernel tests pass, including independent checked accumulation, all
+precisions 1..38, wide promotion followed by cancellation/demotion, a planted
+invalid value preserving the prior two updates, strict count exhaustion,
+`i128::MIN` rejection, and checked envelope boundaries:
+[properties](raw/20261108-hash-aggregate-perf2c/retry-sum-properties.txt).
+The full-domain envelope and reduced arithmetic proofs/negative control are
+listed above. Timing compares only this independent addition against the exact
+accepted add/sub binary, with the same five-round/DuckDB/control method.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 2.593 | 4.067 | 2.925 | 1.585 | 1.057 |
+| q1 | 8 | 1.077 | 1.414 | 1.083 | 1.335 | 1.017 |
+| high_cardinality_tpch | 1 | 4.348 | 4.291 | 4.672 | 0.955 | 1.081 |
+| high_cardinality_tpch | 8 | 2.786 | 2.948 | 2.942 | 0.963 | 1.015 |
+
+**Verdict: reject.** Q1 regresses 58.5%/33.6%, against twins +5.7%/+1.7%.
+Many-group paired shifts -4.5%/-3.7% do not demonstrate compensating gain:
+that path does not admit the new grouped SUM loop, and its controls shift
++8.1%/+1.5%. All local numbers remain **unsettled**. The extra group/value scans
+are not a useful way to remove these checks. On one-thread Q1 the candidate's
+`ExactSum::add_batch` alone takes **29.60%** self time; a correct envelope does
+not make this batch interface efficient.
+
+Q1 one-thread self shares, before→after: Decimal::column **8.65%→6.41%**,
+ExactSum::add **7.47%→not listed** (the new inlined/generic batch cost is not an
+`add` self sample), Partial::resume **17.88%→16.50%**. The add_batch name embeds
+Partial::resume in a generic type: it is not counted again as Partial::resume.
+[Summary/hashes](raw/20261108-hash-aggregate-perf2c/retry-sum-summary.json),
+[samples](raw/20261108-hash-aggregate-perf2c/retry-sum-samples.json),
+[all SF1 DuckDB gates](raw/20261108-hash-aggregate-perf2c/retry-sum-gates.json).
+
+[Rejected patch against 0118a85](raw/20261108-hash-aggregate-perf2c/rejected-sum-retry.patch)
+and [admission snapshot/properties](raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs)
+preserve the candidate. It is removed from production, including the initially
+unexported admission helper. The SUM proof module now explicitly imports this
+rejected snapshot. Full executor/clippy/SF0.01 gates are not claimed for the
+rejected SUM candidate: it passed 26 kernel tests and all SF1 value gates before
+rejection, and final production returns to the previously checked add/sub source.
+
+Focused cargo-mutants on the envelope: **14 caught, 1 missed, 0 timeouts,
+0 invalid**, after a passing control. The survivor changes
+`bound.leading_zeros() < shift` to `<= shift`, strengthening the early-rejection
+guard. It is equivalent: if leading_zeros==shift, the shifted contribution has
+bit 127 set and the original final envelope test already rejects it.
+`perf2c_sum_equal_shift_rejected` proves this for all u128 current/bound values
+and all positive u64 counts, with both covers satisfied:
+[proof](raw/20261108-hash-aggregate-perf2c/retry-kani-sum-equal-shift.txt),
+[outcomes](raw/20261108-hash-aggregate-perf2c/retry-sum-mutants-outcomes.json).
+All unsafe precondition weakenings in the focused sweeps are caught. The final
+proof count is **13/13 completed harnesses, 26/26 cover goals**; the full-width
+heavy harness remains unproved.
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py retry-sum --before /home/dev/perf2c-retry/aligned-final --after /home/dev/perf2c-retry/sum --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2c --profile
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2c-retry/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2c-retry/mutants-sum -p nata-kernels -f crates/nata-kernels/src/sum_admission.rs --timeout 180
+```
+
+The mutation command runs on the preserved candidate (`0118a85` plus its patch),
+not the final production tree, where the rejected helper is intentionally absent.
+The portable negative-control runner continues to target the preserved helper.
+
+### Final verification and parent handoff
+
+Kept runtime change: `0118a85` (aligned add/sub only, provisional). Preserved
+stopped evidence: `7b87ea9` (cherry-pick of `1006777`, re-recorded after staged
+leak scanning). The following evidence commit records the exact-binary run and
+SUM rejection and moves the unused SUM helper out of production; its SHA is in
+the handoff. No product/SUM optimization remains. Final source differs from
+`3e413b8` only in the decimal kernel and evaluator's precision adapter; no
+aggregate/merge/replay/finalization source or lockfile difference remains.
+
+After restoring checked SUM, the final locked release build passes and the CLI
+is **byte-identical** to the exact timed add/sub binary and to the binary that
+passed **65/65 aggregate, 65/65 forced spill, 252/252 SQL**. Thus those gates
+apply to final runtime behavior. Final fmt and local job-chain stubs pass; every
+heavy command also passes `bash -n`. Decimal suite: 30 unchanged pending cases,
+not a pass claim. Proofs: 13 completed / 26 covers, plus four real failing
+negative controls; full-width heavy proof unproved. Focused mutation total:
+**42 caught, 1 equivalent survivor, 0 timeout/invalid**, with the survivor's
+equivalence separately proved. No query result or error change occurred.
+
+Builds/tests were serial locally with `-j 4`; the other child's independent
+compilation is part of why local timings are unsettled. As free space crossed
+the conservative 20 GiB warning line, stale perf2b proof caches and already-run
+integration test executables were deleted, with immutable benchmark binaries
+preserved. Inactive old temporary build caches were also removed; active release
+outputs were retained. No new dependency, target/threshold/ADR amendment, GCP
+API/plan/run, push or merge occurred. Staged leak scanning precedes each commit.
+
+The parent-only [steps](../aggregate-perf2c.steps) include baseline `3e413b8`,
+fix `0118a85`, the thirteen short harnesses, and **separate four-hour CaDiCaL
+and Kissat full-width attempts**. Timeout/failure exit files remain results,
+never certified proofs. Package after this evidence commit so the root-level
+proof runner and rejected snapshots are available. The fixed runtime revision
+contains the same hot code as final HEAD; the final rebuilt binary identity is
+recorded below. Existing SF1 targets are unchanged; SF10/scaling/frozen-target
+certification remain open.
+
+Exact parent commands, **not run here**. Take each approved amount from its plan;
+use fresh run IDs if these are occupied. The ten-hour VM bound allows two
+four-hour solver attempts plus setup/timing; it is not authorization to spend.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 3e413b8 --fix aligned=0118a85 --bundle .aggregate-perf2c-inputs
+cp bench/aggregate-perf2c.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2c-retry-20261108-x86 --data-gb 80 --max-vm-hours 10
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2c-retry-20261108-x86 --data-gb 80 --max-vm-hours 10 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2c-retry-20261108-arm64 --data-gb 80 --max-vm-hours 10
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2c-retry-20261108-arm64 --data-gb 80 --max-vm-hours 10 --approved-usd "$APPROVED_USD_ARM64"
 ```

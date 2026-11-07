@@ -122,3 +122,11 @@ The original arbitrary-i128 product timed out at 180 s; the retry's 20 s Kissat
 trial also has no result. A parent-only four-hour harness on both CPU types can
 upgrade this trust point; no cloud run or full-width proof is claimed here.
 See [the retry evidence](../bench/results/20261107-hash-aggregate-perf.md).
+
+R26 retry verdict: only aligned add/sub is retained provisionally. The product
+trial has no established gain on capped Q1 products; the SUM candidate regresses
+Q1 by 58.5%/33.6% and is rejected. Its admission helper and proof properties live
+in the raw evidence, not the production kernel. SUM updates, promotion, merge,
+replay and finalization retain their original checks. The exact-binary add/sub
+run has material regressions as well as an eight-thread Q1 gain, so settled
+both-CPU performance remains unresolved; P5 is not closed.

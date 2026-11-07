@@ -99,9 +99,9 @@ warning: Found the following unsupported constructs:
          Verification will fail if one or more of these constructs is reachable.
          See https://model-checking.github.io/kani/rust-feature-support.html for more details.
 
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.55s
 warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
-note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 4`
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
 Checking harness perf2c::perf2c_proofs::perf2c_scan...
 CBMC 6.11.0 (cbmc-6.11.0)
 CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
@@ -138,46 +138,46 @@ Unwinding loop _RNvNtCs7m2eH3CPdXC_17kani_nata_kernels7decimal16batch_magnitudes
 aborting path on assume(false) at file library/kani/src/lib.rs line 57 column 1 function kani::mem::cbmc::same_allocation thread 0
 aborting path on assume(false) at file src/../../../crates/nata-kernels/src/decimal.rs line 316 column 17 function decimal::batch_magnitudes thread 0
 Not unwinding loop _RNvNtCs7m2eH3CPdXC_17kani_nata_kernels7decimal16batch_magnitudes.0 iteration 3 file src/../../../crates/nata-kernels/src/decimal.rs line 316 column 5 function decimal::batch_magnitudes thread 0
-Runtime Symex: 0.455209s
+Runtime Symex: 0.239497s
 size of program expression: 10935 steps
 slicing removed 6687 assignments
 Generated 916 VCC(s), 101 remaining after simplification
-Runtime Postprocess Equation: 0.00642286s
+Runtime Postprocess Equation: 0.00379768s
 Passing problem to propositional reduction
 converting SSA
-Runtime Convert SSA: 0.0579014s
+Runtime Convert SSA: 0.0336246s
 Running propositional reduction
 Post-processing
-Runtime Post-process: 0.00794481s
+Runtime Post-process: 0.00460414s
 Solving with CaDiCaL 3.0.0
 43094 variables, 59683 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0108996s
-Runtime decision procedure: 0.0707722s
+Runtime Solver: 0.00663683s
+Runtime decision procedure: 0.0411816s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 43095 variables, 59684 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.00190853s
-Runtime decision procedure: 0.00244343s
+Runtime Solver: 0.00115481s
+Runtime decision procedure: 0.00148004s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 43096 variables, 59685 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.00420853s
-Runtime decision procedure: 0.00471892s
+Runtime Solver: 0.0022874s
+Runtime decision procedure: 0.00259354s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 43097 variables, 59686 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0201734s
-Runtime decision procedure: 0.0207119s
+Runtime Solver: 0.00888897s
+Runtime decision procedure: 0.00919573s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 43098 variables, 59687 clauses
 SAT checker: instance is UNSATISFIABLE
-Runtime Solver: 0.00827197s
-Runtime decision procedure: 0.00877476s
+Runtime Solver: 0.00379371s
+Runtime decision procedure: 0.00405637s
 
 RESULTS:
 Check 1: core::panicking::panic_nounwind_fmt::runtime.unsupported_construct.1
@@ -1931,7 +1931,7 @@ Failed Checks: assertion failed: got == spec
  File: "src/perf2c.rs", line 43, in perf2c::perf2c_proofs::perf2c_scan
 
 VERIFICATION:- FAILED
-Verification Time: 2.3535259s
+Verification Time: 1.1095314s
 
 Manual Harness Summary:
 Verification failed for - perf2c::perf2c_proofs::perf2c_scan

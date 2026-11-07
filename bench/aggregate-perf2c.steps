@@ -1,12 +1,13 @@
 # Parent only; baseline 3e413b8; fixes are the kept retry commits listed in the result.
-# Package one --fix label=SHA per cumulative kept change with bench-aggregate-perf1-heavy.py.
+# Kept fix: aligned=0118a85 (provisional, exact-binary regressions recorded).
+# Prepare: python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 3e413b8 --fix aligned=0118a85 --bundle .aggregate-perf2c-inputs
 # Local results are unsettled. These steps neither alter nor certify frozen targets.
 # Long full-width proofs are separate from the short reduced-width/admission proofs.
 # No cloud identifiers, credentials or approval amounts belong in this file.
 prepare mkdir -p "$WORK/aggregate-perf2c/tmp"
 fixtures rm -rf "$WORK/aggregate-perf2c-sf1" && TMPDIR="$WORK/aggregate-perf2c/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2c-sf1"
 timings perf2c_machine=$(uname -m) && case "$perf2c_machine" in x86_64) perf2c_machine=c3d-highcpu-8 ;; aarch64) perf2c_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2c/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2c_machine" --bundle "$SRC/.aggregate-perf2c-inputs" --work "$WORK/aggregate-perf2c" --data "$WORK/aggregate-perf2c-sf1" --out "$RESULTS/aggregate-perf2c-$(date -u +%Y%m%dT%H%M%SZ)"
-kani-install command -v cargo-kani >/dev/null || { cargo install --locked --version 0.68.0 kani-verifier && cargo kani setup; }; cargo kani --version
-kani-short for perf2c_h in perf2c_precision perf2c_scan perf2c_reduced_product perf2c_aligned_precision perf2c_reduced_aligned perf2c_reduced_bit_product perf2c_sum_envelope perf2c_reduced_sum_envelope; do CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$WORK/aggregate-perf2c/kani-target" timeout 180 cargo kani --manifest-path spikes/kani-nata-kernels/Cargo.toml --harness "$perf2c_h" > "$RESULTS/$perf2c_h.txt" 2>&1 || exit $?; done
+kani-install if ! cargo kani --version 2>/dev/null | grep -q 'Kani Rust Verifier 0.68.0'; then cargo install --locked --version 0.68.0 --force kani-verifier && cargo kani setup; fi && cargo kani --version
+kani-short for perf2c_h in perf2c_precision perf2c_scan perf2c_reduced_product perf2c_aligned_precision perf2c_reduced_aligned perf2c_reduced_bit_product perf2c_sum_envelope perf2c_reduced_sum_envelope perf2c_sum_equal_shift_rejected decimal_column_selected_null_and_bounds decimal_column_add_selected_null_and_bounds decimal_column_sub_selected_null_and_bounds decimal_column_machine_overflow; do CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$WORK/aggregate-perf2c/kani-target" timeout 180 cargo kani --manifest-path spikes/kani-nata-kernels/Cargo.toml --harness "$perf2c_h" > "$RESULTS/$perf2c_h.txt" 2>&1 || exit $?; done
 kani-full-cadical CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$WORK/aggregate-perf2c/kani-target" timeout 14400 cargo kani --manifest-path spikes/kani-nata-kernels/Cargo.toml --harness perf2c_full_product_heavy --solver cadical
 kani-full-kissat CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$WORK/aggregate-perf2c/kani-target" timeout 14400 cargo kani --manifest-path spikes/kani-nata-kernels/Cargo.toml --harness perf2c_full_product_heavy --solver kissat

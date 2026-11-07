@@ -189,13 +189,3 @@ index a1125ba..74a90c5 100644
 +        assert!(9 * 99 >= 100);
 +    }
  }
-diff --git a/spikes/kani-nata-kernels/src/lib.rs b/spikes/kani-nata-kernels/src/lib.rs
-index 9369a59..8d69554 100644
---- a/spikes/kani-nata-kernels/src/lib.rs
-+++ b/spikes/kani-nata-kernels/src/lib.rs
-@@ -1457,3 +1457,5 @@ mod decimal_proofs {
-         kani::cover!(ok); kani::cover!(!ok);
-     }
- }
-+
-+mod perf2c;

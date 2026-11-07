@@ -1,0 +1,245 @@
+diff --git a/crates/nata-exec/src/aggregate.rs b/crates/nata-exec/src/aggregate.rs
+index 8b39f4f..0cca045 100644
+--- a/crates/nata-exec/src/aggregate.rs
++++ b/crates/nata-exec/src/aggregate.rs
+@@ -538,6 +538,51 @@ impl Partial {
+                     }
+                     ("sum" | "avg", Some(Data::Dec(values))) => {
+                         let col = arg.as_ref().ok_or_else(resource)?;
++                        // Bounded small-group admission; high cardinality keeps
++                        // the original one-pass checked path and allocation bounds.
++                        let mut targets = [(0usize, 0usize); 8];
++                        let mut used = 0;
++                        let mut small = true;
++                        for &key in ids {
++                            if !targets[..used].contains(&key) {
++                                if used == targets.len() {
++                                    small = false;
++                                    break;
++                                }
++                                targets[used] = key;
++                                used += 1;
++                            }
++                        }
++                        let (precision, _) = col.ty.as_decimal().ok_or_else(resource)?;
++                        let limit = nata_kernels::decimal::pow10(u32::from(precision))
++                            .ok_or_else(resource)?
++                            .unsigned_abs();
++                        // Admit every touched group before updating any state.
++                        // Otherwise errors must retain original source-row order.
++                        small = small && rows.iter().all(|&row| !col.valid[row as usize] || values[row as usize].unsigned_abs() < limit)
++                            && targets[..used].iter().all(|&(p,id)| {
++                                matches!(&self.tables[p].groups.entries[id].1[slot], State::Sum(sum) if sum.can_add_batch(rows.len() as u64, precision))
++                            });
++                        if small {
++                            for &target in &targets[..used] {
++                                let (p, id) = target;
++                                if let State::Sum(sum) =
++                                    &mut self.tables[p].groups.entries[id].1[slot]
++                                {
++                                    let values = rows.iter().zip(ids).filter_map(|(&row, &key)| {
++                                        let i = row as usize;
++                                        if key == target && col.valid[i] {
++                                            Some(values[i])
++                                        } else {
++                                            None
++                                        }
++                                    });
++                                    sum.add_batch(values, precision)
++                                        .map_err(|_| overflow(agg))?;
++                                }
++                            }
++                            continue;
++                        }
+                         for (&row, &(p, id)) in rows.iter().zip(ids) {
+                             let i = row as usize;
+                             if col.valid[i]
+diff --git a/crates/nata-kernels/src/aggregate.rs b/crates/nata-kernels/src/aggregate.rs
+index 6de44ed..2a0cf11 100644
+--- a/crates/nata-kernels/src/aggregate.rs
++++ b/crates/nata-kernels/src/aggregate.rs
+@@ -71,6 +71,61 @@ impl ExactSum {
+         Ok(())
+     }
+ 
++    /// Sufficient narrow-state admission, with an upper bound on batch rows.
++    pub fn can_add_batch(&self, n: u64, precision: u8) -> bool {
++        let (Ok(limit), Sum::Narrow(current)) = (decimal_limit(precision), self.sum) else {
++            return false;
++        };
++        (1..=38).contains(&precision)
++            && crate::sum_admission::batch_envelope(
++                current.unsigned_abs(),
++                n,
++                limit.unsigned_abs().saturating_sub(1),
++            )
++            && checked_count(self.count, n).is_ok()
++    }
++
++    /// A selected valid batch for one group. Validate once, then either use
++    /// a narrow envelope or replay the unchanged checked/promoting updates.
++    #[allow(
++        clippy::disallowed_methods,
++        reason = "R26: admitted batch bounds every prefix"
++    )]
++    pub fn add_batch<I>(&mut self, values: I, precision: u8) -> Result<(), AggregateError>
++    where
++        I: Iterator<Item = i128> + Clone,
++    {
++        let mut n = 0u64;
++        let mut magnitude = 0;
++        for v in values.clone() {
++            n = n.checked_add(1).ok_or(AggregateError::Overflow)?;
++            magnitude = magnitude.max(v.unsigned_abs());
++        }
++        if (1..=38).contains(&precision)
++            && let Ok(limit) = decimal_limit(precision)
++            && magnitude < limit.unsigned_abs()
++            && let Sum::Narrow(current) = self.sum
++            && crate::sum_admission::batch_envelope(
++                current.unsigned_abs(),
++                n,
++                limit.unsigned_abs().saturating_sub(1),
++            )
++            && let Ok(count) = checked_count(self.count, n)
++        {
++            let mut sum = current;
++            for v in values {
++                sum = sum.wrapping_add(v);
++            }
++            self.sum = Sum::Narrow(sum);
++            self.count = count;
++            return Ok(());
++        }
++        for v in values {
++            self.add(v)?;
++        }
++        Ok(())
++    }
++
+     /// Combine a resident or validated spilled partial exactly once. No final
+     /// SUM precision check here: later partials may cancel a large intermediate.
+     pub fn merge(&mut self, other: Self) -> Result<(), AggregateError> {
+@@ -236,3 +291,56 @@ fn decimal_limit(precision: u8) -> Result<i128, AggregateError> {
+ fn fits(value: i128, precision: u8) -> bool {
+     decimal_limit(precision).is_ok_and(|limit| value.unsigned_abs() < limit.unsigned_abs())
+ }
++#[cfg(test)]
++#[allow(
++    clippy::arithmetic_side_effects,
++    reason = "independent boundary-test arithmetic"
++)]
++mod perf2c_tests {
++    use super::*;
++    #[test]
++    fn batch_prefix_promotion_cancellation_and_invalid_input() {
++        for p in 1..=38 {
++            let m = decimal_limit(p).expect("test boundary") - 1;
++            let values = [m, m, -m, -m, 1];
++            let mut expected = ExactSum::default();
++            let mut got = expected;
++            for v in values {
++                expected.add(v).expect("test boundary");
++            }
++            got.add_batch(values.into_iter(), p).expect("test boundary");
++            assert_eq!(got, expected);
++        }
++        let values = [1, 2, i128::MIN, 3];
++        let mut got = ExactSum::default();
++        assert_eq!(
++            got.add_batch(values.into_iter(), 1),
++            Err(AggregateError::InvalidState)
++        );
++        assert_eq!(got.count(), 2);
++        assert_eq!(got.decimal_sum(38), Ok(Some(3)));
++        let mut got = ExactSum::default();
++        got.add(99_999_999_999_999_999_999_999_999_999_999_999_999)
++            .expect("test boundary");
++        got.add(i128::MAX - 99_999_999_999_999_999_999_999_999_999_999_999_999)
++            .expect("test boundary");
++        got.add_batch([1, -1].into_iter(), 1)
++            .expect("test boundary"); // must promote, never wrap
++        assert_eq!(got.sum, Sum::Narrow(i128::MAX));
++        assert!(!crate::sum_admission::batch_envelope(
++            i128::MAX.unsigned_abs(),
++            1,
++            1
++        ));
++        let mut got = ExactSum {
++            sum: Sum::Narrow(0),
++            count: u64::MAX - 2,
++        };
++        assert_eq!(
++            got.add_batch([1, 1].into_iter(), 1),
++            Err(AggregateError::Overflow)
++        );
++        assert_eq!(got.count, u64::MAX - 1);
++        assert_eq!(got.sum, Sum::Narrow(1));
++    }
++}
+diff --git a/crates/nata-kernels/src/lib.rs b/crates/nata-kernels/src/lib.rs
+index 507d8b8..e12ba24 100644
+--- a/crates/nata-kernels/src/lib.rs
++++ b/crates/nata-kernels/src/lib.rs
+@@ -4,3 +4,4 @@ pub mod arrow_path;
+ pub mod decimal;
+ pub mod kernels;
+ pub mod strict_cast;
++pub mod sum_admission;
+diff --git a/crates/nata-kernels/src/sum_admission.rs b/crates/nata-kernels/src/sum_admission.rs
+index 862b8d9..302c458 100644
+--- a/crates/nata-kernels/src/sum_admission.rs
++++ b/crates/nata-kernels/src/sum_admission.rs
+@@ -10,5 +10,51 @@ pub fn batch_envelope(current: u128, n: u64, bound: u128) -> bool {
+         return false;
+     }
+     let contribution = bound << shift;
+-    current.checked_add(contribution).is_some_and(|v| v < (1u128 << 127))
++    current
++        .checked_add(contribution)
++        .is_some_and(|v| v < (1u128 << 127))
++}
++
++#[cfg(test)]
++#[allow(
++    clippy::arithmetic_side_effects,
++    reason = "independent checked boundary-test reference"
++)]
++mod tests {
++    use super::*;
++    #[test]
++    fn admission_never_allows_an_overflowing_prefix() {
++        let ceiling = 1u128 << 127;
++        for bound in [
++            0,
++            1,
++            9,
++            99,
++            999,
++            1_000_000_000_000_000_000,
++            ceiling - 1,
++            ceiling,
++            u128::MAX,
++        ] {
++            for n in [0, 1, 2, 3, 4, 7, 8, 255, 256, u64::MAX] {
++                for current in [0, 1, ceiling - 2, ceiling - 1, ceiling, u128::MAX] {
++                    if batch_envelope(current, n, bound) {
++                        let exact = bound
++                            .checked_mul(u128::from(n))
++                            .and_then(|v| v.checked_add(current));
++                        assert!(
++                            exact.is_some_and(|v| v < ceiling),
++                            "current={current} n={n} bound={bound}"
++                        );
++                    }
++                }
++            }
++        }
++        assert!(batch_envelope(0, 1, ceiling - 1));
++        assert!(batch_envelope(0, 0, u128::MAX));
++        assert!(batch_envelope(0, 3, 9));
++        assert!(!batch_envelope(ceiling - 1, 1, 1));
++        assert!(!batch_envelope(ceiling, 0, 0));
++        assert!(!batch_envelope(0, u64::MAX, u128::MAX));
++    }
+ }

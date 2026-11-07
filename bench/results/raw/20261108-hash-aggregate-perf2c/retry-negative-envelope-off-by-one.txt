@@ -78,9 +78,9 @@ warning: use of an unstable feature
   |
   = note: requested on the command line with `--force-warn unstable-features`
 
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.73s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.29s
 warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/spikes/kani-nata-kernels)
-note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 4`
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
 Checking harness perf2c::perf2c_proofs::perf2c_sum_envelope...
 CBMC 6.11.0 (cbmc-6.11.0)
 CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
@@ -91,168 +91,168 @@ Removal of function pointers and virtual functions
 Generic Property Instrumentation
 Running with 16 object bits, 48 offset bits (user-specified)
 Starting Bounded Model Checking
-aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 660 column 15 function std::option::Option::<u128>::is_some_and::<{closure@src/../../../crates/nata-kernels/src/sum_admission.rs:13:51: 13:54}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 660 column 15 function std::option::Option::<u128>::is_some_and::<{closure@src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:15:22: 15:25}> thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1012 column 15 function std::option::Option::<u128>::unwrap thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 2248 column 5 function std::option::unwrap_failed thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1014 column 21 function std::option::Option::<u128>::unwrap thread 0
-Runtime Symex: 0.051231s
+Runtime Symex: 0.0164668s
 size of program expression: 1309 steps
 slicing removed 679 assignments
 Generated 39 VCC(s), 35 remaining after simplification
-Runtime Postprocess Equation: 0.000607662s
+Runtime Postprocess Equation: 0.000281896s
 Passing problem to propositional reduction
 converting SSA
-Runtime Convert SSA: 0.257633s
+Runtime Convert SSA: 0.0919702s
 Running propositional reduction
 Post-processing
-Runtime Post-process: 1.629e-05s
+Runtime Post-process: 5.601e-06s
 Solving with CaDiCaL 3.0.0
 32305 variables, 100838 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0151835s
-Runtime decision procedure: 0.274218s
+Runtime Solver: 0.00512783s
+Runtime decision procedure: 0.0975677s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32306 variables, 100839 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0071981s
-Runtime decision procedure: 0.00820605s
+Runtime Solver: 0.00284209s
+Runtime decision procedure: 0.00315668s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32307 variables, 100840 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.133313s
-Runtime decision procedure: 0.134181s
+Runtime Solver: 0.0396385s
+Runtime decision procedure: 0.0399087s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32308 variables, 100841 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0250267s
-Runtime decision procedure: 0.0259964s
+Runtime Solver: 0.0092829s
+Runtime decision procedure: 0.00967428s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32309 variables, 100842 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.107094s
-Runtime decision procedure: 0.108059s
+Runtime Solver: 0.0407243s
+Runtime decision procedure: 0.0410953s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32310 variables, 100843 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 1.44578s
-Runtime decision procedure: 1.44714s
+Runtime Solver: 0.570358s
+Runtime decision procedure: 0.571106s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 32311 variables, 100844 clauses
 SAT checker: instance is UNSATISFIABLE
-Runtime Solver: 3.01801s
-Runtime decision procedure: 3.01864s
+Runtime Solver: 1.54573s
+Runtime decision procedure: 1.54613s
 
 RESULTS:
-Check 1: sum_admission::batch_envelope.assertion.1
+Check 1: sum_admission::batch_envelope::{closure#0}.assertion.1
 	 - Status: SUCCESS
 	 - Description: "attempt to shift left with overflow"
-	 - Location: src/../../../crates/nata-kernels/src/sum_admission.rs:6:26 in function sum_admission::batch_envelope
+	 - Location: src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:15:31 in function sum_admission::batch_envelope::{closure#0}
 
-Check 2: sum_admission::batch_envelope.assertion.2
+Check 2: core::num::<impl u128>::checked_add.arithmetic_overflow.1
 	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/../../../crates/nata-kernels/src/sum_admission.rs:12:24 in function sum_admission::batch_envelope
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u128>::checked_add
 
-Check 3: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.1
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/perf2c.rs:107:29 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 4: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.2
-	 - Status: FAILURE
-	 - Description: "assertion failed: current<(1u128<<127)"
-	 - Location: src/perf2c.rs:107:13 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 5: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.3
-	 - Status: SUCCESS
-	 - Description: "attempt to subtract with overflow"
-	 - Location: src/perf2c.rs:109:30 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 6: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.4
-	 - Status: SUCCESS
-	 - Description: "attempt to subtract with overflow"
-	 - Location: src/perf2c.rs:109:27 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 7: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.5
-	 - Status: SUCCESS
-	 - Description: "assertion failed: bound.leading_zeros()>=shift"
-	 - Location: src/perf2c.rs:110:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 8: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.6
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/perf2c.rs:111:29 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 9: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.7
-	 - Status: SUCCESS
-	 - Description: "assertion failed: rounded>=u128::from(n)"
-	 - Location: src/perf2c.rs:112:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 10: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.8
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/perf2c.rs:113:34 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 11: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.9
-	 - Status: SUCCESS
-	 - Description: "attempt to shift right with overflow"
-	 - Location: src/perf2c.rs:114:28 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 12: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.10
-	 - Status: SUCCESS
-	 - Description: "assertion failed: contribution>>shift == bound"
-	 - Location: src/perf2c.rs:114:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 13: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.11
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/perf2c.rs:115:68 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 14: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.12
-	 - Status: FAILURE
-	 - Description: "assertion failed: current.checked_add(contribution).unwrap()<(1u128<<127)"
-	 - Location: src/perf2c.rs:115:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 15: perf2c::perf2c_proofs::perf2c_sum_envelope.cover.1
-	 - Status: SATISFIED
-	 - Description: "cover condition: got && n>0"
-	 - Location: src/perf2c.rs:118:9 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 16: perf2c::perf2c_proofs::perf2c_sum_envelope.cover.2
-	 - Status: SATISFIED
-	 - Description: "cover condition: !got"
-	 - Location: src/perf2c.rs:118:35 in function perf2c::perf2c_proofs::perf2c_sum_envelope
-
-Check 17: std::option::unwrap_failed.assertion.1
+Check 3: std::option::unwrap_failed.assertion.1
 	 - Status: SUCCESS
 	 - Description: "called `Option::unwrap()` on a `None` value"
 	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2248:5 in function std::option::unwrap_failed
 
-Check 18: sum_admission::batch_envelope::{closure#0}.assertion.1
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/../../../crates/nata-kernels/src/sum_admission.rs:13:60 in function sum_admission::batch_envelope::{closure#0}
-
-Check 19: std::option::Option::<u128>::is_some_and::<{closure@src/../../../crates/nata-kernels/src/sum_admission.rs:13:51: 13:54}>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:660:15 in function std::option::Option::<u128>::is_some_and::<{closure@src/../../../crates/nata-kernels/src/sum_admission.rs:13:51: 13:54}>
-
-Check 20: std::option::Option::<u128>::unwrap.unreachable.1
+Check 4: std::option::Option::<u128>::unwrap.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<u128>::unwrap
 
-Check 21: core::num::<impl u128>::checked_add.arithmetic_overflow.1
+Check 5: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.1
 	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_add` which would overflow"
-	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u128>::checked_add
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:107:29 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 6: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.2
+	 - Status: FAILURE
+	 - Description: "assertion failed: current<(1u128<<127)"
+	 - Location: src/perf2c.rs:107:13 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 7: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to subtract with overflow"
+	 - Location: src/perf2c.rs:109:30 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 8: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.4
+	 - Status: SUCCESS
+	 - Description: "attempt to subtract with overflow"
+	 - Location: src/perf2c.rs:109:27 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 9: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.5
+	 - Status: SUCCESS
+	 - Description: "assertion failed: bound.leading_zeros()>=shift"
+	 - Location: src/perf2c.rs:110:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 10: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.6
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:111:29 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 11: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.7
+	 - Status: SUCCESS
+	 - Description: "assertion failed: rounded>=u128::from(n)"
+	 - Location: src/perf2c.rs:112:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 12: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.8
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:113:34 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 13: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.9
+	 - Status: SUCCESS
+	 - Description: "attempt to shift right with overflow"
+	 - Location: src/perf2c.rs:114:28 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 14: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.10
+	 - Status: SUCCESS
+	 - Description: "assertion failed: contribution>>shift == bound"
+	 - Location: src/perf2c.rs:114:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 15: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.11
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/perf2c.rs:115:68 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 16: perf2c::perf2c_proofs::perf2c_sum_envelope.assertion.12
+	 - Status: FAILURE
+	 - Description: "assertion failed: current.checked_add(contribution).unwrap()<(1u128<<127)"
+	 - Location: src/perf2c.rs:115:17 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 17: perf2c::perf2c_proofs::perf2c_sum_envelope.cover.1
+	 - Status: SATISFIED
+	 - Description: "cover condition: got && n>0"
+	 - Location: src/perf2c.rs:118:9 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 18: perf2c::perf2c_proofs::perf2c_sum_envelope.cover.2
+	 - Status: SATISFIED
+	 - Description: "cover condition: !got"
+	 - Location: src/perf2c.rs:118:35 in function perf2c::perf2c_proofs::perf2c_sum_envelope
+
+Check 19: std::option::Option::<u128>::is_some_and::<{closure@src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:15:22: 15:25}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:660:15 in function std::option::Option::<u128>::is_some_and::<{closure@src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:15:22: 15:25}>
+
+Check 20: sum_admission::batch_envelope.assertion.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:6:26 in function sum_admission::batch_envelope
+
+Check 21: sum_admission::batch_envelope.assertion.2
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs:12:24 in function sum_admission::batch_envelope
 
 
 SUMMARY:
@@ -266,7 +266,7 @@ Failed Checks: assertion failed: current.checked_add(contribution).unwrap()<(1u1
  File: "src/perf2c.rs", line 115, in perf2c::perf2c_proofs::perf2c_sum_envelope
 
 VERIFICATION:- FAILED
-Verification Time: 5.307576s
+Verification Time: 2.435557s
 
 Manual Harness Summary:
 Verification failed for - perf2c::perf2c_proofs::perf2c_sum_envelope

@@ -7,7 +7,7 @@ cases=[
  ('precision-plus-one','bench/results/raw/20261108-hash-aggregate-perf2c/retry-product-decimal.rs','<= u16::from(p)','<= u16::from(p).saturating_add(1)','perf2c_precision'),
  ('drop-scan','crates/nata-kernels/src/decimal.rs','ma < la && mb < lb','true','perf2c_scan'),
  ('aligned-no-spare-digit','crates/nata-kernels/src/decimal.rs','d.checked_sub(1)','d.checked_sub(0)','perf2c_aligned_precision'),
- ('envelope-off-by-one','crates/nata-kernels/src/sum_admission.rs','|v| v < (1u128 << 127)','|v| v <= (1u128 << 127)','perf2c_sum_envelope'),
+ ('envelope-off-by-one','bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs','|v| v < (1u128 << 127)','|v| v <= (1u128 << 127)','perf2c_sum_envelope'),
 ]
 results=[]
 for name,file,before,after,harness in cases:

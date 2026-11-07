@@ -138,4 +138,17 @@ mod perf2c_proofs {
         assert!(v.unsigned_abs()<(1u32<<(u32::from(a)+u32::from(b))));
         kani::cover!(x<0 && y<0); kani::cover!(x>0 && y>0);
     }
+
+    // The one surviving SUM mutant strengthens an already redundant guard.
+    #[kani::proof]
+    fn perf2c_sum_equal_shift_rejected() {
+        let (current,bound):(u128,u128)=kani::any(); let n:u64=kani::any();
+        kani::assume(n>0);
+        let shift=64-(n-1).leading_zeros();
+        if bound.leading_zeros()==shift {
+            assert!(!crate::sum_admission::batch_envelope(current,n,bound));
+        }
+        kani::cover!(bound.leading_zeros()==shift);
+        kani::cover!(crate::sum_admission::batch_envelope(current,n,bound));
+    }
 }

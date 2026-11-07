@@ -1,0 +1,1145 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.100795693,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150828957,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:5:5: replace batch_envelope -> bool with true",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 5,
+              "column": 5
+            },
+            "end": {
+              "line": 15,
+              "column": 45
+            }
+          },
+          "replacement": "true",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_5_col_5.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_5_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053373048,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151248265,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:5:5: replace batch_envelope -> bool with false",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 5,
+              "column": 5
+            },
+            "end": {
+              "line": 15,
+              "column": 45
+            }
+          },
+          "replacement": "false",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_5_col_5_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_5_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.004039485,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150709324,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:5:10: replace == with != in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 5,
+              "column": 10
+            },
+            "end": {
+              "line": 5,
+              "column": 12
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_5_col_10.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_5_col_10.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053748838,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150745091,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:6:24: replace < with == in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 6,
+              "column": 24
+            },
+            "end": {
+              "line": 6,
+              "column": 25
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_6_col_24.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_6_col_24.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.05305078,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150833931,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:6:24: replace < with > in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 6,
+              "column": 24
+            },
+            "end": {
+              "line": 6,
+              "column": 25
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_6_col_24_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_6_col_24_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.203421318,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150901921,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:6:24: replace < with <= in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 6,
+              "column": 24
+            },
+            "end": {
+              "line": 6,
+              "column": 25
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_6_col_24_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_6_col_24_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.253274869,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201129821,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:6:33: replace << with >> in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 6,
+              "column": 33
+            },
+            "end": {
+              "line": 6,
+              "column": 35
+            }
+          },
+          "replacement": ">>",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_6_col_33.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_6_col_33.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103278938,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150800317,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:9:30: replace < with == in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 9,
+              "column": 30
+            },
+            "end": {
+              "line": 9,
+              "column": 31
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_9_col_30.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_9_col_30.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103607709,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150911728,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:9:30: replace < with > in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 9,
+              "column": 30
+            },
+            "end": {
+              "line": 9,
+              "column": 31
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_9_col_30_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_9_col_30_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.05347614,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150993698,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:9:30: replace < with <= in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 9,
+              "column": 30
+            },
+            "end": {
+              "line": 9,
+              "column": 31
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_9_col_30_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_9_col_30_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053674519,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150832316,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:12:30: replace << with >> in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 12,
+              "column": 30
+            },
+            "end": {
+              "line": 12,
+              "column": 32
+            }
+          },
+          "replacement": ">>",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_12_col_30.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_12_col_30.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103221014,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150806725,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:15:28: replace < with == in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 15,
+              "column": 28
+            },
+            "end": {
+              "line": 15,
+              "column": 29
+            }
+          },
+          "replacement": "==",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_15_col_28.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_15_col_28.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.053381415,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150907929,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:15:28: replace < with > in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 15,
+              "column": 28
+            },
+            "end": {
+              "line": 15,
+              "column": 29
+            }
+          },
+          "replacement": ">",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_15_col_28_001.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_15_col_28_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.103345606,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151212388,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:15:28: replace < with <= in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 15,
+              "column": 28
+            },
+            "end": {
+              "line": 15,
+              "column": 29
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_15_col_28_002.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_15_col_28_002.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.20407686,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.1508555,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/sum_admission.rs:15:37: replace << with >> in batch_envelope",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/sum_admission.rs",
+          "function": {
+            "function_name": "batch_envelope",
+            "return_type": "-> bool",
+            "span": {
+              "start": {
+                "line": 4,
+                "column": 1
+              },
+              "end": {
+                "line": 16,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 15,
+              "column": 37
+            },
+            "end": {
+              "line": 15,
+              "column": 39
+            }
+          },
+          "replacement": ">>",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__sum_admission.rs_line_15_col_37.log",
+      "diff_path": "diff/crates__nata-kernels__src__sum_admission.rs_line_15_col_37.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.153979186,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.201010882,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 15,
+  "missed": 1,
+  "caught": 14,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-07T22:25:58.011866113Z",
+  "end_time": "2026-11-07T22:26:17.197360972Z",
+  "cargo_mutants_version": "27.1.0"
+}

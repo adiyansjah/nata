@@ -1,0 +1,34 @@
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-6059bcf0/crates/nata-kernels)
+    Finished `release` profile [optimized] target(s) in 2.21s
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_kernels-a6ea8d2b20697824)
+
+running 26 tests
+test aggregate::perf2c_tests::batch_prefix_promotion_cancellation_and_invalid_input ... ok
+test decimal::tests::bounded_columns_match_an_independent_exact_reference ... ok
+test decimal::tests::perf2c_admission_rejects_each_bad_precondition ... ok
+test decimal::tests::perf2c_aligned_boundaries_and_checked_fallback ... ok
+test decimal::tests::selected_nulls_and_strict_bounds ... ok
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test sum_admission::tests::admission_never_allows_an_overflowing_prefix ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+

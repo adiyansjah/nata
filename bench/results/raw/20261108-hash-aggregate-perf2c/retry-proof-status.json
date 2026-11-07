@@ -1,0 +1,73 @@
+{
+  "completed": [
+    {
+      "log": "retry-kani-decimal_column_add_selected_null_and_bounds.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-decimal_column_machine_overflow.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-decimal_column_selected_null_and_bounds.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-decimal_column_sub_selected_null_and_bounds.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_aligned_precision.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_precision.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_reduced_aligned.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_reduced_bit_product.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_reduced_product.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_reduced_sum_envelope.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_scan.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-perf2c_sum_envelope.txt",
+      "proved": true,
+      "covers": 2
+    },
+    {
+      "log": "retry-kani-sum-equal-shift.txt",
+      "proved": true,
+      "covers": 2
+    }
+  ],
+  "proofs": 13,
+  "covers": 26,
+  "negative_controls": 4,
+  "full_width": "unproved; 20-second Kissat trial timed out with exit 124; four-hour parent steps prepared"
+}
