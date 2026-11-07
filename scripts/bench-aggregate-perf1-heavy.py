@@ -42,6 +42,28 @@ def save(path, value):
     temporary.replace(path)
 
 
+def safe_extract(archive, dest):
+    """Extract a git-archive tarball safely. Python 3.11.2 (the Debian 12 VM image) has no extractall(filter=), found
+    2026-11-07 when the first timing run failed on it, so fall back to checking every member ourselves."""
+    try:
+        archive.extractall(dest, filter='data')
+        return
+    except TypeError:
+        pass
+    root = Path(dest).resolve()
+    for member in archive.getmembers():
+        target = (root / member.name).resolve()
+        if not (target == root or str(target).startswith(str(root) + os.sep)):
+            raise ValueError(f'archive member escapes the destination: {member.name}')
+        if member.issym() or member.islnk():
+            link = (target.parent / member.linkname).resolve()
+            if not str(link).startswith(str(root) + os.sep):
+                raise ValueError(f'archive link escapes the destination: {member.name}')
+        if not (member.isfile() or member.isdir() or member.issym()):
+            raise ValueError(f'unexpected archive member type: {member.name}')
+    archive.extractall(dest)
+
+
 def git(repo, *args):
     return subprocess.check_output(['git', '-C', str(repo), *args], text=True).strip()
 
@@ -233,7 +255,7 @@ def run(args):
             shutil.rmtree(source)
         source.mkdir(parents=True)
         with tarfile.open(bundle / revision['archive'], 'r:gz') as archive:
-            archive.extractall(source, filter='data')
+            safe_extract(archive, source)
         for query in QUERIES:
             if (source / f'check/queries/aggregate/{query}.sql').read_text() != value['queries'][query]:
                 raise ValueError('queries differ between the committed revisions or manifest')
