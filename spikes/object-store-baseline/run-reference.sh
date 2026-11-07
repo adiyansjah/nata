@@ -45,6 +45,7 @@ machine() { { date -u +%FT%TZ; uname -srm; nproc; lscpu | grep -E 'Model name|Ar
 
 case "$step" in
   build)
+    duckdb -c "INSTALL httpfs;" > "$OUT/httpfs-install.txt" 2>&1 || { echo "INSTALL httpfs failed"; cat "$OUT/httpfs-install.txt"; }
     cd "$HERE" && { cargo build --release --locked 2>&1 | tail -5; cargo test --release --locked 2>&1 | grep -E "^test result|FAILED|panicked" ; } | tee "$OUT/build.txt"
     ls -la "$OSB" ;;
   tests)

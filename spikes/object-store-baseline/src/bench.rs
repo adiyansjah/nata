@@ -21,6 +21,8 @@ use crate::util::{Redactor, env_nonempty, median};
 pub enum StoreKind {
     Gcs { bucket: String },
     S3 { spec: S3Spec },
+    /// A local directory (tests of upload/list/delete only; no DuckDB arm).
+    Fs { dir: String },
 }
 
 #[derive(Clone)]
@@ -34,6 +36,7 @@ impl StoreCfg {
         let prefix = env_nonempty("NATA_OBJ_PREFIX").ok_or("NATA_OBJ_PREFIX is not set")?;
         let bucket = env_nonempty("NATA_OBJ_BUCKET").ok_or("NATA_OBJ_BUCKET is not set")?;
         match env_nonempty("NATA_OBJ_KIND").as_deref() {
+            Some("fs") => Ok(StoreCfg { kind: StoreKind::Fs { dir: bucket }, prefix }),
             Some("s3") => Ok(StoreCfg {
                 kind: StoreKind::S3 {
                     spec: S3Spec {
@@ -54,12 +57,14 @@ impl StoreCfg {
         match &self.kind {
             StoreKind::Gcs { bucket } => build_gcs(bucket, cfg, m),
             StoreKind::S3 { spec } => build_s3(spec, cfg, m),
+            StoreKind::Fs { dir } => object_store::local::LocalFileSystem::new_with_prefix(dir).map(|s| Arc::new(s) as Arc<dyn ObjectStore>).map_err(|e| e.to_string()),
         }
     }
     pub fn redactor(&self) -> Redactor {
         let mut v = vec![self.prefix.clone()];
         match &self.kind {
             StoreKind::Gcs { bucket } => v.push(bucket.clone()),
+            StoreKind::Fs { dir } => v.push(dir.clone()),
             StoreKind::S3 { spec } => {
                 v.push(spec.bucket.clone());
                 v.push(spec.endpoint.clone());
@@ -77,6 +82,7 @@ impl StoreCfg {
         match &self.kind {
             StoreKind::Gcs { bucket } => format!("https://storage.googleapis.com/{bucket}/{}/{rel}", self.prefix),
             StoreKind::S3 { spec } => format!("s3://{}/{}/{rel}", spec.bucket, self.prefix),
+            StoreKind::Fs { .. } => String::new(),
         }
     }
 }
@@ -177,7 +183,7 @@ pub fn duck_script(sc: &StoreCfg, cell: &Cell, q: &QueryKind, threads: usize, re
                 s += &format!("CREATE OR REPLACE SECRET osb_s3 (TYPE S3, KEY_ID '{k}', SECRET '{sec}', ENDPOINT '{}', URL_STYLE 'path', USE_SSL {ssl}, REGION '{}');\n", host.trim_end_matches('/'), spec.region);
             }
         }
-        (StoreKind::Gcs { .. }, _) => {
+        (StoreKind::Gcs { .. } | StoreKind::Fs { .. }, _) => {
             if let Some(t) = token {
                 s += &format!("CREATE OR REPLACE SECRET osb_http (TYPE http, BEARER_TOKEN '{t}', SCOPE 'https://storage.googleapis.com/');\n");
             }

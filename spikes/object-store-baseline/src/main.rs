@@ -89,12 +89,21 @@ fn main() {
                     let rel = f.strip_prefix(&dir).unwrap().to_string_lossy().to_string();
                     let dest = sc.path(&rel);
                     async move {
+                        use tokio::io::AsyncReadExt;
                         let up = store.put_multipart(&dest).await.map_err(|e| e.to_string())?;
-                        let data = tokio::fs::read(&f).await.map_err(|e| e.to_string())?;
                         let mut w = object_store::WriteMultipart::new_with_chunk_size(up, 32 << 20);
-                        w.write(&data);
+                        let mut file = tokio::fs::File::open(&f).await.map_err(|e| e.to_string())?;
+                        let mut buf = vec![0u8; 8 << 20];
+                        let mut total = 0usize;
+                        loop {
+                            let n = file.read(&mut buf).await.map_err(|e| e.to_string())?;
+                            if n == 0 { break; }
+                            w.wait_for_capacity(4).await.map_err(|e| e.to_string())?; // bounded memory: at most 4 parts in flight per file
+                            w.write(&buf[..n]);
+                            total += n;
+                        }
                         w.finish().await.map_err(|e| e.to_string())?;
-                        Ok::<usize, String>(data.len())
+                        Ok::<usize, String>(total)
                     }
                 }).buffer_unordered(4).collect::<Vec<_>>().await;
                 let mut bytes = 0usize;
@@ -184,10 +193,11 @@ fn main() {
             if bad > 0 { println!("RESULT bench: {bad} verification runs not ok: no timing kept"); std::process::exit(3); }
             println!("verification: every cell x arm equals the DuckDB-on-local-files answer");
             let mut total = 0; let mut notok = 0;
+            // a timed block starts on a quiet machine: wait once for the whole step (the 1-minute load decays too slowly to wait per cell), then log the load before every cell
+            println!("{}", bench::settle("start"));
             for round in 1..=rounds {
                 for (ci, c) in cells.iter().enumerate() {
-                    let line = bench::settle(&format!("r{round}c{ci}"));
-                    if line.contains("NOT SETTLED") { println!("{line}"); }
+                    println!("LOAD round {round} cell {ci}: {:.2}", std::fs::read_to_string("/proc/loadavg").ok().and_then(|s| s.split_whitespace().next().and_then(|x| x.parse::<f64>().ok())).unwrap_or(0.0));
                     // alternate: the arm order rotates every round and cell (A B A' B' ... then shifted), so no arm always runs first
                     let k = (round + ci) % arms.len();
                     for j in 0..arms.len() {
