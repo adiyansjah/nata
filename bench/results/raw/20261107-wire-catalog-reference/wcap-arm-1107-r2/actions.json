@@ -1,0 +1,17 @@
+{
+  "psql \\dt": "PASS",
+  "psql \\dt *.*": "PASS",
+  "psql \\dt empty.*": "PASS",
+  "psql \\dt \"Quoted Schema\".*": "PASS",
+  "psql \\d public.all_types": "PASS",
+  "psql \\d \"Quoted Schema\".\"Mixed Table\"": "PASS",
+  "psql \\dn": "PASS",
+  "psql \\df": "PASS",
+  "psql \\l": "PASS",
+  "psql \\copy public.all_types TO STDOUT WITH (FORMAT csv, HEADER true)": "PASS",
+  "psql \\copy (SELECT * FROM public.all_types) TO STDOUT": "PASS",
+  "pgjdbc metadata and CopyManager": "PASS",
+  "psycopg explicit metadata SQL": "PASS",
+  "pgcli completion refresh": "PASS",
+  "ADBC get_objects and get_table_schema default COPY": "PASS"
+}

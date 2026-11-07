@@ -133,4 +133,6 @@ sc=$(steps slice4close | grep '^STEP ' | grep -vE '^STEP (machine-|setup-|code-t
 [ "$sc" = "STEP s4c-gen-sf1 STEP s4c-gen-sf10 STEP s4c-build STEP s4c-fixtures STEP s4c-python STEP s4c-correct STEP s4c-contention STEP s4c-process STEP s4c-diff STEP s4c-bench STEP s4c-scan-bench STEP s4c-leaks " ] && ok "slice4close selects all checks before timing" || bad "slice4close: $sc"
 grep -q 'icebergpolaris|slice4bench|slice4close) python3' "$VS" && ok "startup installs slice4close venv support" || bad "slice4close startup missing"
 u=$(steps nosuchjob); echo "$u" | grep -q 'FAILJOB unknown job' && ok "an unknown job is refused" || bad "unknown job accepted: $u"
+wc=$(steps wirecapture | grep "^STEP " | grep -vE "^STEP (machine-|setup-|code-tree)" | tr "\n" " ")
+[ "$wc" = "STEP wc-reference " ] && ok "wirecapture only runs its PostgreSQL reference script" || bad "wirecapture: $wc"
 [ "$fail" = 0 ] && echo "all job-chain tests passed" || { echo "SOME TESTS FAILED"; exit 1; }

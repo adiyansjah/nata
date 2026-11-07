@@ -1,0 +1,8 @@
+// Standalone PostgreSQL text/binary validation reader; std only.
+use std::{io::{Read,Write,BufReader},net::TcpStream};
+fn send(s:&mut TcpStream,t:u8,b:&[u8]) { s.write_all(&[t]).unwrap();s.write_all(&((b.len()+4) as u32).to_be_bytes()).unwrap();s.write_all(b).unwrap(); }
+fn frame(s:&mut impl Read)->(u8,Vec<u8>){let mut h=[0;5];s.read_exact(&mut h).unwrap();let n=u32::from_be_bytes(h[1..].try_into().unwrap()) as usize;assert!((4..16777216).contains(&n));let mut b=vec![0;n-4];s.read_exact(&mut b).unwrap();(h[0],b)}
+fn main(){let binary=std::env::args().nth(1).as_deref()==Some("binary");let mut s=TcpStream::connect("127.0.0.1:55432").unwrap();s.set_nodelay(true).unwrap();let mut r=BufReader::with_capacity(256*1024,s.try_clone().unwrap());let mut b=196608u32.to_be_bytes().to_vec();b.extend(b"user\0nata\0database\0nata\0\0");s.write_all(&((b.len()+4)as u32).to_be_bytes()).unwrap();s.write_all(&b).unwrap();loop{let(t,_)=frame(&mut r);if t==b'Z'{break}}
+if binary {send(&mut s,b'P',b"\0SELECT v FROM million\0\0\0");send(&mut s,b'B',b"\0\0\0\0\0\0\0\x01\0\x01");send(&mut s,b'E',b"\0\0\0\0\0");send(&mut s,b'S',b"");}else{send(&mut s,b'Q',b"SELECT v FROM million\0");}
+let mut n=0i64;loop{let(t,b)=frame(&mut r);if t==b'D'{assert_eq!(&b[..2],&[0,1]);let len=i32::from_be_bytes(b[2..6].try_into().unwrap())as usize;assert_eq!(b.len(),len+6);let v=if binary{i64::from_be_bytes(b[6..].try_into().unwrap())}else{std::str::from_utf8(&b[6..]).unwrap().parse().unwrap()};assert_eq!(v,n);n+=1;}if t==b'E'{panic!("backend error")};if t==b'Z'{break}}
+assert_eq!(n,1000000);println!("validated {n}");send(&mut s,b'X',b"");}

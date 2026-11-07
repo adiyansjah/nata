@@ -45,6 +45,9 @@ case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in iceberg|iceberg-smoke|icebergspikes
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in debt-rss)
   apt-get update -qq && apt-get install -y -qq heaptrack python3-venv ;;
 esac
+case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in wirecapture)
+  apt-get update -qq && apt-get install -y -qq postgresql postgresql-client python3-venv default-jdk-headless ;;
+esac
 case "$(cat "$MNT/JOBNAME" 2> /dev/null)" in pgwirebench|item35)
   apt-get update -qq && apt-get install -y -qq postgresql postgresql-client linux-perf valgrind python3-venv default-jdk-headless
   echo 'nata ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/nata-pgwirebench

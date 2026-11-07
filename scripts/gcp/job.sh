@@ -314,6 +314,8 @@ case "$JOB" in
     run sb-gen-sf10 bash -c 'cd "$SRC" && scripts/gen-tpch.sh 10 data/tpch-sf10'
     run sb-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata'
     run sb-bench bash -c 'cd "$SRC" && { SCAN_WORK="$WORK/scan-work" crates/nata-bench/scan-bench.sh "$WORK/target-ws/release/nata" data/tpch-sf1 data/tpch-sf10 "$RESULTS/scan-bench" 5; echo "exit status: $?"; } > "$RESULTS/scan-bench-run.txt" 2>&1; rm -rf "$WORK/scan-work"; true' ;;
+  wirecapture)
+    run wc-reference bash -c 'bash "$SRC/scripts/wirecapture/run.sh" > "$RESULTS/wirecapture.txt" 2>&1' ;;
   pgwirebench|item35)
     run pw-build bash -c 'cd "$SRC" && CARGO_TARGET_DIR="$WORK/target-ws" cargo build --release -p nata -p nata-check -p nata-bench --bins'
     if [ "$JOB" = item35 ]; then

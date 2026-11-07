@@ -1,0 +1,15 @@
+{"action": "psql \\dt", "first": 1, "last": 1}
+{"action": "psql \\dt *.*", "first": 2, "last": 2}
+{"action": "psql \\dt empty.*", "first": 3, "last": 3}
+{"action": "psql \\dt \"Quoted Schema\".*", "first": 4, "last": 4}
+{"action": "psql \\d public.all_types", "first": 5, "last": 5}
+{"action": "psql \\d \"Quoted Schema\".\"Mixed Table\"", "first": 6, "last": 6}
+{"action": "psql \\dn", "first": 7, "last": 7}
+{"action": "psql \\df", "first": 8, "last": 8}
+{"action": "psql \\l", "first": 9, "last": 9}
+{"action": "psql \\copy public.all_types TO STDOUT WITH (FORMAT csv, HEADER true)", "first": 10, "last": 10}
+{"action": "psql \\copy (SELECT * FROM public.all_types) TO STDOUT", "first": 11, "last": 11}
+{"action": "pgjdbc metadata and CopyManager", "first": 12, "last": 12}
+{"action": "psycopg explicit metadata SQL", "first": 13, "last": 13}
+{"action": "pgcli completion refresh", "first": 14, "last": 15}
+{"action": "ADBC get_objects and get_table_schema default COPY", "first": 16, "last": 17}
