@@ -26,6 +26,7 @@ IPC = "crates/nata-exec/src/spill/ipc.rs"
 PIPE = "crates/nata-exec/src/aggregate/pipeline.rs"
 STORAGE = "crates/nata-exec/src/aggregate/storage.rs"
 M = {
+ "dictionary-scratch-admission-skipped": ("exec-dictionary", [(PIPE, "if strings && !scratch.reserve(manager, Self::BYTES) {", "if false && strings && !scratch.reserve(manager, Self::BYTES) {")]),
  "scratch-reservation-not-released": ("exec", [(PIPE, "struct ScanState {", "impl Drop for Scratch { fn drop(&mut self) { std::mem::forget(std::mem::take(&mut self.grants)); } } struct ScanState {")]),
  "borrowed-key-equality-skipped": ("exec", [(AG, "a == v.get(i)", "a == v.get(i) || true")]),
  "aggregate-cancel-poll-removed": ("exec", [(AG, "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled()", "(evaluated.next - start).is_multiple_of(CANCEL_ROWS) && false && cancelled()")]),
@@ -159,7 +160,7 @@ def cargo(base, work, args, timeout=1500):
 # later deep-aggregate fixture becomes exponential before its guard test runs.
 # The full unmutated exec suite still runs; this mutant uses its original,
 # independently failing selected-branch test rather than a global timeout.
-SUITES = {"exec-case": [["-p", "nata-exec", "--test", "exec", "case_evaluates_only_the_branch_a_row_takes", "--", "--exact"]], "exec": [["-p", "nata-exec"]], "cli": [["-p", "nata", "--test", "sql_cli", "--test", "sql_reliability"]]}
+SUITES = {"exec-dictionary": [["-p", "nata-exec", "--test", "aggregate_spill", "dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget", "--", "--exact"], ["-p", "nata-exec", "--lib", "dictionary_scratch_admission_precedes_revocable_tables"]], "exec-case": [["-p", "nata-exec", "--test", "exec", "case_evaluates_only_the_branch_a_row_takes", "--", "--exact"]], "exec": [["-p", "nata-exec"]], "cli": [["-p", "nata", "--test", "sql_cli", "--test", "sql_reliability"]]}
 
 
 def run_suite(suite, base, work):

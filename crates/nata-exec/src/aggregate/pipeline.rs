@@ -13,6 +13,29 @@ use std::collections::VecDeque;
 fn scan_error(e: impl std::fmt::Display) -> ScanError {
     ScanError::new(ErrorKind::Internal(format!("aggregate spill: {e}")))
 }
+fn memory_error(shared: &Shared, minimum: usize) -> ScanError {
+    let pos = shared
+        .plan
+        .aggregate
+        .as_ref()
+        .and_then(|a| {
+            a.keys
+                .first()
+                .map(|e| e.pos)
+                .or_else(|| a.aggregates.first().map(|a| a.pos))
+        })
+        .unwrap_or(nata_sql::Pos::NONE);
+    ScanError::new(
+        EvalError::at(
+            pos,
+            format!(
+                "resource error: aggregate minimum working set requires at least {minimum} bytes, budget {} bytes",
+                shared.manager.snapshot().budget,
+            ),
+        )
+        .into_kind(),
+    )
+}
 fn stopped(cancel: Option<&ScanCancel>) -> bool {
     cancel.is_some_and(ScanCancel::is_cancelled)
 }
@@ -32,6 +55,18 @@ struct Scratch {
     grants: Chunks,
 }
 impl Scratch {
+    // The existing cache allocation floor is non-revocable while a batch is
+    // evaluated. Admit it before any task can borrow memory for tables.
+    const BYTES: usize = 64 << 10;
+    const MINIMUM: usize = Self::BYTES + 128; // Chunks reservation metadata
+
+    fn admitted(manager: &Arc<MemoryManager>, strings: bool) -> Result<Self, ScanError> {
+        let mut scratch = Self::default();
+        if strings && !scratch.reserve(manager, Self::BYTES) {
+            return Err(ScanError::new(resource().into_kind()));
+        }
+        Ok(scratch)
+    }
     fn reserve(&mut self, manager: &Arc<MemoryManager>, bytes: usize) -> bool {
         let extra = bytes.saturating_sub(self.capacity);
         if extra == 0 {
@@ -41,7 +76,8 @@ impl Scratch {
         // pressure: the caller spills and retries, or reports a minimum-set
         // error when it owns no reclaimable state. No allocation on failure.
         if !matches!(
-            self.grants.reserve(manager, 0, extra, bytes.max(64 << 10)),
+            self.grants
+                .reserve(manager, 0, extra, bytes.max(Self::BYTES)),
             Ok(true)
         ) {
             return false;
@@ -114,8 +150,10 @@ pub(super) fn accumulate(
     // The initial runtime/metadata/output workspace is reserved before opening
     // a scan or constructing queues and continuation vectors.
     observed.stats = Some(Arc::new(nata_parquet::ScanStats::default()));
-    let runtime =
-        Arc::new(grant(&shared.manager, 2 << 20).map_err(|e| ScanError::new(e.into_kind()))?);
+    let runtime = Arc::new(
+        grant(&shared.manager, 2 << 20)
+            .map_err(|_| memory_error(shared, (2 << 20) + shared.manager.snapshot().progress))?,
+    );
     let mut options = shared.plan.scan.scan_options();
     options.late_materialization = cfg.late_materialization;
     if shared.plan.scan.columns.is_empty() {
@@ -187,20 +225,38 @@ pub(super) fn accumulate(
         rehashes: Arc::default(),
         workspace: Mutex::new(Workspace::new(&shared.manager).map_err(scan_error)?),
     });
+    let io = IoService::new(32, &shared.manager).map_err(scan_error)?;
+    let targets = files(&storage.registry)?;
     let before_decode = shared.manager.snapshot();
     let free = before_decode
         .budget
         .saturating_sub(before_decode.progress)
         .saturating_sub(before_decode.held);
+    let has_strings = shared
+        .plan
+        .scan
+        .columns
+        .iter()
+        .any(|c| c.ty == SqlType::Varchar);
+    let task_bytes = decode_bytes
+        .checked_add(if has_strings { Scratch::MINIMUM } else { 0 })
+        .ok_or_else(|| scan_error("scan minimum working set overflow"))?;
+    // Preserve the existing 1 MiB table-progress allowance in addition to
+    // every admitted cursor and its non-revocable string scratch floor.
+    let minimum = task_bytes.saturating_add(1 << 20);
+    if minimum > free {
+        return Err(memory_error(
+            shared,
+            budget.saturating_sub(free).saturating_add(minimum),
+        ));
+    }
     let n = cfg
         .threads
         .max(1)
         .min(tasks.len().max(1))
         .min(32)
-        .min((free.saturating_sub(1 << 20) / decode_bytes.max(1)).max(1))
+        .min((free.saturating_sub(1 << 20) / task_bytes.max(1)).max(1))
         .max(1);
-    let io = IoService::new(32, &shared.manager).map_err(scan_error)?;
-    let targets = files(&storage.registry)?;
     let tasks = Mutex::new(tasks);
     let mut states = Vec::new();
     for _ in 0..n {
@@ -218,7 +274,7 @@ pub(super) fn accumulate(
             finishing: false,
             pressure_since: None,
             source: None,
-            strings: Scratch::default(),
+            strings: Scratch::admitted(&shared.manager, has_strings)?,
             _decode: decode,
         });
     }
@@ -318,23 +374,40 @@ pub(super) fn accumulate(
                     }
                 }
                 if let Some(batch) = &state.input {
-                    let bytes = string_scratch(batch, &shared.plan)
+                    // A dictionary can expand to much more text than its codes.
+                    // Stream a prefix through admitted scratch rather than ask
+                    // for a larger multi-row working set under table pressure.
+                    let mut rows = batch.num_rows();
+                    let mut input = batch.clone();
+                    let mut bytes = string_scratch(&input, &shared.plan)
                         .map_err(|e| ScanError::new(e.into_kind()))?;
+                    while bytes > state.strings.capacity && rows > 1 {
+                        rows = rows.div_ceil(2);
+                        input = batch.slice(0, rows);
+                        bytes = string_scratch(&input, &shared.plan)
+                            .map_err(|e| ScanError::new(e.into_kind()))?;
+                    }
                     if !state.strings.reserve(&shared.manager, bytes) {
                         if state.partial.tables.iter().any(|t| !t.groups.is_empty()) {
                             submit_write(state, &storage, &targets, &io, wake.clone())?;
                             return Ok(Step::Yield);
                         }
-                        return Err(scan_error(
-                            "resource error: aggregate string expression minimum working set exceeds budget",
+                        return Err(memory_error(
+                            shared,
+                            bytes.saturating_add(
+                                shared.manager.snapshot().progress
+                                    + state._decode.bytes()
+                                    + (2 << 20),
+                            ),
                         ));
                     }
                     let evaluated = state
                         .partial
-                        .evaluate(batch)
+                        .evaluate(&input)
                         .map_err(|e| ScanError::new(e.into_kind()))?;
+                    state.input = (rows < batch.num_rows())
+                        .then(|| batch.slice(rows, batch.num_rows() - rows));
                     state.evaluated = Some(evaluated);
-                    state.input = None;
                     return Ok(Step::Yield);
                 }
                 if state.cursor.is_none() {
@@ -828,6 +901,31 @@ fn files_for_repartition(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn dictionary_scratch_admission_precedes_revocable_tables() {
+        let manager = MemoryManager::new(2 << 20, 4096, 1).expect("manager");
+        let mut scratch = Scratch::admitted(&manager, true).expect("admission");
+        let before = manager.snapshot();
+        assert_eq!(
+            before.held,
+            Scratch::MINIMUM,
+            "admission includes chunk metadata"
+        );
+        let table = grant(&manager, before.budget - before.progress - before.held)
+            .expect("table borrows remainder");
+        // Exactly the fresh fixture's upper bound: 256 short strings, 13
+        // dictionary values, multiplied by its expression scratch allowance.
+        assert!(
+            scratch.reserve(&manager, 60 << 10),
+            "a peer table must not starve dictionary evaluation"
+        );
+        assert_eq!(manager.snapshot().pending, 0);
+        drop(table);
+        drop(scratch);
+        let after = manager.snapshot();
+        assert_eq!((after.held, after.live_grants, after.pending), (0, 0, 0));
+        assert!(after.peak <= after.budget);
+    }
     #[test]
     fn competing_scratch_requests_remain_retriable_pressure() {
         let manager = MemoryManager::new(1024, 128, 1).expect("manager");

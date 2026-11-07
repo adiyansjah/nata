@@ -143,7 +143,23 @@ fn error_budget_cancel_and_sink_failure_release_all_state() {
         let r = execute_observed(plan, &cfg, None, &mut observed, |_| {
             Err(nata_parquet::ScanError::usage("sink gone"))
         });
-        let e = r.expect_err("failure").to_string();
+        let error = r.expect_err("failure");
+        if fail {
+            match &error.kind {
+                nata_parquet::ErrorKind::Eval {
+                    message,
+                    line,
+                    column,
+                } => {
+                    assert!(*line > 0 && *column > 0, "positioned memory limit");
+                    assert!(message.contains("minimum working set"));
+                    assert!(message.contains("8192 bytes"));
+                    assert!(message.contains("2101248 bytes"));
+                }
+                other => panic!("expected resource error, got {other:?}"),
+            }
+        }
+        let e = error.to_string();
         assert!(
             e.contains(if fail { "resource error" } else { "sink gone" }),
             "{e}"

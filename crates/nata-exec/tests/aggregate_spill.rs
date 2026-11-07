@@ -26,6 +26,55 @@ fn empty(base: &std::path::Path) {
 }
 
 #[test]
+fn dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget() {
+    use arrow_array::{Int64Array, StringArray};
+    let d = dir("spill-dictionary-fresh");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("base");
+    let p = d.join("big.parquet");
+    // gen-sql-check-data.sh: 100,000 rows, 13 short dictionary values,
+    // several row groups. DuckDB rounds ROW_GROUP_SIZE 5000 to 6144.
+    let strings: ArrayRef = Arc::new(StringArray::from_iter_values(
+        (1..=100_000).map(|i| format!("k{}", i % 13)),
+    ));
+    let big: ArrayRef = Arc::new(Int64Array::from_iter_values(
+        (1..=100_000).map(|i| i * 1000),
+    ));
+    write_batch(
+        &p,
+        &RecordBatch::try_from_iter([("s", strings), ("big", big)]).expect("batch"),
+        6144,
+    );
+    let q = format!(
+        "SELECT s, count(*) AS n, sum(big) AS total FROM '{}' GROUP BY s HAVING count(*) > 100",
+        p.display()
+    );
+    let expected: Vec<_> = (0..13)
+        .map(|k| {
+            let ids: Vec<i64> = (1..=100_000).filter(|i| i % 13 == k).collect();
+            format!("k{k},{},{}", ids.len(), ids.iter().sum::<i64>() * 1000)
+        })
+        .collect();
+    let mut expected = expected;
+    expected.sort();
+    for threads in [1, 8, 16] {
+        for force in [false, true] {
+            let mut config = cfg(&base, threads);
+            config.aggregate_force_spill = force;
+            let out = run_with(&q, &config);
+            assert_eq!(rows(out.csv.expect("dictionary partials")), expected);
+            let metrics = out.report.expect("report").aggregate.expect("aggregate");
+            assert!(metrics.peak_reservation <= 16 << 20);
+            if force {
+                assert!(metrics.spill_bytes_written > 0);
+            }
+            empty(&base);
+        }
+    }
+    std::fs::remove_dir_all(d).expect("cleanup");
+}
+
+#[test]
 fn typed_sql_replay_matches_resident_for_every_key_and_state_type() {
     let d = dir("spill-typed");
     let base = d.join("spill");

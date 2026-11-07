@@ -1,0 +1,14 @@
+Unmodified skeleton source: e198d08.
+Forced-spill gate at eight requested threads: 65/65 PASS.
+Forced-spill gate at 16 requested threads:
+ERROR            dictionary_partials
+    error: DATA/sqlcheck/big.parquet: row group 0: internal error (a bug, or a file that triggers one): aggregate spill: resource error: aggregate string expression minimum working set exceeds budget
+65 queries: 64 pass, 0 mismatch, 0 unsupported, 1 error, 0 reference-error, 0 pending, 0 pending-wrong
+
+Existing local performance release, 16 requested threads:
+error: DATA/sqlcheck/big.parquet: row group 1: internal error (a bug, or a file that triggers one): aggregate spill: resource error: aggregate string expression minimum working set exceeds budget
+
+Diagnostic-only old-code trace:
+scratch denial: bytes=20484 reason=RequestChanged snapshot=Snapshot { budget: 16777216, progress: 4096, held: 16773120, peak: 16777216, live_grants: 68, pending: 1, pressure: 44, requests: 250, releases: 127, lock_wait_nanos: 189106, waits: 23, wakes: 12, cancelled: false }
+
+The new fresh-shape native regression FAILS against e198d08 with the same aggregate string-expression error and PASSES with the fix at 1/8/16 requested threads in both modes.

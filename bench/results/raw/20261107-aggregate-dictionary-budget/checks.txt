@@ -1,0 +1,22 @@
+Local x86-64; disk TMPDIR; CARGO_BUILD_JOBS=2; RUST_TEST_THREADS=2.
+All checks run sequentially. Query gates explicitly request 16 threads.
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: PASS
+cargo deny check: PASS (advisories, bans, licenses, sources)
+fresh/scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+fresh/sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+fresh/sql-differences: 55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+fresh/aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+fresh/spill: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+local/scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+local/sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+local/sql-differences: 55 queries: 55 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+local/aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+local/spill: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+memory loom: PASS; 16 models, 1009 executions, preemption bound 2
+unmutated copy: the exec-dictionary suite passes (13s)
+dictionary-scratch-admission-skipped                 CAUGHT   dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget (31s)
+
+1 mutants: 1 CAUGHT, 0 SURVIVED, 0 INVALID
+scripts/check-leaks.sh --staged: PASS

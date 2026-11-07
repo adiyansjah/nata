@@ -1201,7 +1201,9 @@ impl WireError {
                 line,
                 column,
             } => {
-                let code = if message.starts_with("date outside PostgreSQL range") {
+                let code = if message.starts_with("resource error:") {
+                    "53200"
+                } else if message.starts_with("date outside PostgreSQL range") {
                     "22008"
                 } else if message.contains("division by zero") {
                     "22012"
@@ -1679,4 +1681,22 @@ pub(crate) fn column_count(description: &[u8]) -> usize {
     description
         .get(5..7)
         .map_or(0, |n| i16::from_be_bytes([n[0], n[1]]) as usize)
+}
+
+#[cfg(test)]
+mod resource_error_tests {
+    use super::*;
+    #[test]
+    fn memory_limit_preserves_sqlstate_message_and_position() {
+        let message =
+            "resource error: aggregate minimum working set is 123456 bytes, budget 8192 bytes";
+        let error = WireError::scan(ScanError::new(ErrorKind::Eval {
+            message: message.into(),
+            line: 2,
+            column: 8,
+        }));
+        assert_eq!(error.code, "53200");
+        assert_eq!(error.message, message);
+        assert_eq!(error.pos, Some(Pos { line: 2, col: 8 }));
+    }
 }
