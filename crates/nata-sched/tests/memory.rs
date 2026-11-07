@@ -337,3 +337,113 @@ fn pressure_does_not_revoke_another_operators_fair_share() {
         clean(&m);
     });
 }
+
+#[test]
+fn spill_request_racing_release_keeps_notification_and_progress() {
+    check(|| {
+        let m = MemoryManager::new(10, 2, 2).expect("manager");
+        let state = grant(&m, 0, 8);
+        let a = m.clone();
+        let request = thread::spawn(move || {
+            let d = Dispatcher::new();
+            match MemoryManager::request(&a, 1, 4).expect("request") {
+                Reservation::Granted(g) => drop(g),
+                Reservation::Pending { victim } => {
+                    assert_eq!(victim, Some(0));
+                    a.park(1, d.clone()).expect("park spill requester");
+                    d.take();
+                    drop(grant(&a, 1, 4));
+                }
+            }
+            a.finish(1).expect("finish requester");
+        });
+        let disk = thread::spawn(move || {
+            // Completion owns the table until the write has finished. A release
+            // before pressure is also legal: request then grants immediately.
+            drop(state);
+        });
+        request.join().expect("requester");
+        disk.join().expect("disk completion");
+        assert!(!m.revoked(0).expect("victim"));
+        clean(&m);
+    });
+}
+
+#[test]
+fn cancellation_during_spill_keeps_grant_until_disk_completion() {
+    check(|| {
+        let m = MemoryManager::new(10, 2, 2).expect("manager");
+        let state = grant(&m, 0, 8);
+        pending(&m, 1, 4, 0);
+        let d = Dispatcher::new();
+        m.park(1, d.clone()).expect("park requester");
+        let a = m.clone();
+        let canceller = thread::spawn(move || {
+            a.cancel();
+            assert!(matches!(
+                MemoryManager::request(&a, 1, 4),
+                Err(MemoryError::Cancelled)
+            ));
+        });
+        let a = m.clone();
+        let disk = thread::spawn(move || {
+            // Even if cancellation won, memory is held until the disk job has
+            // dropped the corresponding allocation, never released at cancel.
+            assert_eq!(a.snapshot().held, 8);
+            drop(state);
+        });
+        d.take();
+        canceller.join().expect("cancel");
+        disk.join().expect("disk completion");
+        clean(&m);
+    });
+}
+
+#[test]
+fn chunked_allocations_keep_capacity_charged_until_spill_completes() {
+    use nata_sched::memory::Chunks;
+    check(|| {
+        let m = MemoryManager::new(1024, 128, 2).expect("manager");
+        let mut chunks = Chunks::new();
+        for _ in 0..8 {
+            assert!(chunks.reserve(&m, 0, 32, 256).expect("chunk grant"));
+        }
+        assert_eq!(m.snapshot().requests, 2, "chunk credit inflated");
+        assert_eq!(chunks.reserved(), 512);
+        assert_eq!(m.snapshot().held, 512);
+        pending(&m, 1, 512, 0);
+        let d = Dispatcher::new();
+        let a = m.clone();
+        let waiter = thread::spawn(move || {
+            a.park(1, d.clone()).expect("park");
+            d.take();
+            drop(grant(&a, 1, 512));
+        });
+        let disk = thread::spawn(move || drop(chunks));
+        waiter.join().expect("waiter");
+        disk.join().expect("spill completion");
+        clean(&m);
+    });
+}
+
+#[test]
+fn chunk_pending_retry_keeps_request_size_after_spill_changes_free_memory() {
+    use nata_sched::memory::Chunks;
+    check(|| {
+        let m = MemoryManager::new(1024, 128, 2).expect("manager");
+        let victim = grant(&m, 0, 768);
+        let mut requester = Chunks::new();
+        assert!(!requester.reserve(&m, 1, 32, 256).expect("pending"));
+        let d = Dispatcher::new();
+        m.park(1, d.clone()).expect("park");
+        drop(victim);
+        d.take();
+        assert!(
+            requester
+                .reserve(&m, 1, 32, 256)
+                .expect("same queued request")
+        );
+        drop(requester);
+        clean(&m);
+    });
+}

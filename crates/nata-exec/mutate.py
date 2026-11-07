@@ -20,7 +20,13 @@ SQL = "crates/nata/src/sql.rs"
 
 # name: (suite, [(file, old, new), ...])
 AG = "crates/nata-exec/src/aggregate.rs"
+SPILL = "crates/nata-exec/src/spill/registry.rs"
+IPC = "crates/nata-exec/src/spill/ipc.rs"
 M = {
+ "spill-partition-not-read-back": ("exec", [(IPC, "let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;", "if file.size()? > 0 { return Ok(None); } let remaining = file.size()?.checked_sub(file.stream_position()?).ok_or_else(invalid)?;")]),
+ "spill-reservation-not-released": ("exec", [(IPC, "file.append(&frame)", "file.append(&frame)?; std::mem::forget(Arc::clone(&self._grant)); Ok(())")]),
+ "spill-descriptor-cap-removed": ("exec", [(SPILL, "if s.stats.open >= self.descriptor_cap {", "if s.stats.open >= self.descriptor_cap && false {")]),
+ "spill-cleanup-skipped-on-error": ("exec", [(SPILL, "if allowed != amount { return Err(io::Error::from_raw_os_error(28)); }", "if allowed != amount { std::mem::forget(Arc::clone(&self.owner)); return Err(io::Error::from_raw_os_error(28)); }")]),
  "aggregate-partition-double-counted": ("exec", [(AG, 'for ((dest, source), a) in dest.iter_mut().zip(states).zip(&a.aggregates) { dest.merge(source, a)?; }', 'for ((dest, source), a) in dest.iter_mut().zip(states).zip(&a.aggregates) { dest.merge(source.clone(), a)?; dest.merge(source, a)?; }')]),
  "aggregate-having-before-merge": ("exec", [(AG, 'let tables = self.tables;', r'''let mut tables = self.tables;
     let a = self.shared.plan.aggregate.as_ref().expect("aggregate");

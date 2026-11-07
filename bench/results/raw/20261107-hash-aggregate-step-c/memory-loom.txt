@@ -1,0 +1,141 @@
+   Compiling rustversion v1.0.23
+   Compiling once_cell v1.21.4
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling cc v1.11.0
+   Compiling tracing-core v0.1.36
+   Compiling log v0.4.35
+   Compiling libc v0.2.191
+   Compiling cfg-if v1.0.5
+   Compiling crossbeam-utils v0.8.23
+   Compiling regex-syntax v0.8.11
+   Compiling generator v0.8.11
+   Compiling regex-automata v0.4.18
+   Compiling pin-project-lite v0.2.17
+   Compiling lazy_static v1.5.1
+   Compiling crossbeam-epoch v0.9.21
+   Compiling sharded-slab v0.1.7
+   Compiling tracing v0.1.44
+   Compiling matchers v0.2.0
+   Compiling thread_local v1.1.10
+   Compiling tracing-log v0.2.0
+   Compiling smallvec v1.16.4
+   Compiling nu-ansi-term v0.50.3
+   Compiling tracing-subscriber v0.3.23
+   Compiling scoped-tls v1.0.1
+   Compiling loom v0.7.2
+   Compiling crossbeam-deque v0.8.6
+   Compiling nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-1585cacf/crates/nata-sched)
+    Finished `test` profile [unoptimized] target(s) in 1m 15s
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test abandoned_fifo_head_cannot_starve_successor ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test callbacks_run_outside_manager_lock ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=652 bound=2
+test cancel_drop_races ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.19s
+
+
+running 1 test
+[loom] memory: executions=151 bound=2
+test cancellation_during_spill_keeps_grant_until_disk_completion ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.05s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test cancellation_wakes_every_operator_and_is_sticky ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test chunk_pending_retry_keeps_request_size_after_spill_changes_free_memory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=80 bound=2
+test chunked_allocations_keep_capacity_charged_until_spill_completes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.02s
+
+
+running 1 test
+[loom] memory: executions=33 bound=2
+test competing_grants_never_multiply_budget ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test fifo_arrival_after_release_waits_for_head_instead_of_erroring ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test fifo_successor_wakes_without_another_release ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test invalid_minimum_and_changed_request_fail_clearly ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test one_worker_release_before_park_makes_progress ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test pressure_does_not_revoke_another_operators_fair_share ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=39 bound=2
+test release_before_during_after_park ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+
+running 1 test
+[loom] memory: executions=1 bound=2
+test spill_pressure_wakes_a_parked_victim ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+
+
+running 1 test
+[loom] memory: executions=44 bound=2
+test spill_request_racing_release_keeps_notification_and_progress ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+

@@ -2,7 +2,7 @@
 //! then independent final tasks. State grants move with their allocations.
 use crate::error::{EvalError, R};
 use crate::eval::Evaluator;
-use crate::exec::{ExecConfig, ExecReport, Observed, OperatorStats};
+use crate::exec::{AggregateStats, ExecConfig, ExecReport, Observed, OperatorStats};
 use crate::value::{Col, Data, StrData};
 use arrow_array::RecordBatch;
 use hashbrown::HashTable;
@@ -11,7 +11,7 @@ use nata_parquet::{
     ErrorKind, ParallelConfig, ScanCancel, ScanError, ScanPlan, TaskSink, TaskSinkFactory,
     run_parallel_with,
 };
-use nata_sched::memory::{Grant, MemoryManager, Reservation};
+use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
 use nata_sql::bind::{Aggregate, AggregateExpr};
 use nata_sql::plan::LogicalPlan;
 use nata_sql::types::SqlType;
@@ -193,6 +193,7 @@ fn key_hash(key: &[Atom]) -> u64 {
 struct Groups {
     hash: fn(&[Atom]) -> u64,
     index: HashTable<usize>,
+    rehashes: usize,
     entries: Vec<(Vec<Atom>, Vec<State>)>,
 }
 impl Groups {
@@ -200,6 +201,7 @@ impl Groups {
         Self {
             hash: key_hash,
             index: HashTable::new(),
+            rehashes: 0,
             entries: Vec::new(),
         }
     }
@@ -231,6 +233,7 @@ impl Groups {
         self.entries.push((key, states));
     }
     fn try_reserve(&mut self, n: usize) -> Result<(), ()> {
+        self.rehashes += 1;
         self.index
             .try_reserve(n, |&i| (self.hash)(&self.entries[i].0))
             .map_err(|_| ())?;
@@ -253,13 +256,27 @@ impl IntoIterator for Groups {
 struct Table {
     // Fields drop in order: allocations before their grants.
     groups: Groups,
-    grants: Vec<Grant>,
+    grants: Chunks,
+    chunk_bytes: usize,
 }
 impl Table {
     fn new() -> Self {
         Self {
             groups: Groups::new(),
-            grants: Vec::new(),
+            grants: Chunks::new(),
+            chunk_bytes: 0,
+        }
+    }
+    fn reserve_bytes(&mut self, manager: &Arc<MemoryManager>, bytes: usize) -> R<()> {
+        if self.chunk_bytes == 0 {
+            self.chunk_bytes = (manager.snapshot().budget / 256).clamp(4096, 1 << 20);
+        }
+        match self.grants.reserve(manager, 0, bytes, self.chunk_bytes) {
+            Ok(true) => Ok(()),
+            _ => {
+                manager.cancel();
+                Err(resource())
+            }
         }
     }
     fn reserve(&mut self, manager: &Arc<MemoryManager>, key: &[Atom], a: &Aggregate) -> R<()> {
@@ -274,14 +291,13 @@ impl Table {
         // Charge table growth (including rehash overlap), per-entry allocations,
         // and reservation metadata before allocating them. Conservative retained
         // charges are intentional until step C's reusable allocation ledger.
-        let g = grant(manager, bytes)?;
+        self.reserve_bytes(manager, bytes)?;
         if self.groups.len() == self.groups.capacity() {
             let capacity = self.groups.capacity().max(4);
-            let growth = grant(manager, capacity.saturating_mul(128))?;
+            self.reserve_bytes(manager, capacity.saturating_mul(128))?;
             self.groups.try_reserve(capacity).map_err(|_| resource())?;
-            self.grants.push(growth);
         }
-        self.grants.push(g);
+
         Ok(())
     }
 }
@@ -289,17 +305,35 @@ struct Shared {
     plan: Arc<LogicalPlan>,
     manager: Arc<MemoryManager>,
     partials: Mutex<Vec<Vec<Table>>>,
+    metrics: Mutex<AggregateStats>,
 }
 struct Partial {
     shared: Arc<Shared>,
     tables: Vec<Table>,
+    partial_nanos: u64,
 }
 impl TaskSink for Partial {
     fn push(&mut self, batch: RecordBatch) -> Result<(), ErrorKind> {
-        self.batch(batch).map_err(EvalError::into_kind)
+        let start = Instant::now();
+        let result = self.batch(batch).map_err(EvalError::into_kind);
+        self.partial_nanos = self
+            .partial_nanos
+            .saturating_add(u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX));
+        result
     }
     fn finish(self: Box<Self>) -> Result<(), ErrorKind> {
         let tables = self.tables;
+        {
+            let mut m = self
+                .shared
+                .metrics
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            m.partial_nanos = m.partial_nanos.saturating_add(self.partial_nanos);
+            m.largest_partial = m
+                .largest_partial
+                .max(tables.iter().map(|t| t.groups.len()).sum());
+        }
         self.shared
             .partials
             .lock()
@@ -381,9 +415,18 @@ impl Partial {
                     if let (State::Extreme(old), Atom::Str(new)) = (&*state, &value) {
                         let previous = if let Atom::Str(s) = old { s.len() } else { 0 };
                         if new.len() > previous {
-                            table
-                                .grants
-                                .push(grant(&self.shared.manager, new.len() - previous + 64)?);
+                            match table.grants.reserve(
+                                &self.shared.manager,
+                                0,
+                                new.len() - previous + 64,
+                                table.chunk_bytes,
+                            ) {
+                                Ok(true) => (),
+                                _ => {
+                                    self.shared.manager.cancel();
+                                    return Err(resource());
+                                }
+                            }
                         }
                     }
                     state.add(value, agg)?;
@@ -537,12 +580,14 @@ pub(crate) fn execute(
         plan: Arc::clone(&plan),
         manager: Arc::clone(&manager),
         partials: Mutex::new(Vec::new()),
+        metrics: Mutex::new(AggregateStats::default()),
     });
     let factory: TaskSinkFactory = {
         let shared = Arc::clone(&shared);
         Arc::new(move || {
             Box::new(Partial {
                 shared: Arc::clone(&shared),
+                partial_nanos: 0,
                 tables: shared
                     .partials
                     .lock()
@@ -591,6 +636,14 @@ pub(crate) fn execute(
     );
     let mut partitions: Vec<Vec<Table>> = (0..PARTITIONS).map(|_| Vec::new()).collect();
     for tables in partials {
+        {
+            let mut m = shared
+                .metrics
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            m.partial_groups += tables.iter().map(|t| t.groups.len()).sum::<usize>();
+            m.rehashes += tables.iter().map(|t| t.groups.rehashes).sum::<usize>();
+        }
         for (i, t) in tables.into_iter().enumerate() {
             if !t.groups.is_empty() {
                 partitions[i].push(t);
@@ -627,7 +680,18 @@ pub(crate) fn execute(
         cfg.threads,
         || cancel.is_some_and(ScanCancel::is_cancelled),
         |tables, cancelled| {
-            merge(tables, a, &manager, cancelled).map_err(|e| {
+            let start = Instant::now();
+            let result = merge(tables, a, &manager, cancelled);
+            {
+                let mut m = shared
+                    .metrics
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                m.merge_nanos = m
+                    .merge_nanos
+                    .saturating_add(u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX));
+            }
+            result.map_err(|e| {
                 if cancel.is_some_and(ScanCancel::is_cancelled) {
                     ScanError::new(ErrorKind::Cancelled("aggregate cancelled".into()))
                 } else {
@@ -712,7 +776,18 @@ pub(crate) fn execute(
             "aggregate cancelled".into(),
         )));
     }
+    let mut metrics = shared
+        .metrics
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
+    let memory = manager.snapshot();
+    metrics.reservation_calls = memory.requests;
+    metrics.reservation_releases = memory.releases;
+    metrics.memory_lock_wait_nanos = memory.lock_wait_nanos;
+    metrics.peak_reservation = memory.peak;
     Ok(ExecReport {
+        aggregate: Some(metrics),
         ops: OperatorStats {
             batches: report.row_groups_read,
             scan_rows: report.rows_read,

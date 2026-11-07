@@ -101,10 +101,41 @@ pub struct OperatorStats {
 /// What a run did.
 #[derive(Clone, Debug)]
 pub struct ExecReport {
+    pub aggregate: Option<AggregateStats>,
     pub scan: ScanReport,
     pub ops: OperatorStats,
     /// Wall time from the open of the scan to the join of its last worker.
     pub elapsed: Duration,
+}
+
+/// Native diagnostics; phase times are summed worker time, not elapsed time.
+#[derive(Clone, Debug, Default)]
+pub struct AggregateStats {
+    pub partial_nanos: u64,
+    pub merge_nanos: u64,
+    pub partial_groups: usize,
+    pub largest_partial: usize,
+    pub rehashes: usize,
+    pub reservation_calls: usize,
+    pub reservation_releases: usize,
+    pub memory_lock_wait_nanos: u64,
+    pub peak_reservation: usize,
+}
+impl AggregateStats {
+    pub fn line(&self) -> String {
+        format!(
+            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={}",
+            self.partial_nanos,
+            self.merge_nanos,
+            self.partial_groups,
+            self.largest_partial,
+            self.rehashes,
+            self.reservation_calls,
+            self.reservation_releases,
+            self.memory_lock_wait_nanos,
+            self.peak_reservation
+        )
+    }
 }
 
 fn nanos(d: Duration) -> u64 {
@@ -396,6 +427,7 @@ pub fn execute_observed(
         rows_out,
     };
     Ok(ExecReport {
+        aggregate: None,
         scan: scan_report,
         ops,
         elapsed: started.elapsed(),

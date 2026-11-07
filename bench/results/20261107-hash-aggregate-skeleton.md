@@ -1,5 +1,191 @@
 # Hash aggregate skeleton — step B, 2026-11-07
 
+
+## Step C — incomplete checkpoint
+
+**NOT DELIVERED:** SQL aggregation does not yet spill. The 64 MiB SF1 spill
+acceptance, forced-spill differential gate and recursive partition merge are
+**unimplemented**, not passes. No timing verdict against the frozen targets,
+GCP, push or merge. This checkpoint adds the reservation-contention diagnosis
+and chunking fix requested by the parent, plus independently tested spill-file
+infrastructure. It does not replace the remaining step C integration.
+
+### Reservation contention: local, indicative before/after
+
+**Measured:** the 8-thread HAVING query contends on per-group reservation and
+release. A step B release `perf record -F 199 -g` capture has 2,855 task-clock
+samples, zero lost samples: request **8.27%**, grant drop **3.05%**, contended
+mutex lock **6.30%**, kernel spin unlock **9.74%**, kernel spin slowpath **6.48%**,
+task switch **7.50%**, hash-table rehash **1.19%**, merge self-time **1.40%**.
+Self-time alone does not include merge descendants or waiting. The counter
+trial below measures those phase totals. [Symbol summary](raw/20261107-hash-aggregate-step-c/perf-symbols.txt).
+
+Same-session, alternating before/after release binaries, warm SF1, five rounds
+per arm/thread count, shared local x86-64 development machine (Intel Core i3-1220P), full CLI CSV to
+`/dev/null`. Both variants include the same native instrumentation; the before
+binary retains per-entry grants. This differs from the parent's uninstrumented
+run and is not a cross-session speed comparison. SF1 Q1 and HAVING pass the
+DuckDB differential check before timing (**2/2**). No merge algorithm change.
+
+| Threads | Reservation mode | CLI seconds min / median / max | Reservation calls (median) | Lock acquisition seconds, summed | Partial seconds, summed | Merge seconds, summed |
+|---|---|---|---:|---:|---:|---:|
+| 1 | per entry | 3.622 / 4.262 / 4.366 | 1,494,396 | 0.115510 | 2.291 | 0.230 |
+| 1 | chunks | 3.098 / 3.440 / 3.641 | 2,054 | 0.000240 | 1.943 | 0.258 |
+| 8 | per entry | 5.152 / 5.607 / 5.962 | 2,776,627 | 15.948889 | 13.950 | 12.855 |
+| 8 | chunks | 1.783 / 2.063 / 2.280 | 3,244 | 0.000530 | 3.494 | 4.408 |
+
+Phase times are worker wall time summed, including lock waits, not CPU or query
+elapsed time. Lock acquisition measures from immediately before locking to
+immediately after, including clock and uncontended lock overhead. Requests and
+releases match in every timed run. Counters are exposed by `--report` and
+EXPLAIN ANALYZE, with peak reservations. [All 20 observations](raw/20261107-hash-aggregate-step-c/reservations.json).
+
+Retained partials contain **1,493,405 groups** at one thread and **1,493,439** at
+eight. The largest partial set (16 partition tables per task) is **1,493,405**
+at one thread; at eight its median is **212,664 before / 273,722 after**.
+Partial rehashes are **256** at one thread and median **1,664 / 1,680** at eight.
+Median peak reservation is **1,519,884,352 / 1,526,441,216 bytes** at one thread
+and **2,684,048,704 / 2,447,923,584 bytes** at eight. These use the existing
+system-derived budget, **not 64 MiB**, and do not certify RSS or total allocation
+accounting. The partial pool's scheduling changes its table-size distribution.
+
+**Reasoned from these measurements:** reservation contention explains the
+negative scaling in this workload. Chunking removes millions of ledger/lock
+operations, with no redesign of ADR 0010's merge. The remaining merge and output
+costs are reported, not optimized. Chunk capacity stays charged, including
+unused space and bookkeeping, until its owning tables are freed. The target
+chunk is 1 MiB, reduced for small budgets to `clamp(B / 256, 4 KiB, 1 MiB)`;
+this is allocation granularity, not a budget/default increase. Growth/rehash
+charges still precede allocation. A debug assertion checks live reservations
+against B. Full allocation accounting remains unverified.
+
+Reproduce the indicative diagnostic, sequentially (the before binary was saved
+locally before replacing the ledger; its path is a local artifact):
+
+```sh
+export TMPDIR="$HOME/tmp-skelC" CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0
+export CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0
+cargo build --release -p nata -p nata-check
+python3 scripts/profile-aggregate-reservations.py \
+  --before "$TMPDIR/nata-before-chunks" --after "$PWD/target/release/nata" \
+  --data "$DATA_SF1" --rounds 5 --out "$TMPDIR/profile-chunks.json"
+# perf capture uses the same HAVING SQL and --threads 8, stdout to /dev/null.
+```
+
+### Spill infrastructure, not yet wired to the aggregate
+
+`nata_exec::spill` owns exclusive-created files in a private query directory
+(0700/0600 on Unix); uses O_NOFOLLOW when reopening; charges a supplied D before
+append; caps simultaneous descriptors at `min(32, supplied process allowance)`;
+and removes files/directory by RAII on normal completion, error, cancel, drop
+and task unwind. Query admission must still compute D/process allowance and
+connect these owners to the executor. Restart cleanup is not implemented.
+
+The IPC boundary adapts the spike's validation to a fixed schema: UInt64 hash,
+Binary key bytes and Binary state bytes, non-null, no dictionaries/compression.
+Frames have a version, partition/depth, row/payload lengths and CRC over header
+and payload. Before Arrow decoding: schema byte equality, bounded FlatBuffer
+verification (depth 16, tables 64), metadata <=16 KiB, payload <=64 KiB, rows
+<=256, exactly schema + record messages + EOS, node/buffer counts, non-overlap,
+backed sizes and monotone binary offsets. File size must match the registry's
+reserved byte count, including rejection of complete-frame truncation. A
+512 KiB reserved workspace includes codec copies; a decoded batch retains its
+reservation and prevents another read from multiplying that workspace. This
+physical schema is tested; typed key/state encoding and semantic replay into
+`ExactSum::from_spill` remain to be connected and tested.
+
+A query-owned bounded I/O service has one worker, nonblocking submission and
+sticky completion registration; it catches task panics, drops cancelled queued
+jobs, and joins on teardown. Capacity includes completed, unconsumed tickets.
+Its native tests do not model-check its std channels or worker internals.
+The aggregate's existing scan/sink still runs to completion, so these APIs are
+not a substitute for its required blocked/requeue continuation adapter.
+
+### Checks and remaining work
+
+Local checks: workspace fmt, clippy with warnings denied, tests and cargo-deny
+**PASS**. The final chunk retry regression was then exercised by focused
+`nata-sched`/`nata-exec` tests and the memory-model/control runs; subsequent
+spill accounting changes were checked by the private executor control and the
+fresh bounded spill executable. Native regression gates: scan **5/5**, SQL
+**252/252**, SQL differences **54/54**, aggregate **65/65**; SF1 Q1/HAVING **2/2**.
+Forced-spill gate: **unimplemented**. There is no nonzero SQL spill counter.
+
+All **9 spill tests pass under `ulimit -v 262144`**, including the seeded
+corruption trial: **64 cases per damage kind**, four kinds (truncation, flipped
+byte, wrong/huge length and length beyond the file), seed **22014202119** printed;
+plus a repaired-checksum binary-offset attack. No panic or large allocation in
+those corruption reads. The intentional task-panic tests are caught and clean
+up. [Bounded run](raw/20261107-hash-aggregate-step-c/spill-bounded.txt).
+The first all-spill bounded invocation hit a stale private-mutant executable
+because the local mutation target cache had been shared. That run failed
+cleanup and is not counted as a production result. Only this worktree's
+`nata-exec` artifacts were cleaned and rebuilt from real source; the fresh run
+passes all nine tests. The temporary target symlink was removed. Parent runs
+must keep the private mutation target separate.
+
+**16 real-service loom models / 1,009 executions PASS at bound 2**. New cases:
+spill request racing release, cancellation while a spill retains its grant,
+chunked allocation/release at spill completion, and a pending chunk retry after
+free memory changes. The last case preserves the original queued request size;
+a retry must not calculate a different chunk size and get `RequestChanged`.
+[Models](raw/20261107-hash-aggregate-step-c/memory-loom.txt).
+Bound 3 is unrun locally. Native I/O channels/workers and deque internals remain
+outside this loom instrumentation.
+
+**Five targeted mutants CAUGHT, zero SURVIVED, zero INVALID**, with passing
+controls. The four spill mutants exercise the production primitives, not a
+query-level spill path. No recursion-bound execution mutant exists yet.
+
+| Mutant | Check |
+|---|---|
+| spill-partition-not-read-back | Missing decoded frame / corruption/readback tests |
+| spill-reservation-not-released | Workspace lifetime and final grant gauges |
+| spill-descriptor-cap-removed | Explicit cap and released-slot test |
+| spill-cleanup-skipped-on-error | Injected ENOSPC cleanup test |
+| memory-chunk-credit-inflated | Native and loom chunk accounting assertions |
+
+Executor control + four trials took **87 seconds** (sequential); memory mutant
+**99 seconds**, separate private control **213 seconds**. These are check
+runtimes, not engine-performance results. [Executor mutants](raw/20261107-hash-aggregate-step-c/mut-exec.txt),
+[memory mutant](raw/20261107-hash-aggregate-step-c/mut-memory.txt),
+[memory control](raw/20261107-hash-aggregate-step-c/mut-memory-control.txt).
+
+Promoted direct dependencies, all already locked: arrow-ipc **60.1.0**,
+flatbuffers **25.12.19**, crc32fast **1.5.4**, libc **0.2.191** (O_NOFOLLOW constant;
+no own unsafe). Textual unsafe counts respectively **434 / 138 / 30 / 1,599**;
+normal/build tree **83 packages, 8,834 keywords**, workspace **zero**. These count
+inactive/test source too, do not expand macros, and are not an audit. No new
+locked crate, policy exception or version change. Cargo-deny passes all four
+categories with existing policy warnings. [Inventory](raw/20261107-hash-aggregate-step-c/unsafe-exec.txt).
+
+Parent-only `heavy.steps` commands, **not run here and not cloud approval**:
+
+```sh
+memory-loom LOOM_MAX_PREEMPTIONS=3 MEMORY_MODEL_TIMEOUT=3000 crates/nata-sched/run_memory_loom.sh
+memory-control CARGO_BUILD_JOBS=2 LOOM_MAX_PREEMPTIONS=3 python3 crates/nata-sched/mutants/mutate.py --control --jobs 1 --out "$RESULTS/memory-control.txt"
+memory-mutants CARGO_BUILD_JOBS=2 LOOM_MAX_PREEMPTIONS=3 python3 crates/nata-sched/mutants/mutate.py --only '^memory-' --jobs 1 --out "$RESULTS/memory-mutants.txt"
+spill-mutants CARGO_BUILD_JOBS=2 python3 crates/nata-exec/mutate.py --work "$RESULTS/spill-mutants" --out "$RESULTS/spill-mutants.txt" spill-partition-not-read-back spill-reservation-not-released spill-descriptor-cap-removed spill-cleanup-skipped-on-error
+spill-build mkdir -p "$RESULTS/tmp" && export TMPDIR="$RESULTS/tmp" && cargo test --locked -p nata-exec --test spill --no-run --message-format=json | python3 -c 'import json,sys; r=[json.loads(s) for s in sys.stdin]; print(next(x["executable"] for x in r if x.get("reason")=="compiler-artifact" and x.get("target",{}).get("name")=="spill" and x.get("executable")))' > "$RESULTS/spill-test-bin"
+spill-corruption export TMPDIR="$RESULTS/tmp"; TASK_SPILL_BINARY=$(cat "$RESULTS/spill-test-bin"); (ulimit -v 262144; NATA_SPILL_CASES=30000 NATA_SPILL_SEED=22014202119 "$TASK_SPILL_BINARY" seeded_corruption_rejected_before_arrow_allocation --exact --nocapture --test-threads=1)
+```
+
+The larger corruption command covers 30,000 cases of each damage kind of this
+physical IPC schema; it is not a typed SQL spill campaign. Stage C's recursive
+merge/forced-spill/SF1-budget jobs cannot be supplied before their entry points
+exist. Parent preflight remains `scripts/gcp/test/test-job-chains.sh`; ARM64,
+quiet-machine resource/affinity checks, sanitizers, Miri and Kani are unrun.
+
+Still step C: resumable scan/aggregate pressure and I/O integration, typed
+state encoding/replay, recursive partition merge, pre-decode/merge/output
+reservations, query disk/process-FD admission, spill counters and forced-spill
+CLI/differential/fault acceptance. These are **not deferred to step D**. Step D
+remains serve/default clients, aggregate fuzzer grammar and full mutant sweeps.
+No commit is permissible until the brief's forced-spill pre-commit gate passes;
+that gate is not yet implemented. The branch remains an uncommitted checkpoint: `t3/aggregate-budget-spill`,
+HEAD `8775a11`; all changes are staged, with a clean staged leak scan. No new
+commit, push, merge or cloud operation was performed.
+
 ## Step B
 
 **PASS: SQL and in-memory aggregation, with the aggregate differential gate.**

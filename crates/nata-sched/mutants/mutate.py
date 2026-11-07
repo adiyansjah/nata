@@ -87,6 +87,9 @@ mut("open-failure-does-not-stop-claims", "after a file fails to open the scan go
 # EQUIVALENT mutant, removed: "task-run-after-cancel-at-claim" (the worker no longer checks the token before calling `run`). `Work::run` is contractually
 # the one that looks at the token and returns Cancelled at once, so the result is the same; the check in the worker only saves the call.
 
+mut("memory-chunk-credit-inflated", "chunk credit permits allocations beyond the real reserved capacity",
+    ("src/memory.rs", "self.spare = self.spare.saturating_add(grant.bytes() - Self::METADATA);", "self.spare = self.spare.saturating_add(grant.bytes().saturating_mul(2) - Self::METADATA);"))
+
 mut("memory-reservation-not-released", "RAII drop leaks capacity and the live ledger entry",
     ("src/memory.rs", "        self.manager.release(self.id);", "        let _ = self.id;"))
 mut("memory-budget-cap-removed", "workers can multiply B",

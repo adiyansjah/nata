@@ -1,0 +1,8 @@
+| mutant | suite | result | first failing tests |
+|---|---|---|---|
+| spill-partition-not-read-back | exec | CAUGHT | altered_inner_offsets_rejected_even_with_repaired_checksum, decoded_buffers_retain_reservation_and_cannot_multiply_workspace, frames_round_trip_empty_full_and_multiple ... |
+| spill-reservation-not-released | exec | CAUGHT | altered_inner_offsets_rejected_even_with_repaired_checksum, decoded_buffers_retain_reservation_and_cannot_multiply_workspace, disk_service_wakes_before_or_after_park_and_survives_task_panic ... |
+| spill-descriptor-cap-removed | exec | CAUGHT | descriptors_are_capped_and_release_on_drop |
+| spill-cleanup-skipped-on-error | exec | CAUGHT | quota_short_write_error_cancel_and_panic_leave_no_files |
+
+4 mutants: 4 CAUGHT, 0 SURVIVED, 0 INVALID

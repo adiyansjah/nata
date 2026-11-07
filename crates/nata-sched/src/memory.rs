@@ -42,6 +42,9 @@ pub struct Snapshot {
     pub live_grants: usize,
     pub pending: usize,
     pub pressure: usize,
+    pub requests: usize,
+    pub releases: usize,
+    pub lock_wait_nanos: u64,
     pub waits: usize,
     pub wakes: usize,
     pub cancelled: bool,
@@ -62,6 +65,9 @@ struct State {
     held: usize,
     peak: usize,
     pressure: usize,
+    requests: usize,
+    releases: usize,
+    lock_wait_nanos: u64,
     waits: usize,
     wakes: usize,
     cancelled: bool,
@@ -118,6 +124,9 @@ impl MemoryManager {
                 held: 0,
                 peak: progress,
                 pressure: 0,
+                requests: 0,
+                releases: 0,
+                lock_wait_nanos: 0,
                 waits: 0,
                 wakes: 0,
                 cancelled: false,
@@ -132,7 +141,10 @@ impl MemoryManager {
         operator: usize,
         bytes: usize,
     ) -> Result<Reservation, MemoryError> {
+        let clock = clock();
         let mut s = lock(&manager.state);
+        s.lock_wait_nanos = s.lock_wait_nanos.saturating_add(elapsed(clock));
+        s.requests = s.requests.saturating_add(1);
         if s.cancelled {
             return Err(MemoryError::Cancelled);
         }
@@ -157,6 +169,10 @@ impl MemoryManager {
             s.operators[operator].held += bytes;
             s.live.insert(id, (operator, bytes));
             s.peak = s.peak.max(manager.progress + s.held);
+            debug_assert!(
+                manager.progress + s.held <= manager.budget,
+                "live reservations exceed B"
+            );
             let grant = Grant {
                 manager: Arc::clone(manager),
                 id,
@@ -294,7 +310,10 @@ impl MemoryManager {
     }
 
     fn release(&self, id: u64) {
+        let clock = clock();
         let mut s = lock(&self.state);
+        s.lock_wait_nanos = s.lock_wait_nanos.saturating_add(elapsed(clock));
+        s.releases = s.releases.saturating_add(1);
         // The ledger is an independent invariant, not the budget enforcement.
         let (operator, bytes) = s.live.remove(&id).expect("reservation released twice");
         s.held = s.held.checked_sub(bytes).expect("reservation underflow");
@@ -318,6 +337,9 @@ impl MemoryManager {
             live_grants: s.live.len(),
             pending: s.queue.len(),
             pressure: s.pressure,
+            requests: s.requests,
+            releases: s.releases,
+            lock_wait_nanos: s.lock_wait_nanos,
             waits: s.waits,
             wakes: s.wakes,
             cancelled: s.cancelled,
@@ -346,5 +368,88 @@ impl Drop for Grant {
 impl std::fmt::Debug for MemoryManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.snapshot().fmt(f)
+    }
+}
+
+// Wall clock instrumentation is native only: the exact same accounting and
+// synchronization are modelled, without making model assertions clock-dependent.
+fn clock() -> Option<std::time::Instant> {
+    #[cfg(not(nata_loom))]
+    {
+        Some(std::time::Instant::now())
+    }
+    #[cfg(nata_loom)]
+    {
+        None
+    }
+}
+fn elapsed(start: Option<std::time::Instant>) -> u64 {
+    start.map_or(0, |t| {
+        u64::try_from(t.elapsed().as_nanos()).unwrap_or(u64::MAX)
+    })
+}
+
+/// Task-owned chunks amortize manager locking over many small allocations.
+/// The entire capacity (including unused credit) remains reserved until the
+/// owning allocations have been freed. This is not a second/per-task budget.
+#[derive(Default)]
+pub struct Chunks {
+    grants: Vec<Grant>,
+    spare: usize,
+    pending: Option<usize>,
+}
+impl Chunks {
+    const METADATA: usize = 128;
+    pub fn new() -> Self {
+        Self::default()
+    }
+    /// Reserve before allocating. `false` is pressure: retain the queued request
+    /// and yield/spill before retrying; never allocate on a pending request.
+    pub fn reserve(
+        &mut self,
+        manager: &Arc<MemoryManager>,
+        operator: usize,
+        bytes: usize,
+        chunk: usize,
+    ) -> Result<bool, MemoryError> {
+        if self.spare >= bytes {
+            self.spare -= bytes;
+            return Ok(true);
+        }
+        let needed = bytes
+            .checked_sub(self.spare)
+            .and_then(|n| n.checked_add(Self::METADATA))
+            .ok_or(MemoryError::MinimumExceedsBudget)?;
+        let snapshot = manager.snapshot();
+        let free = snapshot.budget - snapshot.progress - snapshot.held;
+        // Borrow only what's available. A small budget need not fit a 1 MiB
+        // chunk; it must fit this operation and its reservation bookkeeping.
+        let request = self
+            .pending
+            .unwrap_or_else(|| chunk.max(needed).min(free).max(needed));
+        match MemoryManager::request(manager, operator, request)? {
+            Reservation::Granted(grant) => {
+                self.pending = None;
+                self.grants
+                    .try_reserve(1)
+                    .map_err(|_| MemoryError::InvalidBudget)?;
+                self.spare = self.spare.saturating_add(grant.bytes() - Self::METADATA);
+                self.grants.push(grant);
+                self.spare -= bytes;
+                Ok(true)
+            }
+            Reservation::Pending { .. } => {
+                self.pending = Some(request);
+                Ok(false)
+            }
+        }
+    }
+    /// Move charges along with allocations during partition ownership transfer.
+    pub fn append(&mut self, other: &mut Self) {
+        self.grants.append(&mut other.grants);
+        self.spare += std::mem::take(&mut other.spare);
+    }
+    pub fn reserved(&self) -> usize {
+        self.grants.iter().map(Grant::bytes).sum()
     }
 }

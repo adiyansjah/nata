@@ -239,6 +239,9 @@ fn run_query(
                     let rss = crate::peak_rss_kib()
                         .map_or(String::new(), |k| format!(" peak_rss_kib={k}"));
                     say(&format!("{}{rss}\n", report.scan.line()));
+                    if let Some(a) = &report.aggregate {
+                        say(&format!("{}\n", a.line()));
+                    }
                 }
                 ExitCode::SUCCESS
             }

@@ -1,0 +1,22 @@
+
+running 9 tests
+test altered_inner_offsets_rejected_even_with_repaired_checksum ... ok
+test decoded_buffers_retain_reservation_and_cannot_multiply_workspace ... ok
+test descriptors_are_capped_and_release_on_drop ... ok
+test disk_queue_is_bounded_and_cancel_drops_queued_job_before_wake ... ok
+test disk_service_wakes_before_or_after_park_and_survives_task_panic ... 
+thread 'nata-spill-io' (3085689) panicked at crates/nata-exec/tests/spill.rs:310:21:
+disk task panic
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ok
+test frames_round_trip_empty_full_and_multiple ... ok
+test private_exclusive_files_and_no_symlink_adoption ... ok
+test quota_short_write_error_cancel_and_panic_leave_no_files ... 
+thread 'quota_short_write_error_cancel_and_panic_leave_no_files' (3085692) panicked at crates/nata-exec/tests/spill.rs:137:17:
+task panic
+ok
+test seeded_corruption_rejected_before_arrow_allocation ... spill corruption seed=22014202119 cases=64 per shape; max payload=65536
+ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+

@@ -85,6 +85,9 @@ pub fn analyze_text(plan: &LogicalPlan, r: &ExecReport) -> String {
             ));
         }
     }
+    if let Some(a) = &r.aggregate {
+        out.push_str(&format!("{}\n", a.line()));
+    }
     out.push_str(&format!(
         "total: rows returned={}, time={} wall\n",
         ops.rows_out,

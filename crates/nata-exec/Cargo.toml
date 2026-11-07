@@ -14,6 +14,10 @@ nata-sql = { path = "../nata-sql" }
 nata-parquet = { path = "../nata-parquet", default-features = false }
 # `strict_cast` unpacks the scan's dictionary strings (the one sanctioned caller of arrow's cast)
 nata-kernels = { path = "../nata-kernels" }
+arrow-ipc = { version = "=60.1.0", default-features = false }
+crc32fast = "=1.5.4"
+flatbuffers = "=25.12.19"
+libc = "=0.2.191"
 arrow-array = "60"
 arrow-buffer = "60"
 arrow-schema = "60"

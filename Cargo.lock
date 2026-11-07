@@ -794,9 +794,13 @@ version = "0.0.0"
 dependencies = [
  "arrow-array",
  "arrow-buffer",
+ "arrow-ipc",
  "arrow-schema",
  "arrow-select",
+ "crc32fast",
+ "flatbuffers",
  "hashbrown",
+ "libc",
  "nata-kernels",
  "nata-parquet",
  "nata-sched",
