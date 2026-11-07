@@ -1,0 +1,5 @@
+CASE endless_error_body: PASS elapsed_ms=113 result=Err((Server5xx, 4))
+CASE endless_range_body: PASS elapsed_ms=0 result=Err((BadLength, 1))
+CASE huge_header: PASS elapsed_ms=47 result=Err((BadResponse, 1))
+RESULT hostile: 3 cases, 0 failed (ulimit -v 1536 MiB)
+exit 0

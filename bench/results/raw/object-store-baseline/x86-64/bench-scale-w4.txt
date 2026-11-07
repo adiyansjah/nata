@@ -1,0 +1,11 @@
+idle runtime VmRSS:	    7756 kB
+STARTUP cold_store_first_head_ms median=40.3 min=25.8 | warm_head_ms median=16.9 min=13.6
+verification: every cell x arm equals the DuckDB-on-local-files answer
+SETTLE start: settled, load 0.47 after 50 s (limit 0.5)
+LOAD round 1 cell 0: 0.47
+LOAD round 1 cell 1: 1.25
+LOAD round 2 cell 0: 1.29
+LOAD round 2 cell 1: 1.52
+LOAD round 3 cell 0: 1.25
+LOAD round 3 cell 1: 1.56
+RESULT bench: 24 runs, 0 not ok

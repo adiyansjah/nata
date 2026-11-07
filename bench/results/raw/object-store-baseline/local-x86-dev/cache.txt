@@ -1,0 +1,11 @@
+CASE cache_off_vs_bounded_cache_repeated_footer_reads: PASS 10 objects x 5 queries: no_cache: heads=50 footer_gets=50 footer_bytes=3276800 server_gets=50 server_heads=50; bounded_cache: heads=50 footer_gets=10 footer_bytes=655360 server_gets=10 server_heads=50; 
+CASE replaced_object_never_served_stale: PASS after a replace the next open sees the new footer
+CASE lru_eviction_bounded_by_bytes_and_entries: PASS cap 99876 B (3 entries of ~28536 B): retained 85609 B, 3 entries, 3 evictions
+CASE pinned_entries_stay_charged_and_force_a_bypass: PASS outcomes [Miss, Miss, Bypass, Bypass], retained 57073 B <= cap 71340 B, then 57073 B after the handles dropped
+CASE over_entry_cap_is_bypassed_not_admitted: PASS bypassed, served uncached
+CASE failed_fill_is_never_published: PASS fill failed after 4 attempts, nothing cached, next open filled normally
+CASE credential_scope_is_part_of_the_key: PASS two scopes, two entries
+CASE scan_matches_the_oracle_all_policies_and_executors: PASS 24 scans equal the oracle; Full bytes: unmerged: needed 3961196 fetched 3961196 (100%); merged: needed 3961196 fetched 3961196 (100%); merged-x4: needed 3961196 fetched 3961196 (100%); 
+CASE version_change_mid_scan_fails_never_mixes_versions: PASS swap@2: failed IdentityChanged; swap@3: failed IdentityChanged; swap@5: failed IdentityChanged
+RESULT cache+scan: 9 cases, 0 failed
+exit 0

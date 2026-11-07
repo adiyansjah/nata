@@ -1,0 +1,30 @@
+CASE throttle_503_slowdown_then_ok: PASS outcome=ok attempts=0 elapsed_ms=44
+CASE throttle_429_retry_after_honored: PASS outcome=ok attempts=0 elapsed_ms=1002
+CASE retry_after_beyond_deadline_fails_without_another_attempt: PASS outcome=Throttled attempts=1 elapsed_ms=0
+CASE persistent_500_exactly_four_attempts: PASS outcome=Server5xx attempts=4 elapsed_ms=111
+CASE backoff_gaps_follow_equal_jitter: PASS gaps_ms=[19, 25, 67] elapsed_ms=111 
+CASE stalled_headers_timeout_then_ok: PASS outcome=ok attempts=0 elapsed_ms=821
+CASE stalled_body_persistent_bounded_by_attempt_timeout: PASS outcome=Timeout attempts=4 elapsed_ms=3315
+CASE truncated_body_retried_no_duplicate_bytes: PASS outcome=ok attempts=0 elapsed_ms=20
+CASE chunked_range_response_without_content_length_rejected: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE truncated_persistent_four_attempts: PASS outcome=Transport attempts=4 elapsed_ms=111
+CASE connection_reset_then_ok: PASS outcome=ok attempts=0 elapsed_ms=45
+CASE content_range_claims_more_than_requested: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE content_range_shifted_start: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE range_ignored_full_object_200: PASS outcome=BadResponse attempts=1 elapsed_ms=0
+CASE content_length_longer_than_range: PASS outcome=BadLength attempts=1 elapsed_ms=0
+CASE content_length_shorter_than_range: PASS outcome=BadLength attempts=1 elapsed_ms=0
+CASE version_change_between_two_range_reads: PASS elapsed_ms=1 second read failed IdentityChanged (412)
+CASE version_change_endpoint_ignores_if_match: PASS outcome=IdentityChanged attempts=1 elapsed_ms=1
+CASE size_change_endpoint_ignores_if_match: PASS outcome=IdentityChanged attempts=1 elapsed_ms=1
+CASE auth_403_is_permanent: PASS outcome=Auth attempts=1 elapsed_ms=0
+CASE missing_object_404_is_permanent: PASS outcome=NotFound attempts=1 elapsed_ms=0
+CASE range_beyond_pinned_length_rejected_before_any_request: PASS outcome=BadRange attempts=0 elapsed_ms=0
+CASE grant_too_small_is_a_bounded_error: PASS outcome=GrantTooSmall attempts=0 elapsed_ms=0
+CASE cancel_during_stalled_body: PASS quiescence_ms=0 
+CASE cancel_during_backoff_sleep: PASS quiescence_ms=0 result=Err(Cancelled)
+CASE cancel_in_permit_wait_other_query_continues: PASS a_ok=true b=Ok(1000) elapsed_ms=499
+CASE operation_deadline_bounds_a_long_retry_chain: PASS elapsed_ms=1134 result=Err((DeadlineExceeded, 17)) (deadline 1200 ms)
+CASE seeded_chaos_every_read_exact_or_bounded_error: PASS seed=20261107 reads_ok=72 reads_failed_bounded=8 gets_run1=53 gets_run2=53 
+RESULT faults: 28 cases, 0 failed
+exit 0
