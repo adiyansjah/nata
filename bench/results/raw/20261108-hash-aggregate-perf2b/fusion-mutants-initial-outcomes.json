@@ -1,0 +1,474 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.100639448,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.100575899,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/cast.rs:83:13: replace == with != in cast_into",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/cast.rs",
+          "function": {
+            "function_name": "cast_into",
+            "return_type": "-> R<()>",
+            "span": {
+              "start": {
+                "line": 81,
+                "column": 1
+              },
+              "end": {
+                "line": 286,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 83,
+              "column": 13
+            },
+            "end": {
+              "line": 83,
+              "column": 15
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__cast.rs_line_83_col_13.log",
+      "diff_path": "diff/crates__nata-exec__src__cast.rs_line_83_col_13.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.359466015,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151143698,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/eval.rs:716:9: delete match arm (Data::Dec(a), Data::Dec(b), Data::Dec(d)) in arith_into",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/eval.rs",
+          "function": {
+            "function_name": "arith_into",
+            "return_type": "-> R<()>",
+            "span": {
+              "start": {
+                "line": 686,
+                "column": 1
+              },
+              "end": {
+                "line": 745,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 716,
+              "column": 9
+            },
+            "end": {
+              "line": 736,
+              "column": 10
+            }
+          },
+          "replacement": "",
+          "genre": "MatchArm"
+        }
+      },
+      "summary": "MissedMutant",
+      "log_path": "log/crates__nata-exec__src__eval.rs_line_716_col_9.log",
+      "diff_path": "diff/crates__nata-exec__src__eval.rs_line_716_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.56066417,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150910328,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/value.rs:113:9: replace Col::reset with ()",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/value.rs",
+          "function": {
+            "function_name": "Col::reset",
+            "return_type": "",
+            "span": {
+              "start": {
+                "line": 111,
+                "column": 5
+              },
+              "end": {
+                "line": 124,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 113,
+              "column": 9
+            },
+            "end": {
+              "line": 123,
+              "column": 10
+            }
+          },
+          "replacement": "()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__value.rs_line_113_col_9.log",
+      "diff_path": "diff/crates__nata-exec__src__value.rs_line_113_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.509824221,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15093573,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/value.rs:129:9: replace Col::read_arrow -> Result<(), EvalError> with Ok(())",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/value.rs",
+          "function": {
+            "function_name": "Col::read_arrow",
+            "return_type": "-> Result<(), EvalError>",
+            "span": {
+              "start": {
+                "line": 126,
+                "column": 5
+              },
+              "end": {
+                "line": 157,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 129,
+              "column": 9
+            },
+            "end": {
+              "line": 156,
+              "column": 15
+            }
+          },
+          "replacement": "Ok(())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__value.rs_line_129_col_9.log",
+      "diff_path": "diff/crates__nata-exec__src__value.rs_line_129_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.460403847,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150906732,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/aggregate/fusion.rs:79:9: replace Program::push -> usize with 0",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/aggregate/fusion.rs",
+          "function": {
+            "function_name": "Program::push",
+            "return_type": "-> usize",
+            "span": {
+              "start": {
+                "line": 78,
+                "column": 5
+              },
+              "end": {
+                "line": 93,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 79,
+              "column": 9
+            },
+            "end": {
+              "line": 92,
+              "column": 11
+            }
+          },
+          "replacement": "0",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__aggregate__fusion.rs_line_79_col_9.log",
+      "diff_path": "diff/crates__nata-exec__src__aggregate__fusion.rs_line_79_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.5605252910000003,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15087297,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-exec/src/aggregate/hashing.rs:50:5: replace columns_into with ()",
+          "package": "nata-exec",
+          "file": "crates/nata-exec/src/aggregate/hashing.rs",
+          "function": {
+            "function_name": "columns_into",
+            "return_type": "",
+            "span": {
+              "start": {
+                "line": 49,
+                "column": 1
+              },
+              "end": {
+                "line": 74,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 50,
+              "column": 5
+            },
+            "end": {
+              "line": 73,
+              "column": 6
+            }
+          },
+          "replacement": "()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-exec__src__aggregate__hashing.rs_line_50_col_5.log",
+      "diff_path": "diff/crates__nata-exec__src__aggregate__hashing.rs_line_50_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 3.660944134,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150936846,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-exec@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 6,
+  "missed": 1,
+  "caught": 5,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-07T19:51:18.987389546Z",
+  "end_time": "2026-11-07T19:51:41.212608493Z",
+  "cargo_mutants_version": "27.1.0"
+}

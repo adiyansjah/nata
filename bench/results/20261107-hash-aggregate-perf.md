@@ -1117,3 +1117,84 @@ arity conjunction, and reversing arity equality are all caught.
 ```sh
 CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2b/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --profile release --output /home/dev/perf2b-next/mutants-small -p nata-exec -f crates/nata-exec/src/aggregate.rs -F 'Groups::find_row' --timeout 180 -- --lib aggregate::tests::
 ```
+
+### 2b/4 — shared eager argument DAG and task buffer reuse
+
+**Rule:** Compile eager column/literal/cast/arithmetic trees once per task into a typed DAG. Evaluate each node once for the same retained-row selection, then pass shared columns directly to aggregate updates. Keep conditional roots in the existing evaluator, all arguments before state updates/HAVING/LIMIT, exact checked kernels and grant accounting.
+
+Local shared x86-64 VM; **unsettled**, warm SF1, whole CLI, 8 GiB,
+five alternating rounds and identical-before generic control. Frozen targets and
+ADRs remain unchanged; no both-architecture or settled target claim.
+
+| Query | Threads | Before median s | After median s | Control median s | Paired after/before | Paired control/before |
+|---|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.454 | 1.286 | 1.426 | 0.884 | 0.981 |
+| q1 | 8 | 0.430 | 0.391 | 0.459 | 0.908 | 1.072 |
+| high_cardinality_tpch | 1 | 2.847 | 2.830 | 2.893 | 0.990 | 0.994 |
+| high_cardinality_tpch | 8 | 2.066 | 2.030 | 2.045 | 0.975 | 1.001 |
+
+**Verdict:** Retain, locally unsettled. Paired Q1 improves 11.6%/9.2%; many-group ratios 0.990/0.975 with twin controls 0.994/1.001. No cell regresses by 3%. This is expression/materialization fusion, not check elision or an arithmetic-width change.
+
+One-thread whole-process Q1 self shares (inclusive shares are not additive):
+
+| Symbol | Before % | After % |
+|---|---:|---:|
+| Partial::resume | 14.59 | 17.97 |
+| Decimal::column | 15.71 | 11.93 |
+| ExactSum::add | 5.05 | 3.76 |
+| Col::from_arrow | 5.05 | 2.61 |
+
+[Samples](raw/20261108-hash-aggregate-perf2b/fusion-samples.json),
+[distributions, paired controls and immutable binary hashes](raw/20261108-hash-aggregate-perf2b/fusion-summary.json),
+[DuckDB value gates](raw/20261108-hash-aggregate-perf2b/fusion-gates.json).
+Full per-cell profiles are adjacent `fusion-QUERY-THREADS-ARM.txt` files.
+Commands use external immutable copies, never an in-place rebuilt binary:
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py fusion --before /home/dev/perf2b-next/small --after /home/dev/perf2b-next/fusion --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2b --profile
+```
+
+The DAG shares only eager nodes evaluated on the same selection, with the first
+occurrence's type and positioned checks. It shares Q1's discounted-price subtree
+and column arguments across SUM/AVG, without cloning their vectors. Numeric
+input widening and result buffers, selected rows and hashes are retained per
+task; old text is released before another decode. Generic/conditional expressions
+retain the existing evaluator and its allocations; this is not zero-allocation
+execution. Scalar SQL and the DAG call the same extracted `arith_into`,
+`literal_into`, and `cast_into` implementations. No strict kernel changed.
+Existing conservative expression/decode and string grants cover retained
+capacities; no minimum grant, default, or spill-pressure rule changes.
+
+Validation: full `cargo test --locked --release -j 4 -p nata-exec -- --test-threads=1`
+passes, including shared-argument identity, two-batch buffer reuse, validity reset,
+Decimal64/Decimal128, masked integer overflow, conditional branches and first
+error positions. Locked release build and both aggregate gates pass **65/65**.
+[Tests](raw/20261108-hash-aggregate-perf2b/fusion-tests.txt),
+[gates](raw/20261108-hash-aggregate-perf2b/fusion-checks.txt),
+[clippy](raw/20261108-hash-aggregate-perf2b/fusion-clippy.txt).
+
+Focused mutations initially found **5 caught, 1 missed**: deleting decimal
+arithmetic survived the library-only control. The integration gates do not
+strengthen that library test. A concrete decimal-buffer test now checks both
+Arrow widths, exact results, selection/NULL clearing and retained capacity.
+Final sweep: **6 caught, 0 missed, 0 invalid**, including that deletion, the
+DAG slot mapping, omitted buffer reset/Arrow input, altered cast equality and
+omitted hash-vector filling. Initial evidence is retained, not reclassified:
+[initial outcomes](raw/20261108-hash-aggregate-perf2b/fusion-mutants-initial-outcomes.json),
+[final outcomes](raw/20261108-hash-aggregate-perf2b/fusion-mutants-final-outcomes.json).
+One tool invocation rejected `--in-place -j 1` before testing; in-place mode is
+already serial. The corrected command uses `--cargo-arg=--lib` for both build
+and test, and `--cargo-arg=-j4`. That invocation is not a mutant catch.
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2b/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --profile release --output /home/dev/perf2b-next/mutants-fusion-final -p nata-exec -f crates/nata-exec/src/aggregate/fusion.rs -f crates/nata-exec/src/aggregate/hashing.rs -f crates/nata-exec/src/value.rs -f crates/nata-exec/src/cast.rs -f crates/nata-exec/src/eval.rs -F 'replace Program::push -> usize with 0|replace Col::reset with \(\)|replace Col::read_arrow.*with Ok\(\(\)\)|delete match arm \(Data::Dec.*in arith_into|replace == with != in cast_into|replace columns_into with \(\)' --timeout 180
+cd spikes/kani-nata-kernels
+for proof in decimal_column_selected_null_and_bounds decimal_column_add_selected_null_and_bounds decimal_column_sub_selected_null_and_bounds decimal_column_machine_overflow; do
+  CARGO_BUILD_JOBS=4 cargo kani --harness "$proof"
+done
+```
+
+Kani regression rerun: **4/4 PASS, 8/8 covers**, importing the unchanged production
+`Decimal::column`. Individual `fusion-kani-*.txt` logs are adjacent to the raw
+profiles. These bounded kernels do not prove DAG compilation, buffer lifetime,
+or general i256 arithmetic; runtime/mutation checks cover the changed wrappers.

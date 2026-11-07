@@ -108,6 +108,54 @@ impl Col {
         }
     }
 
+    /// Reuse an admitted fixed-width buffer; old selection bits cannot leak.
+    pub(crate) fn reset(&mut self, n: usize) {
+        self.valid.resize(n, false);
+        self.valid.fill(false);
+        match &mut self.data {
+            Data::Bool(v) => v.resize(n, false),
+            Data::Int(v) => v.resize(n, 0),
+            Data::Dec(v) => v.resize(n, 0),
+            Data::F32(v) => v.resize(n, 0.0),
+            Data::F64(v) => v.resize(n, 0.0),
+            Data::Date(v) => v.resize(n, 0),
+            Data::Str(_) => {}
+        }
+    }
+
+    /// Widen a scan lane once into reusable storage. Uncommon Arrow layouts
+    /// retain the sanctioned conversion and dictionary NULL validation.
+    pub(crate) fn read_arrow(&mut self, array: &ArrayRef) -> Result<(), EvalError> {
+        macro_rules! copy {
+            ($values:expr, $native:ty, $convert:expr) => {{
+                let a = array
+                    .as_primitive_opt::<$native>()
+                    .ok_or_else(|| EvalError::internal("scan lane type"))?;
+                $values.clear();
+                $values.extend(a.values().iter().copied().map($convert));
+            }};
+        }
+        match (&mut self.data, array.data_type()) {
+            (Data::Dec(v), DataType::Decimal64(..)) => copy!(v, Decimal64Type, i128::from),
+            (Data::Dec(v), DataType::Decimal128(..)) => {
+                copy!(v, Decimal128Type, std::convert::identity)
+            }
+            (Data::Int(v), DataType::Int8) => copy!(v, Int8Type, i64::from),
+            (Data::Int(v), DataType::Int16) => copy!(v, Int16Type, i64::from),
+            (Data::Int(v), DataType::Int32) => copy!(v, Int32Type, i64::from),
+            (Data::Int(v), DataType::Int64) => copy!(v, Int64Type, std::convert::identity),
+            (Data::Date(v), DataType::Date32) => copy!(v, Date32Type, std::convert::identity),
+            _ => {
+                *self = Self::from_arrow(array, self.ty)?;
+                return Ok(());
+            }
+        }
+        self.valid.clear();
+        self.valid
+            .extend((0..array.len()).map(|i| array.is_valid(i)));
+        Ok(())
+    }
+
     pub fn bool_col(values: Vec<bool>, valid: Vec<bool>) -> Col {
         Col {
             ty: SqlType::Boolean,

@@ -272,6 +272,9 @@ pub(super) fn accumulate(
             partial: Partial {
                 shared: Arc::clone(shared),
                 tables: empty_tables(),
+                program: None,
+                rows: Vec::new(),
+                hashes: Vec::new(),
             },
             cursor: None,
             evaluated: None,
@@ -377,7 +380,9 @@ pub(super) fn accumulate(
                             return Ok(Step::Yield);
                         }
                         state.pressure_since = None;
-                        state.evaluated = None;
+                        if let Some(evaluated) = state.evaluated.take() {
+                            state.partial.recycle(evaluated);
+                        }
                         if cfg.aggregate_force_spill || shared.manager.revoked(0).unwrap_or(false) {
                             submit_write(state, &storage, &targets, &io, wake.clone())?;
                             return Ok(Step::Yield);

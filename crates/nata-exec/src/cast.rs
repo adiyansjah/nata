@@ -70,13 +70,20 @@ fn out_valid(c: &Col, sel: &[u32]) -> Vec<bool> {
 
 /// Convert the rows `sel` of `c` to type `to`. Rows outside `sel` come back NULL.
 pub fn cast_col(c: &Col, to: SqlType, sel: &[u32], pos: Pos) -> R<Col> {
-    let from = c.ty;
-    let n = c.len();
-    if from == to {
+    if c.ty == to {
         return Ok(c.clone());
     }
+    let mut out = Col::empty(to, c.len());
+    cast_into(c, to, sel, pos, &mut out)?;
+    Ok(out)
+}
+
+pub(crate) fn cast_into(c: &Col, to: SqlType, sel: &[u32], pos: Pos, out: &mut Col) -> R<()> {
+    let from = c.ty;
+    if from == to {
+        return out.assign(c, sel);
+    }
     let valid = out_valid(c, sel);
-    let mut out = Col::empty(to, n);
     let rows: Vec<usize> = sel
         .iter()
         .map(|r| *r as usize)
@@ -275,7 +282,7 @@ pub fn cast_col(c: &Col, to: SqlType, sel: &[u32], pos: Pos) -> R<Col> {
         _ => return Err(internal()),
     }
     out.valid = valid;
-    Ok(out)
+    Ok(())
 }
 
 fn float_at(d: &Data, i: usize) -> f64 {

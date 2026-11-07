@@ -9,6 +9,7 @@ use hashbrown::HashTable;
 use nata_kernels::aggregate::{ExactSum, add_count};
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
+mod fusion;
 mod hashing;
 mod pipeline;
 mod replay;
@@ -255,7 +256,7 @@ impl Groups {
         let i = *self.index.find(hash, |&i| self.entries[i].0 == key)?;
         Some(&mut self.entries[i].1)
     }
-    fn find_row(&self, hash: u64, columns: &[Col], row: usize) -> Option<usize> {
+    fn find_row(&self, hash: u64, columns: &[Arc<Col>], row: usize) -> Option<usize> {
         let matches = |id: usize| {
             let key = &self.entries[id].0;
             key.len() == columns.len()
@@ -369,16 +370,19 @@ struct Shared {
 struct Partial {
     shared: Arc<Shared>,
     tables: Vec<Table>,
+    program: Option<fusion::Program>,
+    rows: Vec<u32>,
+    hashes: Vec<u64>,
 }
 struct Evaluated {
     rows: Vec<u32>,
     hashes: Vec<u64>,
-    keys: Vec<Col>,
-    args: Vec<Option<Col>>,
+    keys: Vec<Arc<Col>>,
+    args: Vec<Option<Arc<Col>>>,
     next: usize,
 }
 impl Partial {
-    fn evaluate(&self, batch: &RecordBatch) -> R<Evaluated> {
+    fn evaluate(&mut self, batch: &RecordBatch) -> R<Evaluated> {
         let plan = &self.shared.plan;
         let a = plan
             .aggregate
@@ -387,32 +391,24 @@ impl Partial {
         eval_on_stack(crate::exec::max_depth(plan), || {
             let types: Vec<_> = plan.scan.columns.iter().map(|c| c.ty).collect();
             let ev = Evaluator::new(batch, &types);
-            let rows = if let Some(f) = &plan.filter {
-                ev.keep_mask(&f.predicate)?
-                    .into_iter()
-                    .enumerate()
-                    .filter(|(_, k)| *k)
-                    .map(|(i, _)| u32::try_from(i).map_err(|_| resource()))
-                    .collect::<R<Vec<_>>>()?
+            let mut rows = std::mem::take(&mut self.rows);
+            rows.clear();
+            if let Some(f) = &plan.filter {
+                rows.extend(
+                    ev.keep_mask(&f.predicate)?
+                        .into_iter()
+                        .enumerate()
+                        .filter(|(_, k)| *k)
+                        .map(|(i, _)| u32::try_from(i).map_err(|_| resource()))
+                        .collect::<R<Vec<_>>>()?,
+                );
             } else {
-                ev.all_rows()
-            };
-            let keys: Vec<_> = a
-                .keys
-                .iter()
-                .map(|e| ev.eval(e, &rows).map(|c| (*c).clone()))
-                .collect::<R<Vec<_>>>()?;
-            let args = a
-                .aggregates
-                .iter()
-                .map(|a| {
-                    a.arg
-                        .as_ref()
-                        .map(|e| ev.eval(e, &rows).map(|c| (*c).clone()))
-                        .transpose()
-                })
-                .collect::<R<Vec<_>>>()?;
-            let hashes = hashing::columns(&keys, &rows);
+                rows.extend(ev.all_rows());
+            }
+            let program = self.program.get_or_insert_with(|| fusion::Program::new(a));
+            let (keys, args) = program.evaluate(batch, &ev, a, &rows)?;
+            let mut hashes = std::mem::take(&mut self.hashes);
+            hashing::columns_into(&keys, &rows, &mut hashes);
             Ok(Evaluated {
                 rows,
                 hashes,
@@ -421,6 +417,14 @@ impl Partial {
                 next: 0,
             })
         })
+    }
+    fn recycle(&mut self, evaluated: Evaluated) {
+        self.rows = evaluated.rows;
+        self.hashes = evaluated.hashes;
+        drop((evaluated.keys, evaluated.args));
+        if let Some(program) = &mut self.program {
+            program.release_text();
+        }
     }
     // No state changes until *all* capacity for this row has been granted.
     // Returning false leaves the row cursor in place for replay after the spill.
@@ -958,6 +962,9 @@ mod tests {
                 force_collisions: false,
             }),
             tables: (0..PARTITIONS).map(|_| Table::new()).collect(),
+            program: None,
+            rows: Vec::new(),
+            hashes: Vec::new(),
         }
     }
     fn counting_batch(n: u32) -> Evaluated {
@@ -1026,12 +1033,12 @@ mod tests {
             data: Data::Int(vec![5, 999, 777, 11, 999, 13]),
         };
         let rows = vec![0, 2, 3, 5];
-        let hashes = hashing::columns(std::slice::from_ref(&keys), &rows);
+        let hashes = hashing::columns(std::slice::from_ref(&Arc::new(keys.clone())), &rows);
         let mut evaluated = Evaluated {
             rows,
             hashes,
-            keys: vec![keys],
-            args: vec![Some(args)],
+            keys: vec![Arc::new(keys)],
+            args: vec![Some(Arc::new(args))],
             next: 0,
         };
         assert!(partial.resume(&mut evaluated, &|| false).expect("batch"));
@@ -1086,7 +1093,7 @@ mod tests {
         let mut floats = Col::empty(SqlType::Double, 4);
         floats.valid = vec![true; 4];
         floats.data = Data::F64(vec![-0.0, -f64::NAN, 1.0, 2.0]);
-        let columns = [text, floats];
+        let columns = [Arc::new(text), Arc::new(floats)];
         let mut groups = Groups::new();
         groups.hash = |_| 0;
         for i in 0..3 {
@@ -1117,7 +1124,7 @@ mod tests {
             groups.insert(vec![Atom::get(&col, n)], vec![State::Count(1)]);
             for i in 0..20 {
                 assert_eq!(
-                    groups.find_row(0, std::slice::from_ref(&col), i),
+                    groups.find_row(0, std::slice::from_ref(&Arc::new(col.clone())), i),
                     (i <= n).then_some(i)
                 );
             }

@@ -40,8 +40,15 @@ pub(super) fn key(key: &[Atom], depth: u8) -> u64 {
 }
 /// One type dispatch per column, one hash per selected value. The hash vector
 /// belongs to the evaluated batch and is covered by its decode reservation.
-pub(super) fn columns(keys: &[Col], rows: &[u32]) -> Vec<u64> {
-    let mut hashes = vec![seed(0); rows.len()];
+#[cfg(test)]
+pub(super) fn columns(keys: &[std::sync::Arc<Col>], rows: &[u32]) -> Vec<u64> {
+    let mut hashes = Vec::new();
+    columns_into(keys, rows, &mut hashes);
+    hashes
+}
+pub(super) fn columns_into(keys: &[std::sync::Arc<Col>], rows: &[u32], hashes: &mut Vec<u64>) {
+    hashes.resize(rows.len(), seed(0));
+    hashes.fill(seed(0));
     for col in keys {
         let mut apply = |hash_value: &dyn Fn(usize) -> u64| {
             for (h, &row) in hashes.iter_mut().zip(rows) {
@@ -64,7 +71,6 @@ pub(super) fn columns(keys: &[Col], rows: &[u32]) -> Vec<u64> {
             Data::Date(v) => apply(&|i| value(6, &v[i].to_le_bytes())),
         }
     }
-    hashes
 }
 
 #[cfg(test)]
@@ -114,7 +120,7 @@ mod tests {
                 let mut c = Col::empty(ty, 3);
                 c.data = data;
                 c.valid = vec![true, true, false];
-                c
+                std::sync::Arc::new(c)
             })
             .collect();
         let rows = [2, 1, 0];

@@ -1,0 +1,4 @@
+Found 6 mutants to test
+ok       Unmutated baseline in 0s build + 0s test
+MISSED   crates/nata-exec/src/eval.rs:716:9: delete match arm (Data::Dec(a), Data::Dec(b), Data::Dec(d)) in arith_into in 3s build + 0s test
+6 mutants tested in 22s: 1 missed, 5 caught

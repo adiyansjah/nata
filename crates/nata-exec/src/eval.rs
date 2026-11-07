@@ -432,10 +432,16 @@ impl<'a> Evaluator<'a> {
 
 fn literal_col(v: &Value, ty: SqlType, n: usize) -> R<Col> {
     let mut c = Col::empty(ty, n);
+    literal_into(v, &mut c)?;
+    Ok(c)
+}
+
+pub(crate) fn literal_into(v: &Value, c: &mut Col) -> R<()> {
+    let n = c.len();
     if matches!(v, Value::Null) {
-        return Ok(c);
+        return Ok(());
     }
-    c.valid = vec![true; n];
+    c.valid.fill(true);
     let bad = || EvalError::internal("a literal does not match its type");
     match (v, &mut c.data) {
         (Value::Bool(b), Data::Bool(d)) => d.fill(*b),
@@ -453,7 +459,7 @@ fn literal_col(v: &Value, ty: SqlType, n: usize) -> R<Col> {
         (Value::Date(x), Data::Date(d)) => d.fill(*x),
         _ => return Err(bad()),
     }
-    Ok(c)
+    Ok(())
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------ logic
@@ -672,8 +678,19 @@ fn negate(c: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
 }
 
 fn arith(op: ArithOp, l: &Col, r: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
-    let n = l.len();
-    let mut out = Col::empty(e.ty, n);
+    let mut out = Col::empty(e.ty, l.len());
+    arith_into(op, l, r, e, sel, &mut out)?;
+    Ok(out)
+}
+
+pub(crate) fn arith_into(
+    op: ArithOp,
+    l: &Col,
+    r: &Col,
+    e: &Expr,
+    sel: &[u32],
+    out: &mut Col,
+) -> R<()> {
     let name = format!("`{}`", op.symbol());
     match (&l.data, &r.data, &mut out.data) {
         (Data::Int(a), Data::Int(b), Data::Int(d)) => {
@@ -724,7 +741,7 @@ fn arith(op: ArithOp, l: &Col, r: &Col, e: &Expr, sel: &[u32]) -> R<Col> {
             )));
         }
     }
-    Ok(out)
+    Ok(())
 }
 
 fn kernel_op(op: ArithOp) -> Op {
