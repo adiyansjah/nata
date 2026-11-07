@@ -87,6 +87,15 @@ mut("open-failure-does-not-stop-claims", "after a file fails to open the scan go
 # EQUIVALENT mutant, removed: "task-run-after-cancel-at-claim" (the worker no longer checks the token before calling `run`). `Work::run` is contractually
 # the one that looks at the token and returns Cancelled at once, so the result is the same; the check in the worker only saves the call.
 
+mut("memory-reservation-not-released", "RAII drop leaks capacity and the live ledger entry",
+    ("src/memory.rs", "        self.manager.release(self.id);", "        let _ = self.id;"))
+mut("memory-budget-cap-removed", "workers can multiply B",
+    ("src/memory.rs", "if turn && bytes <= available - s.held {", "if turn {"))
+mut("memory-sticky-wake-dropped", "release before park loses its notification",
+    ("src/memory.rs", "        let op = &mut s.operators[operator];\n        op.notified = true;", "        let op = &mut s.operators[operator];\n        op.notified = false;"))
+mut("memory-grant-released-twice", "a capacity reservation releases twice",
+    ("src/memory.rs", "        self.manager.release(self.id);", "        self.manager.release(self.id);\n        self.manager.release(self.id);"))
+
 def sh(cmd, cwd, env=None, timeout=300):
     """Run in its own process group; on a timeout kill the whole group (a deadlocked test binary is a grandchild of cargo)."""
     import signal
@@ -140,7 +149,7 @@ def check(slot, name):
     if rc != 0:
         return name, "INVALID", "does not compile (std): " + " ".join(out.strip().splitlines()[-3:]), time.time() - t0
     std = None
-    for t in ("facade", "sched"):
+    for t in (("memory",) if name and name.startswith("memory-") else ("facade", "sched", "memory")):
         rc, out = sh(["cargo", "test", "--offline", "--release", "--test", t, "--", "--test-threads=4"], d, env, 60)
         if rc != 0:
             fails = re.findall(r"^test (\S+) \.\.\. FAILED", out, re.M)
@@ -148,11 +157,12 @@ def check(slot, name):
             break
     # 2. loom models (always run: the question is whether the MODELS catch it)
     env = {"CARGO_TARGET_DIR": os.path.join(base, "target-loom"), "RUSTFLAGS": "--cfg nata_loom"}
-    rc, out = sh(["cargo", "test", "--offline", "--release", "--test", "loom_sched", "--no-run"], d, env, 900)
+    model_test = "memory" if name and name.startswith("memory-") else "loom_sched"
+    rc, out = sh(["cargo", "test", "--offline", "--release", "--test", model_test, "--no-run"], d, env, 900)
     if rc != 0:
         return name, "INVALID", "does not compile (loom): " + " ".join(out.strip().splitlines()[-3:]), time.time() - t0
     deps = os.path.join(base, "target-loom", "release", "deps")
-    cands = sorted([os.path.join(deps, f) for f in os.listdir(deps) if f.startswith("loom_sched-") and not f.endswith(".d")], key=os.path.getmtime)
+    cands = sorted([os.path.join(deps, f) for f in os.listdir(deps) if f.startswith(model_test + "-") and not f.endswith(".d")], key=os.path.getmtime)
     binary = cands[-1]
     loom = None
     for m in models(binary, d, env):

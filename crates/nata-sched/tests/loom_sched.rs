@@ -11,6 +11,8 @@
 #![cfg(nata_loom)]
 
 mod common;
+#[path = "memory.rs"]
+mod memory;
 use common::*;
 
 use std::sync::atomic::{AtomicUsize as StdAtomicUsize, Ordering as StdOrdering};

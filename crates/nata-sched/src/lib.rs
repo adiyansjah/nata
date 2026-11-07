@@ -38,6 +38,7 @@
 
 use std::collections::{BTreeMap, VecDeque};
 
+pub mod memory;
 pub mod sync;
 use sync::{Arc, AtomicU64, Condvar, JoinHandle, Mutex, Ordering, lock, wait};
 

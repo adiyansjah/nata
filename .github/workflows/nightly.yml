@@ -104,7 +104,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: loom-bound3-${{ matrix.model }}
+          # Rust module-qualified model names contain colons; artifact names cannot.
+          name: loom-bound3-${{ strategy.job-index }}
           path: loom-bound3.txt
 
   fuzz-sql:
