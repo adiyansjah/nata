@@ -14,6 +14,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{Semaphore, mpsc, oneshot, watch};
 
 use crate::codec::{self, Message};
+mod fetch;
 use crate::{
     extended::{self, Portal, Statement},
     session,
@@ -53,6 +54,7 @@ impl Drop for Counted {
     }
 }
 pub struct Config {
+    pub catalog: Arc<crate::catalog::Snapshot>,
     pub listen: SocketAddr,
     pub unsafe_listen: bool,
     pub max_connections: usize,
@@ -82,6 +84,7 @@ impl Config {
         Ok(())
     }
 }
+#[derive(Clone)]
 struct Active {
     token: ScanCancel,
     stop: watch::Sender<bool>,
@@ -230,6 +233,7 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
         let mut execution = execution.clone();
         execution.threads = threads;
         execution.window = threads.saturating_mul(2);
+        let catalog = Arc::clone(&config.catalog);
         tokio::spawn(async move {
             let _socket_slot = socket_slot;
             let startup = tokio::time::timeout(Duration::from_secs(5), async {
@@ -327,7 +331,16 @@ pub async fn serve_listener(listener: TcpListener, config: Config) -> io::Result
                 return;
             }
             drop(startup_slot);
-            let _ = session_loop(socket, &registration, queries, execution, metrics, state).await;
+            let _ = session_loop(
+                socket,
+                &registration,
+                queries,
+                execution,
+                metrics,
+                state,
+                catalog,
+            )
+            .await;
         });
     }
 }
@@ -418,6 +431,7 @@ async fn session_loop(
     execution: nata_exec::ExecConfig,
     metrics: Option<Arc<Metrics>>,
     mut state: session::State,
+    catalog: Arc<crate::catalog::Snapshot>,
 ) -> io::Result<()> {
     let (mut read, write) = socket.into_split();
     let mut write = tokio::io::BufWriter::with_capacity(OUTPUT_BYTES, write);
@@ -445,15 +459,30 @@ async fn session_loop(
             }
         }
     }));
+    state.catalog = Arc::clone(&catalog);
     let mut objects = Objects::new(metrics.clone());
+    let mut runs: HashMap<String, fetch::Run> = HashMap::new();
     let mut failed = false;
     loop {
+        runs.retain(|name, _| objects.portals.get(name).is_some());
+        for run in runs.values_mut() {
+            run.expire();
+        }
         // Flush before waiting: Parse/Describe clients may wait without sending Sync.
         let m = match input.try_recv() {
             Ok(m) => m,
             Err(_) => {
                 write.flush().await?;
-                let Some(m) = input.recv().await else { break };
+                let lease = runs.values().filter_map(fetch::Run::deadline).min();
+                let received = if let Some(lease) = lease {
+                    match tokio::time::timeout_at(lease.into(), input.recv()).await {
+                        Ok(m) => m,
+                        Err(_) => continue,
+                    }
+                } else {
+                    input.recv().await
+                };
+                let Some(m) = received else { break };
                 m
             }
         };
@@ -485,6 +514,60 @@ async fn session_loop(
             write.flush().await?;
             continue;
         }
+        if let Message::Execute(name, limit) = &m
+            && let Some(p) = objects.portals.get(name).cloned()
+            && (runs.contains_key(name)
+                || (*limit > 0 && column_count(&p.statement.description) > 0))
+        {
+            let result = if state.transaction == b'E' {
+                Err(WireError::new(
+                    "25P02",
+                    "current transaction is aborted; use ROLLBACK",
+                ))
+            } else if state
+                .clone()
+                .evaluate(&p.statement.sql)
+                .is_ok_and(|r| r.is_some())
+                || crate::metadata::query(&catalog, &state.database, &p.statement.sql)
+                    .is_ok_and(|r| r.is_some())
+            {
+                Err(WireError::unsupported(
+                    "bounded fetch of session or metadata rows",
+                ))
+            } else if crate::copy::query(&p.statement.sql)
+                .ok()
+                .flatten()
+                .is_some()
+            {
+                Err(WireError::unsupported("bounded Execute of COPY"))
+            } else {
+                let run = runs.entry(name.clone()).or_insert_with(fetch::Run::new);
+                run.execute(
+                    &mut write,
+                    registered,
+                    &queries,
+                    &execution,
+                    &metrics,
+                    &catalog,
+                    &state,
+                    &p,
+                    *limit,
+                    &mut disconnected,
+                )
+                .await
+            };
+            if let Err(e) = result {
+                if e.code == "08006" {
+                    return Ok(());
+                }
+                state.failed();
+                failed = true;
+                send_wire_error(&mut write, &e, &p.statement.sql).await;
+                runs.clear();
+                objects.portals.clear();
+            }
+            continue;
+        }
         let started = Instant::now();
         let simple = matches!(m, Message::Query(_));
         // Modes: 0 executes, 1 validates Parse, 2 describes a statement, 3 describes a portal.
@@ -499,6 +582,7 @@ async fn session_loop(
             Message::Query(q) => {
                 objects.statements.remove("");
                 objects.portals.remove("");
+                runs.remove("");
                 sql = q;
             }
             Message::Parse {
@@ -533,6 +617,7 @@ async fn session_loop(
             } => {
                 if name.is_empty() {
                     objects.portals.remove("");
+                    runs.remove("");
                 }
                 let result = objects.check_portal(&name).and_then(|()| {
                     let s = objects
@@ -589,6 +674,7 @@ async fn session_loop(
                 let exists = if target == b'S' {
                     objects.statements.remove(&name).is_some()
                 } else {
+                    runs.remove(&name);
                     objects.portals.remove(&name).is_some()
                 };
                 // PostgreSQL Close is idempotent, including absent named objects.
@@ -643,7 +729,23 @@ async fn session_loop(
                 .trim_matches(|c: char| c.is_whitespace() || c == ';')
                 .is_empty();
             let mut next_state = state.clone();
-            let chatter = next_state.evaluate(&sql);
+            let mut chatter = if state.transaction == b'E' {
+                next_state.evaluate(&sql)
+            } else {
+                crate::metadata::query(&catalog, &state.database, &sql).and_then(|r| {
+                    if r.is_some() {
+                        Ok(r)
+                    } else {
+                        next_state.evaluate(&sql)
+                    }
+                })
+            };
+            if mode == 0 && state.timeout().is_some_and(|d| started.elapsed() >= d) {
+                chatter = Err(WireError::new(
+                    "57014",
+                    "canceling statement due to statement timeout",
+                ));
+            }
             if mode == 2 {
                 let types = &objects
                     .statements
@@ -660,7 +762,19 @@ async fn session_loop(
             }
             if empty || !matches!(chatter, Ok(None)) {
                 let mut session_rows = 0;
-                let result: Result<(), WireError> = async {
+                // Metadata CPU is bounded by the snapshot/query limits. Check the
+                // wall deadline before output; a stalled/partial output closes the
+                // socket rather than appending an error inside a frame.
+                let response_budget = if mode == 0 {
+                    state
+                        .timeout()
+                        .map(|d| d.saturating_sub(started.elapsed()))
+                        .unwrap_or(Duration::from_secs(2))
+                        .min(Duration::from_secs(2))
+                } else {
+                    Duration::from_secs(2)
+                };
+                let responding = async {
                     if empty {
                         if mode == 0 {
                             write
@@ -749,8 +863,12 @@ async fn session_loop(
                         }
                     }
                     Ok(())
-                }
-                .await;
+                };
+                let result: Result<(), WireError> =
+                    match tokio::time::timeout(response_budget, responding).await {
+                        Ok(result) => result,
+                        Err(_) => return Ok(()),
+                    };
                 let _ = writeln!(
                     io::stderr(),
                     "session={} duration_us={} rows={} state={} queue_wait_us={} worker_share={}",
@@ -767,7 +885,15 @@ async fn session_loop(
                     send_wire_error(&mut write, &e, &sql).await;
                 } else if mode == 1 {
                     if let Some(mut s) = parsed {
-                        if let Ok(Some(r)) = state.clone().evaluate(&sql) {
+                        if let Ok(Some(r)) = crate::metadata::query(&catalog, &state.database, &sql)
+                            .and_then(|r| {
+                                if r.is_some() {
+                                    Ok(r)
+                                } else {
+                                    state.clone().evaluate(&sql)
+                                }
+                            })
+                        {
                             s.description =
                                 codec::description(&r.fields).map_err(io::Error::other)?;
                         }
@@ -790,6 +916,11 @@ async fn session_loop(
                     stop,
                     cancelled: Arc::clone(&cancelled),
                 });
+                let _deadline = if mode == 0 {
+                    fetch::Deadline::start(state.timeout(), &registered.session)
+                } else {
+                    None
+                };
                 let queued = Instant::now();
                 let permit = tokio::select! {
                     p = tokio::time::timeout(Duration::from_secs(5), Arc::clone(&queries).acquire_owned()) => p.ok().and_then(Result::ok),
@@ -804,6 +935,9 @@ async fn session_loop(
                     let (tx, mut rx) = mpsc::channel(BRIDGE_BUFFERS);
                     let (done, joined) = oneshot::channel();
                     let q = sql.clone();
+                    let snapshot = Arc::clone(&catalog);
+                    let database = state.database.clone();
+                    let search_path = state.search_path();
                     let c = Arc::clone(&cancelled);
                     let progress = metrics.clone();
                     let result_formats =
@@ -838,6 +972,10 @@ async fn session_loop(
                                         &tx,
                                         progress.as_deref(),
                                         &result_formats,
+                                        &snapshot,
+                                        &database,
+                                        &search_path,
+                                        None,
                                     )
                                 }));
                             let _ = writeln!(
@@ -894,6 +1032,7 @@ async fn session_loop(
                                         }
                                         boundary.consume(&p);
                                     }
+                                    Some(Event::Suspended) => return Err(WireError::internal()),
                                     Some(Event::Finished(result)) => { transport_failed = !boundary.complete(); return result; },
                                     None => return Err(WireError::internal()),
                                 }
@@ -966,6 +1105,10 @@ async fn session_loop(
                     }
                 }
             }
+        }
+        if state.transaction == b'E' {
+            runs.clear();
+            objects.portals.clear();
         }
         if mode == 0
             && state.transaction == b'I'
@@ -1124,9 +1267,18 @@ enum Event {
     Packet(Vec<u8>),
     Data(Vec<u8>),
     Finished(Result<u64, WireError>),
+    Suspended,
 }
-struct Source<'a>(&'a AtomicBool);
+struct Source<'a>(
+    &'a AtomicBool,
+    &'a crate::catalog::Snapshot,
+    &'a str,
+    &'a [String],
+);
 impl SourceProvider for Source<'_> {
+    fn named(&self, name: &[String]) -> Result<nata_sql::source::SourceInfo, String> {
+        self.1.resolve(name, self.2, self.3)
+    }
     fn expand(&self, p: &str) -> Result<Vec<PathBuf>, String> {
         if self.0.load(Ordering::SeqCst) {
             return Err("cancelled".into());
@@ -1151,10 +1303,18 @@ fn produce(
     tx: &mpsc::Sender<Event>,
     metrics: Option<&Metrics>,
     result_formats: &[i16],
+    catalog: &crate::catalog::Snapshot,
+    database: &str,
+    search_path: &[String],
+    gate: Option<&fetch::Gate>,
 ) -> Result<u64, WireError> {
     let inner = crate::copy::query(sql)?;
     let copying = inner.is_some();
-    let p = nata_sql::plan_parameters(inner.unwrap_or(sql), params, &Source(cancelled));
+    let p = nata_sql::plan_parameters(
+        inner.unwrap_or(sql),
+        params,
+        &Source(cancelled, catalog, database, search_path),
+    );
     if cancelled.load(Ordering::SeqCst) {
         return Err(WireError::cancel());
     }
@@ -1206,6 +1366,9 @@ fn produce(
         })
     };
     use nata_sql::ast::ExplainMode;
+    if gate.is_some() && p.mode != ExplainMode::No {
+        return Err(WireError::unsupported("bounded Execute of EXPLAIN"));
+    }
     if p.mode == ExplainMode::Plan || p.mode == ExplainMode::Analyze {
         let text = if p.mode == ExplainMode::Plan {
             p.plan.explain_text()
@@ -1328,6 +1491,22 @@ fn produce(
                     }
                 }
                 rows += 1;
+                if let Some(gate) = gate
+                    && gate.row()
+                {
+                    if !output.is_empty() {
+                        send_buffer(std::mem::replace(
+                            &mut output,
+                            Vec::with_capacity(OUTPUT_BYTES),
+                        ))?;
+                    }
+                    tx.blocking_send(Event::Suspended).map_err(|_| {
+                        ScanError::new(ErrorKind::Cancelled("closed portal".into()))
+                    })?;
+                    gate.wait().map_err(|_| {
+                        ScanError::new(ErrorKind::Cancelled("closed portal".into()))
+                    })?;
+                }
                 if let Some(m) = metrics {
                     m.rows_produced.fetch_add(1, Ordering::SeqCst);
                 }

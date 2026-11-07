@@ -33,6 +33,8 @@ pub struct Query {
     pub items: Vec<SelectItem>,
     /// The path or glob, unescaped.
     pub from: String,
+    /// Registered name components; None denotes a literal file path.
+    pub from_name: Option<Vec<String>>,
     pub from_pos: Span,
     pub where_: Option<Expr>,
     pub group_by: Vec<Expr>,

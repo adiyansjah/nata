@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 157, in <lambda>
+    e=record('pgcli completion '+name,lambda fn=fn:fn(completer,p))
+                                                   ^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/pgcli/completion_refresher.py", line 128, in refresh_databases
+    completer.extend_database_names(executor.databases())
+                                    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/pgcli/pgexecute.py", line 648, in databases
+    cur.execute(self.databases_query)
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/pgcli/pgexecute.py", line 90, in execute
+    super().execute(*args, **kwargs)
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.FeatureNotSupported: not supported yet: catalog query; only exact ADBC type bootstrap is supported

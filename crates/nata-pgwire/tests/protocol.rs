@@ -161,6 +161,7 @@ fn malformed_lengths_startup_ssl_and_max_connections() {
         assert_eq!(c.read(&mut n).expect("closed"), 0);
     }
     let c = Config {
+        catalog: Arc::new(nata_pgwire::catalog::Snapshot::default()),
         listen: "127.0.0.1:0".parse().expect("addr"),
         unsafe_listen: false,
         max_connections: 0,
@@ -232,6 +233,7 @@ fn psql_when_installed() {
 #[test]
 fn unsafe_listen_requires_explicit_flag() {
     let mut c = Config {
+        catalog: Arc::new(nata_pgwire::catalog::Snapshot::default()),
         listen: SocketAddr::new(std::net::Ipv4Addr::UNSPECIFIED.into(), 5432),
         unsafe_listen: false,
         max_connections: 64,
@@ -320,7 +322,7 @@ fn extended_recorded_sequences_and_sync_recovery() {
     c.execute(0);
     assert_eq!(tags(&c.sync()), b"1tn2nCZ");
     // Errors at Parse, Bind and Execute each suppress later work, then Sync restores normal operation.
-    for stage in 0..3 {
+    for stage in 0..2 {
         if stage == 0 {
             c.parse("SELECT @", &[]);
         } else {
@@ -444,7 +446,7 @@ fn session_chatter_status_and_transaction_markers() {
         assert_eq!(values(&c.query(q)), vec![vec![Some(v.into())]]);
     }
     for q in [
-        "SET statement_timeout = 100",
+        "SET statement_timeout = -1",
         "SET client_encoding = 'LATIN1'",
         "SET work_mem = '1GB'",
         "SHOW unknown",
@@ -751,7 +753,8 @@ fn limited_rowless_commands_allow_jdbc_rollback_recovery() {
     c.parse(&q, &[]);
     c.bind(&[], 0, 0);
     c.execute(100);
-    assert_code(&c.sync(), "0A000");
+    assert_eq!(tags(&c.sync()), b"12DDDCZ");
+    assert_code(&c.query("SELECT @"), "42601");
     c.parse("ROLLBACK", &[]);
     c.bind(&[], 0, 0);
     c.execute(1);
@@ -1463,4 +1466,434 @@ fn aggregate_output_backpressure_disconnect_and_cancel_join() {
             .all(|s| s.2 == 0)
     );
     std::fs::remove_file(path).expect("remove");
+}
+
+fn fetched(c: &mut Client, limit: i32) -> Vec<(u8, Vec<u8>)> {
+    c.execute(limit);
+    c.frame(b'H', b"");
+    let mut r = Vec::new();
+    loop {
+        let m = read(&mut c.socket);
+        let end = matches!(m.0, b's' | b'C' | b'E');
+        r.push(m);
+        if end {
+            return r;
+        }
+    }
+}
+fn park(c: &mut Client) {
+    c.query("BEGIN");
+    c.parse(&format!("SELECT i FROM '{}'", fixture()), &[]);
+    c.bind(&[], 0, 0);
+    let r = fetched(c, 1);
+    assert_eq!(tags(&r), b"12Ds");
+}
+#[test]
+fn skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope() {
+    let s = Server::start(4);
+    for n in 0..=3 {
+        let mut c = s.client();
+        c.query("BEGIN");
+        c.parse(&format!("SELECT i FROM '{}' LIMIT {n}", fixture()), &[]);
+        c.bind(&[], 0, 0);
+        let r = fetched(&mut c, 2);
+        if n >= 2 {
+            assert_eq!(tags(&r), b"12DDs");
+            cancel(&s, c.key); // PostgreSQL rule: suspended means no executing statement.
+            let r = fetched(&mut c, 2);
+            assert_eq!(
+                tags(&r),
+                if n == 2 { b"C".as_slice() } else { b"DC" },
+                "{r:?}"
+            );
+            assert_eq!(
+                r.last().expect("complete").1,
+                if n == 2 {
+                    b"SELECT 0\0".as_slice()
+                } else {
+                    b"SELECT 1\0"
+                }
+            );
+            assert_eq!(fetched(&mut c, 2), vec![(b'C', b"SELECT 0\0".to_vec())]);
+        } else {
+            assert_eq!(
+                r.last().expect("complete").1,
+                format!("SELECT {n}\0").as_bytes()
+            );
+        }
+        c.sync();
+        c.query("ROLLBACK");
+    }
+    let mut a = s.client();
+    let mut b = s.client();
+    park(&mut a);
+    park(&mut b); // Holds both admissions, not a separate parked pool.
+    let mut c = s.client();
+    assert_eq!(tags(&c.query("SET statement_timeout = '20ms'")), b"CZ");
+    let start = Instant::now();
+    assert_code(&c.query(&format!("SELECT i FROM '{}'", fixture())), "57014");
+    assert!(start.elapsed() < Duration::from_secs(1));
+    assert_eq!(values(&c.query("SELECT 1")), vec![vec![Some("1".into())]]);
+    drop(b);
+    drop(a);
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    c.query("SET statement_timeout = 1000");
+    park(&mut c);
+    std::thread::sleep(Duration::from_millis(1100));
+    cancel(&s, c.key);
+    assert_eq!(tags(&fetched(&mut c, 0)), b"DDC"); // Fresh Execute deadline; idle time excluded.
+    c.sync();
+    c.query("ROLLBACK");
+    c.query("BEGIN");
+    assert_code(&c.query("SELECT @"), "42601");
+    assert_code(&c.query("SELECT 1"), "25P02");
+    assert_eq!(tags(&c.query("ROLLBACK")), b"CZ");
+    for q in ["DECLARE c CURSOR FOR SELECT 1", "FETCH 1 FROM c", "CLOSE c"] {
+        assert_code(&c.query(q), "0A000");
+    }
+}
+#[test]
+fn skeleton_portal_expiry_and_close_release_admission() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    park(&mut c);
+    c.sync(); // Inside BEGIN retains the portal.
+    std::thread::sleep(Duration::from_millis(5200));
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    assert_code(&fetched(&mut c, 1), "34000");
+    c.sync();
+    c.query("ROLLBACK");
+    park(&mut c);
+    c.frame(b'C', b"P\0");
+    c.sync();
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+}
+#[test]
+fn skeleton_snapshot_named_scan_and_metadata() {
+    let path = std::env::temp_dir().join(format!("nata-registry-{}", std::process::id()));
+    std::fs::write(
+        &path,
+        format!(
+            "nata\tpublic\tExample\t{}\nnata\tother\tExample\t{}\n",
+            fixture(),
+            fixture()
+        ),
+    )
+    .expect("snapshot fixture");
+    let snapshot = nata_pgwire::catalog::Snapshot::load(&path).expect("snapshot fixture");
+    let a = nata_sql::plan_sql("SELECT * FROM nata.public.\"Example\"", &snapshot)
+        .expect("snapshot fixture");
+    let b = nata_sql::plan_sql(&format!("SELECT * FROM '{}'", fixture()), &snapshot)
+        .expect("snapshot fixture");
+    assert_eq!(a.plan, b.plan);
+    assert_ne!(snapshot.tables[0].oid, snapshot.tables[1].oid);
+    assert_ne!(snapshot.tables[0].schema_oid, snapshot.tables[1].schema_oid);
+    assert!(nata_sql::plan_sql("SELECT * FROM nata.public.example", &snapshot).is_err());
+    std::fs::remove_file(path).expect("snapshot fixture");
+    let s = Server::start(4);
+    let mut c = s.client();
+    for (q, rows) in [
+        ("SELECT table_name FROM information_schema.tables", 0),
+        (
+            "SELECT catalog_name FROM information_schema.information_schema_catalog_name",
+            0,
+        ),
+    ] {
+        let r = c.query(q);
+        assert_eq!(values(&r).len(), rows);
+        assert!(!tags(&r).contains(&b'E'));
+    }
+    // Unsupported catalog projections cannot masquerade as empty catalogs.
+    for q in [
+        "SELECT * FROM information_schema.columns",
+        "SELECT * FROM information_schema.tables",
+        "SELECT relpartbound FROM pg_catalog.pg_class",
+        "SELECT * FROM pg_catalog.pg_policy",
+        "SELECT * FROM information_schema.columns WHERE table_name = 'absent'",
+    ] {
+        let r = c.query(q);
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty());
+    }
+    let r = c.query("SELECT oid, typname, typreceive, typbasetype, typrelid, typarray FROM pg_catalog.pg_type WHERE (typreceive != 0 OR typsend != 0) AND typtype != 'r' AND typreceive::TEXT != 'array_recv'");
+    assert!(
+        values(&r)
+            .iter()
+            .any(|r| r[0].as_deref() == Some("23") && r[1].as_deref() == Some("int4"))
+    );
+}
+
+#[test]
+fn skeleton_all_36_inventory_additions_refuse_before_rows() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    {
+        let r = c.query("SELECT array_agg()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "ADBC function:array_agg");
+    }
+    {
+        let r = c.query("SELECT pg_my_temp_schema()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "ADBC function:pg_my_temp_schema");
+    }
+    {
+        let r = c.query("SELECT unnest()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "ADBC function:unnest");
+    }
+    {
+        let r = c.query("SELECT array_agg()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgcli function:array_agg");
+    }
+    {
+        let r = c.query("SELECT generate_subscripts()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgcli function:generate_subscripts");
+    }
+    {
+        let r = c.query("SELECT unnest()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgcli function:unnest");
+    }
+    {
+        let r = c.query("SELECT deptype,objid FROM pg_catalog.pg_depend");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgcli pg_catalog.pg_depend");
+    }
+    {
+        let r = c.query("SELECT proargdefaults FROM pg_catalog.pg_proc");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgcli pg_catalog.pg_proc");
+    }
+    {
+        let r = c.query("SELECT array_upper()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:array_upper");
+    }
+    {
+        let r = c.query("SELECT current_catalog()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:current_catalog");
+    }
+    {
+        let r = c.query("SELECT generate_series()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:generate_series");
+    }
+    {
+        let r = c.query("SELECT information_schema._pg_expandarray()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "pgjdbc function:information_schema._pg_expandarray"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.btrim()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:pg_catalog.btrim");
+    }
+    {
+        let r = c.query("SELECT pg_catalog.substring()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "pgjdbc function:pg_catalog.substring"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_get_function_result()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "pgjdbc function:pg_get_function_result"
+        );
+    }
+    {
+        let r = c.query("SELECT replace()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:replace");
+    }
+    {
+        let r = c.query("SELECT row_number()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc function:row_number");
+    }
+    {
+        let r = c.query("SELECT indisclustered,indoption,indpred FROM pg_catalog.pg_index");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "pgjdbc pg_catalog.pg_index");
+    }
+    {
+        let r = c.query("SELECT pg_catalog.array_to_string()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.array_to_string"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.array_upper()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.array_upper"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.generate_series()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.generate_series"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.pg_get_function_arguments()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.pg_get_function_arguments"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.pg_get_function_result()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.pg_get_function_result"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.pg_get_statisticsobjdef_columns()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.pg_get_statisticsobjdef_columns"
+        );
+    }
+    {
+        let r = c.query("SELECT pg_catalog.pg_relation_is_publishable()");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql function:pg_catalog.pg_relation_is_publishable"
+        );
+    }
+    {
+        let r = c.query("SELECT string_agg()");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql function:string_agg");
+    }
+    {
+        let r = c.query("SELECT relpartbound FROM pg_catalog.pg_class");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_class");
+    }
+    {
+        let r = c.query("SELECT datacl,daticulocale,datlocprovider FROM pg_catalog.pg_database");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_database");
+    }
+    {
+        let r = c.query("SELECT inhdetachpending FROM pg_catalog.pg_inherits");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_inherits");
+    }
+    {
+        let r = c.query("SELECT polcmd,polname,polpermissive,polqual,polrelid,polroles,polwithcheck FROM pg_catalog.pg_policy");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_policy");
+    }
+    {
+        let r = c.query("SELECT oid,puballtables,pubname FROM pg_catalog.pg_publication");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_publication");
+    }
+    {
+        let r = c.query("SELECT pnnspid,pnpubid FROM pg_catalog.pg_publication_namespace");
+        assert_code(&r, "0A000");
+        assert!(
+            values(&r).is_empty(),
+            "psql pg_catalog.pg_publication_namespace"
+        );
+    }
+    {
+        let r = c.query("SELECT prattrs,prpubid,prqual,prrelid FROM pg_catalog.pg_publication_rel");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_publication_rel");
+    }
+    {
+        let r = c.query("SELECT oid,stxkind,stxname,stxnamespace,stxrelid,stxstattarget FROM pg_catalog.pg_statistic_ext");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psql pg_catalog.pg_statistic_ext");
+    }
+    {
+        let r = c.query("SELECT character_set_catalog,character_set_name,character_set_schema,collation_catalog,collation_name,collation_schema,dtd_identifier,identity_cycle,identity_generation,identity_increment,identity_maximum,identity_minimum,identity_start,interval_precision,interval_type,is_self_referencing,maximum_cardinality,scope_catalog,scope_name,scope_schema FROM information_schema.columns");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psycopg information_schema.columns");
+    }
+    {
+        let r = c.query("SELECT commit_action,is_typed,reference_generation,self_referencing_column_name,user_defined_type_catalog,user_defined_type_name,user_defined_type_schema FROM information_schema.tables");
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty(), "psycopg information_schema.tables");
+    }
+}
+
+#[test]
+fn bounded_explain_refuses_instead_of_ignoring_the_row_limit() {
+    let s = Server::start(4);
+    let mut c = s.client();
+    for q in [
+        format!("EXPLAIN SELECT i FROM '{}'", fixture()),
+        format!("EXPLAIN ANALYZE SELECT i FROM '{}'", fixture()),
+    ] {
+        c.query("BEGIN");
+        c.parse(&q, &[]);
+        c.bind(&[], 0, 0);
+        c.execute(1);
+        let r = c.sync();
+        assert_code(&r, "0A000");
+        assert!(values(&r).is_empty());
+        c.query("ROLLBACK");
+    }
+}
+
+#[test]
+fn bounded_aggregate_keeps_admitted_spill_configuration() {
+    let dir = std::env::temp_dir().join(format!("nata-portal-spill-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("base");
+    let pool = 64 << 20;
+    let mut execution = nata_exec::ExecConfig::new(1);
+    execution.aggregate_memory_bytes = Some(pool);
+    execution.aggregate_force_spill = true;
+    execution.aggregate_spill_directory = Some(dir.clone());
+    let s = Server::start_execution(4, Arc::new(Metrics::default()), execution);
+    let mut c = s.client();
+    c.query("BEGIN");
+    c.parse(
+        &format!("SELECT i,count(*) FROM '{}' GROUP BY i", fixture()),
+        &[],
+    );
+    c.bind(&[], 0, 0);
+    let first = fetched(&mut c, 1);
+    assert_eq!(tags(&first), b"12Ds");
+    cancel(&s, c.key);
+    let rest = fetched(&mut c, 0);
+    assert_eq!(tags(&rest), b"DDC");
+    assert_eq!(values(&first).len() + values(&rest).len(), 3);
+    c.sync();
+    c.query("ROLLBACK");
+    wait_until(|| s.metrics.running.load(Ordering::SeqCst) == 0);
+    let samples = s.metrics.aggregates.lock().expect("samples");
+    assert_eq!(samples.len(), 1);
+    assert!(samples.iter().all(|&(budget, peak, held, cancelled)| {
+        budget == pool / 2 && peak > 0 && peak <= budget && held == 0 && !cancelled
+    }));
+    assert_eq!(std::fs::read_dir(&dir).expect("clean").count(), 0);
+    drop(samples);
+    drop(s);
+    std::fs::remove_dir(dir).expect("removed");
 }

@@ -100,3 +100,24 @@ An unknown column is a bind error with a suggestion, not a `not supported yet`.
 `nata scan FILE... [--columns a,b] [--filter 'col op literal' ...] [--limit N] --csv` reads Parquet files (slice 3, closed 2026-11-06: parallel, ordered by default, `--threads`, `--unordered`, `--count`) and prints CSV: projection pushdown, row-group
 pruning from the footer statistics and an exact row filter. Example, the year range of the slice card:
 `nata scan lineitem.parquet --columns l_orderkey,l_shipdate --filter 'l_shipdate >= 1994-01-01' --filter 'l_shipdate < 1995-01-01' --csv`. Types, literals and limits: `crates/nata-parquet/README.md`.
+
+## Registered sources and metadata over Postgres wire (slice-10 skeleton)
+
+With `nata serve --catalog registry.tsv`, `FROM example`, `FROM public.example`
+and `FROM nata.public.example` resolve the same explicitly registered local
+Parquet source. Unquoted components fold to lower case; quoted components are
+exact. The server pins one read-only catalog snapshot per connection. The
+standalone `nata sql` provider remains file-only and refuses registered names.
+See [serve.md](serve.md#local-registry-and-thin-metadata-projections-slice-10-skeleton)
+for the tab-separated registry and the precise information_schema projections.
+
+```sql
+SELECT * FROM nata.public.example LIMIT 3;
+SELECT table_name FROM information_schema.tables ORDER BY table_name;
+SELECT column_name, data_type FROM information_schema.columns;
+```
+
+Metadata projections use a separate bounded adapter; their optional ORDER BY
+support does not add ORDER BY to ordinary data SQL. Unsupported catalog objects,
+columns, joins, filters and helper expressions return 0A000, without fabricated
+empty answers. SQL DECLARE/FETCH/CLOSE remain explicit unsupported errors.

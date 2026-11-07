@@ -1,0 +1,14 @@
+Assertion-failure excerpt from the private-copy cargo test (not a compilation failure):
+failures:
+
+---- skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope stdout ----
+
+thread 'skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope' (2712354) panicked at crates/nata-pgwire/tests/support/mod.rs:327:58:
+error
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope
+
+test result: FAILED. 28 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.53s

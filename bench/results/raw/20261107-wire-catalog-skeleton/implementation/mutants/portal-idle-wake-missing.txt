@@ -1,0 +1,17 @@
+Assertion-failure excerpt from the private-copy cargo test (not a compilation failure):
+failures:
+
+---- server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling stdout ----
+
+thread 'server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling' (2719878) panicked at crates/nata-pgwire/src/server/fetch.rs:335:14:
+lease deadline: Elapsed(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (2719880) panicked at crates/nata-pgwire/src/server/fetch.rs:319:25:
+lease wakes credit wait: ()
+
+
+failures:
+    server::fetch::tests::idle_lease_wakes_and_reaps_without_session_loop_polling
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s

@@ -1,0 +1,23 @@
+Assertion-failure excerpt from the private-copy cargo test (not a compilation failure):
+failures:
+
+---- exact_adbc_bootstrap_and_unknown_catalog_refusal stdout ----
+
+thread 'exact_adbc_bootstrap_and_unknown_catalog_refusal' (2707039) panicked at crates/nata-pgwire/tests/protocol.rs:842:9:
+assertion `left == right` failed
+  left: [Some("24"), Some("int4"), Some("int4recv"), Some("0"), Some("0"), Some("0")]
+ right: [Some("23"), Some("int4"), Some("int4recv"), Some("0"), Some("0"), Some("0")]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- skeleton_snapshot_named_scan_and_metadata stdout ----
+
+thread 'skeleton_snapshot_named_scan_and_metadata' (2707538) panicked at crates/nata-pgwire/tests/protocol.rs:1341:5:
+assertion failed: values(&r).iter().any(|r|
+        r[0].as_deref() == Some("23") && r[1].as_deref() == Some("int4"))
+
+
+failures:
+    exact_adbc_bootstrap_and_unknown_catalog_refusal
+    skeleton_snapshot_named_scan_and_metadata
+
+test result: FAILED. 27 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.54s

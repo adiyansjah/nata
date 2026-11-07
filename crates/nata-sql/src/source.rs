@@ -11,6 +11,10 @@ use crate::types::SqlType;
 
 /// Where files and schemas come from. The default reads the file system; tests substitute an in-memory one.
 pub trait SourceProvider: Sync {
+    /// Resolve a registered name from a pinned catalog snapshot. File-only providers refuse it.
+    fn named(&self, _name: &[String]) -> std::result::Result<SourceInfo, String> {
+        Err("registered table names require a catalog snapshot".into())
+    }
     /// The files that a path or glob names, in the order of the scan.
     fn expand(&self, pattern: &str) -> std::result::Result<Vec<PathBuf>, String>;
     /// The top-level columns of a file, from its footer alone.

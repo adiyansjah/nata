@@ -91,7 +91,7 @@ fn s1_what_is_not_yet_supported_names_the_construct_at_its_position() {
             "more than one table",
             26,
         ),
-        ("SELECT a FROM t", "table names", 15),
+        ("SELECT a FROM t", "registered table", 15),
         ("SELECT abs(a) FROM 't.parquet'", "function calls", 8),
     ] {
         let e = err(q);

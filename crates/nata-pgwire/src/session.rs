@@ -9,6 +9,8 @@ use std::collections::BTreeMap;
 #[derive(Clone)]
 pub(crate) struct State {
     pub transaction: u8,
+    pub database: String,
+    pub catalog: std::sync::Arc<crate::catalog::Snapshot>,
     settings: BTreeMap<String, String>,
 }
 pub(crate) struct Response {
@@ -22,6 +24,8 @@ impl Default for State {
     fn default() -> Self {
         Self {
             transaction: b'I',
+            database: "nata".into(),
+            catalog: std::sync::Arc::default(),
             settings: [
                 ("server_version", "16.0"),
                 ("server_version_num", "160000"),
@@ -46,9 +50,21 @@ impl Default for State {
     }
 }
 impl State {
+    pub fn timeout(&self) -> Option<std::time::Duration> {
+        let ms = self.settings["statement_timeout"]
+            .parse::<u64>()
+            .expect("validated timeout");
+        (ms != 0).then(|| std::time::Duration::from_millis(ms))
+    }
+    pub fn search_path(&self) -> Vec<String> {
+        search_path_names(&self.settings["search_path"]).expect("validated search_path")
+    }
     pub fn startup(&mut self, params: &[(String, String)]) -> Result<(), WireError> {
         for (k, v) in params {
             if matches!(k.as_str(), "user" | "database" | "replication") {
+                if k == "database" {
+                    self.database.clone_from(v);
+                }
                 if k == "replication" {
                     return Err(WireError::unsupported("replication"));
                 }
@@ -64,14 +80,15 @@ impl State {
     pub fn set(&mut self, key: &str, value: &str) -> Result<Option<(String, String)>, WireError> {
         let l = value.to_ascii_lowercase();
         let allowed = match key {
-            "application_name" | "search_path" | "timezone" => true,
+            "application_name" | "timezone" => true,
+            "search_path" => search_path_names(value).is_some(),
             "extra_float_digits" => matches!(l.as_str(), "1" | "2" | "3"),
             "datestyle" => matches!(
                 l.as_str(),
                 "iso" | "iso, mdy" | "iso , mdy" | "iso, dmy" | "iso , dmy"
             ),
             "client_encoding" => matches!(l.as_str(), "utf8" | "utf-8"),
-            "statement_timeout" => l == "0", // A nonzero timeout cannot be a truthful no-op.
+            "statement_timeout" => timeout_ms(value).is_some(),
             "standard_conforming_strings" => l == "on",
             "default_transaction_read_only" | "default_transaction_deferrable" => l == "off",
             "default_transaction_isolation" => l == "read committed",
@@ -83,6 +100,7 @@ impl State {
         let value: String = match key {
             "client_encoding" => "UTF8".into(),
             "datestyle" => "ISO, MDY".into(),
+            "statement_timeout" => timeout_ms(value).expect("validated").to_string(),
             _ => value.into(),
         };
         self.settings.insert(key.into(), value.clone());
@@ -97,7 +115,23 @@ impl State {
         }
     }
     pub fn evaluate(&mut self, sql: &str) -> Result<Option<Response>, WireError> {
-        if let Some(response) = bootstrap(sql)? {
+        if self.transaction == b'E'
+            && !matches!(
+                sql.trim()
+                    .trim_end_matches(';')
+                    .trim()
+                    .to_ascii_lowercase()
+                    .as_str(),
+                "rollback" | "commit" | "rollback work" | "commit work"
+            )
+        {
+            return Err(WireError::new(
+                "25P02",
+                "current transaction is aborted; use ROLLBACK",
+            ));
+        }
+        refuse_helpers(sql)?;
+        if let Some(response) = bootstrap(sql, &self.catalog, &self.database)? {
             return Ok(Some(response));
         }
         let first = sql
@@ -218,7 +252,18 @@ impl State {
                 self.transaction = b'I';
             }
             ["set", key, "=" | "to", ..] if words.len() >= 4 => {
-                let value = words[3..].join(" ");
+                let value = if *key == "search_path" {
+                    match &group[3..] {
+                        [Token::SingleQuotedString(s)] => s.clone(),
+                        tokens => tokens
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    }
+                } else {
+                    words[3..].join(" ")
+                };
                 if let Some(status) = self.set(key, &value)? {
                     out.status.push(status);
                 }
@@ -271,6 +316,102 @@ impl State {
         Ok(Some(out))
     }
 }
+// Captured helpers outside the bounded skeleton surface are explicit refusals.
+fn refuse_helpers(sql: &str) -> Result<(), WireError> {
+    const REFUSED: &[&str] = &[
+        "_pg_expandarray",
+        "array_agg",
+        "array_to_string",
+        "array_upper",
+        "btrim",
+        "current_catalog",
+        "generate_series",
+        "generate_subscripts",
+        "pg_get_function_arguments",
+        "pg_get_function_result",
+        "pg_get_statisticsobjdef_columns",
+        "pg_my_temp_schema",
+        "pg_relation_is_publishable",
+        "replace",
+        "row_number",
+        "string_agg",
+        "substring",
+        "unnest",
+    ];
+    if !REFUSED.iter().any(|n| sql.to_ascii_lowercase().contains(n)) {
+        return Ok(());
+    }
+    let tokens = Tokenizer::new(&PostgreSqlDialect {}, sql)
+        .tokenize()
+        .map_err(|_| WireError::unsupported("metadata helper tokens"))?;
+    let tokens: Vec<_> = tokens
+        .iter()
+        .filter(|t| !matches!(t, Token::Whitespace(_)))
+        .collect();
+    if tokens.windows(2).any(|ts| {
+        matches!(ts[0], Token::Word(w) if REFUSED.contains(&w.value.to_ascii_lowercase().as_str()))
+            && *ts[1] == Token::LParen
+    }) || tokens
+        .iter()
+        .any(|t| matches!(t, Token::Word(w) if w.quote_style.is_none() && w.value.eq_ignore_ascii_case("current_catalog")))
+    {
+        return Err(WireError::unsupported(
+            "captured catalog helper outside the skeleton metadata contract",
+        ));
+    }
+    Ok(())
+}
+
+fn search_path_names(value: &str) -> Option<Vec<String>> {
+    let tokens = Tokenizer::new(&PostgreSqlDialect {}, value)
+        .tokenize()
+        .ok()?;
+    let tokens: Vec<_> = tokens
+        .into_iter()
+        .filter(|t| !matches!(t, Token::Whitespace(_)))
+        .collect();
+    if tokens.is_empty() {
+        return Some(vec![]);
+    }
+    if tokens.len().is_multiple_of(2) {
+        return None;
+    }
+    let mut names = Vec::new();
+    for (i, t) in tokens.iter().enumerate() {
+        if i % 2 == 1 {
+            if *t != Token::Comma {
+                return None;
+            }
+            continue;
+        }
+        let Token::Word(w) = t else {
+            return None;
+        };
+        if w.value == "$user" || !matches!(w.quote_style, None | Some('"')) {
+            return None;
+        }
+        names.push(if w.quote_style.is_some() {
+            w.value.clone()
+        } else {
+            w.value.to_ascii_lowercase()
+        });
+    }
+    Some(names)
+}
+fn timeout_ms(value: &str) -> Option<u64> {
+    let value = value.trim();
+    let end = value
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(value.len());
+    let n = value[..end].parse::<u64>().ok()?;
+    let multiplier = match value[end..].trim() {
+        "" | "ms" => 1,
+        "s" => 1000,
+        "min" => 60_000,
+        _ => return None,
+    };
+    n.checked_mul(multiplier).filter(|n| *n <= i32::MAX as u64)
+}
 fn status_name(key: &str) -> Option<&str> {
     match key {
         "datestyle" => Some("DateStyle"),
@@ -285,7 +426,11 @@ fn status_name(key: &str) -> Option<&str> {
 const ATTRIBUTES: &str =
     "SELECT attrelid, attname, atttypid FROM pg_catalog.pg_attribute ORDER BY attrelid, attnum";
 const TYPES: &str = "SELECT oid, typname, typreceive, typbasetype, typrelid, typarray FROM pg_catalog.pg_type WHERE (typreceive != 0 OR typsend != 0) AND typtype != 'r' AND typreceive::TEXT != 'array_recv'";
-fn bootstrap(sql: &str) -> Result<Option<Response>, WireError> {
+fn bootstrap(
+    sql: &str,
+    snapshot: &crate::catalog::Snapshot,
+    database: &str,
+) -> Result<Option<Response>, WireError> {
     // Only tokenize potential catalog chatter, never every ordinary data query.
     if !sql.to_ascii_lowercase().contains("pg_catalog") {
         return Ok(None);
@@ -327,7 +472,20 @@ fn bootstrap(sql: &str) -> Result<Option<Response>, WireError> {
         deallocate: None,
     };
     if ts == tokens(ATTRIBUTES)? {
-        // No composite/table row types are exposed by Nata.
+        for t in snapshot.tables.iter().filter(|t| t.catalog == database) {
+            for c in &t.source.columns {
+                let ty = *c
+                    .ty
+                    .as_ref()
+                    .map_err(|_| WireError::unsupported("catalog column type"))?;
+                let (oid, _, _) = crate::codec::type_info(ty);
+                out.rows.push(vec![
+                    Some(t.oid.to_string()),
+                    Some(c.name.clone()),
+                    Some(oid.to_string()),
+                ]);
+            }
+        }
         out.fields = vec![
             ("attrelid".into(), SqlType::Integer),
             ("attname".into(), SqlType::Varchar),
@@ -378,4 +536,23 @@ fn bootstrap(sql: &str) -> Result<Option<Response>, WireError> {
     }
     out.command = format!("SELECT {}", out.rows.len());
     Ok(Some(out))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn quoted_search_path_preserves_case_and_empty_path_is_valid() {
+        let mut state = State::default();
+        assert!(
+            state
+                .evaluate("SET search_path = \"Quoted Schema\", PUBLIC")
+                .is_ok()
+        );
+        assert_eq!(state.search_path(), vec!["Quoted Schema", "public"]);
+        assert!(state.evaluate("SET search_path = ''").is_ok());
+        assert!(state.search_path().is_empty());
+        assert!(state.set("search_path", "public; SELECT 1").is_err());
+        assert!(state.set("search_path", "public,").is_err());
+    }
 }

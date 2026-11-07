@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 69, in <lambda>
+    for form in ('text','csv','table'):record('psql copy-'+form,lambda form=form:check_copy(form,cli(copy_sql(form))))
+                                                                                                 ^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 59, in cli
+    def cli(q):return subprocess.run(['psql',dsn,'-c',q],capture_output=True,check=True,timeout=20).stdout
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.local/share/uv/python/cpython-3.12.16-linux-x86_64-gnu/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['psql', 'host=127.0.0.1 port=36257 user=nata dbname=nata', '-c', 'COPY (SELECT v FROM nata.public.all_types LIMIT 3) TO STDOUT (FORMAT csv, HEADER true)']' returned non-zero exit status 1.
+b'ERROR:  not supported yet: COPY; only COPY (SELECT ...) TO STDOUT [WITH] (FORMAT binary) is supported\n'

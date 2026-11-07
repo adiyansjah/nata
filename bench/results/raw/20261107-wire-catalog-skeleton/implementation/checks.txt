@@ -1,0 +1,12 @@
+cargo fmt --check: PASS
+cargo clippy --workspace --all-targets -- -D warnings: PASS
+cargo test --workspace: PASS; 488 passed, zero failed/ignored, 70 summaries; TMPDIR on disk
+cargo deny check: advisories/bans/licenses/sources OK; inherited unmatched license allowance warnings
+nata-check scan: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check sql: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check sql-differences: 54 queries: 54 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+nata-check aggregate: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+wirecapture Python unit tests: 3 PASS
+job-chain tests: PASS
+Existing 11 ARM/x86 fixture pairs: identical offline
+New lib/protocol mutation baselines: PASS; 6 CAUGHT, zero INVALID/surviving

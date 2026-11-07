@@ -81,7 +81,7 @@ MUTANTS = {
                                    "if target == b'S' { 2 } else { 3 }",
                                    "if target == b'S' { 2 } else { 2 }",
                                    'protocol'),
- 'execute-row-limit-ignored': ('crates/nata-pgwire/src/server.rs', 'if limit != 0 {', 'if false {', 'protocol'),
+ 'execute-row-limit-ignored': ('crates/nata-pgwire/src/server/fetch.rs', 'n == 1', 'false', 'protocol'),
  'binary-formats-accepted': ('crates/nata-pgwire/src/extended.rs',
                              'if formats.iter().any(|f| !matches!(*f, 0 | 1)) {',
                              'if false {',
@@ -164,6 +164,14 @@ MUTANTS.update({
  'float-closed-midpoint': ('crates/nata-pgwire/src/float.rs', '!midpoint(d, q, lower, e2) && !midpoint(d, q, upper, e2)', 'true || (!midpoint(d, q, lower, e2) && !midpoint(d, q, upper, e2))', 'protocol'),
 })
 
+MUTANTS.update({
+ 'portal-idle-wake-missing': ('crates/nata-pgwire/src/server/fetch.rs', 'let _ = resume.send(0);', 'let _ = resume;', 'lib'),
+ 'exact-end-suspension-missing': ('crates/nata-pgwire/src/server/fetch.rs', "codec::packet(b's', b\"\")", "codec::packet(b'C', b\"SELECT 0\\0\")", 'protocol'),
+ 'statement-timeout-not-enforced': ('crates/nata-pgwire/src/session.rs', '(ms != 0).then(', 'false.then(', 'protocol'),
+ 'refused-catalog-silent-empty': (SESSION, 'return Err(WireError::unsupported(\n            "catalog query; only exact ADBC type bootstrap is supported",\n        ));', 'return Ok(Some(out));', 'protocol'),
+ 'cancel-applied-while-suspended': ('crates/nata-pgwire/src/server/fetch.rs', '.take(); // suspension transition', '.clone(); // suspension transition', 'protocol'),
+})
+
 def fingerprint():
     h = hashlib.sha256()
     for p in sorted((ROOT/'crates').rglob('*.rs')):
@@ -187,7 +195,7 @@ def main():
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.work/'target'), CARGO_TERM_COLOR='never')
     def test(suite):
         try:
-            p = subprocess.run(['cargo','test','-p','nata-pgwire','--test',suite], cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
+            p = subprocess.run(['cargo','test','-p','nata-pgwire']+(['--lib'] if suite == 'lib' else ['--test',suite]), cwd=ws, env=env, capture_output=True, text=True, timeout=1200)
             return p.returncode, p.stdout+p.stderr
         except subprocess.TimeoutExpired:
             return 99, 'timeout'

@@ -59,7 +59,13 @@ pub fn bind_with(
     provider: &dyn SourceProvider,
     options: BindOptions,
 ) -> Result<Bound> {
-    let source = resolve_with(provider, &q.from, q.from_pos.0, options)?;
+    let source = if let Some(name) = &q.from_name {
+        provider.named(name).map_err(|_| {
+            SqlError::not_supported(q.from_pos.0, "unknown or unavailable registered table")
+        })?
+    } else {
+        resolve_with(provider, &q.from, q.from_pos.0, options)?
+    };
     let mut b = Binder::new(&source, q);
     let aggregate_mode = !q.group_by.is_empty()
         || q.having.is_some()

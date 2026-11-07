@@ -188,7 +188,10 @@ jobs:
         env:
           NATA_PGWIRE_SEED: ${{ needs.seeds.outputs.seed }}
           NATA_PGWIRE_CASES: "1000000"
-        run: cargo test -p nata-pgwire --test codec seeded_decoder_fuzz -- --nocapture
+          NATA_METADATA_CASES: "1000000"
+        run: |
+          cargo test -p nata-pgwire --test codec seeded_decoder_fuzz -- --nocapture
+          cargo test -p nata-pgwire --lib seeded_metadata_fuzz -- --nocapture
 
 
   live-pgwire:

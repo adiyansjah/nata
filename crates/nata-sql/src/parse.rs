@@ -721,7 +721,7 @@ impl Conv<'_> {
             .iter()
             .map(|i| self.item(i))
             .collect::<Result<Vec<_>>>()?;
-        let (from, from_pos) = self.from(from, tok)?;
+        let (from, from_pos, from_name) = self.from(from, tok)?;
         let where_ = selection.as_ref().map(|e| self.expr(e, 0)).transpose()?;
         let (limit, limit_pos, offset, offset_pos) = self.limit(limit_clause.as_ref())?;
         Ok(ast::Query {
@@ -729,6 +729,7 @@ impl Conv<'_> {
             items,
             from,
             from_pos,
+            from_name,
             where_,
             group_by,
             having,
@@ -739,7 +740,11 @@ impl Conv<'_> {
         })
     }
 
-    fn from(&self, from: &[sp::TableWithJoins], tok: Option<SpSpan>) -> Result<(String, Span)> {
+    fn from(
+        &self,
+        from: &[sp::TableWithJoins],
+        tok: Option<SpSpan>,
+    ) -> Result<(String, Span, Option<Vec<String>>)> {
         let end = self.end();
         let twj = match from {
             [] => return ns(tok, end, "SELECT without FROM (write FROM 'path')"),
@@ -817,12 +822,32 @@ impl Conv<'_> {
                         })
                         .map_or(self.end(), |t| sp_pos(t.span))
                 };
-                Ok((id.value.clone(), Span(pos)))
+                Ok((id.value.clone(), Span(pos), None))
+            }
+            parts if (1..=3).contains(&parts.len()) => {
+                let names = parts
+                    .iter()
+                    .map(|p| match p {
+                        sp::ObjectNamePart::Identifier(id) if id.quote_style != Some('\'') => {
+                            Ok(if id.quote_style.is_some() {
+                                id.value.clone()
+                            } else {
+                                id.value.to_ascii_lowercase()
+                            })
+                        }
+                        _ => Err(SqlError::not_supported(end, "registered table name")),
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Ok((
+                    names.join("."),
+                    Span(sp_pos(twj.relation.span())),
+                    Some(names),
+                ))
             }
             _ => ns(
                 Some(twj.relation.span()),
                 end,
-                "table names (only a quoted path or glob, FROM 'file.parquet')",
+                "registered names with one to three components",
             ),
         }
     }

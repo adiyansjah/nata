@@ -23,14 +23,16 @@ lookup `34000`. Close is idempotent even for unknown names, matching PostgreSQL.
 A simple Query destroys the unnamed statement and portal. Portals are destroyed
 at Sync in auto-commit, or at COMMIT/ROLLBACK in a compatibility transaction.
 
-**Nonzero Execute max-rows on a row-producing query** returns `0A000`; set fetch
-size to zero. Rowless commands (SET, COMMIT/ROLLBACK) accept a limit, since they
-cannot suspend; this permits pgjdbc rollback after a fetch refusal. Suspended
-portals are not implemented. Keeping an admission, worker share and scan window
-parked between fetches needs an explicit idle-portal admission/expiry policy.
-Named wire portals work with unlimited Execute; SQL DECLARE/FETCH cursors remain
-unsupported, including psycopg server-side cursors. pgjdbc `fetchSize=100` with
-autocommit off is tested to return `0A000`, with Sync/rollback recovery.
+**Positive Execute max-rows** streams supported data SELECTs from one retained
+execution. It sends PortalSuspended after exactly the requested rows, including
+an exact end; the next Execute then completes with SELECT 0. Completion counts
+are per Execute. Execute zero drains the remaining rows. Metadata/session row
+fetch and positive-limit EXPLAIN are explicit 0A000 boundaries in this skeleton.
+COPY retains its existing utility stream behavior; max-rows does not limit CopyData.
+Suspension retains the admission, worker share and bounded bridge. A five-second
+idle lease releases them; the next Execute reports 34000. Cancellation while
+suspended is inert; each executing Execute gets a fresh statement_timeout.
+Named SQL DECLARE/FETCH/CLOSE remain 0A000, including psycopg ServerCursor.
 
 Parameters are substituted as literal AST nodes, never pasted into the query.
 Text/string OIDs 25/1043 hold raw UTF8; numeric OIDs 20/21/23/700/701/1700 accept
@@ -73,8 +75,8 @@ multi-statement messages return `0A000`.
 | `SET DateStyle = 'ISO'` | ISO / ISO, MDY / ISO, DMY accepted; report canonical ISO, MDY |
 | `SET client_encoding = 'UTF8'` | UTF8 / UTF-8 only; report UTF8 |
 | `SET TimeZone = '...'`, `SET TIME ZONE '...'` | store only; Date32 has no timezone; report TimeZone |
-| `SET search_path = ...` | store only; SQL still resolves quoted file paths |
-| `SET statement_timeout = 0` | zero only; nonzero refused rather than silently ignored |
+| `SET search_path = ...` | comma-separated schema names for registered table lookup; quoted file sources are unchanged |
+| `SET statement_timeout = ...` | checked integer milliseconds, or quoted ms/s/min suffix; 0 disables, maximum 2147483647 ms; enforced per Query/Execute; stalled metadata/session output may close the socket |
 | `SET standard_conforming_strings = on` | on only, ParameterStatus |
 | `SET default_transaction_read_only = off` | off only |
 | `SET default_transaction_isolation = 'read committed'` | read committed only |
@@ -97,7 +99,7 @@ Startup reports server/client encoding, version, DateStyle, TimeZone,
 application_name, integer_datetimes and standard_conforming_strings.
 
 pgcli's catalog/completion queries and psql catalog backslash commands remain
-unsupported; no information_schema/pg_catalog emulation is claimed.
+unsupported; the bounded projections below do not certify full browsing.
 
 ## Bounds, cancellation and errors
 
@@ -183,7 +185,7 @@ DATE loader deliberately returns strings. psql returns display text and SQL
 `PREPARE` remains `0A000` (wire preparation is a different interface).
 
 ADBC PostgreSQL 1.13.0 connects using two exact, read-only type-bootstrap
-answers (empty pg_attribute; built-in pg_type rows). Other catalog/completion SQL
+answers (snapshot pg_attribute rows; built-in pg_type rows). Other catalog/completion SQL
 returns 0A000. Default Arrow fetch now uses bounded binary COPY:
 
 ```sql
@@ -215,3 +217,45 @@ measured source tree. Psql/reference ratios are context, not a changed target.
 Use the recorded timings when
 choosing this interface for large exports; first rows stream and slow clients
 exert bounded backpressure, but that does not imply CLI-equivalent throughput.
+
+## Local registry and thin metadata projections (slice-10 skeleton)
+
+`nata serve --catalog registry.tsv` pins an immutable read-only snapshot for
+connections. Registry lines contain one catalog name; catalog and schema names;
+or catalog, schema, table and a single local Parquet filename, separated by tabs.
+Relative filenames resolve beside the registry. Names are exact UTF8 (1–63 bytes);
+SQL unquoted names fold to lower case. Comments begin with #. Remote locations,
+globs, duplicate table identities, unsupported column types and reserved metadata
+schemas are rejected at startup. Registry/snapshot accounting is capped at 16 MiB;
+no filesystem discovery, SQL writes, refresh or persistent OID promise is made.
+Generated identities are checked, noncolliding, and pinned for the server lifetime.
+
+```sh
+printf 'nata\tpublic\texample\tdata/example.parquet\n' > registry.tsv
+nata serve --catalog registry.tsv
+```
+
+```sql
+SELECT * FROM nata.public.example;
+SELECT * FROM public.example;
+SELECT * FROM example;
+SELECT table_name FROM information_schema.tables ORDER BY table_name;
+SELECT column_name, data_type, is_nullable FROM information_schema.columns;
+```
+
+The metadata adapter accepts a single SELECT projection of identifiers and
+optional ascending ORDER BY identifiers, with no expressions, filters or joins.
+A wildcard is refused for incomplete views; only information_schema_catalog_name
+accepts *. It exposes information_schema_catalog_name(catalog_name), schemata(catalog_name,
+schema_name), tables(table_catalog, table_schema, table_name, table_type,
+is_insertable_into), and columns(table_catalog, table_schema, table_name,
+column_name, ordinal_position, is_nullable, data_type, numeric_precision,
+numeric_scale, is_updatable). Nullability is conservatively YES; locations remain
+in the snapshot, not in public metadata rows. Additional objects/columns/helpers
+fail with 0A000, including all 36 captured additions. No invented empty policy,
+key, function or publication relations are returned. ADBC's exact type bootstrap
+is retained. SHOW catalogs/tables, DESCRIBE, full metadata SQL and metadata-row
+positive fetch remain outside this thin implementation. Metadata CPU has the bounded snapshot/query surface and an elapsed deadline
+check before output; stalled metadata/session writes close after the statement
+deadline or the inherited two-second send bound, preserving frame safety. See the skeleton result record for the
+actual default-client failures and remaining gates.

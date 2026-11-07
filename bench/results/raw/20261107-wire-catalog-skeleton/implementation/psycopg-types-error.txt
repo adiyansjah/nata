@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 121, in <lambda>
+    for action in ('select','tables','columns','tables-filtered','columns-filtered','types','copy','copy-text','copy-csv','copy-table','timeout','cancel','recovery'):record('psycopg '+action,lambda action=action:psy_action(action))
+                                                                                                                                                                                                                    ^^^^^^^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 99, in psy_action
+    c.execute('SELECT n.nspname,t.typname,t.oid,t.typtypmod FROM pg_catalog.pg_type t JOIN pg_catalog.pg_namespace n ON n.oid=t.typnamespace').fetchall()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/psycopg/connection.py", line 304, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.FeatureNotSupported: not supported yet: catalog query; only exact ADBC type bootstrap is supported

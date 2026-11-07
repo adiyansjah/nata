@@ -252,7 +252,6 @@ fn not_supported_errors_name_the_construct_at_its_position() {
         ("SELECT abs(a) FROM 'f'", "function calls", 1, 8),
         ("SELECT a FROM 'f' ORDER BY a", "ORDER BY", 1, 19),
         ("SELECT a FROM 'f' GROUP BY ALL", "GROUP BY", 1, 19),
-        ("SELECT a FROM t", "table names", 1, 15),
         ("SELECT a b FROM 'f'", "an alias without AS", 1, 10),
         ("SELECT * FROM 'f' WHERE a LIKE 'x'", "LIKE", 1, 25),
         ("SELECT a || b FROM 'f'", "the operator ||", 1, 8),

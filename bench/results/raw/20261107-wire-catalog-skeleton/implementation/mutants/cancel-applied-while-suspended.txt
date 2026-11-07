@@ -1,0 +1,16 @@
+Assertion-failure excerpt from the private-copy cargo test (not a compilation failure):
+failures:
+
+---- skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope stdout ----
+
+thread 'skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope' (2718497) panicked at crates/nata-pgwire/tests/protocol.rs:1226:13:
+assertion `left == right` failed: [(69, [83, 69, 82, 82, 79, 82, 0, 86, 69, 82, 82, 79, 82, 0, 67, 53, 55, 48, 49, 52, 0, 77, 99, 97, 110, 99, 101, 108, 105, 110, 103, 32, 115, 116, 97, 116, 101, 109, 101, 110, 116, 32, 100, 117, 101, 32, 116, 111, 32, 117, 115, 101, 114, 32, 114, 101, 113, 117, 101, 115, 116, 0, 0])]
+  left: [69]
+ right: [67]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    skeleton_fetch_exact_end_cancel_suspended_and_timeout_scope
+
+test result: FAILED. 28 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.43s

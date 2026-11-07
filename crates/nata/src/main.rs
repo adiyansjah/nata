@@ -30,6 +30,9 @@ struct Cli {
 enum Command {
     /// Serve Postgres wire 3.0 simple and unnamed extended queries (trust authentication, no TLS).
     Serve {
+        /// Read-only local table registry (tab-separated catalog, schema, table, file).
+        #[arg(long)]
+        catalog: Option<PathBuf>,
         /// Bind address. Loopback only unless --unsafe-listen is explicitly given.
         #[arg(long, default_value = "127.0.0.1:5432")]
         listen: std::net::SocketAddr,
@@ -298,6 +301,7 @@ fn main() -> ExitCode {
             };
         }
         Command::Serve {
+            catalog,
             listen,
             unsafe_listen,
             max_connections,
@@ -312,6 +316,19 @@ fn main() -> ExitCode {
                 let _ = writeln!(std::io::stderr(), "error: internal server error");
             }));
             let config = nata_pgwire::server::Config {
+                catalog: match catalog {
+                    Some(path) => match nata_pgwire::catalog::Snapshot::load(&path) {
+                        Ok(s) => Arc::new(s),
+                        Err(_) => {
+                            let _ = writeln!(
+                                std::io::stderr(),
+                                "error: cannot load local catalog registry"
+                            );
+                            return ExitCode::from(2);
+                        }
+                    },
+                    None => Arc::new(nata_pgwire::catalog::Snapshot::default()),
+                },
                 listen,
                 unsafe_listen,
                 max_connections,

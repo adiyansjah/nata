@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 15, in record
+    try: fn(); results[name]='PASS'
+         ^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 184, in <lambda>
+    for action in ('connect','select','copy','objects-all','objects-catalogs','objects-db_schemas','objects-tables','objects-columns','schema','timeout','cancel','recovery'):record('ADBC '+action,lambda action=action:adbc(action))
+                                                                                                                                                                                                                         ^^^^^^^^^^^^
+  File "/home/dev/.t3/worktrees/nata/t3-93e26647/scripts/wire-skeleton/matrix.py", line 181, in adbc
+    elif action=='schema':eq(c.adbc_get_table_schema('all_types',db_schema_filter='public').names,['v'])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dev/tmp-wcskel2/venv/lib/python3.12/site-packages/adbc_driver_manager/dbapi.py", line 678, in adbc_get_table_schema
+    handle = _blocking_call(
+             ^^^^^^^^^^^^^^^
+  File "adbc_driver_manager/_lib.pyx", line 1968, in adbc_driver_manager._lib._blocking_call_impl
+  File "adbc_driver_manager/_lib.pyx", line 1961, in adbc_driver_manager._lib._blocking_call_impl
+  File "adbc_driver_manager/_lib.pyx", line 1282, in adbc_driver_manager._lib.AdbcConnection.get_table_schema
+  File "adbc_driver_manager/_lib.pyx", line 262, in adbc_driver_manager._lib.check_error
+adbc_driver_manager.NotSupportedError: NOT_IMPLEMENTED: [libpq] Failed to execute query 'SELECT attname, atttypid FROM pg_catalog.pg_class AS cls INNER JOIN pg_catalog.pg_attribute AS attr ON cls.oid = attr.attrelid INNER JOIN pg_catalog.pg_type AS typ ON attr.atttypid = typ.oid WHERE attr.attnum >= 0 AND cls.oid = $1::regclass::oid ORDER BY attr.attnum': ERROR:  not supported yet: catalog query; only exact ADBC type bootstrap is supported
+. SQLSTATE: 0A000

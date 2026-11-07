@@ -95,6 +95,36 @@ def sequences(out):
             steps.append(dict(frontend=[['E',(b'p\0'+i(2)).hex()],['H','']],backend=c.until(('s','C','E'))))
         exchange('S',b''); exchange('C',b'Pp\0',('3',)); exchange('S',b'')
         exchange('Q',b'ROLLBACK\0'); c.close(); save('execute-limit-'+str(rows),steps)
+    # Parent amendment: cancel is inert while suspended; timeout is per Execute,
+    # and excludes time awaiting the next Execute. Keys are never persisted.
+    for name in ('suspended-cancel', 'suspended-timeout-restart'):
+        c=Conn(); steps=[]
+        def exchange(t,b,ends=('Z',)):
+            c.send(t,b); front=[t,b.hex()]
+            if ends != ('Z',): c.send('H'); front=[[t,b.hex()],['H','']]
+            steps.append(dict(frontend=front,backend=c.until(ends)))
+        exchange('Q', b'BEGIN\0')
+        if name == 'suspended-timeout-restart':
+            exchange('Q', b'SET statement_timeout=80\0')
+            query=b'SELECT i::bigint, pg_sleep(0.03) FROM generate_series(1,3) i'
+        else:
+            query=b'SELECT i::bigint FROM generate_series(1,3) i'
+        exchange('P', b's\0'+query+b'\0\0\0', ('1',))
+        exchange('B', b'p\0s\0'+b'\0\0'*3, ('2',))
+        exchange('D', b'Pp\0', ('T',))
+        exchange('E', b'p\0'+i(1), ('s','C','E'))
+        import time
+        time.sleep(.12)
+        if name == 'suspended-cancel':
+            cancel=socket.create_connection(('127.0.0.1',55432)); cancel.sendall(i(16)+i(80877102)+c.key)
+            # Read EOF to establish that the server processed cancellation before resume.
+            assert cancel.recv(1)==b''; cancel.close()
+            steps.append(dict(frontend=['H',''], concurrent='CancelRequest with session key (redacted)', sleep_ms=120))
+        else:
+            steps.append(dict(frontend=['H',''], sleep_ms=120))
+        for _ in range(3): exchange('E', b'p\0'+i(1), ('s','C','E'))
+        exchange('S',b''); exchange('Q',b'ROLLBACK\0')
+        c.close(); save(name,steps)
     c=Conn(); steps=[]
     q='SET statement_timeout=20'
     steps.append(dict(frontend=['Q',(q+'\0').encode().hex()],backend=c.query(q)))

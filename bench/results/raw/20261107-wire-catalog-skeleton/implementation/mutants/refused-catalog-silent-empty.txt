@@ -1,0 +1,26 @@
+Assertion-failure excerpt from the private-copy cargo test (not a compilation failure):
+failures:
+
+---- exact_adbc_bootstrap_and_unknown_catalog_refusal stdout ----
+
+thread 'exact_adbc_bootstrap_and_unknown_catalog_refusal' (2714882) panicked at crates/nata-pgwire/tests/support/mod.rs:327:58:
+error
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- skeleton_all_36_inventory_additions_refuse_before_rows stdout ----
+
+thread 'skeleton_all_36_inventory_additions_refuse_before_rows' (2715358) panicked at crates/nata-pgwire/tests/support/mod.rs:327:58:
+error
+
+---- skeleton_snapshot_named_scan_and_metadata stdout ----
+
+thread 'skeleton_snapshot_named_scan_and_metadata' (2715476) panicked at crates/nata-pgwire/tests/support/mod.rs:327:58:
+error
+
+
+failures:
+    exact_adbc_bootstrap_and_unknown_catalog_refusal
+    skeleton_all_36_inventory_additions_refuse_before_rows
+    skeleton_snapshot_named_scan_and_metadata
+
+test result: FAILED. 26 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.53s
