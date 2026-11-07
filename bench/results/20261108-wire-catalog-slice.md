@@ -412,3 +412,23 @@ Tested code-content identity (`scripts/code-tree.sh`):
 `6a68104ebf6931f119b28735a32618d987f38f4e00a5bc84b122d52d7127f6f6`.
 Branch `t3/catalog-browsing-timeout-copy`, base `fa3d4dc`. The implementation
 commit includes this record; no push or merge is performed.
+
+## Clean-VM checks on both CPU types (parent, runs `wbrowse-n4a` and `wbrowse-c3d`, 2026-11-08)
+
+Commit `838e394` (schema browsing merged), `scripts/wire-browse/heavy.steps.example`, n4a-highcpu-16 (ARM64) and c3d-highcpu-16
+(x86-64), Spot, approved $0.34 and $0.23; both VMs and disks deleted and verified. Raw results stay in the gitignored
+`bench/gcp-runs/`.
+
+| Step | ARM64 | x86-64 |
+|---|---|---|
+| Client matrix | 76 PASS / 0 FAIL / 9 not run (exit 1 by design: "not run" is not PASS) | same |
+| Protocol tests | 36/36 | 36/36 |
+| Metadata fuzz, 1,000,000 cases | PASS | PASS |
+| Wire mutant sweep | 78/78 CAUGHT, 4 unmutated controls PASS | 78/78 CAUGHT, 4 controls PASS |
+| Browse oracle (PostgreSQL **15.19**, Debian 12) | 3 FAIL: statements 8, 16, 65 | same 3 |
+
+The three oracle failures were version gaps in the comparison script, not Nata: PG15 has no `pg_database.daticurules`
+(PG16+), so statement 65's reference query failed; PG15 types `pg_statistic_ext.stxstattarget` as int4 where PG17 (Nata's
+target) uses int2, and statements 8 and 16 return no rows either way. Fixed in `a956048` and `ba2df5a`; the PG17 local run
+still passes 56/56 plus the three binary cases. The fixed oracle is rerun on both CPU types as the last steps of the step 2b
+timing job (runs `perf2b-c3d`, `perf2b-n4a`). PG15 is not PG16: PG16 parity stays open.
