@@ -122,7 +122,11 @@ def sequences(out):
             steps.append(dict(frontend=['H',''], concurrent='CancelRequest with session key (redacted)', sleep_ms=120))
         else:
             steps.append(dict(frontend=['H',''], sleep_ms=120))
-        for _ in range(3): exchange('E', b'p\0'+i(1), ('s','C','E'))
+        for _ in range(3):
+            exchange('E', b'p\0'+i(1), ('s','C','E'))
+            # After an ErrorResponse PostgreSQL ignores everything until Sync, so stop resuming and record
+            # the error as the outcome (found 2026-11-07: the first version waited forever here).
+            if steps[-1]['backend'] and steps[-1]['backend'][-1][0] == 'E': break
         exchange('S',b''); exchange('Q',b'ROLLBACK\0')
         c.close(); save(name,steps)
     c=Conn(); steps=[]
