@@ -1,0 +1,267 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.150859092,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15076856,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked",
+            "query_stats"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-sched/src/query_stats.rs:138:9: replace QueryStats::level with ()",
+          "package": "nata-sched",
+          "file": "crates/nata-sched/src/query_stats.rs",
+          "function": {
+            "function_name": "QueryStats::level",
+            "return_type": "",
+            "span": {
+              "start": {
+                "line": 137,
+                "column": 5
+              },
+              "end": {
+                "line": 141,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 138,
+              "column": 9
+            },
+            "end": {
+              "line": 140,
+              "column": 10
+            }
+          },
+          "replacement": "()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-sched__src__query_stats.rs_line_138_col_9.log",
+      "diff_path": "diff/crates__nata-sched__src__query_stats.rs_line_138_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.604359066,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150974566,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked",
+            "query_stats"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-sched/src/query_stats.rs:152:9: replace QueryStats::add with ()",
+          "package": "nata-sched",
+          "file": "crates/nata-sched/src/query_stats.rs",
+          "function": {
+            "function_name": "QueryStats::add",
+            "return_type": "",
+            "span": {
+              "start": {
+                "line": 151,
+                "column": 5
+              },
+              "end": {
+                "line": 154,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 152,
+              "column": 9
+            },
+            "end": {
+              "line": 153,
+              "column": 68
+            }
+          },
+          "replacement": "()",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-sched__src__query_stats.rs_line_152_col_9.log",
+      "diff_path": "diff/crates__nata-sched__src__query_stats.rs_line_152_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.504253701,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.15082551,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked",
+            "query_stats"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-sched/src/query_stats.rs:474:5: replace write_json -> std::io::Result<()> with Ok(())",
+          "package": "nata-sched",
+          "file": "crates/nata-sched/src/query_stats.rs",
+          "function": {
+            "function_name": "write_json",
+            "return_type": "-> std::io::Result<()>",
+            "span": {
+              "start": {
+                "line": 471,
+                "column": 1
+              },
+              "end": {
+                "line": 493,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 474,
+              "column": 5
+            },
+            "end": {
+              "line": 492,
+              "column": 11
+            }
+          },
+          "replacement": "Ok(())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-sched__src__query_stats.rs_line_474_col_5.log",
+      "diff_path": "diff/crates__nata-sched__src__query_stats.rs_line_474_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.503345401,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150896344,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-sched@0.0.0",
+            "-j4",
+            "--lib",
+            "--locked",
+            "query_stats"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 3,
+  "missed": 0,
+  "caught": 3,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-08T09:58:25.79435188Z",
+  "end_time": "2026-11-08T09:58:31.166840673Z",
+  "cargo_mutants_version": "27.1.0"
+}

@@ -1,0 +1,8 @@
+PASS having_overflow normal stdout/stderr identical, separate record
+PASS having_overflow spill stdout/stderr identical, separate record
+PASS limit_overflow normal stdout/stderr identical, separate record
+PASS limit_overflow spill stdout/stderr identical, separate record
+PASS q1 normal stdout/stderr identical, separate record
+PASS q1 spill stdout/stderr identical, separate record
+PASS syntax/bind error stats published after diagnostics
+PASS EXPLAIN ANALYZE same execution owner

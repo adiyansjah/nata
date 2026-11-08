@@ -1,0 +1,47 @@
+{
+  "binary_sha256": "5366fd343da05c539b8269c1c2a9b805406e95acfd4420a8122db20faff46834",
+  "cases": [
+    {
+      "query": "having_overflow",
+      "spill": false,
+      "exit": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "602018fd9e340a2c40e52062ab877036eb7201cf3348e2f2ce687352549c90be"
+    },
+    {
+      "query": "having_overflow",
+      "spill": true,
+      "exit": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "602018fd9e340a2c40e52062ab877036eb7201cf3348e2f2ce687352549c90be"
+    },
+    {
+      "query": "limit_overflow",
+      "spill": false,
+      "exit": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "602018fd9e340a2c40e52062ab877036eb7201cf3348e2f2ce687352549c90be"
+    },
+    {
+      "query": "limit_overflow",
+      "spill": true,
+      "exit": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "602018fd9e340a2c40e52062ab877036eb7201cf3348e2f2ce687352549c90be"
+    },
+    {
+      "query": "q1",
+      "spill": false,
+      "exit": 0,
+      "stdout_sha256": "d0153818f2f5a28b7d940474981c6beb9d38ae8cdd53e1c976a6345ff4687d65",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "query": "q1",
+      "spill": true,
+      "exit": 0,
+      "stdout_sha256": "3518db405a2575218d783abbdca4f378a11f65b35ae19ab191b9cc504ed3e806",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

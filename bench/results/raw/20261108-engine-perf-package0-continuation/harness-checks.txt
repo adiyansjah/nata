@@ -1,0 +1,8 @@
+Observed check results (commands run locally; no cloud calls):
+python3 -m unittest discover -s scripts -p test_bench_verdict.py: 13 PASS
+python3 scripts/check-verdict-mutants.py: 9/9 CAUGHT
+python3 -m unittest discover -s scripts -p test_profile_precheck.py: 2 PASS
+python3 -m unittest discover -s scripts -p test_engine_perf_package0.py: 3 PASS
+python3 scripts/bench-aggregate-closeout.py --self-test: 72 frozen cells + 5 scale cells, PASS
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work /tmp/pkg0-harness-resume: 5 builds, 40 gates, 480 timed arms, PASS (inert only)
+Timer: initial attempt during compilation FAILED 85.962449 ms < 50 ms assertion; lower-load rerun 2 PASS, bounds unchanged (see timer.log).
