@@ -3125,3 +3125,36 @@ bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-footer-${CLOS
 bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150
 bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
 ```
+
+## 2026-11-08 correction: closeout completion timer
+
+**Fixed measurement defect; old marginal closeout verdicts remain UNRESOLVED
+until rerun.** `Popen.wait(timeout)` polls with sleeps up to 50 ms. Short cells
+could therefore inflate DuckDB's denominator (recorded 8-thread Q1 ~0.114 s
+versus the unaffected heavy runner's ~0.079 s). Historical numbers above are
+retained; this correction changes neither frozen budgets nor target ratios.
+
+The closeout runner now waits for piped stderr EOF with `communicate`, measures
+completion using `perf_counter_ns`, and only then parses diagnostics. CSV still
+goes to the same file; `/usr/bin/time` still records RSS/CPU. Timeout remains a
+safety deadline, killing and reaping the entire process group and draining its
+pipe. Output, diagnostics, nonzero status and timeout exit 124 are tested.
+
+Local x86-64 inert control, `sleep 0.017` five times including process startup:
+**19.957, 19.869, 19.508, 19.304, 18.746 ms**. The Python short-child regression
+independently timestamps immediately before child exit; each of three sub-50-ms
+children must be detected within **8 ms**. Reinstating the old polling wait
+fails this check (observed overshoot **13.48 ms**). These are timer controls,
+not query performance claims. Command:
+
+```sh
+python3 -m unittest discover -s scripts -p test_bench_aggregate_closeout.py -v
+python3 scripts/bench-aggregate-closeout.py --self-test
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work /tmp/aggregate-heavy-inert
+```
+
+All pass. **`bench-aggregate-perf1-heavy.py` is unaffected:** its
+`subprocess.run(stderr=PIPE, timeout=600)` uses pipe completion, not the
+no-pipe polling wait. The 2b local runner imports that helper; 2d/2e use the
+same method. Their recorded results are not invalidated by this timer defect.
+No Rust function changed in this timer correction; cargo-mutants is inapplicable.

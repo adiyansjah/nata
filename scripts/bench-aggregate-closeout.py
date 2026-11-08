@@ -65,22 +65,28 @@ def canonical(source, query, scratch, name='actual'):
 
 def invoke(argv, env, output, log, timeout):
     rss = log.with_suffix('.usage')
-    start, load = time.perf_counter(), os.getloadavg()
-    with output.open('w') as sink, log.open('w') as err:
+    load = os.getloadavg()
+    start = time.perf_counter_ns()
+    with output.open('w') as sink:
         try:
             p = sp.Popen(['/usr/bin/time','-f','%M %U %S','-o',str(rss),*map(str,argv)],
-                         env=env, stdout=sink, stderr=err, start_new_session=True)
-            rc = p.wait(timeout=timeout)
+                         env=env, stdout=sink, stderr=sp.PIPE, start_new_session=True)
+            # Pipe EOF reports completion without wait(timeout)'s 50 ms polling
+            # grid. Keep full CSV output and the process-group safety deadline.
+            _, stderr = p.communicate(timeout=timeout)
+            rc = p.returncode
         except sp.TimeoutExpired:
             os.killpg(p.pid, signal.SIGKILL)
-            p.wait()
+            _, stderr = p.communicate()
             rc = 124
+    elapsed = (time.perf_counter_ns()-start)/1e9
+    log.write_bytes(stderr)
     metrics = {}
     for line in log.read_text().splitlines():
         if line.startswith('aggregate:'):
             metrics = {k:int(v) for k,v in (s.split('=') for s in line.split()[1:])}
     usage = rss.read_text().splitlines()[-1].split() if rss.exists() and rss.stat().st_size else []
-    return dict(exit=rc, seconds=time.perf_counter()-start, load=load,
+    return dict(exit=rc, seconds=elapsed, load=load,
                 rss_bytes=int(usage[0])*1024 if len(usage)==3 else None,
                 user_seconds=float(usage[1]) if len(usage)==3 else None,
                 system_seconds=float(usage[2]) if len(usage)==3 else None,
