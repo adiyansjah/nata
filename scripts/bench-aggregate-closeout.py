@@ -113,6 +113,10 @@ def run(a):
     decimal.getcontext().prec = 80
     a.out = a.out.resolve(); a.data = a.data.resolve(); a.binary = a.binary.resolve()
     a.out.mkdir(parents=True, exist_ok=False)
+    # Bulk scratch (spill, query output, sort files, TMPDIR) lives OUTSIDE the results tree: the supervisor pulls $RESULTS every few
+    # minutes, and live spill files made every pull fail (closeout4-*, 2026-11-08). Only logs and JSON stay in a.out.
+    a.bulk = (Path(os.environ['WORK'])/'closeout-bulk' if os.environ.get('WORK') else a.out.parent/(a.out.name+'-bulk'))/a.out.name
+    a.bulk.mkdir(parents=True, exist_ok=False)
     if a.binary.stat().st_mode & 0o222:
         raise ValueError('use a read-only immutable binary copy')
     matrix = selected_cells(a)
@@ -123,7 +127,7 @@ def run(a):
             raise ValueError('wrong machine topology for frozen cells')
         if a.machine=='c3d-highcpu-30':
             matrix=[(q,30 if t==32 else t,b) for q,t,b in matrix]
-    env = dict(os.environ, TMPDIR=str(a.out), LC_ALL='C')
+    env = dict(os.environ, TMPDIR=str(a.bulk), LC_ALL='C')
     if getattr(a, 'policy', 'slice5') == '0008-v1':
         env['NATA_QUERY_STATS'] = '1'
         env['NATA_QUERY_TRACE'] = '1' if getattr(a, 'trace', False) else '0'
@@ -153,7 +157,8 @@ def run(a):
     observations=[]; summaries=[]; baseline={}; failed=False
     for i,(query,threads,budget) in enumerate(matrix):
         body=sql(query,a.data); scratch=a.out/f'cell-{i}';scratch.mkdir()
-        spill=scratch/'spill';spill.mkdir()
+        bulk=a.bulk/f'cell-{i}';bulk.mkdir()
+        spill=bulk/'spill';spill.mkdir()
         for variant in ('main','duckdb'): (spill/variant).mkdir()
         disk=(128 if a.scale==100 else 32)*GIB
         def command(variant, cap=budget, query_sql=body):
@@ -165,20 +170,20 @@ def run(a):
         if threads not in baseline:
             probes=[]
             for r in range(1 if a.smoke else 5):
-                p=invoke(command('main',query_sql=f"SELECT l_orderkey FROM '{a.data}/lineitem.parquet' LIMIT 0"),env,scratch/'baseline.csv',scratch/f'baseline-{r}.log',a.timeout)
+                p=invoke(command('main',query_sql=f"SELECT l_orderkey FROM '{a.data}/lineitem.parquet' LIMIT 0"),env,bulk/'baseline.csv',scratch/f'baseline-{r}.log',a.timeout)
                 if p['exit'] or p['rss_bytes'] is None: raise RuntimeError('baseline failed')
                 probes.append(p['rss_bytes'])
             baseline[threads]=max(probes)
             h.save(a.out/'baselines.json',baseline)
-        output=scratch/'output.csv'
+        output=bulk/'output.csv'
         oracle=invoke(command('duckdb',cap=(32 if a.scale==100 else 4)*GIB),env,output,scratch/'oracle.log',a.timeout)
         if oracle['exit']: raise RuntimeError('unrestricted value oracle failed; stop')
-        expected_values=canonical(output,query,scratch,'expected')
+        expected_values=canonical(output,query,bulk,'expected')
         gates=[]
         for variant in ('main','duckdb'):
             row=invoke(command(variant),env,output,scratch/f'gate-{variant}.log',a.timeout)
             if row['exit']==0:
-                actual=canonical(output,query,scratch)
+                actual=canonical(output,query,bulk)
                 equal=h.equal_values(expected_values,actual,'q1') if query=='q1' else expected_values['rows']==actual['rows'] and filecmp.cmp(expected_values['path'],actual['path'],shallow=False)
                 if not equal: raise RuntimeError(f'value gate failed: {query}/{threads}/{budget}/{variant}')
                 row['result_rows']=sum(expected_values.values()) if query=='q1' else expected_values['rows']
