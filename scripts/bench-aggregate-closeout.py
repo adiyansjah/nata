@@ -152,7 +152,7 @@ def run(a):
     if not a.smoke and metadata['input_rows']!={1:6001215,10:59986052,100:600037902}[a.scale]:
         raise ValueError('input scale does not match frozen matrix')
     h.save(a.out/'metadata.json',metadata)
-    observations=[]; summaries=[]; baseline={}
+    observations=[]; summaries=[]; baseline={}; failed=False
     for i,(query,threads,budget) in enumerate(matrix):
         body=sql(query,a.data); scratch=a.out/f'cell-{i}';scratch.mkdir()
         spill=scratch/'spill';spill.mkdir()
@@ -183,39 +183,61 @@ def run(a):
                 if not equal: raise RuntimeError(f'value gate failed: {query}/{threads}/{budget}/{variant}')
                 row['result_rows']=sum(expected_values.values()) if query=='q1' else expected_values['rows']
                 if variant=='main':
-                    resource_gate(row,budget,baseline[threads],disk)
-                    if a.resource_only and row['counters']['partitions_spilled']<=a.fd_limit:
+                    try:
+                        resource_gate(row,budget,baseline[threads],disk)
+                    except RuntimeError as error:
+                        row['error']=str(error)
+                    if a.resource_only and not row.get('error') and row['counters']['partitions_spilled']<=a.fd_limit:
                         raise RuntimeError('low-FD fixture did not exceed the process descriptor limit; UNRESOLVED')
-            elif variant=='main': raise RuntimeError(f'completion gate failed: {query}/{threads}/{budget}')
+            elif variant=='main':
+                row['error']=f"completion gate failed (exit {row['exit']}): "+(scratch/'gate-main.log').read_text()
             gates.append(dict(variant=variant,**row))
         h.save(scratch/'gates.json',gates)
+        if gates[0].get('error'):
+            summary=dict(query=query,threads=threads,budget=budget,verdict='FAIL',
+                         error=gates[0]['error'],gates=str(scratch/'gates.json'))
+            summaries.append(summary);h.save(a.out/'summary.json',summaries)
+            failed=True
+            print('completed',query,threads,budget,'FAIL',summary['error'],flush=True)
+            output.unlink()
+            for sorted_file in scratch.glob('*.sorted'): sorted_file.unlink()
+            continue
         settled=False
         if not a.smoke:
             result=sp.run(['bash',str(ROOT/'scripts/gcp/settle.sh'),f'closeout-{i}','0.5','600'],env=env,capture_output=True,text=True)
             (scratch/'settle.txt').write_text(result.stdout+result.stderr)
             settled=result.returncode==0
             if not settled: raise RuntimeError('settle failed; UNRESOLVED, stop')
-        samples=[]
+        samples=[]; timing_error=None
         for r in range(1 if a.smoke else 5):
             for variant,role in h.arms([{'label':'main'}],r):
                 if variant=='duckdb' and gates[1]['exit']: continue
                 row=invoke(command(variant),env,output,scratch/f'{r}-{variant}-{role}.log',a.timeout)
                 row['gated_result_rows']=sum(expected_values.values()) if query=='q1' else expected_values['rows']
                 if variant=='main':
-                    resource_gate(row,budget,baseline[threads],disk)
-                    if list((spill/'main').iterdir()): raise RuntimeError('spill cleanup failure')
-                    required={1:64*MIB,10:256*MIB,100:4*GIB}[a.scale]
-                    if not a.smoke and query=='high_cardinality_tpch' and budget==required and not row['counters']['spill_bytes_written']:
-                        raise RuntimeError('required HC spill absent')
+                    try:
+                        resource_gate(row,budget,baseline[threads],disk)
+                        if list((spill/'main').iterdir()): raise RuntimeError('spill cleanup failure')
+                        required={1:64*MIB,10:256*MIB,100:4*GIB}[a.scale]
+                        if not a.smoke and query=='high_cardinality_tpch' and budget==required and not row['counters']['spill_bytes_written']:
+                            raise RuntimeError('required HC spill absent')
+                    except RuntimeError as error:
+                        timing_error=str(error)+': '+(scratch/f'{r}-{variant}-{role}.log').read_text()
+                        row['error']=timing_error
                 sample=dict(query=query,threads=threads,budget=budget,round=r,variant=variant,role=role,settled=settled,**row)
                 samples.append(sample);observations.append(sample)
                 h.save(a.out/'timings.json',observations)
+                if timing_error: break
+            if timing_error: break
         output.unlink()
         for sorted_file in scratch.glob('*.sorted'): sorted_file.unlink()
         complete=gates[1]['exit']==0 and all(s['exit']==0 for s in samples if s['variant']=='duckdb')
         summary=dict(query=query,threads=threads,budget=budget,
                      target_latency_ratio=(1.5 if query=='q1' else 2.0) if a.scale<100 and budget==4*GIB and query!='high_cardinality_tpch' else (2.0 if gates[0]['counters']['spill_bytes_written'] else None),
                      **summarize(samples,complete,settled))
+        if timing_error:
+            summary.update(verdict='FAIL',error=timing_error)
+            failed=True
         summaries.append(summary);h.save(a.out/'summary.json',summaries)
         print('completed',query,threads,budget,summary['verdict'],flush=True)
     scaling=[]
@@ -227,6 +249,8 @@ def run(a):
                 if all(len(v)==5 and all(s['exit']==0 for s in v) for v in values):
                     scaling.append(dict(variant=variant,role=role,low=low,high=high,speedup=h.distribution([x['seconds']/y['seconds'] for x,y in zip(*values)]),verdict='UNRESOLVED',target=(5 if a.machine.startswith('n4a') else 3.5) if a.scale==10 else (2.5 if a.machine.startswith('n4a') else 'REPORT ONLY')))
         h.save(a.out/'scaling.json',scaling)
+
+    return 1 if failed else 0
 
 
 def self_test():
@@ -246,13 +270,13 @@ def self_test():
         base=Path(directory); binary=base/'nata';binary.write_bytes(b'inert');binary.chmod(0o444)
         data=base/'data';data.mkdir();(data/'lineitem.parquet').write_bytes(b'inert')
         calls=[]
-        fail_reference=[False]
+        fail_reference=[False]; fail_candidate=[False]; fail_timing=[False]
         def fake(argv, env, output, log, timeout):
             calls.append(argv)
             width=10 if 'sum_charge' in argv[-1] else 4
             output.write_text(','.join('c'+str(i) for i in range(width))+'\n')
             log.write_text('inert process\n')
-            return dict(exit=1 if fail_reference[0] and argv[0]=='duckdb' and '67108864B' in argv[3] else 0,seconds=1,rss_bytes=1,counters=dict(peak_reservation=1,spill_peak_bytes=0,spill_peak_open=0,spill_bytes_written=0,partitions_spilled=256))
+            return dict(exit=1 if (fail_timing[0] and log.name=='0-main-primary.log') or (fail_reference[0] and argv[0]=='duckdb' and '67108864B' in argv[3]) or (fail_candidate[0] and argv[0]!='duckdb' and '--aggregate-memory-bytes' in argv and argv[argv.index('--aggregate-memory-bytes')+1]=='67108864' and 'LIMIT 0' not in argv[-1]) else 0,seconds=1,rss_bytes=1,counters=dict(peak_reservation=1,spill_peak_bytes=0,spill_peak_open=0,spill_bytes_written=0,partitions_spilled=256))
         a=argparse.Namespace(out=base/'out',binary=binary,data=data,scale=1,smoke=True,resource_only=False,fd_limit=1024,machine='c3d-highcpu-8',commit='inert',timeout=5)
         with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
             run(a)
@@ -274,6 +298,20 @@ def self_test():
             run(a)
         results=json.loads((a.out/'summary.json').read_text())
         assert sum(row['verdict']=='UNASSESSED' for row in results)==12
+        a.out=base/'failed-candidate-out';fail_candidate[0]=True;fail_reference[0]=False
+        with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
+            assert run(a)==1
+        results=json.loads((a.out/'summary.json').read_text())
+        assert len(results)==36 and sum(row['verdict']=='FAIL' for row in results)==12
+        assert all('inert process' in row['error'] for row in results if row['verdict']=='FAIL')
+        assert len(json.loads((a.out/'cell-1/gates.json').read_text()))==2
+        assert results[-1]['budget']==256*MIB  # failed cells did not abort the matrix
+        a.out=base/'failed-timing-out';fail_candidate[0]=False;fail_timing[0]=True
+        with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
+            assert run(a)==1
+        results=json.loads((a.out/'summary.json').read_text())
+        assert len(results)==36 and all(row['verdict']=='FAIL' for row in results)
+        assert all('inert process' in row['error'] for row in results)
         bad=dict(exit=0,rss_bytes=1,counters=dict(peak_reservation=2,spill_peak_bytes=0,spill_peak_open=0))
         try:
             resource_gate(bad,1,0,1)
@@ -281,7 +319,7 @@ def self_test():
             pass
         else:
             raise AssertionError('reservation breach accepted')
-    print('PASS: 72 frozen cells + 5 scale cells; failed references UNASSESSED; no automatic MET')
+    print('PASS: 72 frozen cells + 5 scale cells; failed references UNASSESSED; completion failures FAIL/continue/nonzero; no automatic MET')
 
 
 def main():
@@ -297,7 +335,7 @@ def main():
     if a.self_test: return self_test()
     if a.plan: print(json.dumps(cells(a.scale),indent=2));return
     if not all((a.binary,a.commit,a.data,a.out)):p.error('run requires --binary --commit --data --out')
-    run(a)
+    return run(a)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__': raise SystemExit(main())

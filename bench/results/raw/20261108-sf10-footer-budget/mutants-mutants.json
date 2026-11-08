@@ -1,0 +1,162 @@
+[
+  {
+    "diff": "--- crates/nata-parquet/src/footer.rs\n+++ delete match arm Ok(Reservation::Granted(g)) in reserve\n@@ -10,17 +10,17 @@\n use parquet::file::metadata::{ParquetMetaData, ParquetMetaDataReader};\n \n fn bad() -> ParquetError {\n     ParquetError::General(\"invalid compact footer structure\".into())\n }\n \n fn reserve(memory: &Arc<MemoryManager>, bytes: usize) -> Result<Grant> {\n     match MemoryManager::request(memory, 0, bytes) {\n-        Ok(Reservation::Granted(g)) => Ok(g),\n+         /* ~ changed by cargo-mutants ~ */\n         _ => Err(ParquetError::General(format!(\n             \"resource error: aggregate footer metadata needs {bytes} additional bytes (budget {})\",\n             memory.snapshot().budget\n         ))),\n     }\n }\n \n // Allocation-free compact-protocol walker, used only to locate row-group\n",
+    "file": "crates/nata-parquet/src/footer.rs",
+    "function": {
+      "function_name": "reserve",
+      "return_type": "-> Result<Grant>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 24
+        },
+        "start": {
+          "column": 1,
+          "line": 16
+        }
+      }
+    },
+    "genre": "MatchArm",
+    "name": "crates/nata-parquet/src/footer.rs:18:9: delete match arm Ok(Reservation::Granted(g)) in reserve",
+    "package": "nata-parquet",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 18
+      },
+      "start": {
+        "column": 9,
+        "line": 18
+      }
+    }
+  },
+  {
+    "diff": "--- crates/nata-parquet/src/footer.rs\n+++ replace retained_bytes -> Result<usize> with Ok(0)\n@@ -195,20 +195,17 @@\n         return Err(bad());\n     }\n     found.ok_or_else(bad)\n }\n \n fn retained_bytes(meta: &ParquetMetaData) -> Result<usize> {\n     // A second copy of metadata's measured capacity bounds the Arrow schema,\n     // schema checks, projection/filter views, and pruning strings in read_file.\n-    meta.memory_size()\n-        .checked_mul(2)\n-        .and_then(|n| n.checked_add(4096))\n-        .ok_or_else(bad)\n+    Ok(0) /* ~ changed by cargo-mutants ~ */\n }\n \n /// Same conservative 128x parser staging bound as the original reader, applied\n /// to one row group, including its file-level schema/KVs, plus scratch wire.\n fn staging_bytes(wire: usize) -> Result<usize> {\n     wire.checked_mul(129)\n         .and_then(|n| n.checked_add(4096))\n         .ok_or_else(bad)\n",
+    "file": "crates/nata-parquet/src/footer.rs",
+    "function": {
+      "function_name": "retained_bytes",
+      "return_type": "-> Result<usize>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 207
+        },
+        "start": {
+          "column": 1,
+          "line": 200
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(0)",
+    "package": "nata-parquet",
+    "replacement": "Ok(0)",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 206
+      },
+      "start": {
+        "column": 5,
+        "line": 203
+      }
+    }
+  },
+  {
+    "diff": "--- crates/nata-parquet/src/footer.rs\n+++ replace retained_bytes -> Result<usize> with Ok(1)\n@@ -195,20 +195,17 @@\n         return Err(bad());\n     }\n     found.ok_or_else(bad)\n }\n \n fn retained_bytes(meta: &ParquetMetaData) -> Result<usize> {\n     // A second copy of metadata's measured capacity bounds the Arrow schema,\n     // schema checks, projection/filter views, and pruning strings in read_file.\n-    meta.memory_size()\n-        .checked_mul(2)\n-        .and_then(|n| n.checked_add(4096))\n-        .ok_or_else(bad)\n+    Ok(1) /* ~ changed by cargo-mutants ~ */\n }\n \n /// Same conservative 128x parser staging bound as the original reader, applied\n /// to one row group, including its file-level schema/KVs, plus scratch wire.\n fn staging_bytes(wire: usize) -> Result<usize> {\n     wire.checked_mul(129)\n         .and_then(|n| n.checked_add(4096))\n         .ok_or_else(bad)\n",
+    "file": "crates/nata-parquet/src/footer.rs",
+    "function": {
+      "function_name": "retained_bytes",
+      "return_type": "-> Result<usize>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 207
+        },
+        "start": {
+          "column": 1,
+          "line": 200
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(1)",
+    "package": "nata-parquet",
+    "replacement": "Ok(1)",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 206
+      },
+      "start": {
+        "column": 5,
+        "line": 203
+      }
+    }
+  },
+  {
+    "diff": "--- crates/nata-parquet/src/footer.rs\n+++ replace staging_bytes -> Result<usize> with Ok(0)\n@@ -204,19 +204,17 @@\n         .checked_mul(2)\n         .and_then(|n| n.checked_add(4096))\n         .ok_or_else(bad)\n }\n \n /// Same conservative 128x parser staging bound as the original reader, applied\n /// to one row group, including its file-level schema/KVs, plus scratch wire.\n fn staging_bytes(wire: usize) -> Result<usize> {\n-    wire.checked_mul(129)\n-        .and_then(|n| n.checked_add(4096))\n-        .ok_or_else(bad)\n+    Ok(0) /* ~ changed by cargo-mutants ~ */\n }\n \n pub(crate) fn load(\n     file: &mut File,\n     memory: &Arc<MemoryManager>,\n ) -> Result<(ParquetMetaData, Vec<Grant>)> {\n     let size = file.metadata()?.len();\n     let mut tail = [0; 8];\n",
+    "file": "crates/nata-parquet/src/footer.rs",
+    "function": {
+      "function_name": "staging_bytes",
+      "return_type": "-> Result<usize>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 215
+        },
+        "start": {
+          "column": 1,
+          "line": 209
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(0)",
+    "package": "nata-parquet",
+    "replacement": "Ok(0)",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 214
+      },
+      "start": {
+        "column": 5,
+        "line": 212
+      }
+    }
+  },
+  {
+    "diff": "--- crates/nata-parquet/src/footer.rs\n+++ replace staging_bytes -> Result<usize> with Ok(1)\n@@ -204,19 +204,17 @@\n         .checked_mul(2)\n         .and_then(|n| n.checked_add(4096))\n         .ok_or_else(bad)\n }\n \n /// Same conservative 128x parser staging bound as the original reader, applied\n /// to one row group, including its file-level schema/KVs, plus scratch wire.\n fn staging_bytes(wire: usize) -> Result<usize> {\n-    wire.checked_mul(129)\n-        .and_then(|n| n.checked_add(4096))\n-        .ok_or_else(bad)\n+    Ok(1) /* ~ changed by cargo-mutants ~ */\n }\n \n pub(crate) fn load(\n     file: &mut File,\n     memory: &Arc<MemoryManager>,\n ) -> Result<(ParquetMetaData, Vec<Grant>)> {\n     let size = file.metadata()?.len();\n     let mut tail = [0; 8];\n",
+    "file": "crates/nata-parquet/src/footer.rs",
+    "function": {
+      "function_name": "staging_bytes",
+      "return_type": "-> Result<usize>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 215
+        },
+        "start": {
+          "column": 1,
+          "line": 209
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(1)",
+    "package": "nata-parquet",
+    "replacement": "Ok(1)",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 214
+      },
+      "start": {
+        "column": 5,
+        "line": 212
+      }
+    }
+  }
+]

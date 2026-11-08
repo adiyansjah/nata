@@ -1,0 +1,47 @@
+Resumed local verification, 2026-11-08. Base: 506c9ff941286ce6af912fb8fd06773d4cd4aafc.
+Patch applied first; no conflicts. No new Cargo.lock entries or ADR/frozen-rule changes.
+SF10 fixture reused, not regenerated: 59,986,052 rows, 488 row groups, 16 columns.
+Input bytes=2206304314, SHA256=7b5f73dd78c4ef5b127896550e153223423b5fb53d88ecbb9fc451404dc44843.
+Disk started at 65 GB available and stayed above 20 GB; no stale-output cleanup triggered.
+One Cargo build/test at a time for this task, -j 4, RUST_TEST_THREADS=4,
+CARGO_INCREMENTAL=0, disk TMPDIR=/home/dev/nata-footer-resume/tmp.
+
+Commands (from repo root, log names identify results):
+cargo test --locked -j 4 -p nata-parquet
+# 125 PASS; 1 ignored local capacity control, then explicitly run below.
+# Baseline: git archive HEAD Cargo.toml Cargo.lock rust-toolchain.toml crates,
+# extracted into /home/dev/nata-footer-resume/before-source before any commit.
+# Build with --manifest-path there and the same CARGO_TARGET_DIR; copy nata-before read-only.
+cargo build --locked --release -j 4 -p nata -p nata-check
+# Final rebuild after the equivalent clippy range-pattern cleanup is in release-final.log.
+# Binary changed, so all four Q1 controls and the small query gates were rerun.
+env -u AI_AGENT scripts/gen-tpch.sh 0.01 /home/dev/nata-footer-resume/gates
+scripts/gen-sql-check-data.sh /home/dev/nata-footer-resume/gates
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data /home/dev/nata-footer-resume/gates --queries check/queries/aggregate
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data /home/dev/nata-footer-resume/gates --queries check/queries/aggregate --force-aggregate-spill
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data /home/dev/nata-footer-resume/gates --queries check/queries/sql
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data /home/dev/nata-footer-resume/gates --queries check/queries/scan
+NATA_FOOTER_FIXTURES=/home/dev/src/nata/data/tpch-sf1/lineitem.parquet:/home/dev/nata-footer-budget/lineitem.parquet cargo test --locked -j 4 -p nata-parquet --lib local_footer_capacity_evidence -- --ignored --nocapture
+cargo fmt --all --check
+cargo clippy --locked --workspace --all-targets -j 4 -- -D warnings
+python3 scripts/bench-aggregate-closeout.py --self-test
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work /home/dev/nata-footer-resume/harness-inert
+python3 -m py_compile scripts/bench-aggregate-closeout.py
+bash -n scripts/gcp/orchestrate.sh
+bash scripts/gcp/test/test-job-chains.sh
+/home/dev/perf2b/cargo-mutants mutants --cap-lints false --in-place -p nata-parquet -f 'crates/nata-parquet/src/footer.rs' -F '(reserve|retained_bytes|staging_bytes)' -E 'with Ok\(Default::default\(\)\)' --jobserver-tasks 4 --cargo-arg=--locked --cargo-arg=-j --cargo-arg=4 --cargo-arg=--lib --cargo-test-arg=footer::tests --timeout 120 --build-timeout 300 --output /home/dev/nata-footer-resume/mutation-focused --caught --unviable
+python3 bench/results/raw/20261108-sf10-footer-budget/reproduce.py /home/dev/nata-footer-budget /home/dev/nata-footer-resume/nata-before /home/dev/nata-footer-resume/nata-final /home/dev/nata-footer-resume/completion-final
+
+The focused mutation cohort uses a passing baseline; all 5 viable mutations caught.
+An earlier baseline-only invocation was interrupted to restrict builds to --lib;
+it is not counted as a tested mutation. Grant::default() was excluded as unviable.
+No GCP, push or merge. Local completion controls do not settle cloud resource/performance gates.
+Versions:
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+v2.0.0 (Cyanoptera) d54cbbe3df
+cargo-mutants 27.1.0
+x86_64
+
+Final binary SHA256=43c717752aa9c55cfde3debf2afbac318dd1f2dcad38c1111b53fa64feee9193
+Baseline binary SHA256=16bd7d56959d7bb695a7470fd972c0409a7a59bbcd11782ab143bf6e60c32489

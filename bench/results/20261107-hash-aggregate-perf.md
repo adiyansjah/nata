@@ -2951,3 +2951,177 @@ rows, so output batching cannot move it; its cells are 0.96-1.00x except ARM64 e
 0.99x and twin arms differ by 3-5%, so it is read as noise, not a regression. The in-memory baselines differ from step 2d's run
 (ARM64 2.72 → 3.06 s at one thread): verdicts use paired ratios within one run. Frozen targets: **NOT MET**; many groups in memory now
 2.2-2.6x (target 2x), spill 3.3-5.3x, Q1 2.1-5.0x.
+
+## Slice 5 closeout: SF10 footer budget
+
+The clean x86 and ARM SF10 closeouts' Q1/1-thread/64-MiB cells refused input
+before accumulation; DuckDB completed. This is a **FAIL**, not an absent denominator or
+an acceptable small-budget refusal: card 0005 freezes completion at the declared
+fixture budgets. The previous harness raised at this cell and abandoned SF10.
+No frozen target, ADR, dependency, budget or result semantics changes here.
+
+**Cause.** `nata-parquet::reader::read_file` charged the local execution footer
+as `128 * encoded_footer_length + 4096`, before calling
+`ArrowReaderMetadata::load`, and retained that entire construction allowance
+until the last `Arc<FileScan>` dropped. The footer is the file's trailing compact
+Thrift FileMetaData: every row group and every column, including statistics,
+encoding/path/schema/KV metadata and page-index location fields. The projection
+mask is applied afterwards. Q1 reads seven of lineitem's sixteen columns; the
+charge did not reflect that projection. The repair retains all column metadata
+for the existing pruning/scan semantics: its reduction comes from piecewise
+construction and capacity accounting, not from deleting unprojected columns. Default reader options skip page indexes:
+no column-index/offset-index blocks, bloom filters or data pages are loaded as
+part of this charge. Pruning/task descriptors and Arrow schema views were also
+covered by that deliberately conservative allowance.
+
+| Input | Rows | Row groups | Columns in footer / Q1 scan | Footer wire bytes | Old live grant |
+|---|---:|---:|---:|---:|---:|
+| SF1 | 6,001,215 | 49 | 16 / 7 | 91,032 | 11,656,192 |
+| SF10 | 59,986,052 | 488 | 16 / 7 | 895,631 | 114,644,864 |
+
+These local shapes reproduce the closeout failure. SF10 lineitem occupies
+2,206,304,314 bytes (SHA-256
+`7b5f73dd78c4ef5b127896550e153223423b5fb53d88ecbb9fc451404dc44843`).
+The SF1 comparison file is 205,482,956 bytes (SHA-256
+`c87ad8d103896e33436e3430058dc8503900e828f37dc1ce3393d964a1a99f5e`).
+
+It is the **query** budget, despite the historical "aggregate" diagnostic:
+aggregation passes its MemoryManager into `ScanPlan::open_budgeted`, and
+ADR 0009 requires scan/expression/metadata workspace and aggregate tables to
+share B. The local footer requests use the same operator 0 as aggregation. A separate uncharged local metadata pool would violate that rule.
+The remote reader/cache has its own existing query/cache ownership under
+ADRs 0011/0012; this local fix does not borrow that cache's allowance. The
+front-end's earlier `read_leaves` schema-binding read is distinct, temporary and
+unchanged (P12 metadata handoff remains deferred).
+
+**Fix.** Keep the encoded wire image under a query grant. An allocation-free
+compact-protocol walk locates row-group boundaries, bounds lengths/loops by
+remaining input and caps nesting at 64. Each row group is decoded by the locked
+parquet-rs decoder using a temporary footer containing that group and the
+unchanged file-level fields. Reserve the original 128x parser allowance for this
+piece, plus its scratch wire, before constructing it. Drop scratch, then shrink
+the grant to twice `ParquetMetaData::memory_size()` plus 4 KiB: capacities and
+shared-pointer contents are counted by parquet-rs, with a conservative second
+copy for Arrow schema/projection/filter/pruning views. Charge the metadata,
+grant and scan/task descriptor vectors separately before allocating them.
+
+All parsed row groups/columns remain available for existing pruning and scan
+semantics; the large whole-file **construction** allowance is no longer held.
+Grants accompany FileScan through its last task and are released on every exit.
+Explicit and omitted ordinals match the dependency. Mixed ordinal presence uses
+the original whole-footer decode under a full staging grant, since the public
+builder cannot restore an unset ordinal; that unusual shape can still refuse
+when its construction grant cannot fit. Oversized wire, file-level metadata,
+one row group or accumulated retained metadata still refuses through the memory
+service, with a numeric additional-byte requirement and cap. The inherited
+Parquet dependency trust limits remain; this is not a claim of closing R6b/c/d.
+
+**Harness.** A candidate completion/resource failure now saves both engine
+gates, records a `FAIL` summary with its error/log, skips timing for that failed
+cell and continues to the next matrix cell. A failure during timing is likewise
+saved as `FAIL`. The matrix returns exit 1 if any candidate cell failed;
+`# gate-exits` still fails the step/job afterwards. Failed references remain
+UNASSESSED; successful timings remain UNRESOLVED pending the existing noise
+judgment. The self-test exercises gate failures and timing failures through the
+last cell, saved diagnostics and the nonzero return. No automatic MET is added.
+
+**Fresh local verification (resumed on main `506c9ff`, x86-64).** The patch
+applied without conflicts (one trailing blank line was removed). The existing
+SF10 fixture was reused after checking 65 GB free; its identity is given above.
+Both recorded clean-VM runs stopped at SF10 cell 1; their independently generated
+Parquet byte identities differ from this local file. These controls prove local
+completion and value equality, not a clean-VM resource/performance verdict.
+
+The standalone 64-MiB capacity control compares the assembled metadata to the
+locked reader, checks every held byte against its grants, then drops metadata and
+grants and requires zero held bytes/live grants:
+
+| Input | Parsed capacity bytes | Retained footer charge bytes | Peak footer charge bytes |
+|---|---:|---:|---:|
+| SF1 | 346,921 | 1,423,954 | 1,794,159 |
+| SF10 | 3,406,223 | 14,142,484 | 15,323,148 |
+
+Fresh source-only baseline build: `git archive 506c9ff Cargo.toml Cargo.lock
+rust-toolchain.toml crates`, then the same locked release build as the candidate.
+The real SF10 Q1 completion controls record **query** peak reservations below
+(the footer control above measures only footer grants). Every successful result
+matches the paired DuckDB value multiset; DuckDB completes all four cells.
+
+| Requested threads | Budget bytes | Baseline outcome / query peak bytes | Repaired query peak bytes | Repaired active tasks |
+|---|---:|---:|---:|---:|
+| 1 | 67,108,864 | REFUSED: footer request 114,644,864 | 32,036,313 | 1 |
+| 8 | 67,108,864 | REFUSED: footer request 114,644,864 | 62,219,199 | 3 |
+| 1 | 268,435,456 | complete / 134,897,989 | 34,395,609 | 1 |
+| 8 | 268,435,456 | complete / 257,053,162 | 156,550,782 | 8 |
+
+The existing admission policy shrinks task concurrency at 64 MiB; requested
+threads and actual tasks are deliberately distinguished. The synthetic regression
+has 512 row groups / 16 columns and an old charge above 64 MiB, but the repaired
+reader fits. The 32-KiB negative control proves the parsed metadata itself exceeds
+the cap, requires a numeric resource refusal, and checks complete grant cleanup.
+
+Evidence and reproducible controls: [raw files](raw/20261108-sf10-footer-budget/),
+[Q1 runner](raw/20261108-sf10-footer-budget/reproduce.py). No fixture budget,
+target, dependency or accepted ADR changed.
+
+**Checks:** `cargo test --locked -j 4 -p nata-parquet`: **125 passed**, zero
+failures, one explicit local-capacity ignore; that capacity control was then run
+separately and passed for SF1/SF10. This includes damaged-file fuzz/regressions,
+truncations, budgeted-footer damage, ordinal equivalence, pruning, cancellation
+and cleanup. Locked release builds of `nata` / `nata-check`, workspace fmt and
+workspace/all-target clippy with warnings denied pass. Fresh SF0.01 plus generated
+SQL fixtures: **65/65 aggregate, 65/65 forced spill, 252/252 SQL, 5/5 scan**.
+Both inert harness self-tests, Python compile, shell syntax and job-chain tests
+(including strict heavy-step exit propagation) pass. All Cargo builds/tests ran
+sequentially with `-j 4` and disk-backed TMPDIR; disk stayed above 20 GB free.
+
+**Focused cargo-mutants:** a passing private baseline, **5/5 CAUGHT**, zero
+survivors, timeouts or unviable mutations in the selected cohort. It removes the
+successful grant arm and replaces retained/staging charges with zero or one.
+The syntactically generated `Grant::default()` replacement was excluded because
+`Grant` has no `Default` implementation; it cannot be a valid negative control.
+The run uses in-place (one scenario at a time), `--jobserver-tasks 4`,
+`--cargo-arg=--locked --cargo-arg=-j --cargo-arg=4 --cargo-arg=--lib`, and
+`--cargo-test-arg=footer::tests`; full command and outcomes are in the raw record.
+No GCP, push or merge was run for this repair; both-CPU clean-VM reruns remain
+for the owner/parent. No speed/target verdict is promoted by these controls.
+
+Local reproduction (only lineitem is needed for these four completion cells):
+
+```sh
+# Check free disk first; generation/database/build overlap needs headroom.
+df -h .
+mkdir -p "$FOOTER_WORK"
+env -u AI_AGENT duckdb "$FOOTER_WORK/sf10.duckdb" -c "SET threads=4; SET memory_limit='4GB'; INSTALL tpch; LOAD tpch; CALL dbgen(sf=10); COPY lineitem TO '$FOOTER_WORK/lineitem.parquet' (FORMAT parquet);"
+# Remove the temporary generator database after COPY if space is needed.
+TMPDIR="$FOOTER_WORK" cargo build --locked --release -j 4 -p nata -p nata-check
+for threads in 1 8; do
+  for budget in 67108864 268435456; do
+    env -u AI_AGENT target/release/nata sql --csv --report --threads "$threads" \
+      --aggregate-memory-bytes "$budget" \
+      --command "$(sed "s|{data}|$FOOTER_WORK|g" check/queries/aggregate/q1.sql)"
+  done
+done
+NATA_FOOTER_FIXTURES="$SF1_DATA/lineitem.parquet:$FOOTER_WORK/lineitem.parquet" \
+  TMPDIR="$FOOTER_WORK" cargo test --locked -j 4 -p nata-parquet --lib \
+  local_footer_capacity_evidence -- --ignored --nocapture
+```
+
+No GCP was run for this repair. For the parent's separately authorized SF1/SF10
+reruns, after committing prepare a fresh immutable source bundle and use fresh
+job IDs; the small job includes both complete matrices and the low-FD control:
+
+```sh
+git archive HEAD --format=tar --output=.aggregate-closeout-source.tar
+git rev-parse HEAD > .aggregate-closeout-commit
+sha256sum .aggregate-closeout-source.tar > .aggregate-closeout-source.sha256
+cp bench/aggregate-closeout.steps heavy.steps
+cmp bench/aggregate-closeout.steps heavy.steps # preserve the first # gate-exits line too
+# Use a new suffix for every rerun. Each job runs SF1, SF10 and the SF1 low-FD control.
+: "${CLOSEOUT_RUN_SUFFIX:?set a fresh run suffix}"
+# Plan each CPU job, then run only with its owner-approved bound.
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-x86-small" --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-x86-small" --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-footer-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+```

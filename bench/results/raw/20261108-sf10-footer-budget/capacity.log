@@ -1,0 +1,10 @@
+   Compiling nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-55bdaa12/crates/nata-parquet)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.35s
+     Running unittests src/lib.rs (target/debug/deps/nata_parquet-5646b448b7fb0b4c)
+
+running 1 test
+/home/dev/src/nata/data/tpch-sf1/lineitem.parquet: wire=91032 original=11656192 parsed=346921 retained=1423954 footer_peak=1794159
+/home/dev/nata-footer-budget/lineitem.parquet: wire=895631 original=114644864 parsed=3406223 retained=14142484 footer_peak=15323148
+test footer::tests::local_footer_capacity_evidence ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 34 filtered out; finished in 0.03s

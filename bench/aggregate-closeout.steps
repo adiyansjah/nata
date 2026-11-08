@@ -1,4 +1,6 @@
 # gate-exits
+# Each matrix records failed completion cells and continues, then exits nonzero
+# if any candidate cell failed. gate-exits still prevents later steps after failure.
 # SF1/SF10 on c3d-highcpu-8 or n4a-highcpu-8. 6h cap; 150GB data.
 prepare mkdir -p "$WORK/closeout/source" "$WORK/closeout/tmp" && cd "$SRC" && sha256sum -c .aggregate-closeout-source.sha256 && tar -xf .aggregate-closeout-source.tar -C "$WORK/closeout/source"
 build cd "$WORK/closeout/source" && CARGO_TARGET_DIR="$WORK/closeout/target" CARGO_INCREMENTAL=0 cargo build --locked --release -j 4 -p nata -p nata-check && cp "$WORK/closeout/target/release/nata" "$WORK/closeout/nata" && chmod a-w "$WORK/closeout/nata"

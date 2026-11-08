@@ -1,0 +1,423 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 0.202240885,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.352658492,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-parquet/src/footer.rs:18:9: delete match arm Ok(Reservation::Granted(g)) in reserve",
+          "package": "nata-parquet",
+          "file": "crates/nata-parquet/src/footer.rs",
+          "function": {
+            "function_name": "reserve",
+            "return_type": "-> Result<Grant>",
+            "span": {
+              "start": {
+                "line": 16,
+                "column": 1
+              },
+              "end": {
+                "line": 24,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 18,
+              "column": 9
+            },
+            "end": {
+              "line": 18,
+              "column": 46
+            }
+          },
+          "replacement": "",
+          "genre": "MatchArm"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-parquet__src__footer.rs_line_18_col_9.log",
+      "diff_path": "diff/crates__nata-parquet__src__footer.rs_line_18_col_9.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 10.819828268,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.503244341,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(0)",
+          "package": "nata-parquet",
+          "file": "crates/nata-parquet/src/footer.rs",
+          "function": {
+            "function_name": "retained_bytes",
+            "return_type": "-> Result<usize>",
+            "span": {
+              "start": {
+                "line": 200,
+                "column": 1
+              },
+              "end": {
+                "line": 207,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 203,
+              "column": 5
+            },
+            "end": {
+              "line": 206,
+              "column": 25
+            }
+          },
+          "replacement": "Ok(0)",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-parquet__src__footer.rs_line_203_col_5.log",
+      "diff_path": "diff/crates__nata-parquet__src__footer.rs_line_203_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.325200062,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.555654251,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(1)",
+          "package": "nata-parquet",
+          "file": "crates/nata-parquet/src/footer.rs",
+          "function": {
+            "function_name": "retained_bytes",
+            "return_type": "-> Result<usize>",
+            "span": {
+              "start": {
+                "line": 200,
+                "column": 1
+              },
+              "end": {
+                "line": 207,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 203,
+              "column": 5
+            },
+            "end": {
+              "line": 206,
+              "column": 25
+            }
+          },
+          "replacement": "Ok(1)",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-parquet__src__footer.rs_line_203_col_5_001.log",
+      "diff_path": "diff/crates__nata-parquet__src__footer.rs_line_203_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 10.867139277,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.503405029,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(0)",
+          "package": "nata-parquet",
+          "file": "crates/nata-parquet/src/footer.rs",
+          "function": {
+            "function_name": "staging_bytes",
+            "return_type": "-> Result<usize>",
+            "span": {
+              "start": {
+                "line": 209,
+                "column": 1
+              },
+              "end": {
+                "line": 215,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 212,
+              "column": 5
+            },
+            "end": {
+              "line": 214,
+              "column": 25
+            }
+          },
+          "replacement": "Ok(0)",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-parquet__src__footer.rs_line_212_col_5.log",
+      "diff_path": "diff/crates__nata-parquet__src__footer.rs_line_212_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 10.468007004,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.506187083,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(1)",
+          "package": "nata-parquet",
+          "file": "crates/nata-parquet/src/footer.rs",
+          "function": {
+            "function_name": "staging_bytes",
+            "return_type": "-> Result<usize>",
+            "span": {
+              "start": {
+                "line": 209,
+                "column": 1
+              },
+              "end": {
+                "line": 215,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 212,
+              "column": 5
+            },
+            "end": {
+              "line": 214,
+              "column": 25
+            }
+          },
+          "replacement": "Ok(1)",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-parquet__src__footer.rs_line_212_col_5_001.log",
+      "diff_path": "diff/crates__nata-parquet__src__footer.rs_line_212_col_5_001.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 11.60639173,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.402887681,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--verbose",
+            "--package=nata-parquet@0.0.0",
+            "--locked",
+            "-j",
+            "4",
+            "--lib",
+            "footer::tests"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 5,
+  "missed": 0,
+  "caught": 5,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-08T06:22:50.079885736Z",
+  "end_time": "2026-11-08T06:23:48.205836835Z",
+  "cargo_mutants_version": "27.1.0"
+}

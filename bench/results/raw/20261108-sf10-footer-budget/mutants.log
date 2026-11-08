@@ -1,0 +1,8 @@
+Found 5 mutants to test
+ok       Unmutated baseline in 0s build + 0s test
+caught   crates/nata-parquet/src/footer.rs:18:9: delete match arm Ok(Reservation::Granted(g)) in reserve in 10s build + 0s test
+caught   crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(0) in 11s build + 0s test
+caught   crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(1) in 10s build + 0s test
+caught   crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(0) in 10s build + 0s test
+caught   crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(1) in 11s build + 0s test
+5 mutants tested in 58s: 5 caught

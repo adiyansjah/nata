@@ -102,7 +102,7 @@ pub struct FileScan {
     ctx: Arc<Ctx>,
     /// Counts this footer as held in memory until the file is dropped (the last of its tasks is gone).
     _held: Counted,
-    _memory: Option<nata_sched::memory::Grant>,
+    _memory: Vec<nata_sched::memory::Grant>,
 }
 
 impl FileScan {
@@ -251,6 +251,13 @@ pub fn remote_error(e: &crate::remote::RemoteError, path: &Path) -> ScanError {
 
 fn parquet_error(e: &ParquetError, path: &Path, row_group: Option<usize>) -> ScanError {
     let kind = match e {
+        ParquetError::General(message) if message.starts_with("resource error:") => {
+            ErrorKind::Eval {
+                message: message.clone(),
+                line: 0,
+                column: 0,
+            }
+        }
         ParquetError::NYI(what) => ErrorKind::NotSupported(redact(what)),
         ParquetError::IndexOutOfBound(..) => ErrorKind::Corrupt("an index is out of bounds".into()),
         other => ErrorKind::Corrupt(redact(&other.to_string())),
@@ -727,7 +734,7 @@ fn read_file(
     ctx: &Arc<Ctx>,
     prepared: Option<RemoteFile>,
 ) -> Result<(FileScan, usize), ScanError> {
-    let mut metadata_grant = None;
+    let mut metadata_grant = Vec::new();
     // a file in a store: the identity lookup and the (cached) footer come from the remote reader; there is no handle to open
     let remote_file = if prepared.is_some() {
         prepared
@@ -760,47 +767,15 @@ fn read_file(
         let _count = Counted::new(&ctx.stats.handles);
         check_magic(&mut file, path)?;
         if let Some(memory) = &ctx.memory {
-            use std::io::{Seek, SeekFrom};
-            let mut tail = [0u8; 8];
-            file.seek(SeekFrom::End(-8))
-                .and_then(|_| file.read_exact(&mut tail))
-                .map_err(|e| io_error(&e, path))?;
-            let encoded = u64::from(u32::from_le_bytes(
-                tail[..4]
-                    .try_into()
-                    .map_err(|_| ScanError::usage("footer length"))?,
-            ));
-            let file_size = file.metadata().map_err(|e| io_error(&e, path))?.len();
-            if encoded > file_size.saturating_sub(12) {
-                return Err(ScanError::new(ErrorKind::Corrupt(
-                    "footer length exceeds file".into(),
-                ))
-                .in_file(path));
-            }
-            // Capacity bound includes parser structures, Arrow schema/metadata,
-            // pruning vectors and the row-group continuation descriptors.
-            let bytes = usize::try_from(encoded)
-                .ok()
-                .and_then(|n| n.checked_mul(128))
-                .and_then(|n| n.checked_add(4096))
-                .ok_or_else(|| ScanError::usage("footer memory bound overflow"))?;
-            metadata_grant =
-                Some(
-                    match nata_sched::memory::MemoryManager::request(memory, 0, bytes) {
-                        Ok(nata_sched::memory::Reservation::Granted(g)) => g,
-                        _ => return Err(ScanError::new(ErrorKind::Eval {
-                            message:
-                                "resource error: aggregate footer metadata exceeds memory budget"
-                                    .into(),
-                            line: 0,
-                            column: 0,
-                        })
-                        .in_file(path)),
-                    },
-                );
+            let (metadata, grants) = crate::footer::load(&mut file, memory)
+                .map_err(|e| parquet_error(&e, path, None))?;
+            metadata_grant = grants;
+            ArrowReaderMetadata::try_new(Arc::new(metadata), ArrowReaderOptions::new())
+                .map_err(|e| parquet_error(&e, path, None))?
+        } else {
+            ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
+                .map_err(|e| parquet_error(&e, path, None))?
         }
-        ArrowReaderMetadata::load(&file, ArrowReaderOptions::new())
-            .map_err(|e| parquet_error(&e, path, None))?
         // the handle is closed here
     };
     let metadata = Arc::clone(plain.metadata());

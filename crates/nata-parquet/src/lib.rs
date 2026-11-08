@@ -10,6 +10,7 @@ pub mod civil;
 pub mod csv;
 pub mod error;
 pub mod filter;
+mod footer;
 pub mod opener;
 pub mod parallel;
 pub mod reader;

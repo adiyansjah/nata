@@ -1,0 +1,5 @@
+crates/nata-parquet/src/footer.rs:18:9: delete match arm Ok(Reservation::Granted(g)) in reserve
+crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(0)
+crates/nata-parquet/src/footer.rs:203:5: replace retained_bytes -> Result<usize> with Ok(1)
+crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(0)
+crates/nata-parquet/src/footer.rs:212:5: replace staging_bytes -> Result<usize> with Ok(1)
