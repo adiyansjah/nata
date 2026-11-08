@@ -1,0 +1,418 @@
+[
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "scan_decode",
+    "before": 237.565542,
+    "after": 231.866315,
+    "control": 233.255385
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "filter",
+    "before": 92.035508,
+    "after": 91.021244,
+    "control": 90.032863
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "expression",
+    "before": 175.110509,
+    "after": 174.375587,
+    "control": 172.984191
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "group_id",
+    "before": 46.985516,
+    "after": 46.45902,
+    "control": 46.103157
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "state_update",
+    "before": 229.909813,
+    "after": 170.581315,
+    "control": 227.036074
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "merge",
+    "before": 0.009273,
+    "after": 0.008577,
+    "control": 0.008479
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "finalize",
+    "before": 0.042815,
+    "after": 0.040791,
+    "control": 0.039096
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "output_sink",
+    "before": 0.08457,
+    "after": 0.066514,
+    "control": 0.070041
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "spill_write",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "spill_read",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "teardown",
+    "before": 0.218628,
+    "after": 0.19014,
+    "control": 0.166744
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "admission_wait",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 1,
+    "stage": "bind_metadata",
+    "before": 2.003673,
+    "after": 2.043424,
+    "control": 1.973853
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "scan_decode",
+    "before": 472.292155,
+    "after": 460.180257,
+    "control": 477.35479
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "filter",
+    "before": 196.037079,
+    "after": 186.507393,
+    "control": 195.603322
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "expression",
+    "before": 310.464823,
+    "after": 312.326323,
+    "control": 315.430855
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "group_id",
+    "before": 92.084113,
+    "after": 87.048094,
+    "control": 93.474831
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "state_update",
+    "before": 473.249669,
+    "after": 337.081123,
+    "control": 472.34587
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "merge",
+    "before": 0.043159,
+    "after": 0.046089,
+    "control": 0.040423
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "finalize",
+    "before": 0.054194,
+    "after": 0.04393,
+    "control": 0.046766
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "output_sink",
+    "before": 0.095283,
+    "after": 0.075257,
+    "control": 0.087852
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "spill_write",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "spill_read",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "teardown",
+    "before": 0.264557,
+    "after": 0.183429,
+    "control": 0.187459
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "admission_wait",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "stage": "bind_metadata",
+    "before": 2.060114,
+    "after": 1.99804,
+    "control": 1.757738
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "scan_decode",
+    "before": 220.903168,
+    "after": 223.977538,
+    "control": 221.810554
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "filter",
+    "before": 114.648558,
+    "after": 114.569811,
+    "control": 115.169776
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "expression",
+    "before": 298.233692,
+    "after": 296.277712,
+    "control": 300.285046
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "group_id",
+    "before": 833.851624,
+    "after": 884.520242,
+    "control": 844.241618
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "state_update",
+    "before": 107.426371,
+    "after": 105.647772,
+    "control": 106.164411
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "merge",
+    "before": 0.049434,
+    "after": 0.049941,
+    "control": 0.049863
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "finalize",
+    "before": 368.166974,
+    "after": 395.07701,
+    "control": 395.753419
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "output_sink",
+    "before": 693.081495,
+    "after": 714.580058,
+    "control": 701.375349
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "spill_write",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "spill_read",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "teardown",
+    "before": 33.915994,
+    "after": 15.747696,
+    "control": 34.326662
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "admission_wait",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "stage": "bind_metadata",
+    "before": 1.962175,
+    "after": 1.83491,
+    "control": 1.957249
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "scan_decode",
+    "before": 488.070004,
+    "after": 468.703151,
+    "control": 512.598407
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "filter",
+    "before": 291.851165,
+    "after": 286.804871,
+    "control": 306.627649
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "expression",
+    "before": 436.567375,
+    "after": 437.849349,
+    "control": 430.336189
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "group_id",
+    "before": 1700.502836,
+    "after": 1649.3923,
+    "control": 1765.750322
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "state_update",
+    "before": 210.644848,
+    "after": 204.323768,
+    "control": 216.174762
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "merge",
+    "before": 951.133147,
+    "after": 904.330341,
+    "control": 955.35063
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "finalize",
+    "before": 533.27946,
+    "after": 563.867472,
+    "control": 536.306817
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "output_sink",
+    "before": 807.726928,
+    "after": 821.368283,
+    "control": 820.066186
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "spill_write",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "spill_read",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "teardown",
+    "before": 21.340734,
+    "after": 26.102654,
+    "control": 26.709154
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "admission_wait",
+    "before": 0.0,
+    "after": 0.0,
+    "control": 0.0
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "stage": "bind_metadata",
+    "before": 1.861928,
+    "after": 1.90432,
+    "control": 1.861266
+  }
+]

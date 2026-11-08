@@ -120,13 +120,16 @@ All expected gains are hypotheses. Each package needs its own accepted brief; th
 | **Batch sink follow-up (architecture 3)** | ≤32-group construction then one-row sink calls (`aggregate.rs:795–865`); CSV allocates per call (`crates/nata-parquet/src/csv.rs:327–348`), though stdout is buffered | Carry slice 5's bounded repair into a common selection/range or compact-batch sink, including pgwire. Reuse buffers/typed column access only where CSV/DataRow/COPY contracts agree. No forced row-at-a-time API; one-row/final short batches remain valid, with no delay to fill a batch. PG encoding targets stay Track C | Complete unchanged CSV and independent PG byte oracles, selected-error/OFFSET/LIMIT, slow-client/backpressure/portal cancel and retained-buffer bounds. Output time stays in whole-query ratios | After 0, early beside W-C; uses charged view lifetime contract, not blocked on W-A. Coordinate Track C/ADR 0015 |
 | **Minimal typed lazy scan descriptor (architecture 8, P12)** | Duplicate metadata handoff and fixed scan plan (`crates/nata-sql/src/plan.rs:42–50`); card 0009:13,21–24,36,43 needs pinned lazy work | Minimal schema/field identities, snapshot/object pins when present, residuals, bounded lazy file/task stream and charge owner. Bind/execute share validated immutable metadata; prepare still revalidates. Full provider/snapshot version belongs to card 0009, feature-map slice 12, with ADR 0012/0014 amendments | Changed object/schema/auth scope/generation and field-ID rename/drop-add, cache-off and disable-reuse, sound prune/full-read equivalence, eager-million-task mutant and retained-memory checks. T3 remains ≤1.2x | After 0 and view/query-owner contracts; P12 local handoff here, full remote/provider certification later. No eager task vector or new Iceberg feature here |
 
-**W-C progress, 2026-11-08:** step 1 redo implements typed Arrow decimal slices,
-word-mask kernels and checked native i64 arithmetic feeding the existing exact
-SUM/AVG state. The rejected per-row accessor design is not retained. Local checks
-and the unsettled screen are recorded in [the W-C result](../../bench/results/20261108-engine-perf-wc.md);
-settled c3d/n4a verdict remains pending in `bench/aggregate-wc1.steps`. Step 2 part 1 adds capped canonical dictionary-value group IDs; its checks,
-proof/mutants and unsettled nine-round screen are recorded in that result.
-Shared SUM/AVG (step 2 part 2) and W-A remain separate work; no target, ADR or charge changed.
+**W-C progress, 2026-11-08:** step 1's typed Arrow decimal slices, word-mask
+kernels and checked native arithmetic are kept after the settled c3d/n4a run.
+Step 2 adds capped canonical dictionary-value group IDs and physical-plan
+sharing of exact SUM/AVG states (Q1: seven consumers, five owners), retaining
+version-1 spill records and independent final SUM checks. Both parts' local
+checks, bounded proof/mutants, nine-round unsettled screens and same-run stats
+are in [the W-C result](../../bench/results/20261108-engine-perf-wc.md).
+Settled step-2 verdict remains pending in `bench/aggregate-wc2.steps`. W-A and
+broader W-C adapter/proof-ownership gaps remain separate; no target, ADR,
+dependency or charge changed.
 
 Write the [pipeline step protocol](../decisions/0016-pipeline-step-protocol.md) and
 [query owner](../decisions/0017-query-owner.md) contracts before W-A/W-B interfaces harden.

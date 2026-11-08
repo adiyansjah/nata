@@ -1,0 +1,4 @@
+Found 4 mutants to test
+ok       Unmutated baseline in 0s build + 0s test
+MISSED   crates/nata-exec/src/aggregate.rs:592:53: replace != with == in Partial::resume in 24s build + 0s test
+4 mutants tested in 2m: 1 missed, 3 caught

@@ -55,3 +55,31 @@ CARGO_TARGET_DIR=/home/dev/perf2b/target CARGO_PROFILE_RELEASE_DEBUG=1 \
 Kani 0.68 / CBMC 6.11; cargo-mutants 27.1.0. No concurrent Cargo builds/tests.
 Cloud plan/run commands and immutable archive preparation are in the main
 W-C report. These local numbers have no settled-machine performance verdict.
+
+Part 2 uses the same checks, then:
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target CARGO_PROFILE_RELEASE_DEBUG=1 \
+  /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false \
+  --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--test=aggregate --profile release \
+  --output /tmp/nata-wc2/part2-mutants-final -p nata-exec \
+  -f crates/nata-exec/src/aggregate.rs -f crates/nata-exec/src/aggregate/fusion.rs \
+  -f crates/nata-exec/src/aggregate/replay.rs \
+  -F '(replace != with == in Partial::resume|replace == with != in Program::states|replace >= with < in encode)' \
+  --timeout 180
+python3 bench/results/raw/20261108-engine-perf-wc2/exact-gates.py \
+  /tmp/nata-wc2/part1 /tmp/nata-wc2/part2 part2
+NATA_QUERY_STATS=1 NATA_STATS_DIR="$PWD/bench/results/raw/20261108-engine-perf-wc2/part2-stats" \
+  python3 scripts/bench-aggregate-perf2b-local.py part2 --before /tmp/nata-wc2/part1 \
+  --after /tmp/nata-wc2/part2 --data /home/dev/nata-s5-fixes/sf1 \
+  --out bench/results/raw/20261108-engine-perf-wc2/part2-screen --rounds 9
+python3 bench/results/raw/20261108-engine-perf-wc2/summarize.py part2
+python3 bench/results/raw/20261108-engine-perf-wc2/step-controls.py
+```
+
+`exact-gates.py` accepts before, after, part label and runs from the repository
+root. It writes `/tmp/nata-wc2/<part>-exact.json`. `summarize.py` reads the saved
+samples and produces stage and timing tables. It uses service wall medians from
+exactly the same nine invocations per arm, preserving before/after/control in
+the machine-readable output. The wide-spill replay arithmetic is unchanged;
+part 2 introduces no new numerical kernel or Kani harness.

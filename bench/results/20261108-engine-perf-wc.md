@@ -347,3 +347,161 @@ The baseline and read-only candidate are separate immutable binaries. Disk free
 remained above 20 GB. `scripts/check-leaks.sh --staged` precedes the commit.
 The prepared `bench/aggregate-wc2.steps` will contain baseline, dictionary-only
 and cumulative shared-state archives; no GCP operation is run here.
+
+## W-C step 2, part 2: shared SUM/AVG state (2026-11-08)
+
+**Kept for the parent's settled measurement; local evidence is UNSETTLED.**
+Dictionary-only commit: `f774be08275353cf7bd23d97542ceda79e98d511`.
+This part's local denominator is that immutable binary, not another session's
+baseline timings. The GCP bundle compares both cumulative revisions against
+branch base `709674d47891c340df63273d4e8e8e415743f830`.
+
+Rule: the physical aggregate program maps equal typed input-expression nodes
+to their first exact SUM/AVG consumer before scanning. Q1's seven consumers
+have **five ExactSum owners**; the two other slots are memory-only aliases.
+COUNT and extrema remain independent. Earlier consumer ownership preserves
+update/merge error priority. ExactSum's count guard, wide promotion, update,
+merge and rounding arithmetic are unchanged. Resident merges combine owner
+states once and aliases remain aliases. No charge or bytes/group reduction is
+claimed: logical state slots and conservative charges remain allocated.
+
+Finalization expands aliases from the exact unfinalized owner before executing
+every original consumer in slot order. Thus an AVG that fits cannot suppress
+a SUM overflow, including when AVG precedes SUM, HAVING is false, or LIMIT is
+zero. SUM still narrows only at group finalization; AVG divides the exact sum.
+Typed expressions with different inputs/types never share.
+
+**Spill format stays version 1.** The writer expands each alias to the same
+full typed sum/count record the old implementation wrote; a test asserts
+byte-for-byte equality with independent slots. It adds no disk tags or schema,
+and neither canonical hashes nor hash/partition membership validation changes.
+Replay still validates and merges each logical slot independently, including
+expanded copies. This deliberately preserves validation/error behavior for
+untrusted, individually valid records; no cross-slot equality is assumed from
+disk. It also means replay still uses one state per logical consumer. The hot
+partial accumulation/resident merge does the seven-to-five work; this change
+makes no five-state spill-replay memory or codec-speed claim. No ADR amendment,
+format extension or dependency was needed.
+
+Checks (serial, four jobs, same release settings as part 1):
+
+- `cargo test --locked --release -j 4 -p nata-kernels -p nata-exec`:
+  **169 passed**, excluding child-process reruns. fmt, clippy all targets
+  with `-D warnings`, locked release build of `nata`/`nata-check`: pass.
+- Fresh step-2 fixtures from the recorded generation commands; aggregate
+  **65/65**, forced spill **65/65**, SQL **252/252**, scan **5/5**.
+- Physical-plan test asserts Q1's seven slots resolve to `[0,1,2,3,0,1,6]`:
+  exactly five sums, separate COUNT, no alias for a changed input type.
+- Independent expected-value tests cover exact cancellation, all-NULL state,
+  non-NULL versus COUNT(*) counts, half-away negative AVG, and merging once.
+  Planted two-max-DECIMAL(38) input yields a fitting AVG and overflowing SUM in
+  either order, resident/forced spill, 1/4 threads. Exact positioned EvalError
+  equality is asserted for AVG-before-SUM. Spill bytes equal the old expanded
+  state; corrupting an expanded slot's count remains rejected.
+- No numerical kernel changed or was added in part 2. The production dictionary
+  proof and negative control from part 1 still cover the unchanged source.
+  Existing wide ExactSum proofs/trust gaps are not upgraded by this change;
+  planner aliases, Arrow and IPC remain covered by tests/mutations, not Kani.
+- An initial focused mutation run had **3 caught, 1 missed**: inversion of the
+  native Decimal64 NULL-mask condition was outside the then-current wide
+  shared-state fixtures. A real SQL Decimal64 fixture now asserts SUM, AVG,
+  COUNT(x) and COUNT(*) with NULLs plus a selected-out nonzero value, at 1/4
+  threads and with/without spill. Full tests and gates were rerun; the resulting
+  production binary is byte-identical to the earlier part-2 build (test-only
+  strengthening). The initial outcome is retained, not counted as a pass.
+- Final focused cargo-mutants: **4/4 caught**, zero missed, timeouts or
+  unviable mutants; unmutated baseline passes. Controls invert owner/alias
+  update choice, native NULL-mask choice, state construction and spill alias
+  index validation. [Initial run](raw/20261108-engine-perf-wc2/part2-mutants-initial.json),
+  [final run](raw/20261108-engine-perf-wc2/part2-mutants-final.json).
+- Exact CSV multiset gates (no tolerance) pass for SF1 Q1/high-cardinality,
+  1/8 threads before timing. The 12 DuckDB value gates also pass. No result,
+  positioned error, hash or spill-format mismatch was observed.
+
+The following **unsettled** numbers use nine alternating rounds and an
+identical dictionary-only control, warm SF1, 8 GiB, whole CLI/CSV. Per-stage
+values are same-invocation service-wall medians, not exclusive CPU time;
+8-thread stages overlap. Package 0 remains explicitly incomplete. Raw samples,
+quartiles, every exit, sidecars and source/binary hashes are retained in
+[the evidence directory](raw/20261108-engine-perf-wc2/).
+
+| Query | Threads | Before min / median s | After min / median s | Paired after/before | Control median [min,max] |
+|---|---:|---:|---:|---:|---:|
+| q1 | 1 | 0.927223 / 0.963090 | 0.865349 / 0.887777 | 0.916207 | 0.980640 [0.907280,1.132077] |
+| q1 | 8 | 0.277209 / 0.309872 | 0.257932 / 0.286196 | 0.924999 | 1.007797 [0.908326,1.205710] |
+| high_cardinality_tpch | 1 | 2.499047 / 2.568307 | 2.504930 / 2.623859 | 1.005921 | 1.012446 [0.885482,1.025396] |
+| high_cardinality_tpch | 8 | 1.682122 / 1.769951 | 1.709128 / 1.834191 | 0.998686 | 1.024265 [0.921716,1.093155] |
+
+No median regression exceeds the identical-control spread; no local rejection,
+acceptance of a speed target, or scaling claim follows. Q1/1t state-update
+service wall falls 229.910→170.581 ms in these same invocations.
+
+| Stage (service wall ms) | Q1 / 1t | Q1 / 8t | HC / 1t | HC / 8t |
+|---|---:|---:|---:|---:|
+| scan_decode | 237.566 → 231.866 | 472.292 → 460.180 | 220.903 → 223.978 | 488.070 → 468.703 |
+| filter | 92.036 → 91.021 | 196.037 → 186.507 | 114.649 → 114.570 | 291.851 → 286.805 |
+| expression | 175.111 → 174.376 | 310.465 → 312.326 | 298.234 → 296.278 | 436.567 → 437.849 |
+| group_id | 46.986 → 46.459 | 92.084 → 87.048 | 833.852 → 884.520 | 1700.503 → 1649.392 |
+| state_update | 229.910 → 170.581 | 473.250 → 337.081 | 107.426 → 105.648 | 210.645 → 204.324 |
+| merge | 0.009 → 0.009 | 0.043 → 0.046 | 0.049 → 0.050 | 951.133 → 904.330 |
+| finalize | 0.043 → 0.041 | 0.054 → 0.044 | 368.167 → 395.077 | 533.279 → 563.867 |
+| output_sink | 0.085 → 0.067 | 0.095 → 0.075 | 693.081 → 714.580 | 807.727 → 821.368 |
+| spill_write | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| spill_read | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| teardown | 0.219 → 0.190 | 0.265 → 0.183 | 33.916 → 15.748 | 21.341 → 26.103 |
+| admission_wait | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| bind_metadata | 2.004 → 2.043 | 2.060 → 1.998 | 1.962 → 1.835 | 1.862 → 1.904 |
+
+Disk remained above 20 GB free; stale-output deletion was not triggered.
+[All exact reproduction commands](raw/20261108-engine-perf-wc2/reproduce.md),
+[source identities](raw/20261108-engine-perf-wc2/identity.json),
+[local comparison chart](raw/20261108-engine-perf-wc2/comparison.html).
+
+### W-C step 2 settled GCP handoff (prepared only)
+
+[`aggregate-wc2.steps`](../aggregate-wc2.steps) follows wc1 exactly: `# gate-exits`,
+`tools` installs perf/time, `kept` refuses source-identical archives, topology,
+profile pre-check, inert harness self-test, locked release gate build, fresh
+fixtures, aggregate/spill/SQL/scan gates, SF1 fixture generation, then settled
+five-round alternating primary/twin timing. All native invocations get distinct
+persisted package-0 sidecars. Baseline, dictionary-only and cumulative shared
+state use separate immutable archives and targets. Cells are Q1/high-cardinality,
+1/8 threads, 8 GiB/64 MiB, on each CPU. No local result settles retention or any
+frozen target. No cloud command below was run by the implementation agent.
+
+Preparation from the committed branch (the final HEAD contains the checked
+shared-state source and evidence):
+
+```sh
+WC2_BASE=709674d47891c340df63273d4e8e8e415743f830
+WC2_DICTIONARY_SHA=f774be08275353cf7bd23d97542ceda79e98d511
+WC2_SHARED_SHA=$(git rev-parse HEAD)
+git merge-base --is-ancestor "$WC2_BASE" "$WC2_DICTIONARY_SHA"
+git merge-base --is-ancestor "$WC2_DICTIONARY_SHA" "$WC2_SHARED_SHA"
+WC2_SHIP=$(mktemp -d /tmp/nata-wc2-ship.XXXXXX)
+git archive --format=tar --output "$WC2_SHIP/source.tar" "$WC2_SHARED_SHA"
+sha256sum "$WC2_SHIP/source.tar" > "$WC2_SHIP/source.sha256"
+mkdir "$WC2_SHIP/tree"
+tar -xf "$WC2_SHIP/source.tar" -C "$WC2_SHIP/tree"
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline "$WC2_BASE" \
+  --fix dictionary="$WC2_DICTIONARY_SHA" --fix shared="$WC2_SHARED_SHA" \
+  --bundle "$WC2_SHIP/tree/.aggregate-wc2-inputs"
+sha256sum "$WC2_SHIP/tree/.aggregate-wc2-inputs/"*.tar.gz > "$WC2_SHIP/bundle.sha256"
+git rev-parse "$WC2_SHARED_SHA" > "$WC2_SHIP/tree/.aggregate-wc2-commit"
+cp bench/aggregate-wc2.steps "$WC2_SHIP/tree/heavy.steps"
+```
+
+Exact parent-run commands (independent CPU jobs, 80 GB data disk, two VM-hour
+maximum each; currency bounds supplied by the owner at run time):
+
+```sh
+"$WC2_SHIP/tree/scripts/gcp/orchestrate.sh" plan --job heavy --machines c3d-highcpu-8 --data-gb 80 --max-vm-hours 2 --run-id wc2-x86
+"$WC2_SHIP/tree/scripts/gcp/orchestrate.sh" plan --job heavy --machines n4a-highcpu-8 --data-gb 80 --max-vm-hours 2 --run-id wc2-arm
+"$WC2_SHIP/tree/scripts/gcp/orchestrate.sh" run --job heavy --machines c3d-highcpu-8 --data-gb 80 --max-vm-hours 2 --run-id wc2-x86 --approved-usd "${WC2_APPROVED_X86_USD:?owner-approved bound required}"
+"$WC2_SHIP/tree/scripts/gcp/orchestrate.sh" run --job heavy --machines n4a-highcpu-8 --data-gb 80 --max-vm-hours 2 --run-id wc2-arm --approved-usd "${WC2_APPROVED_ARM_USD:?owner-approved bound required}"
+```
+
+The heavy-runner inert self-test, job-chain tests and each prepared step's shell
+syntax pass. A source-identical candidate, missing bundle or wrong baseline is
+refused by the kept check. Staged leak scans precede both commits. No push,
+merge, GCP, target/ADR change, new dependency or memory-charge reduction.

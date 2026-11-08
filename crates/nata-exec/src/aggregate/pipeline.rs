@@ -295,7 +295,13 @@ pub(super) fn accumulate(
             partial: Partial {
                 shared: Arc::clone(shared),
                 tables: empty_tables(PARTITIONS),
-                program: None,
+                // Compile physical state sharing once before scanning any rows.
+                program: Some(
+                    eval_on_stack(crate::exec::max_depth(&shared.plan), || {
+                        Ok(fusion::Program::new(a))
+                    })
+                    .map_err(|e| ScanError::new(e.into_kind()))?,
+                ),
                 rows: Vec::new(),
                 hashes: Vec::new(),
             },
@@ -597,9 +603,11 @@ pub(super) fn accumulate(
         table
             .reserve(&shared.manager, &[], a)
             .map_err(|e| ScanError::new(e.into_kind()))?;
-        table
-            .groups
-            .insert(vec![], a.aggregates.iter().map(State::new).collect());
+        let states = eval_on_stack(crate::exec::max_depth(&shared.plan), || {
+            Ok(fusion::Program::new(a).states(a))
+        })
+        .map_err(|e| ScanError::new(e.into_kind()))?;
+        table.groups.insert(vec![], states);
         partitions[usize::try_from((shared.hash)(&[], 0) & 15)
             .map_err(|_| scan_error("global partition"))?]
         .push(table);

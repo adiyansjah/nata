@@ -370,3 +370,106 @@ fn dictionary_values_change_across_row_groups_and_files() {
         }
     }
 }
+
+#[test]
+fn shared_sum_avg_keeps_overflow_priority_and_spill_replay() {
+    let d = dir("aggregate-shared-state");
+    let p = d.join("t.parquet");
+    let max = 10i128.pow(38) - 1;
+    let b = RecordBatch::try_from_iter([(
+        "x",
+        Arc::new(
+            Decimal128Array::from(vec![Some(max), Some(max), None])
+                .with_precision_and_scale(38, 0)
+                .expect("decimal"),
+        ) as ArrayRef,
+    )])
+    .expect("batch");
+    write_batch(&p, &b, 1);
+    for threads in [1, 4] {
+        for force in [false, true] {
+            let mut cfg = ExecConfig::new(threads);
+            cfg.aggregate_force_spill = force;
+            for select in ["sum(x),avg(x)", "avg(x),sum(x)"] {
+                let q = format!(
+                    "SELECT {select} FROM '{}' HAVING false LIMIT 0",
+                    p.display()
+                );
+                let error = run_with(&q, &cfg)
+                    .csv
+                    .expect_err("independent SUM overflow");
+                assert!(error.contains("sum overflow"), "{error}");
+            }
+            assert_eq!(
+                run_with(
+                    &format!("SELECT avg(x) AS a,avg(x) AS b FROM '{}'", p.display()),
+                    &cfg
+                )
+                .csv
+                .expect("fitting averages"),
+                format!("a,b\n{max},{max}\n")
+            );
+        }
+    }
+    let b = RecordBatch::try_from_iter([(
+        "x",
+        Arc::new(
+            Decimal128Array::from(vec![Some(max), Some(max), None, Some(-max), Some(-max)])
+                .with_precision_and_scale(38, 0)
+                .expect("decimal"),
+        ) as ArrayRef,
+    )])
+    .expect("batch");
+    write_batch(&p, &b, 1);
+    for threads in [1, 4] {
+        for force in [false, true] {
+            let mut cfg = ExecConfig::new(threads);
+            cfg.aggregate_force_spill = force;
+            let q = format!(
+                "SELECT sum(x) AS s,avg(x) AS a,count(x) AS n,count(*) AS all_n FROM '{}'",
+                p.display()
+            );
+            assert_eq!(
+                run_with(&q, &cfg).csv.expect("exact cancellation"),
+                "s,a,n,all_n\n0,0,4,5\n"
+            );
+            let q = format!(
+                "SELECT sum(x) AS s,avg(x) AS a FROM '{}' WHERE x IS NULL",
+                p.display()
+            );
+            assert_eq!(
+                run_with(&q, &cfg).csv.expect("all null"),
+                "s,a\nNULL,NULL\n"
+            );
+        }
+    }
+}
+
+#[test]
+fn shared_native_decimal64_state_skips_nulls_and_selected_out_values() {
+    use arrow_array::Decimal64Array;
+    let d = dir("aggregate-shared-native-nulls");
+    let p = d.join("t.parquet");
+    let values: ArrayRef = Arc::new(
+        Decimal64Array::from(vec![Some(100), None, Some(200), Some(999), None])
+            .with_precision_and_scale(15, 2)
+            .expect("decimal"),
+    );
+    let ids: ArrayRef = Arc::new(Int32Array::from(vec![0, 1, 2, 3, 4]));
+    let b = RecordBatch::try_from_iter([("x", values), ("id", ids)]).expect("batch");
+    write_batch(&p, &b, 5);
+    for threads in [1, 4] {
+        for force in [false, true] {
+            let mut cfg = ExecConfig::new(threads);
+            cfg.aggregate_force_spill = force;
+            let q = format!(
+                "SELECT sum(x) AS s,avg(x) AS a,count(x) AS n,count(*) AS all_n FROM '{}' WHERE id <> 3",
+                p.display()
+            );
+            assert_eq!(
+                run_with(&q, &cfg).csv.expect("native NULL mask"),
+                "s,a,n,all_n\n3.00,1.50000000,2,4\n"
+            );
+        }
+    }
+}

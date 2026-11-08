@@ -26,6 +26,7 @@ pub(super) struct Program {
     native: Vec<Option<Arc<arrow_array::Decimal64Array>>>,
     keys: Vec<usize>,
     args: Vec<Option<usize>>,
+    pub(super) state_slots: Vec<usize>,
     empty_text: Arc<arrow_array::StringArray>,
 }
 fn eager(e: &Expr) -> bool {
@@ -88,6 +89,7 @@ impl Program {
             native: vec![],
             keys: vec![],
             args: vec![],
+            state_slots: vec![],
             empty_text: Arc::new(arrow_array::StringArray::from(Vec::<&str>::new())),
         };
         let roots: Vec<_> = a
@@ -105,9 +107,38 @@ impl Program {
                 .arg
                 .as_ref()
                 .map(|e| out.root(e, a.keys.len() + i, &roots));
+            // Physical aggregate program: the first exact SUM/AVG consumer
+            // owns the state and keeps update/merge error priority. COUNT and
+            // extrema never alias. Typed DAG identity includes the input type.
+            let source = if matches!(agg.name.as_str(), "sum" | "avg") && id.is_some() {
+                out.args
+                    .iter()
+                    .enumerate()
+                    .find_map(|(j, prior)| {
+                        (*prior == id && matches!(a.aggregates[j].name.as_str(), "sum" | "avg"))
+                            .then_some(j)
+                    })
+                    .unwrap_or(i)
+            } else {
+                i
+            };
+            out.state_slots.push(source);
             out.args.push(id);
         }
         out
+    }
+    pub(super) fn states(&self, a: &Aggregate) -> Vec<State> {
+        a.aggregates
+            .iter()
+            .enumerate()
+            .map(|(i, a)| {
+                if self.state_slots[i] == i {
+                    State::new(a)
+                } else {
+                    State::Shared(self.state_slots[i])
+                }
+            })
+            .collect()
     }
     fn root(&mut self, e: &Expr, root: usize, roots: &[Option<&Expr>]) -> usize {
         if eager(e) {
@@ -749,5 +780,70 @@ mod native_errors {
         drop(args);
         p.release_text();
         assert!(p.native.iter().all(Option::is_none));
+    }
+}
+
+#[cfg(test)]
+mod shared_states {
+    use super::*;
+    use nata_sql::Pos;
+    #[test]
+    fn q1_seven_sums_become_five_and_typed_inputs_do_not_alias() {
+        let ty = SqlType::Decimal {
+            precision: 15,
+            scale: 2,
+        };
+        let make = |i, ty| Expr::new(ExprKind::Column(i), ty, Pos::START);
+        let mut a = Aggregate {
+            keys: vec![],
+            aggregates: vec![],
+            having: None,
+        };
+        for (name, col) in [
+            ("sum", 0),
+            ("sum", 1),
+            ("sum", 2),
+            ("sum", 3),
+            ("avg", 0),
+            ("avg", 1),
+            ("avg", 4),
+        ] {
+            a.aggregates.push(AggregateExpr {
+                name: name.into(),
+                arg: Some(make(col, ty)),
+                ty,
+                pos: Pos::START,
+            });
+        }
+        let p = Program::new(&a);
+        assert_eq!(p.state_slots, [0, 1, 2, 3, 0, 1, 6]);
+        assert_eq!(
+            p.states(&a)
+                .iter()
+                .filter(|s| matches!(s, State::Sum(_)))
+                .count(),
+            5
+        );
+        a.aggregates.push(AggregateExpr {
+            name: "avg".into(),
+            arg: Some(make(
+                0,
+                SqlType::Decimal {
+                    precision: 16,
+                    scale: 2,
+                },
+            )),
+            ty,
+            pos: Pos::START,
+        });
+        a.aggregates.push(AggregateExpr {
+            name: "count".into(),
+            arg: Some(make(0, ty)),
+            ty: SqlType::BigInt,
+            pos: Pos::START,
+        });
+        let p = Program::new(&a);
+        assert_eq!(p.state_slots[7..], [7, 8]);
+        assert!(matches!(p.states(&a)[8], State::Count(0)));
     }
 }

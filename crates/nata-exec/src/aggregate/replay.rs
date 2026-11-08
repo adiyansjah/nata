@@ -58,7 +58,7 @@ pub(super) fn size(key: &[Atom], states: &[State]) -> io::Result<usize> {
         .chain(states.iter().map(|s| {
             7 + match s {
                 State::Count(_) => 8,
-                State::Sum(_) => 40,
+                State::Sum(_) | State::Shared(_) => 40,
                 State::Extreme(v) => atom_size(v),
                 State::Final(_) => MAX_RECORD + 1,
             }
@@ -116,7 +116,21 @@ pub(super) fn encode(
             .map_err(|_| invalid())?
             .to_le_bytes(),
     );
-    for (s, expr) in states.iter().zip(&a.aggregates) {
+    for (slot, (s, expr)) in states.iter().zip(&a.aggregates).enumerate() {
+        // Keep VERSION 1's full typed state for every logical consumer. Replay
+        // validates and merges every record independently, including aliases'
+        // expanded copies. No new disk tag, code identity or trust assumption.
+        let s = if let State::Shared(source) = s {
+            if *source >= slot {
+                return Err(invalid());
+            }
+            match states.get(*source) {
+                Some(s @ State::Sum(_)) => s,
+                _ => return Err(invalid()),
+            }
+        } else {
+            s
+        };
         values.push(kind(&expr.name)?);
         values.extend_from_slice(&type_tag(expr.arg.as_ref().map_or(SqlType::Null, |a| a.ty)));
         values.extend_from_slice(&type_tag(expr.ty));

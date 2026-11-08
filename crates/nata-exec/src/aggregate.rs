@@ -111,6 +111,8 @@ impl Atom {
 enum State {
     Count(u64),
     Sum(ExactSum),
+    // Memory-only alias to an earlier exact SUM/AVG state. Never serialized.
+    Shared(usize),
     Extreme(Atom),
     Final(Atom),
 }
@@ -153,6 +155,7 @@ impl State {
             (Self::Count(n), Self::Count(m)) => *n = add_count(*n, m).map_err(|_| overflow(a))?,
             (Self::Sum(n), Self::Sum(m)) => n.merge(m).map_err(|_| overflow(a))?,
             (s @ Self::Extreme(_), Self::Extreme(v)) => s.add(v, a)?,
+            (Self::Shared(a), Self::Shared(b)) if *a == b => {}
             _ => return Err(EvalError::internal("incompatible aggregate states")),
         }
         Ok(())
@@ -172,6 +175,7 @@ impl State {
     }
     fn finish(&self, a: &AggregateExpr) -> R<Atom> {
         Ok(match self {
+            Self::Shared(_) => return Err(EvalError::internal("unresolved aggregate state")),
             Self::Count(n) => Atom::Int(i64::try_from(*n).map_err(|_| overflow(a))?),
             Self::Extreme(v) | Self::Final(v) => v.clone(),
             Self::Sum(s) if a.name == "avg" => {
@@ -553,9 +557,11 @@ impl Partial {
                     // reservation precedes key/state allocation and table growth.
                     let key = evaluated.keys.iter().map(|c| Atom::get(c, i)).collect();
                     let id = table.groups.len();
-                    table
-                        .groups
-                        .insert(key, a.aggregates.iter().map(State::new).collect());
+                    let states = self.program.as_ref().map_or_else(
+                        || a.aggregates.iter().map(State::new).collect(),
+                        |p| p.states(a),
+                    );
+                    table.groups.insert(key, states);
                     id
                 };
                 if let Some(c) = combination {
@@ -575,6 +581,13 @@ impl Partial {
             // Dispatch argument representation and aggregate once per column,
             // rather than constructing an Atom for every numeric addend.
             for (slot, (agg, arg)) in a.aggregates.iter().zip(&evaluated.args).enumerate() {
+                if self
+                    .program
+                    .as_ref()
+                    .is_some_and(|p| p.state_slots[slot] != slot)
+                {
+                    continue;
+                }
                 if let Some(Argument::Decimal64(values)) = arg {
                     let mask = (values.null_count() != 0).then(|| {
                         let selected =
@@ -709,12 +722,28 @@ fn merge(
         if row.is_multiple_of(CANCEL_ROWS) && cancelled() {
             return Err(EvalError::at(nata_sql::Pos::NONE, "cancelled"));
         }
-        for (s, a) in states.iter_mut().zip(&a.aggregates) {
-            s.finalize(a)?;
-        }
+        finalize_states(states, a)?;
     }
     Ok(out)
 }
+/// Expand memory aliases only at the output boundary, before finalizing any
+/// consumer. SUM and AVG then execute their own checks in original slot order;
+/// an overflowing SUM cannot be hidden by a fitting AVG, HAVING or LIMIT.
+fn finalize_states(states: &mut [State], a: &Aggregate) -> R<()> {
+    for i in 0..states.len() {
+        if let State::Shared(source) = states[i] {
+            let Some(State::Sum(sum)) = states.get(source) else {
+                return Err(EvalError::internal("invalid shared aggregate state"));
+            };
+            states[i] = State::Sum(*sum);
+        }
+    }
+    for (state, expr) in states.iter_mut().zip(&a.aggregates) {
+        state.finalize(expr)?;
+    }
+    Ok(())
+}
+
 fn batch(rows: &[(Vec<Atom>, Vec<State>)], a: &Aggregate) -> R<RecordBatch> {
     let types = a
         .keys
@@ -1084,6 +1113,127 @@ pub(crate) fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_sum_avg_expands_identically_for_spill_and_finalizes_independently() {
+        use nata_sql::{
+            Pos,
+            texpr::{Expr, ExprKind},
+        };
+        let ty = SqlType::Decimal {
+            precision: 38,
+            scale: 0,
+        };
+        let a = Aggregate {
+            keys: vec![],
+            aggregates: ["avg", "sum", "avg"]
+                .iter()
+                .enumerate()
+                .map(|(i, name)| AggregateExpr {
+                    name: (*name).into(),
+                    arg: Some(Expr::new(ExprKind::Column(0), ty, Pos::START)),
+                    ty,
+                    pos: Pos {
+                        line: 2,
+                        col: u32::try_from(i + 1).expect("position"),
+                    },
+                })
+                .collect(),
+            having: None,
+        };
+        let program = fusion::Program::new(&a);
+        assert_eq!(program.state_slots, [0, 0, 0]);
+        let mut states = program.states(&a);
+        let max = 10i128.pow(38) - 1;
+        states[0]
+            .add(Atom::Dec(max), &a.aggregates[0])
+            .expect("add");
+        states[0]
+            .add(Atom::Dec(max), &a.aggregates[0])
+            .expect("wide exact sum");
+        let State::Sum(sum) = states[0] else {
+            panic!("sum")
+        };
+        let plain = vec![State::Sum(sum); 3];
+        let encoded = replay::encode(&[], &states, &a).expect("expanded spill");
+        assert_eq!(
+            encoded,
+            replay::encode(&[], &plain, &a).expect("old format")
+        );
+        let (_, decoded) = replay::decode(&encoded.0, &encoded.1, &a).expect("validated replay");
+        assert!(
+            decoded
+                .iter()
+                .all(|s| matches!(s, State::Sum(s) if *s == sum))
+        );
+        assert_eq!(
+            states[0].finish(&a.aggregates[0]).expect("fitting AVG"),
+            Atom::Dec(max)
+        );
+        let error = finalize_states(&mut states, &a).expect_err("SUM still overflows");
+        assert_eq!(error, overflow(&a.aggregates[1]));
+        let mut invalid = encoded.1.clone();
+        let n = invalid.len();
+        invalid[n - 8..].fill(0);
+        assert!(
+            replay::decode(&encoded.0, &invalid, &a).is_err(),
+            "every expanded slot validated"
+        );
+    }
+
+    #[test]
+    fn shared_states_merge_exactly_once_and_keep_null_counts() {
+        use nata_sql::{
+            Pos,
+            texpr::{Expr, ExprKind},
+        };
+        let input = SqlType::Decimal {
+            precision: 15,
+            scale: 2,
+        };
+        let a = Aggregate {
+            keys: vec![],
+            aggregates: ["sum", "avg"]
+                .iter()
+                .map(|name| AggregateExpr {
+                    name: (*name).into(),
+                    arg: Some(Expr::new(ExprKind::Column(0), input, Pos::START)),
+                    ty: if *name == "sum" {
+                        SqlType::Decimal {
+                            precision: 38,
+                            scale: 2,
+                        }
+                    } else {
+                        SqlType::Decimal {
+                            precision: 21,
+                            scale: 8,
+                        }
+                    },
+                    pos: Pos::START,
+                })
+                .collect(),
+            having: None,
+        };
+        let p = fusion::Program::new(&a);
+        let mut dest = p.states(&a);
+        let mut source = p.states(&a);
+        dest[0].add(Atom::Dec(123), &a.aggregates[0]).expect("add");
+        source[0]
+            .add(Atom::Dec(-124), &a.aggregates[0])
+            .expect("add");
+        for ((d, s), e) in dest.iter_mut().zip(source).zip(&a.aggregates) {
+            d.merge(s, e).expect("merge");
+        }
+        let State::Sum(sum) = dest[0] else {
+            panic!("sum")
+        };
+        assert_eq!(sum.count(), 2);
+        finalize_states(&mut dest, &a).expect("finalize");
+        assert!(matches!(dest[0], State::Final(Atom::Dec(-1))));
+        assert!(matches!(dest[1], State::Final(Atom::Dec(-500_000))));
+        let mut empty = p.states(&a);
+        finalize_states(&mut empty, &a).expect("all null");
+        assert!(empty.iter().all(|s| matches!(s, State::Final(Atom::Null))));
+    }
     #[test]
     fn output_delivery_gathers_fixed_width_and_borrows_string_runs() {
         use arrow_array::{ArrayRef, Int32Array, StringArray, cast::AsArray};
