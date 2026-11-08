@@ -1709,3 +1709,35 @@ mod wc1_q1 {
         kani::cover!(got.is_err());
     }
 }
+
+#[path = "../../../crates/nata-kernels/src/dictionary.rs"]
+mod dictionary;
+#[cfg(kani)]
+mod wc2_dictionary {
+    use super::dictionary;
+    #[kani::proof]
+    #[kani::unwind(5)]
+    fn wc2_codes() {
+        let codes: [u32; 3] = kani::any();
+        let valid: [bool; 3] = kani::any();
+        let rows: [u32; 3] = kani::any();
+        let radix: u8 = kani::any();
+        kani::assume(radix > 0 && radix <= 4);
+        for r in rows { kani::assume(r < 3); }
+        let before: [u8; 3] = kani::any();
+        let mut ids = before.map(usize::from);
+        let result = dictionary::append(&codes, &valid, &rows, usize::from(radix), &mut ids);
+        let good = rows.iter().all(|r| !valid[*r as usize] || codes[*r as usize] < u32::from(radix) - 1);
+        assert_eq!(result.is_some(), good);
+        if good {
+            for j in 0..3 {
+                let r = rows[j] as usize;
+                let c = if valid[r] { codes[r] as usize } else { usize::from(radix) - 1 };
+                assert_eq!(ids[j], usize::from(before[j]) * usize::from(radix) + c);
+            }
+        }
+        kani::cover!(good && valid[rows[0] as usize]);
+        kani::cover!(good && !valid[rows[0] as usize] && codes[rows[0] as usize] == u32::MAX);
+        kani::cover!(!good);
+    }
+}

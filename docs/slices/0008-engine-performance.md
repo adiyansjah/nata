@@ -124,8 +124,9 @@ All expected gains are hypotheses. Each package needs its own accepted brief; th
 word-mask kernels and checked native i64 arithmetic feeding the existing exact
 SUM/AVG state. The rejected per-row accessor design is not retained. Local checks
 and the unsettled screen are recorded in [the W-C result](../../bench/results/20261108-engine-perf-wc.md);
-settled c3d/n4a verdict remains pending in `bench/aggregate-wc1.steps`. Step 2 and W-A
-remain separate work; no target, ADR or charge changed.
+settled c3d/n4a verdict remains pending in `bench/aggregate-wc1.steps`. Step 2 part 1 adds capped canonical dictionary-value group IDs; its checks,
+proof/mutants and unsettled nine-round screen are recorded in that result.
+Shared SUM/AVG (step 2 part 2) and W-A remain separate work; no target, ADR or charge changed.
 
 Write the [pipeline step protocol](../decisions/0016-pipeline-step-protocol.md) and
 [query owner](../decisions/0017-query-owner.md) contracts before W-A/W-B interfaces harden.

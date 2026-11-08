@@ -317,3 +317,56 @@ fn output_batches_gather_having_survivors_and_apply_offset_limit() {
         }
     }
 }
+
+#[test]
+fn dictionary_values_change_across_row_groups_and_files() {
+    use arrow_array::{Int64Array, StringArray};
+    let d = dir("aggregate-dictionary-values");
+    for (file, reversed) in [("a.parquet", false), ("b.parquet", true)] {
+        let keys: Vec<Option<&str>> = (0..128)
+            .map(|i| match (i + usize::from(reversed)) % 4 {
+                0 => Some("雪"),
+                1 => Some(""),
+                2 => None,
+                _ => Some("other"),
+            })
+            .collect();
+        let other: Vec<_> = (0..128)
+            .map(|i| if i % 2 == 0 { "A" } else { "B" })
+            .collect();
+        let b = RecordBatch::try_from_iter([
+            ("k", Arc::new(StringArray::from(keys)) as ArrayRef),
+            ("l", Arc::new(StringArray::from(other)) as ArrayRef),
+            ("v", Arc::new(Int64Array::from(vec![1; 128])) as ArrayRef),
+        ])
+        .expect("dictionary fixture");
+        write_batch(&d.join(file), &b, 32);
+    }
+    let q = format!(
+        "SELECT k,l,sum(v) AS s,count(*) AS n FROM '{}/*.parquet' GROUP BY k,l",
+        d.display()
+    );
+    let expected = [
+        "\"雪\",A,32,32",
+        "\"雪\",B,32,32",
+        ",A,32,32",
+        ",B,32,32",
+        "NULL,A,32,32",
+        "NULL,B,32,32",
+        "other,A,32,32",
+        "other,B,32,32",
+    ];
+    for threads in [1, 4] {
+        for spill in [false, true] {
+            let mut cfg = ExecConfig::new(threads);
+            cfg.aggregate_force_spill = spill;
+            for collisions in [false, true] {
+                cfg.aggregate_spill_force_collisions = collisions;
+                assert_eq!(
+                    sorted(run_with(&q, &cfg).csv.expect("dictionary fixture")),
+                    expected
+                );
+            }
+        }
+    }
+}

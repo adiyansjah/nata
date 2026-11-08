@@ -73,6 +73,61 @@ pub(super) fn columns_into(keys: &[std::sync::Arc<Col>], rows: &[u32], hashes: &
     }
 }
 
+/// The dense product is bounded by both a small hard cap and selected rows.
+/// This fits the existing per-expression/row workspace without a new retained
+/// cache or cross-batch dictionary ownership. Hash strings once per value, then
+/// combine their canonical hashes once per dictionary tuple (including NULL).
+pub(super) const DICTIONARY_CAP: usize = 256;
+pub(super) fn dictionary(
+    keys: &[std::sync::Arc<Col>],
+    rows: &[u32],
+    hashes: &mut Vec<u64>,
+) -> Option<Vec<usize>> {
+    use super::StrData;
+    use arrow_array::Array;
+    if keys.is_empty() {
+        return None;
+    }
+    let mut product = 1usize;
+    for col in keys {
+        let Data::Str(StrData::Dict { values, .. }) = &col.data else {
+            return None;
+        };
+        product = product.checked_mul(values.len().checked_add(1)?)?;
+        if product > DICTIONARY_CAP || product > rows.len() {
+            return None;
+        }
+    }
+    let mut combinations = vec![0; rows.len()];
+    // Two bounded hash arrays, no owned string copies. Null dictionary values
+    // hash exactly like null keys; Col validity also masks their row codes.
+    let mut tuples = vec![seed(0)];
+    for col in keys {
+        let Data::Str(StrData::Dict { values, keys }) = &col.data else {
+            return None;
+        };
+        let radix = values.len() + 1;
+        nata_kernels::dictionary::append(keys, &col.valid, rows, radix, &mut combinations)?;
+        let values: Vec<_> = (0..values.len())
+            .map(|i| {
+                if values.is_null(i) {
+                    value(0, &[])
+                } else {
+                    value(5, values.value(i).as_bytes())
+                }
+            })
+            .chain(std::iter::once(value(0, &[])))
+            .collect();
+        tuples = tuples
+            .iter()
+            .flat_map(|h| values.iter().map(move |v| combine(*h, *v)))
+            .collect();
+    }
+    hashes.clear();
+    hashes.extend(combinations.iter().map(|id| tuples[*id]));
+    Some(combinations)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,6 +189,48 @@ mod tests {
         }
         assert_eq!(columns(&cols[6..7], &rows), columns(&cols[7..8], &rows));
         assert_eq!(columns(&cols[3..4], &[0, 1]), columns(&cols[4..5], &[0, 1]));
+    }
+    #[test]
+    fn dictionary_hashes_are_values_with_nulls_duplicates_and_caps() {
+        let col = |values: Vec<Option<&str>>, codes: Vec<u32>, valid: Vec<bool>| {
+            Arc::new(Col {
+                ty: SqlType::Varchar,
+                data: Data::Str(StrData::Dict {
+                    values: Arc::new(StringArray::from(values)),
+                    keys: codes,
+                }),
+                valid,
+            })
+        };
+        let a = col(
+            vec![Some("雪"), Some(""), None, Some("雪")],
+            vec![0, 1, u32::MAX, 3, 2, 0, 1, 3, 0, 0],
+            vec![true, true, false, true, false, true, true, true, true, true],
+        );
+        let b = col(
+            vec![Some(""), Some("雪")],
+            vec![1, 0, u32::MAX, 1, 0, 1, 0, 1, 1, 1],
+            vec![true, true, false, true, false, true, true, true, true, true],
+        );
+        let rows = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+        let mut hashes = vec![];
+        let ids = dictionary(std::slice::from_ref(&a), &rows, &mut hashes).expect("dictionary");
+        assert_eq!(hashes, columns(std::slice::from_ref(&a), &rows));
+        assert_eq!(hashes, columns(std::slice::from_ref(&b), &rows));
+        assert_eq!(ids[7], 4, "masked invalid index is NULL");
+        assert!(
+            dictionary(&[a.clone(), b.clone()], &rows, &mut hashes).is_none(),
+            "product exceeds row workspace"
+        );
+        let many: Vec<_> = (0..300).map(|_| Some("x")).collect();
+        let huge = col(many, vec![0; 512], vec![true; 512]);
+        assert!(dictionary(&[huge], &(0..512).collect::<Vec<_>>(), &mut hashes).is_none());
+        let plain = Arc::new(Col {
+            ty: SqlType::BigInt,
+            valid: vec![true; 10],
+            data: Data::Int(vec![0; 10]),
+        });
+        assert!(dictionary(&[a, plain], &rows, &mut hashes).is_none());
     }
     #[test]
     fn canonical_hash_vectors_and_recursive_seeds() {

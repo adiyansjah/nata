@@ -252,3 +252,98 @@ seconds. "Now / DuckDB" is W-C against DuckDB.
 **Regression found in the baseline, not caused by W-C:** high cardinality at 64 MiB and 8 threads is 39.804 s (x86-64) and 25.762 s (ARM64)
 at `2b7a415`, against about 4.9-5.5 s in the step 2e settled run. The 1-thread 64 MiB cells did not regress. Being bisected. The `profile`
 step reported the pre-check as unavailable on both CPUs; it does not affect these timings.
+
+## W-C step 2, part 1: dictionary-value group IDs (2026-11-08)
+
+**Kept for the parent's settled measurement; local evidence is UNSETTLED.**
+Baseline is slice 5 closing commit `709674d47891c340df63273d4e8e8e415743f830`.
+No query result/error, hash seed/version, spill format, grant/default, target,
+ADR or dependency changes. The general hash path remains the fallback.
+
+Rule: remove per-row string hashing/comparison only when every key is a small
+string dictionary. Hash each dictionary value with the existing canonical XXH3
+function; combine hashes once per dictionary tuple, including NULL. The product
+of `(dictionary length + 1)` must fit **256 and selected-row count**, otherwise
+fall back. A typed checked code loop builds batch-local tuple addresses; the
+first observed tuple probes by full value equality and later rows reuse its
+canonical table group ID. Codes never establish cross-batch/file identity.
+Duplicate/reordered dictionaries still resolve by values. The cache resets on
+resume after spill; stable entry indices survive hash-table growth. String
+MIN/MAX keeps per-row string-capacity checks. Existing per-expression/row task
+workspace covers the bounded hash arrays and row addresses (no charge cut).
+
+Checks (serial, Cargo `-j 4`, release profile with `CARGO_PROFILE_RELEASE_DEBUG=1`):
+
+- Touched-crate `cargo test --locked --release -j 4 -p nata-kernels -p nata-exec`:
+  **164 passed**, excluding the two child-process reruns. fmt and clippy
+  (`--all-targets -- -D warnings`): pass.
+- `cargo build --locked --release -j 4 -p nata -p nata-check`: pass.
+  Fresh data: `env -u AI_AGENT scripts/gen-tpch.sh 0.01 /tmp/nata-wc2/gates`
+  and `scripts/gen-sql-check-data.sh /tmp/nata-wc2/gates`.
+  `env -u AI_AGENT .../nata-check --candidate .../nata --data /tmp/nata-wc2/gates
+  --queries check/queries/aggregate`: **65/65**; again with
+  `--force-aggregate-spill`: **65/65**; SQL **252/252**; scan **5/5**.
+- Tests cover selected NULLs, masked invalid indices, dictionary-value NULLs,
+  duplicate/reordered dictionaries, Unicode/empty values, caps and mixed-type
+  fallback. A whole-SQL two-key fixture changes dictionaries across row groups
+  and files at 1/4 threads, resident/forced-spill, normal/forced-collision paths.
+- Production `nata_kernels::dictionary::append` is included by path in the
+  existing isolated Kani crate. `wc2_dictionary::wc2_codes`: **verified**, all
+  **3 covers satisfied**. Bounds: three arbitrary row addresses (including
+  duplicates/permutations), arbitrary u32 codes/validity, radices 1..4, prior
+  IDs 0..255. The independent formula checks every successful address and
+  identifies exactly live invalid codes. An actual source mutation ignoring
+  validity produces a completed failing proof (**1/1 caught**).
+  Arrow ownership, canonical XXH3 internals, allocation and table probing are
+  test-covered, not claimed proved. Checked integer/address failure boundaries
+  outside the bounded proof are unit-tested.
+- cargo-mutants **4/4 caught**, zero missed/timeouts/unviable: return None,
+  return Some unconditionally, invert length check, invert code range check.
+  Unmutated baseline passes. Restored source matches the checked implementation.
+- Exact before/after CSV multiset gates (no tolerance) pass for SF1 Q1 and
+  high-cardinality, 1/8 threads. Differential DuckDB gates precede timed arms.
+
+Evidence: [checks, proofs, mutants and exact gates](raw/20261108-engine-perf-wc2/),
+[raw local samples](raw/20261108-engine-perf-wc2/part1-screen/part1-samples.json),
+[stats sidecars](raw/20261108-engine-perf-wc2/part1-stats/).
+
+Nine alternating rounds per cell (before/after/identical-before, reversed on
+odd rounds), warm SF1, whole CLI including startup/planning/decode/CSV, 8 GiB,
+1/8 threads. **Unsettled screen only**, never a target or scaling verdict.
+Use the observed control spread, including the dev VM's historical 0.83–1.98,
+not a 10% local acceptance rule. The settled both-CPU matrix decides retention.
+
+| Query | Threads | Before min / median s | After min / median s | Paired after/before | Control median [min,max] |
+|---|---:|---:|---:|---:|---:|
+| q1 | 1 | 1.110882 / 1.162604 | 0.893282 / 0.924232 | 0.801943 | 1.014106 [0.847480,1.083882] |
+| q1 | 8 | 0.357000 / 0.407766 | 0.283955 / 0.337971 | 0.840314 | 1.041081 [0.676713,1.172731] |
+| high_cardinality_tpch | 1 | 2.594095 / 2.696218 | 2.575197 / 2.660456 | 0.977623 | 0.987338 [0.910199,1.035669] |
+| high_cardinality_tpch | 8 | 1.732235 / 1.850935 | 1.662262 / 1.825769 | 0.987290 | 0.971330 [0.933356,1.038678] |
+
+No median regression exceeds the identical-baseline control spread. All native
+invocations retain distinct `NATA_STATS_JSON` sidecars. Service wall medians from
+the same nine timed invocations follow; they overlap at 8 threads and must not
+be summed into CLI wall/CPU time. Package 0 remains `complete=false` with its
+explicit missing-site/CPU/wake inventory. All local timed cells are in memory.
+
+| Stage (service wall ms) | Q1 / 1t | Q1 / 8t | HC / 1t | HC / 8t |
+|---|---:|---:|---:|---:|
+| scan_decode | 233.315 → 227.575 | 514.021 → 486.164 | 232.751 → 227.973 | 547.354 → 498.527 |
+| filter | 93.003 → 87.763 | 197.726 → 206.484 | 121.219 → 118.269 | 293.950 → 296.795 |
+| expression | 170.613 → 168.158 | 327.307 → 320.940 | 316.941 → 311.233 | 446.614 → 439.075 |
+| group_id | 266.159 → 45.373 | 541.563 → 93.599 | 893.968 → 859.315 | 1777.090 → 1709.435 |
+| state_update | 225.343 → 225.945 | 490.542 → 479.708 | 111.560 → 110.163 | 222.696 → 210.888 |
+| merge | 0.008 → 0.009 | 0.047 → 0.051 | 0.050 → 0.050 | 928.679 → 914.181 |
+| finalize | 0.043 → 0.038 | 0.051 → 0.045 | 415.859 → 410.179 | 519.268 → 533.333 |
+| output_sink | 0.087 → 0.066 | 0.099 → 0.100 | 742.468 → 717.515 | 832.070 → 825.763 |
+| spill_write | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| spill_read | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| teardown | 0.213 → 0.184 | 0.295 → 0.246 | 16.939 → 35.385 | 26.251 → 27.313 |
+| admission_wait | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 | 0.000 → 0.000 |
+| bind_metadata | 1.913 → 2.004 | 1.854 → 2.081 | 1.704 → 1.934 | 1.924 → 2.189 |
+
+Reproduction: [exact commands and proof bounds](raw/20261108-engine-perf-wc2/reproduce.md).
+The baseline and read-only candidate are separate immutable binaries. Disk free
+remained above 20 GB. `scripts/check-leaks.sh --staged` precedes the commit.
+The prepared `bench/aggregate-wc2.steps` will contain baseline, dictionary-only
+and cumulative shared-state archives; no GCP operation is run here.

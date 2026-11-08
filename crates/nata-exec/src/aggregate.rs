@@ -383,6 +383,7 @@ struct Evaluated {
     keys: Vec<Arc<Col>>,
     args: Vec<Option<Argument>>,
     next: usize,
+    dictionary: Option<Vec<usize>>,
 }
 impl Partial {
     fn evaluate(&mut self, batch: &RecordBatch) -> R<Evaluated> {
@@ -425,13 +426,17 @@ impl Partial {
                 crate::query_stats::Stage::GroupId,
             );
             let mut hashes = std::mem::take(&mut self.hashes);
-            hashing::columns_into(&keys, &rows, &mut hashes);
+            let dictionary = hashing::dictionary(&keys, &rows, &mut hashes);
+            if dictionary.is_none() {
+                hashing::columns_into(&keys, &rows, &mut hashes);
+            }
             Ok(Evaluated {
                 rows,
                 hashes,
                 keys,
                 args,
                 next: 0,
+                dictionary,
             })
         })
     }
@@ -452,6 +457,13 @@ impl Partial {
             .aggregate
             .as_ref()
             .ok_or_else(|| EvalError::internal("aggregate missing"))?;
+        // Reset on every resume: spill replaces the tables. IDs remain valid
+        // through table rehash, since they address the stable entry vector.
+        let mut dictionary_groups = [None; hashing::DICTIONARY_CAP];
+        let cache_groups = !a
+            .aggregates
+            .iter()
+            .any(|a| (a.name == "min" || a.name == "max") && a.ty == SqlType::Varchar);
         let start = evaluated.next;
         while evaluated.next < evaluated.rows.len() {
             if (evaluated.next - start).is_multiple_of(CANCEL_ROWS) && cancelled() {
@@ -467,6 +479,16 @@ impl Partial {
                 crate::query_stats::Stage::GroupId,
             );
             while evaluated.next < stop {
+                let combination = evaluated
+                    .dictionary
+                    .as_ref()
+                    .filter(|_| cache_groups)
+                    .map(|v| v[evaluated.next]);
+                if let Some(id) = combination.and_then(|c| dictionary_groups[c]) {
+                    groups[evaluated.next - begin] = id;
+                    evaluated.next += 1;
+                    continue;
+                }
                 let r = evaluated.rows[evaluated.next];
                 let i = r as usize;
                 let hash = evaluated.hashes[evaluated.next];
@@ -536,6 +558,9 @@ impl Partial {
                         .insert(key, a.aggregates.iter().map(State::new).collect());
                     id
                 };
+                if let Some(c) = combination {
+                    dictionary_groups[c] = Some((p, id));
+                }
                 groups[evaluated.next - begin] = (p, id);
                 evaluated.next += 1;
             }
@@ -1146,6 +1171,7 @@ mod tests {
             keys: vec![],
             args: vec![None],
             next: 0,
+            dictionary: None,
         }
     }
     #[test]
@@ -1211,6 +1237,7 @@ mod tests {
             keys: vec![Arc::new(keys)],
             args: vec![Some(Argument::General(Arc::new(args)))],
             next: 0,
+            dictionary: None,
         };
         assert!(partial.resume(&mut evaluated, &|| false).expect("batch"));
         let mut result = Vec::new();

@@ -1,0 +1,26 @@
+[
+  {
+    "query": "q1",
+    "threads": 1,
+    "exact": true,
+    "rows": 4
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "exact": true,
+    "rows": 4
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "exact": true,
+    "rows": 1273748
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "exact": true,
+    "rows": 1273748
+  }
+]
