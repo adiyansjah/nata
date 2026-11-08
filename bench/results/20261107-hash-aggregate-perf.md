@@ -2457,3 +2457,89 @@ Repeated focused estimator/fan-out/concurrency/membership mutants: **41 caught,
 constant divide by zero), 0 timeout**; unmutated baseline PASS.
 [Outcomes](raw/20261108-hash-aggregate-perf2d/ipc-mutants-outcomes.json),
 [deciding log](raw/20261108-hash-aggregate-perf2d/ipc-mutants.txt).
+
+### Cumulative settled handoff (prepared locally; GCP not run)
+
+Kept code commits, in order:
+
+| Change | Commit | Local decision |
+|---|---|---|
+| Budget-sized initial fan-out | `6a9dc6eb6008aef90e00f3ed00641e274edbd96b` | Keep: fewer spill bytes, partitions, depth and opens; settled timing pending |
+| Batch state-column replay | `5529452e148f948a13452917b9c52c418cdeab85` | Keep: removes temporary state vectors; net benefit unresolved locally |
+| Larger bounded IPC messages | `cce85b30863576ae7cf03e8a7065509eb390da68` | Keep: full-message bounds demonstrated; modest framing gain, net benefit unresolved |
+
+[Steps](../aggregate-perf2d.steps) use exactly **four cumulative fixes**:
+`addsub=10acff0`, `nosmall=a3f71fe` (main equivalent of `b893561`),
+`fanout=6a9dc6e`, then `replay-ipc=cce85b3` grouping the two separately
+committed decode/IPC changes. Baseline stays `c9cc13c`. Rejected ready-read
+replay is absent. The underlying runner retains Q1 and high cardinality at
+1/8 threads, both 8 GiB and **64 MiB spill cells**, five alternating rounds,
+primary/twin arms, matched-budget DuckDB and per-observation spill counters.
+No frozen target or failed-denominator policy changes.
+
+Local handoff checks: the real `prepare` command validates ancestor order and
+packages five committed source archives; [manifest](raw/20261108-hash-aggregate-perf2d/fanout-settled-manifest.json),
+[prepare log](raw/20261108-hash-aggregate-perf2d/fanout-prepare.txt).
+All four parsed step commands pass `bash -n`:
+[syntax log](raw/20261108-hash-aggregate-perf2d/fanout-steps-syntax.txt).
+The full **inert** heavy runner self-test passes (five builds, 40 value gates,
+480 timed primary/twin arms, ARM simulation, matched spill budgets and
+incomplete-denominator handling; no engines or VMs launched):
+[self-test log](raw/20261108-hash-aggregate-perf2d/fanout-heavy-self-test.txt).
+The [I/O chart](raw/20261108-hash-aggregate-perf2d/fanout-io.html) shows local
+medians; post-fan-out eight-thread ranges overlap as documented above.
+
+**Six-hour cap per architecture**, including all replacement VMs. Reasoned
+allowances: 75 minutes for five clean builds, 80 for eight bounded settle waits,
+60 for alternating measurements, 30 for fixtures/value gates/setup and 60 for
+preemption/restart (305 minutes, rounded up with 55 minutes spare). The earlier
+four-hour prefix had only three source builds and fewer timing arms. The cap
+is a spend bound, not a promise of completion; no proofs or fuzzy retry budget
+are hidden in it. The parent obtains each plan's approved amount separately.
+No plan/run command below was executed here.
+
+Run from this branch. Use fresh run IDs if occupied; a different output bundle
+path must also replace the matching `--bundle` path in the steps:
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline c9cc13caa508ece01286f498ffc4cded440e9d26 --fix addsub=10acff0b7a7ab0021b12c5f5ccb2d8e037a0bb39 --fix nosmall=a3f71fe8c998ccf4be58482dc53932f5c8405f2b --fix fanout=6a9dc6eb6008aef90e00f3ed00641e274edbd96b --fix replay-ipc=cce85b30863576ae7cf03e8a7065509eb390da68 --bundle .aggregate-perf2d-fanout-inputs
+cp bench/aggregate-perf2d.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2d-fanout-20261108-x86 --data-gb 80 --max-vm-hours 6
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2d-fanout-20261108-x86 --data-gb 80 --max-vm-hours 6 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2d-fanout-20261108-arm64 --data-gb 80 --max-vm-hours 6
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2d-fanout-20261108-arm64 --data-gb 80 --max-vm-hours 6 --approved-usd "$APPROVED_USD_ARM64"
+```
+
+Reproduce the checks after each cumulative change (actual local runs used
+`CARGO_TARGET_DIR=/home/dev/perf2b/target`, `CARGO_BUILD_JOBS=4`,
+`RUST_TEST_THREADS=1` and `/home/dev/perf2d/data`; below uses default target):
+
+```sh
+PERF2D_DATA=$(mktemp -d /tmp/nata-perf2d-check.XXXXXX)
+cargo test --locked --release -j 4 -p nata-exec
+cargo fmt --all --check
+cargo clippy --locked --release -j 4 -p nata-exec --all-targets -- -D warnings
+cargo build --locked --release -j 4 -p nata -p nata-check
+scripts/gen-tpch.sh 0.01 "$PERF2D_DATA"
+scripts/gen-sql-check-data.sh "$PERF2D_DATA"
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/aggregate
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/aggregate --force-aggregate-spill
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$PERF2D_DATA" --queries check/queries/sql
+```
+
+All three sweeps separately report 41 caught / 1 equivalent missed / 1 unviable,
+with no timeout and passing unmutated baselines. Neither known-negative IPC
+probe is counted as a caught mutant or a failed final check. No query result
+changed; no fault/damage assertion was weakened. Cargo.lock and dependencies,
+accepted ADRs, target thresholds, Q1 kernels, input batch size and other crates
+are unchanged. Local cargo jobs ran serially at `-j 4`; free disk stayed at
+25 GiB, so no stale-output deletion was needed. Each commit passed
+`scripts/check-leaks.sh --staged`. No GCP, push or merge.
+
+Final post-mutant normal release rebuild and byte-for-byte comparison: **PASS**.
+The final CLI SHA256 is
+`be5240758bef8b839bb2c9513ce20fd5f982e75455bcd97bf5cf62c90f4dda13`,
+identical to the immutable IPC binary that passed all value gates and timings.
+[Build/digest log](raw/20261108-hash-aggregate-perf2d/fanout-final-build.txt).
+The three implementation steps are complete locally; settled performance and
+all frozen target decisions remain with the parent, not certified by this run.

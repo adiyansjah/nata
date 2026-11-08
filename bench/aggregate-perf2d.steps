@@ -1,16 +1,20 @@
-# Parent only. Settled SF1 on c3d-highcpu-8 and n4a-highcpu-8, separately.
-# Package committed cumulative revisions with the exact prepare command in
-# bench/results/20261107-hash-aggregate-perf.md, Performance step 2d.
-# Baseline c9cc13c; addsub=10acff0 remains provisional/unsettled;
-# no-small=b89356153b9bfb4b2e7c2558c9b6c7a750d8e8e3 is the sole kept 2d fix.
-# Replay experiment rejected; fan-out stopped for ADR amendment acceptance.
-# Heavy runner includes Q1 and high cardinality, 1/8 threads, 8 GiB AND 64 MiB,
-# value gates before timing, five alternating rounds and a twin of every arm.
-# Every timing keeps spill bytes written/read, partitions and recursion depth.
-# No GCP identifiers or credentials belong here. These are measurements only.
+# Parent only: settled SF1, separate c3d-highcpu-8 and n4a-highcpu-8 runs.
+# Baseline c9cc13c; four cumulative fixes, in order:
+# addsub=10acff0 (still provisional); nosmall=a3f71fe (main equivalent of b893561);
+# fanout=6a9dc6eb6008aef90e00f3ed00641e274edbd96b;
+# replay-ipc=cce85b30863576ae7cf03e8a7065509eb390da68 groups
+# decode 5529452e148f948a13452917b9c52c418cdeab85 and bounded larger IPC messages.
+# Rejected ready-read replay is absent. See the final "Performance step 2d
+# (fan-out)" handoff in bench/results/20261107-hash-aggregate-perf.md for exact
+# prepare/plan/run commands and the justified six-hour cap per architecture.
+# Keep Q1 + high cardinality, 1/8 threads, BOTH 8 GiB and 64 MiB spill cells,
+# value gates before timing, five alternating rounds, primary/twin for every
+# arm and matched-budget DuckDB (failed denominators stay incomplete).
+# Retain bytes written/read, partitions, depth and load for every timing.
+# No GCP identifiers or credentials belong here. Do not launch from a child.
 prepare mkdir -p "$WORK/aggregate-perf2d/tmp"
 # Debian 12 does not ship /usr/bin/time. Install it before any optional whole-
 # system profile or RSS step uses it; the heavy timing runner itself uses Python.
 tools if [ ! -x /usr/bin/time ]; then sudo apt-get update && sudo apt-get install -y time; fi
 fixtures rm -rf "$WORK/aggregate-perf2d-sf1" && TMPDIR="$WORK/aggregate-perf2d/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2d-sf1"
-timings perf2d_machine=$(uname -m) && case "$perf2d_machine" in x86_64) perf2d_machine=c3d-highcpu-8 ;; aarch64) perf2d_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2d/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2d_machine" --bundle "$SRC/.aggregate-perf2d-inputs" --work "$WORK/aggregate-perf2d" --data "$WORK/aggregate-perf2d-sf1" --out "$RESULTS/aggregate-perf2d-$(date -u +%Y%m%dT%H%M%SZ)"
+timings perf2d_machine=$(uname -m) && case "$perf2d_machine" in x86_64) perf2d_machine=c3d-highcpu-8 ;; aarch64) perf2d_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2d/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2d_machine" --bundle "$SRC/.aggregate-perf2d-fanout-inputs" --work "$WORK/aggregate-perf2d" --data "$WORK/aggregate-perf2d-sf1" --out "$RESULTS/aggregate-perf2d-$(date -u +%Y%m%dT%H%M%SZ)"

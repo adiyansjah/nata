@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "revisions": [
+    {
+      "label": "baseline",
+      "commit": "c9cc13caa508ece01286f498ffc4cded440e9d26",
+      "archive": "baseline-c9cc13caa508ece01286f498ffc4cded440e9d26.tar.gz",
+      "archive_sha256": "2c7df56aaaff9eb66bc7522831f82cb6d2b20291f1ff648b984c53e13eb07865"
+    },
+    {
+      "label": "addsub",
+      "commit": "10acff0b7a7ab0021b12c5f5ccb2d8e037a0bb39",
+      "archive": "addsub-10acff0b7a7ab0021b12c5f5ccb2d8e037a0bb39.tar.gz",
+      "archive_sha256": "c836bb85db33fa6fdb52a2324c3da9dd723fe1fe48664d1a1e63a7de9612bcd8"
+    },
+    {
+      "label": "nosmall",
+      "commit": "a3f71fe8c998ccf4be58482dc53932f5c8405f2b",
+      "archive": "nosmall-a3f71fe8c998ccf4be58482dc53932f5c8405f2b.tar.gz",
+      "archive_sha256": "d3f040b6df10f9fd16019d64b19ebdd9b6959254da4db50aa527450477c94a69"
+    },
+    {
+      "label": "fanout",
+      "commit": "6a9dc6eb6008aef90e00f3ed00641e274edbd96b",
+      "archive": "fanout-6a9dc6eb6008aef90e00f3ed00641e274edbd96b.tar.gz",
+      "archive_sha256": "710c9da030b36b89a692e5ebd4a851fbd698a934c02dd3b79f87a00cd51079bc"
+    },
+    {
+      "label": "replay-ipc",
+      "commit": "cce85b30863576ae7cf03e8a7065509eb390da68",
+      "archive": "replay-ipc-cce85b30863576ae7cf03e8a7065509eb390da68.tar.gz",
+      "archive_sha256": "43ef1447f50fcf0a389ed78551f71074c2348e064588c0a9b8c4ece52343b8d2"
+    }
+  ],
+  "queries": {
+    "q1": "-- tolerance: 1e-8\nSELECT l_returnflag, l_linestatus,\n sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,\n avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price,\n avg(l_discount) AS avg_disc, count(*) AS count_order\nFROM '{data}/lineitem.parquet'\nWHERE l_shipdate <= DATE '1998-09-02'\nGROUP BY l_returnflag, l_linestatus;\n",
+    "high_cardinality_tpch": "SELECT l_orderkey, count(*) AS n, sum(l_extendedprice) AS price, sum(l_extendedprice * (1 - l_discount)) AS net FROM '{data}/lineitem.parquet' WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_orderkey HAVING count(*) > 1;\n"
+  }
+}
