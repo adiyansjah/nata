@@ -1,0 +1,86 @@
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/crates/nata-kernels)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/crates/nata-exec)
+    Finished `release` profile [optimized + debuginfo] target(s) in 7.17s
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_exec-62fb983d0c485bc6)
+
+running 45 tests
+test aggregate::fusion::tests::complete_conditional_roots_share_without_merging_different_values ... ok
+test aggregate::hashing::tests::columns_match_owned_keys_for_selected_null_dictionary_and_float_values ... ok
+test aggregate::hashing::tests::canonical_hash_vectors_and_recursive_seeds ... ok
+test aggregate::fusion::tests::shared_eager_arguments_reuse_buffers_and_reset_selection_and_nulls ... ok
+test aggregate::fusion::tests::first_positioned_error_and_conditional_phase_match_evaluator ... ok
+test aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure ... ok
+test aggregate::native::tests::sliced_bitmap_offsets_and_null_junk ... ok
+test aggregate::pipeline::tests::fanout_estimator_overflow_clamps_and_merge_grants ... ok
+test aggregate::fusion::native_errors::borrowed_parent_lifetime_and_sparse_selection ... ok
+test aggregate::fusion::tests::decimal64_and_decimal128_share_checked_arithmetic_and_reused_output ... ok
+test aggregate::pipeline::tests::dictionary_scratch_admission_precedes_revocable_tables ... ok
+test aggregate::fusion::tests::text_literals_do_not_add_owned_instruction_copies ... ok
+test aggregate::replay::tests::replay_rejects_impossible_wide_states_and_wrong_aggregate_descriptor ... ok
+test aggregate::pipeline::tests::reusable_scratch_charges_capacity_once_and_releases_every_chunk ... ok
+test aggregate::fusion::native_errors::native_precision_overflow_keeps_node_then_row_priority ... ok
+test aggregate::pipeline::tests::resident_multiple_inputs_keep_the_pressure_fallback ... ok
+test aggregate::pipeline::tests::resident_adoption_keeps_grants_without_merge_overlap ... ok
+test aggregate::replay::tests::typed_records_reject_truncation_trailing_bytes_wrong_tags_and_invalid_values ... ok
+test aggregate::storage::tests::membership_uses_query_fanout_and_recursive_sixteen ... ok
+test aggregate::tests::borrowed_lookup_resolves_collisions_and_never_reads_null_junk ... ok
+test aggregate::tests::collision_equality_and_canonical_float_keys ... ok
+test aggregate::tests::final_partition_merges_every_contribution_exactly_once ... ok
+test aggregate::tests::borrowed_lookup_keeps_groups_across_table_growth ... ok
+test aggregate::storage::tests::hostile_valid_ipc_cannot_change_query_partition_membership ... ok
+test aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message ... ok
+test aggregate::tests::group_vector_keeps_selected_null_arguments_and_distinct_groups ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test aggregate::tests::output_delivery_gathers_fixed_width_and_borrows_string_runs ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test aggregate::tests::partial_polls_at_batch_entry_and_bounded_intervals_in_large_batches ... ok
+test eval::tests::three_valued_and_or ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::integers_as_text ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test aggregate::pipeline::tests::resident_output_workspace_excludes_strings_even_inside_fixed_width_expressions ... ok
+test exec::projection_memory_tests::bare_projection_allocates_no_row_selection ... ok
+test aggregate::tests::resident_finalization_also_polls_at_bounded_intervals ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_kernels-196171e855a16b48)
+
+running 26 tests
+test decimal::tests::perf2c_admission_rejects_each_bad_precondition ... ok
+test decimal::tests::bounded_columns_match_an_independent_exact_reference ... ok
+test kernels::tests::a_guard_filter_protects_the_later_kernel ... ok
+test decimal::tests::selected_nulls_and_strict_bounds ... ok
+test kernels::tests::a_zero_divisor_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::a_zero_divisor_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_a_null_slot_is_not_an_error ... ok
+test kernels::tests::an_overflow_in_an_unselected_row_is_not_an_error ... ok
+test kernels::tests::dense_multi_sums_match_separate_sums ... ok
+test kernels::tests::div_const_left_follows_the_same_rules ... ok
+test kernels::tests::filter_ne_drops_nulls_and_respects_the_selection ... ok
+test kernels::tests::filters_drop_nulls_and_respect_the_input_selection ... ok
+test kernels::tests::masked_grouped_sums_skip_nulls_and_follow_the_selection ... ok
+test kernels::tests::merge_branches_lets_a_later_part_win_on_an_overlap ... ok
+test kernels::tests::merge_branches_places_each_part_and_leaves_other_rows_null ... ok
+test kernels::tests::min_divided_by_minus_one_is_an_overflow_only_when_selected_and_valid ... ok
+test kernels::tests::split_ne_sends_null_comparisons_to_the_else_branch ... ok
+test kernels::tests::subtraction_overflow_follows_the_same_rules_as_multiplication ... ok
+test kernels::tests::sums_skip_nulls_and_count_the_valid_values ... ok
+test kernels::tests::the_dense_filter_respects_the_input_selection ... ok
+test native::tests::native_matches_checked_wide_including_precision_and_machine_overflow ... ok
+test native::tests::word_boundaries_padding_and_masked_junk ... ok
+test decimal::tests::perf2c_aligned_boundaries_and_checked_fallback ... ok
+test kernels::tests::div_const_left_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::div_matches_the_scalar_reference_including_errors ... ok
+test kernels::tests::mul_matches_the_scalar_reference_including_errors ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

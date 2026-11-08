@@ -1,0 +1,200 @@
+Kani Rust Verifier 0.68.0 (cargo plugin)
+CBMC 6.11.0
+   Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:336:21
+    |
+336 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: `#[warn(semicolon_in_expressions_from_non_local_macros)]` (part of `#[warn(future_incompatible)]`) on by default
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:354:21
+    |
+354 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:368:21
+    |
+368 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:382:21
+    |
+382 |             None => assert!(fails),
+    |                     ^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:467:23
+    |
+467 |             Err(e) => assert!(is_zero_msg(&e) == want_zero),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: trailing semicolon in macro used in expression position
+   --> src/lib.rs:685:23
+    |
+685 |             Err(e) => assert!(!is_zero_msg(&e)),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #79813 <https://github.com/rust-lang/rust/issues/79813>
+    = note: this warning originates in the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: use of an unstable feature
+ --> <crate attribute>:1:12
+  |
+1 | #![feature(register_tool)]
+  |            ^^^^^^^^^^^^^
+  |
+  = note: requested on the command line with `--force-warn unstable-features`
+
+warning: Found the following unsupported constructs:
+             - caller_location (1)
+             - foreign function (1)
+         
+         Verification will fail if one or more of these constructs is reachable.
+         See https://model-checking.github.io/kani/rust-feature-support.html for more details.
+
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.57s
+warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`
+Checking harness wc1_full_product::wc1_mul_full_i64...
+CBMC 6.11.0 (cbmc-6.11.0)
+CBMC version 6.11.0 (cbmc-6.11.0) 64-bit x86_64 linux
+Reading GOTO program from file /home/dev/perf2b/kani-target/kani/x86_64-unknown-linux-gnu/debug/build/kani-nata-kernels/fa796202a2789cc3/out/kani_nata_kernels-fa796202a2789cc3__RNvNtCs7m2eH3CPdXC_17kani_nata_kernels16wc1_full_product16wc1_mul_full_i64.out
+Generating GOTO Program
+Adding CPROVER library (x86_64)
+Removal of function pointers and virtual functions
+Generic Property Instrumentation
+Running with 16 object bits, 48 offset bits (user-specified)
+Starting Bounded Model Checking
+Unwinding loop _RNvMs7_NtCs8xvirJzNMvV_4core3numy11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 1 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 2434 column 13 function core::num::<impl u64>::checked_pow thread 0
+Unwinding loop _RNvMs7_NtCs8xvirJzNMvV_4core3numy11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 2 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 2434 column 13 function core::num::<impl u64>::checked_pow thread 0
+Unwinding loop _RNvMs7_NtCs8xvirJzNMvV_4core3numy11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 3 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 2434 column 13 function core::num::<impl u64>::checked_pow thread 0
+Unwinding loop _RNvMs7_NtCs8xvirJzNMvV_4core3numy11checked_powCs7m2eH3CPdXC_17kani_nata_kernels.1 iteration 4 file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs line 2434 column 13 function core::num::<impl u64>::checked_pow thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.0 iteration 1 file src/../../../crates/nata-kernels/src/native.rs line 16 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 1 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 2 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 3 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 4 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 5 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 6 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 7 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1574 column 5 function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i64>::ok_or::<decimal::Fail> thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/../../../crates/nata-kernels/src/native.rs line 75 column 26 function native::Decimal64::column::{closure#0} thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 2177 column 15 function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Not unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.1 iteration 8 file src/../../../crates/nata-kernels/src/native.rs line 21 column 13 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+Unwinding loop _RINvNtCs7m2eH3CPdXC_17kani_nata_kernels6native8selectedNtNtB4_7decimal4FailNCNvMB2_NtB2_9Decimal646column0EB4_.2 iteration 1 file src/../../../crates/nata-kernels/src/native.rs line 12 column 5 function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:74:50: 74:53}> thread 0
+aborting path on assume(false) at file src/lib.rs line 0 column 0 function <std::result::Result<(), decimal::Fail> as std::cmp::PartialEq>::eq thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
+aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
+Runtime Symex: 0.81458s
+size of program expression: 29515 steps
+slicing removed 24214 assignments
+Generated 1220 VCC(s), 173 remaining after simplification
+Runtime Postprocess Equation: 0.0126203s
+Passing problem to propositional reduction
+converting SSA
+Runtime Convert SSA: 0.532768s
+Running propositional reduction
+Post-processing
+Runtime Post-process: 7.183e-06s
+Solving with CaDiCaL 3.0.0
+386031 variables, 1942997 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 2.98673s
+Runtime decision procedure: 3.52559s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+386032 variables, 1942998 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 0.0520033s
+Runtime decision procedure: 0.0591195s
+Running propositional reduction
+Solving with CaDiCaL 3.0.0
+386033 variables, 1942999 clauses
+SAT checker: instance is SATISFIABLE
+Runtime Solver: 1.92924s
+Runtime decision procedure: 1.9336s
+Running propositional reduction

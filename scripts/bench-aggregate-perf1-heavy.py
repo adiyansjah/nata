@@ -142,6 +142,13 @@ def invoke(argv, env, destination=None):
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         row = invoke_process(argv, env, destination or root/'out', root/'stderr', 600, capture_usage=False)
+        if row.get('stats_file') and env.get('NATA_STATS_DIR'):
+            stats_dir = Path(env['NATA_STATS_DIR']).resolve()
+            stats_dir.mkdir(parents=True, exist_ok=True)
+            fd, name = tempfile.mkstemp(prefix='run-', suffix='.stats.json', dir=stats_dir)
+            os.close(fd)
+            shutil.copyfile(row['stats_file'], name)
+            row['stats_file'] = name
         if row['exit']:
             row['error'] = (root/'stderr').read_text()[-2000:]
         return row
@@ -251,7 +258,7 @@ def run(args):
                 raise ValueError('queries differ between the committed revisions or manifest')
         build_env = dict(env, CARGO_TARGET_DIR=str(target))
         with (out / ('build-' + revision['label'] + '.log')).open('w') as log:
-            subprocess.run(['cargo','build','--locked','--release','-p','nata'], cwd=source, env=build_env, stdout=log, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(['cargo','build','--locked','--release','-j','4','-p','nata'], cwd=source, env=build_env, stdout=log, stderr=subprocess.STDOUT, check=True)
         binary = target / 'release/nata'
         binaries[revision['label']] = binary
         build_records.append(dict(**revision, binary_sha256=digest(binary)))

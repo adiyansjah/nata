@@ -1465,3 +1465,213 @@ mod rejected_decimal;
 
 #[path = "../../../bench/results/raw/20261108-hash-aggregate-perf2c/retry-sum-admission.rs"]
 mod sum_admission;
+
+// W-C1: actual production typed slice kernels, no copied implementation.
+#[path = "../../../crates/nata-kernels/src/native.rs"]
+mod native;
+#[cfg(kani)]
+mod wc1_proofs {
+    use super::{
+        decimal::{Decimal, Fail, Op},
+        native,
+    };
+    // Arrow is outside this domain: offsets/null/selection composition have
+    // differential tests in nata-exec. Values are arbitrary i64 for add/sub;
+    // mul traversal is bounded to signed 8-bit inputs. The actual production
+    // arithmetic leaf has a separate full-i64 harness in wc1_full_product.
+    fn arithmetic(op: Op) {
+        let a: [i64; 2] = if op == Op::Mul {
+            [i64::from(kani::any::<i8>()), i64::from(kani::any::<i8>())]
+        } else {
+            kani::any()
+        };
+        let b: [i64; 2] = if op == Op::Mul {
+            [i64::from(kani::any::<i8>()), i64::from(kani::any::<i8>())]
+        } else {
+            kani::any()
+        };
+        let mask: u64 = kani::any();
+        kani::assume(mask < 4);
+        let mut out = [7; 2];
+        let k = native::Decimal64::new(op, 0, 0, 18, 0).unwrap();
+        let got = k.column(&a, &b, &[mask], &mut out);
+        let mut reference = [7; 2];
+        let mut expected = Ok(());
+        for i in 0..2 {
+            if mask & (1 << i) != 0 {
+                if op != Op::Mul
+                    && (a[i].unsigned_abs() >= 1_000_000_000_000_000_000
+                        || b[i].unsigned_abs() >= 1_000_000_000_000_000_000)
+                {
+                    expected = Err(Fail::Overflow);
+                    break;
+                }
+                let v = match op {
+                    Op::Add => i128::from(a[i]) + i128::from(b[i]),
+                    Op::Sub => i128::from(a[i]) - i128::from(b[i]),
+                    _ => i128::from(a[i]) * i128::from(b[i]),
+                };
+                if v.unsigned_abs() >= 1_000_000_000_000_000_000 {
+                    expected = Err(Fail::Overflow);
+                    break;
+                }
+                reference[i] = i64::try_from(v).unwrap();
+            }
+        }
+        assert_eq!(got, expected);
+        assert_eq!(out, reference);
+        kani::cover!(mask == 0 && got.is_ok());
+        kani::cover!(mask == 3 && got.is_ok());
+        if op != Op::Mul {
+            kani::cover!(got.is_err());
+        }
+    }
+    #[kani::proof]
+    #[kani::unwind(20)]
+    fn wc1_add() {
+        arithmetic(Op::Add);
+    }
+    #[kani::proof]
+    #[kani::unwind(20)]
+    fn wc1_sub() {
+        arithmetic(Op::Sub);
+    }
+    #[kani::proof]
+    #[kani::unwind(20)]
+    fn wc1_mul() {
+        arithmetic(Op::Mul);
+    }
+    #[kani::proof]
+    #[kani::unwind(20)]
+    fn wc1_alignment() {
+        let a: i64 = kani::any();
+        let b: i64 = kani::any();
+        let sub: bool = kani::any();
+        let op = if sub { Op::Sub } else { Op::Add };
+        let mut out = [0];
+        let got =
+            native::Decimal64::new(op, 0, 2, 18, 2)
+                .unwrap()
+                .column(&[a], &[b], &[1], &mut out);
+        let expected = Decimal::new(op, 0, 2, 18, 2)
+            .unwrap()
+            .scalar(i128::from(a), i128::from(b));
+        assert_eq!(got.map(|()| i128::from(out[0])), expected);
+        kani::cover!(got.is_ok());
+        kani::cover!(got.is_err());
+    }
+    #[kani::proof]
+    #[kani::unwind(20)]
+    fn wc1_numbers_and_selection() {
+        let values: [i64; 3] = kani::any();
+        let mask: u64 = kani::any();
+        kani::assume(mask < 8 || mask == u64::MAX);
+        let mut got = [None; 3];
+        native::numbers(&values, &[mask], |i, v| {
+            assert!(got[i].is_none(), "each selected row is visited once");
+            got[i] = Some(v);
+            Ok::<_, Fail>(())
+        })
+        .unwrap();
+        for i in 0..3 {
+            assert_eq!(
+                got[i],
+                if mask & (1 << i) != 0 {
+                    Some(i128::from(values[i]))
+                } else {
+                    None
+                }
+            );
+        }
+        kani::cover!(mask == u64::MAX);
+        kani::cover!(mask == 0);
+        kani::cover!(mask == 5);
+    }
+}
+
+#[cfg(kani)]
+mod wc1_full_product {
+    use super::{
+        decimal::{Fail, Op},
+        native,
+    };
+    #[kani::proof]
+    #[kani::unwind(8)]
+    fn wc1_mul_full_i64() {
+        let a: i64 = kani::any();
+        let b: i64 = kani::any();
+        let got = native::Decimal64::new(Op::Mul, 0, 0, 18, 0)
+            .unwrap()
+            .product(a, b);
+        let product = i128::from(a) * i128::from(b);
+        let expected = if product.unsigned_abs() < 1_000_000_000_000_000_000 {
+            Ok(())
+        } else {
+            Err(Fail::Overflow)
+        };
+        assert_eq!(got.map(|_| ()), expected);
+        if let Ok(value) = got {
+            assert_eq!(i128::from(value), product);
+        }
+        kani::cover!(got.is_ok());
+        kani::cover!(got.is_err());
+        kani::cover!(product.unsigned_abs() == 1_000_000_000_000_000_000);
+    }
+}
+
+#[cfg(kani)]
+mod wc1_words {
+    use super::native;
+    #[kani::proof]
+    #[kani::unwind(70)]
+    fn wc1_word_boundary() {
+        let full: bool = kani::any();
+        let last: bool = kani::any();
+        let mask = [if full { u64::MAX } else { 1 << 63 }, u64::from(last)];
+        let mut visited = [false; 65];
+        native::selected(&mask, 65, |i| {
+            assert!(!visited[i]);
+            visited[i] = true;
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        for i in 0..65 {
+            assert_eq!(visited[i], mask[i / 64] & (1 << (i % 64)) != 0);
+        }
+        kani::cover!(full && last);
+        kani::cover!(!full && !last);
+    }
+}
+
+#[cfg(kani)]
+mod wc1_q1 {
+    use super::{
+        decimal::{Decimal, Op},
+        native,
+    };
+    #[kani::proof]
+    #[kani::unwind(8)]
+    fn wc1_q1_alignment() {
+        let a: i64 = kani::any();
+        let b: i64 = kani::any();
+        let op = if kani::any::<bool>() {
+            Op::Sub
+        } else {
+            Op::Add
+        };
+        let mut out = [0];
+        let got =
+            native::Decimal64::new(op, 0, 2, 16, 2)
+                .unwrap()
+                .column(&[a], &[b], &[1], &mut out);
+        let reference = Decimal::new(op, 0, 2, 16, 2)
+            .unwrap()
+            .scalar(i128::from(a), i128::from(b));
+        assert_eq!(got.is_ok(), reference.is_ok());
+        if let Ok(value) = reference {
+            assert_eq!(i128::from(out[0]), value);
+        }
+        kani::cover!(got.is_ok());
+        kani::cover!(got.is_err());
+    }
+}

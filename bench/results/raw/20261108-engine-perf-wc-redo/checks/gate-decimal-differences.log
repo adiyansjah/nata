@@ -1,0 +1,26 @@
+PENDING          avg_decimal
+    error: not supported yet: a subquery or table function in FROM
+PENDING          case_guard_around_division
+    error: not supported yet: ORDER BY
+PENDING          coalesce_does_not_fit_38_digits
+    error: not supported yet: function calls (coalesce(...))
+PENDING          decimal_compared_with_double
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          decimal_plus_double
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          divide_decimals
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          divide_integers
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          division_by_zero
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          division_precision_too_large
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          exponent_literal_is_exact
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          modulo_wide_operands
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          stddev_is_double
+    error: not supported yet: function calls (stddev(...))
+
+12 queries: 0 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 12 pending, 0 pending-wrong

@@ -620,7 +620,7 @@ fn int_overflow(e: &Expr, what: &str) -> EvalError {
     )
 }
 
-fn dec_overflow(e: &Expr, what: &str) -> EvalError {
+pub(crate) fn dec_overflow(e: &Expr, what: &str) -> EvalError {
     EvalError::at(
         e.pos,
         format!(
@@ -756,7 +756,7 @@ pub(crate) fn arith_into(
     Ok(())
 }
 
-fn kernel_op(op: ArithOp) -> Op {
+pub(crate) fn kernel_op(op: ArithOp) -> Op {
     match op {
         ArithOp::Add => Op::Add,
         ArithOp::Sub => Op::Sub,

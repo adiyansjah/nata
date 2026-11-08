@@ -4,7 +4,7 @@ use crate::error::{EvalError, R};
 use crate::eval::Evaluator;
 use crate::exec::{AggregateStats, ExecConfig, ExecReport, Observed, OperatorStats};
 use crate::value::{Col, Data, StrData};
-use arrow_array::{RecordBatch, UInt32Array};
+use arrow_array::{Array, RecordBatch, UInt32Array};
 use arrow_select::take::take_record_batch;
 use hashbrown::HashTable;
 use nata_kernels::aggregate::{ExactSum, add_count};
@@ -12,6 +12,8 @@ use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sched::memory::{Chunks, Grant, MemoryManager, Reservation};
 mod fusion;
 mod hashing;
+mod native;
+use native::Argument;
 mod pipeline;
 mod replay;
 mod storage;
@@ -375,7 +377,7 @@ struct Evaluated {
     rows: Vec<u32>,
     hashes: Vec<u64>,
     keys: Vec<Arc<Col>>,
-    args: Vec<Option<Arc<Col>>>,
+    args: Vec<Option<Argument>>,
     next: usize,
 }
 impl Partial {
@@ -480,7 +482,7 @@ impl Partial {
                     .enumerate()
                     .map(|(slot, (arg, agg))| {
                         if (agg.name == "min" || agg.name == "max")
-                            && let Some(col) = arg
+                            && let Some(col) = arg.as_ref().and_then(Argument::general)
                             && col.valid[i]
                             && let Data::Str(text) = &col.data
                         {
@@ -540,12 +542,38 @@ impl Partial {
             );
             let rows = &evaluated.rows[begin..evaluated.next];
             let ids = &groups[..rows.len()];
+            let selected = native::selection(rows, rows.last().map_or(0, |r| *r as usize + 1));
             // Dispatch argument representation and aggregate once per column,
             // rather than constructing an Atom for every numeric addend.
             for (slot, (agg, arg)) in a.aggregates.iter().zip(&evaluated.args).enumerate() {
-                match (agg.name.as_str(), arg.as_ref().map(|c| &c.data)) {
+                if let Some(Argument::Decimal64(values)) = arg {
+                    let nullable = values.null_count() != 0;
+                    let mut masked;
+                    let mask = if nullable {
+                        masked = selected.clone();
+                        native::intersect(&mut masked, values.nulls());
+                        &masked
+                    } else {
+                        &selected
+                    };
+                    let mut ordinal = 0;
+                    nata_kernels::native::numbers(values.values().as_ref(), mask, |row, value| {
+                        while rows[ordinal] as usize != row {
+                            ordinal += 1;
+                        }
+                        let (p, id) = ids[ordinal];
+                        ordinal += 1;
+                        if let State::Sum(sum) = &mut self.tables[p].groups.entries[id].1[slot] {
+                            sum.add(value).map_err(|_| overflow(agg))?;
+                        }
+                        Ok::<_, EvalError>(())
+                    })?;
+                    continue;
+                }
+                let arg = arg.as_ref().and_then(Argument::general);
+                match (agg.name.as_str(), arg.map(|c| &c.data)) {
                     ("sum" | "avg", Some(Data::Int(values))) => {
-                        let col = arg.as_ref().ok_or_else(resource)?;
+                        let col = arg.ok_or_else(resource)?;
                         for (&row, &(p, id)) in rows.iter().zip(ids) {
                             let i = row as usize;
                             if col.valid[i]
@@ -557,7 +585,7 @@ impl Partial {
                         }
                     }
                     ("sum" | "avg", Some(Data::Dec(values))) => {
-                        let col = arg.as_ref().ok_or_else(resource)?;
+                        let col = arg.ok_or_else(resource)?;
                         for (&row, &(p, id)) in rows.iter().zip(ids) {
                             let i = row as usize;
                             if col.valid[i]
@@ -1178,7 +1206,7 @@ mod tests {
             rows,
             hashes,
             keys: vec![Arc::new(keys)],
-            args: vec![Some(Arc::new(args))],
+            args: vec![Some(Argument::General(Arc::new(args)))],
             next: 0,
         };
         assert!(partial.resume(&mut evaluated, &|| false).expect("batch"));

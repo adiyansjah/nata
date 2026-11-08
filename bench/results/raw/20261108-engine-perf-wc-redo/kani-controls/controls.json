@@ -1,0 +1,29 @@
+{
+  "source_sha256": "5f1656e712cd8e78c60338cce46572a85c878972077e0a641baab0b8e48d0b43",
+  "results": [
+    {
+      "control": "precision",
+      "harness": "wc1_proofs::wc1_add",
+      "exit": 1,
+      "caught": true
+    },
+    {
+      "control": "selection",
+      "harness": "wc1_proofs::wc1_numbers_and_selection",
+      "exit": 1,
+      "caught": true
+    },
+    {
+      "control": "input-row",
+      "harness": "wc1_proofs::wc1_numbers_and_selection",
+      "exit": 1,
+      "caught": true
+    },
+    {
+      "control": "product",
+      "harness": "wc1_full_product::wc1_mul_full_i64",
+      "exit": 1,
+      "caught": true
+    }
+  ]
+}

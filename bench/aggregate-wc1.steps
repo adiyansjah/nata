@@ -1,0 +1,22 @@
+# gate-exits
+# PREPARED ONLY. Owner-run settled W-C candidates, independently on
+# c3d-highcpu-8 and n4a-highcpu-8; no GCP identifiers belong here.
+# Prepare immutable baseline/cumulative source archives and their SHA256 manifest:
+# python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 2b7a415a183c3e06caa379c8c627abc4a43b89fe --fix wc1="$WC_KEPT_SHA" --bundle SHIP/.aggregate-wc1-inputs
+# Ship a git archive of the checked branch, that bundle, and this as heavy.steps.
+# Commands and the remaining split are in results/20261108-engine-perf-wc.md.
+# The rejected direct-root adapter is not used. Native typed decimal kernels
+# are the candidate; refuse a source-identical baseline/candidate pair.
+kept python3 -I -c 'import json,tarfile; from pathlib import Path; b=Path(".aggregate-wc1-inputs"); m=json.loads((b/"manifest.json").read_text()); assert m["revisions"][0]["commit"]=="2b7a415a183c3e06caa379c8c627abc4a43b89fe"; snap=lambda n:{x.name:t.extractfile(x).read() for t in [tarfile.open(b/n)] for x in t if x.isfile() and x.name.startswith("crates/") and x.name.endswith(".rs")}; base=snap(m["revisions"][0]["archive"]); assert len(m["revisions"])>1 and all(snap(r["archive"])!=base for r in m["revisions"][1:]), "no kept Rust change: do not time the rejected views or a docs-only HEAD"'
+topology lscpu --json > "$RESULTS/wc1-topology.json" && taskset -pc $$ > "$RESULTS/wc1-affinity.txt"
+profile python3 scripts/profile-precheck.py --out "$RESULTS/wc1-profile-precheck"
+harness python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/wc1-self-test"
+prepare mkdir -p "$WORK/wc1/tmp" && cp .aggregate-wc1-inputs/manifest.json "$RESULTS/wc1-manifest.json"
+gate-build CARGO_TARGET_DIR="$WORK/wc1/gates-target" cargo build --locked --release -j 4 -p nata -p nata-check
+gate-data env -u AI_AGENT scripts/gen-tpch.sh 0.01 "$WORK/wc1/gates" && scripts/gen-sql-check-data.sh "$WORK/wc1/gates"
+gate-aggregate env -u AI_AGENT "$WORK/wc1/gates-target/release/nata-check" --candidate "$WORK/wc1/gates-target/release/nata" --data "$WORK/wc1/gates" --queries check/queries/aggregate
+gate-spill env -u AI_AGENT "$WORK/wc1/gates-target/release/nata-check" --candidate "$WORK/wc1/gates-target/release/nata" --data "$WORK/wc1/gates" --queries check/queries/aggregate --force-aggregate-spill
+gate-sql env -u AI_AGENT "$WORK/wc1/gates-target/release/nata-check" --candidate "$WORK/wc1/gates-target/release/nata" --data "$WORK/wc1/gates" --queries check/queries/sql
+gate-scan env -u AI_AGENT "$WORK/wc1/gates-target/release/nata-check" --candidate "$WORK/wc1/gates-target/release/nata" --data "$WORK/wc1/gates" --queries check/queries/scan
+fixtures TMPDIR="$WORK/wc1/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/wc1/sf1"
+timings wc1_machine=$(uname -m) && case "$wc1_machine" in x86_64) wc1_machine=c3d-highcpu-8 ;; aarch64) wc1_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && NATA_QUERY_STATS=1 NATA_STATS_DIR="$RESULTS/wc1-stats" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$wc1_machine" --bundle "$SRC/.aggregate-wc1-inputs" --work "$WORK/wc1/timing" --data "$WORK/wc1/sf1" --out "$RESULTS/wc1-$(date -u +%Y%m%dT%H%M%SZ)"

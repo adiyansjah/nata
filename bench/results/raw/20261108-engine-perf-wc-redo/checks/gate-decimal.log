@@ -1,0 +1,62 @@
+PENDING          add_different_scales
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          add_operand_does_not_fit_after_rescale
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          cast_does_not_fit
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          cast_from_string
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          cast_nan_to_decimal
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          cast_not_a_number
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          compare_across_scales
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          decimal_to_integer_rounds
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          floor_ceil_trunc
+    error: not supported yet: Floor
+PENDING          group_equal_values_across_scales
+    error: not supported yet: a subquery or table function in FROM
+PENDING          guarded_division_by_zero
+    error: not supported yet: ORDER BY
+PENDING          int_div_truncates
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          integer_min_mod_minus_one
+    error: not supported yet: the type TINYINT
+PENDING          integer_mul_overflow_keeps_integer_type
+    error: not supported yet: the type TINYINT
+PENDING          integer_overflow
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          min_max_median
+    error: not supported yet: function calls (median(...))
+PENDING          mod_sign_follows_dividend
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          modulo_by_zero
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          mul_basic
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          mul_q1_chain
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          mul_wide_operands
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          null_propagation
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          overflow_add_at_38_digits
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          overflow_mul_at_38_digits
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          overflow_mul_beyond_64_bit_cap
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          overflow_sum_at_38_digits
+    error: not supported yet: a subquery or table function in FROM
+PENDING          round_half_away_from_zero
+    error: not supported yet: function calls (ROUND(...))
+PENDING          scale_too_large_for_mul
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          sub_different_scales
+    error: not supported yet: SELECT without FROM (write FROM 'path')
+PENDING          sum_decimal
+    error: not supported yet: a subquery or table function in FROM
+
+30 queries: 0 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 30 pending, 0 pending-wrong

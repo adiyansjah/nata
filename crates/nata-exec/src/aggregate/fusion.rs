@@ -18,11 +18,12 @@ struct Node {
     // Only type and position are needed by the shared strict operations.
     meta: Expr,
 }
-type Arguments = (Vec<Arc<Col>>, Vec<Option<Arc<Col>>>);
+type Arguments = (Vec<Arc<Col>>, Vec<Option<Argument>>);
 
 pub(super) struct Program {
     nodes: Vec<Node>,
     columns: Vec<Arc<Col>>,
+    native: Vec<Option<Arc<arrow_array::Decimal64Array>>>,
     keys: Vec<usize>,
     args: Vec<Option<usize>>,
     empty_text: Arc<arrow_array::StringArray>,
@@ -84,6 +85,7 @@ impl Program {
         let mut out = Self {
             nodes: vec![],
             columns: vec![],
+            native: vec![],
             keys: vec![],
             args: vec![],
             empty_text: Arc::new(arrow_array::StringArray::from(Vec::<&str>::new())),
@@ -150,6 +152,7 @@ impl Program {
             meta: Expr::literal(Value::Null, e.ty, e.pos),
         });
         self.columns.push(Arc::new(Col::empty(e.ty, 0)));
+        self.native.push(None);
         id
     }
     pub(super) fn evaluate(
@@ -159,7 +162,92 @@ impl Program {
         a: &Aggregate,
         rows: &[u32],
     ) -> R<Arguments> {
+        use arrow_array::cast::AsArray;
+        use arrow_array::types::Decimal64Type;
+        let selected = native::selection(rows, batch.num_rows());
         for (id, node) in self.nodes.iter().enumerate() {
+            self.native[id] = None;
+            // Dispatch once per DAG node. Unsupported layouts/operations keep
+            // the Col evaluator, materializing native dependencies only there.
+            if let SqlType::Decimal { precision, scale } = node.meta.ty
+                && precision <= 18
+            {
+                let arrow_scale = i8::try_from(scale).map_err(|_| resource())?;
+                let value = match &node.code {
+                    Code::Column(i) => batch
+                        .column(*i)
+                        .as_primitive_opt::<Decimal64Type>()
+                        .map(|a| Arc::new(a.clone())),
+                    Code::Literal(Value::Decimal(v)) => i64::try_from(*v).ok().map(|v| {
+                        native::record_owned(batch.num_rows(), false, false);
+                        Arc::new(
+                            arrow_array::Decimal64Array::new(
+                                vec![v; batch.num_rows()].into(),
+                                None,
+                            )
+                            .with_precision_and_scale(precision, arrow_scale)
+                            .expect("bound decimal type"),
+                        )
+                    }),
+                    Code::Arith(op, l, r) => match (&self.native[*l], &self.native[*r]) {
+                        (Some(lane), Some(rhs)) => {
+                            let (_, sl) =
+                                self.nodes[*l].meta.ty.as_decimal().ok_or_else(resource)?;
+                            let (_, sr) =
+                                self.nodes[*r].meta.ty.as_decimal().ok_or_else(resource)?;
+                            if let Some(kernel) = nata_kernels::native::Decimal64::new(
+                                crate::eval::kernel_op(*op),
+                                sl,
+                                sr,
+                                precision,
+                                scale,
+                            ) {
+                                let mut mask = selected.clone();
+                                native::intersect(&mut mask, lane.nulls());
+                                native::intersect(&mut mask, rhs.nulls());
+                                let mut values = vec![0; batch.num_rows()];
+                                kernel
+                                    .column(lane.values(), rhs.values(), &mask, &mut values)
+                                    .map_err(|_| {
+                                        crate::eval::dec_overflow(
+                                            &node.meta,
+                                            &format!("`{}`", op.symbol()),
+                                        )
+                                    })?;
+                                native::record_owned(batch.num_rows(), false, true);
+                                Some(Arc::new(
+                                    arrow_array::Decimal64Array::new(
+                                        values.into(),
+                                        native::nulls(&mask, batch.num_rows()),
+                                    )
+                                    .with_precision_and_scale(precision, arrow_scale)
+                                    .map_err(|_| resource())?,
+                                ))
+                            } else {
+                                None
+                            }
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+                if value.is_some() {
+                    self.native[id] = value;
+                    continue;
+                }
+            }
+            let dependencies: Vec<usize> = match node.code {
+                Code::Arith(_, l, r) => vec![l, r],
+                Code::Cast(i) => vec![i],
+                _ => vec![],
+            };
+            for i in dependencies {
+                if let Some(array) = &self.native[i] {
+                    let array: arrow_array::ArrayRef = array.clone();
+                    *Arc::get_mut(&mut self.columns[i]).ok_or_else(resource)? =
+                        Col::from_arrow(&array, self.nodes[i].meta.ty)?;
+                }
+            }
             let (inputs, outputs) = self.columns.split_at_mut(id);
             let out = Arc::get_mut(&mut outputs[0])
                 .ok_or_else(|| EvalError::internal("live aggregate expression buffer"))?;
@@ -186,6 +274,22 @@ impl Program {
                     *out = std::rc::Rc::try_unwrap(col).unwrap_or_else(|c| (*c).clone());
                 }
             }
+            // Cast and conditional outputs retain the general reference path.
+            self.native[id] = native::narrow(out);
+        }
+        // Keys and non-SUM/AVG consumers keep their established Col semantics.
+        for id in self.keys.iter().copied().chain(
+            self.args
+                .iter()
+                .zip(&a.aggregates)
+                .filter(|(_, a)| !matches!(a.name.as_str(), "sum" | "avg"))
+                .filter_map(|(i, _)| *i),
+        ) {
+            if let Some(array) = &self.native[id] {
+                let array: arrow_array::ArrayRef = array.clone();
+                *Arc::get_mut(&mut self.columns[id]).ok_or_else(resource)? =
+                    Col::from_arrow(&array, self.nodes[id].meta.ty)?;
+            }
         }
         Ok((
             self.keys
@@ -194,13 +298,25 @@ impl Program {
                 .collect(),
             self.args
                 .iter()
-                .map(|i| i.map(|i| Arc::clone(&self.columns[i])))
+                .zip(&a.aggregates)
+                .map(|(i, a)| {
+                    i.map(|i| {
+                        if matches!(a.name.as_str(), "sum" | "avg")
+                            && let Some(array) = &self.native[i]
+                        {
+                            Argument::Decimal64(Arc::clone(array))
+                        } else {
+                            Argument::General(Arc::clone(&self.columns[i]))
+                        }
+                    })
+                })
                 .collect(),
         ))
     }
     // Do not retain previous Arrow dictionaries/expanded text while decoding
     // another batch. Numeric/key capacities remain within the admitted scratch.
     pub(super) fn release_text(&mut self) {
+        self.native.fill(None);
         for col in &mut self.columns {
             if let Some(c) = Arc::get_mut(col) {
                 match &mut c.data {
@@ -283,11 +399,23 @@ mod tests {
             .evaluate(&first, &ev, &a, &[1, 2])
             .expect("masked overflow");
         assert!(Arc::ptr_eq(
-            args[0].as_ref().expect("arg"),
-            args[2].as_ref().expect("arg")
+            args[0].as_ref().expect("arg").general().expect("general"),
+            args[2].as_ref().expect("arg").general().expect("general")
         ));
-        assert_eq!(Atom::get(args[0].as_ref().expect("arg"), 1), Atom::Null);
-        assert_eq!(Atom::get(args[1].as_ref().expect("arg"), 2), Atom::Int(9));
+        assert_eq!(
+            Atom::get(
+                args[0].as_ref().expect("arg").general().expect("general"),
+                1
+            ),
+            Atom::Null
+        );
+        assert_eq!(
+            Atom::get(
+                args[1].as_ref().expect("arg").general().expect("general"),
+                2
+            ),
+            Atom::Int(9)
+        );
         let pointers: Vec<_> = program
             .columns
             .iter()
@@ -305,13 +433,28 @@ mod tests {
         let (_, args) = program
             .evaluate(&second, &ev, &a, &[0, 2, 3])
             .expect("reuse");
-        assert_eq!(Atom::get(args[0].as_ref().expect("arg"), 0), Atom::Int(16));
         assert_eq!(
-            Atom::get(args[0].as_ref().expect("arg"), 1),
+            Atom::get(
+                args[0].as_ref().expect("arg").general().expect("general"),
+                0
+            ),
+            Atom::Int(16)
+        );
+        assert_eq!(
+            Atom::get(
+                args[0].as_ref().expect("arg").general().expect("general"),
+                1
+            ),
             Atom::Null,
             "old selected bit cleared"
         );
-        assert_eq!(Atom::get(args[0].as_ref().expect("arg"), 2), Atom::Null);
+        assert_eq!(
+            Atom::get(
+                args[0].as_ref().expect("arg").general().expect("general"),
+                2
+            ),
+            Atom::Null
+        );
         for (c, ptr) in program.columns.iter().zip(pointers) {
             let Data::Int(v) = &c.data else { panic!("int") };
             assert_eq!(v.as_ptr(), ptr, "capacity survives another batch");
@@ -349,14 +492,12 @@ mod tests {
         let types = [ty];
         let ev = Evaluator::new(&b, &types);
         let (_, args) = p.evaluate(&b, &ev, &a, &[0, 1]).expect("decimal add");
-        let out = args[0].as_ref().expect("arg");
-        assert_eq!(Atom::get(out, 0), Atom::Dec(250));
-        assert_eq!(Atom::get(out, 1), Atom::Null);
-        assert_eq!(Atom::get(out, 2), Atom::Null);
-        let Data::Dec(v) = &out.data else {
-            panic!("decimal")
+        let Argument::Decimal64(out) = args[0].as_ref().expect("arg") else {
+            panic!("native")
         };
-        let ptr = v.as_ptr();
+        assert_eq!(out.value(0), 250);
+        assert!(out.is_null(1));
+        assert!(out.is_null(2));
         drop(args);
         let second: ArrayRef = Arc::new(
             Decimal128Array::from(vec![Some(7), Some(9)])
@@ -369,13 +510,11 @@ mod tests {
         let (_, args) = p
             .evaluate(&b, &ev, &a, &[1])
             .expect("reuse wide Arrow input");
-        let out = args[0].as_ref().expect("arg");
-        assert_eq!(Atom::get(out, 0), Atom::Null);
-        assert_eq!(Atom::get(out, 1), Atom::Dec(18));
-        let Data::Dec(v) = &out.data else {
-            panic!("decimal")
+        let Argument::Decimal64(out) = args[0].as_ref().expect("arg") else {
+            panic!("native")
         };
-        assert_eq!(v.as_ptr(), ptr);
+        assert!(out.is_null(0));
+        assert_eq!(out.value(1), 18);
     }
     #[test]
     fn text_literals_do_not_add_owned_instruction_copies() {
@@ -413,9 +552,9 @@ mod tests {
         let types = [SqlType::BigInt];
         let ev = Evaluator::new(&b, &types);
         let (_, args) = p.evaluate(&b, &ev, &a, &[0]).expect("masked conditional");
-        let x = args[0].as_ref().expect("arg");
-        let y = args[1].as_ref().expect("arg");
-        let z = args[2].as_ref().expect("arg");
+        let x = args[0].as_ref().expect("arg").general().expect("general");
+        let y = args[1].as_ref().expect("arg").general().expect("general");
+        let z = args[2].as_ref().expect("arg").general().expect("general");
         assert!(Arc::ptr_eq(x, z));
         assert!(!Arc::ptr_eq(x, y));
         assert_eq!(Atom::get(x, 0), Atom::Int(3));
@@ -470,9 +609,145 @@ mod tests {
         assert!(matches!(p.nodes[0].code, Code::Generic(0)));
         let (_, args) = p.evaluate(&b, &ev, &a, &[0, 1]).expect("unselected branch");
         assert!(Arc::ptr_eq(
-            args[0].as_ref().expect("arg"),
-            args[2].as_ref().expect("arg")
+            args[0].as_ref().expect("arg").general().expect("general"),
+            args[2].as_ref().expect("arg").general().expect("general")
         ));
-        assert_eq!(Atom::get(args[0].as_ref().expect("arg"), 0), Atom::Int(0));
+        assert_eq!(
+            Atom::get(
+                args[0].as_ref().expect("arg").general().expect("general"),
+                0
+            ),
+            Atom::Int(0)
+        );
+    }
+}
+
+#[cfg(test)]
+mod native_errors {
+    use super::*;
+    use arrow_array::{ArrayRef, Decimal64Array};
+    use nata_sql::Pos;
+    #[test]
+    fn native_precision_overflow_keeps_node_then_row_priority() {
+        let ty = SqlType::Decimal {
+            precision: 18,
+            scale: 0,
+        };
+        let product = |column, pos| {
+            Expr::new(
+                ExprKind::Arith {
+                    op: ArithOp::Mul,
+                    left: Box::new(Expr::new(ExprKind::Column(column), ty, pos)),
+                    right: Box::new(Expr::literal(
+                        Value::Decimal(100),
+                        SqlType::Decimal {
+                            precision: 3,
+                            scale: 0,
+                        },
+                        pos,
+                    )),
+                },
+                ty,
+                pos,
+            )
+        };
+        let first = Pos { line: 2, col: 10 };
+        let later = Pos { line: 3, col: 20 };
+        let a = Aggregate {
+            keys: vec![],
+            aggregates: vec![product(0, first), product(1, later)]
+                .into_iter()
+                .map(|e| AggregateExpr {
+                    name: "sum".into(),
+                    arg: Some(e),
+                    ty: SqlType::Decimal {
+                        precision: 38,
+                        scale: 0,
+                    },
+                    pos: Pos::START,
+                })
+                .collect(),
+            having: None,
+        };
+        let array = |v| {
+            Arc::new(
+                Decimal64Array::from(v)
+                    .with_precision_and_scale(18, 0)
+                    .expect("type"),
+            ) as ArrayRef
+        };
+        // 10^18 fits i64 but fails DECIMAL(18). Earlier node row 1 wins
+        // over later node row 0. NULL junk and deselected rows must not fire.
+        let b = RecordBatch::try_from_iter([
+            (
+                "a",
+                array(vec![Some(1), Some(10_000_000_000_000_000), None]),
+            ),
+            (
+                "b",
+                array(vec![Some(10_000_000_000_000_000), Some(1), None]),
+            ),
+        ])
+        .expect("batch");
+        let types = [ty, ty];
+        let ev = Evaluator::new(&b, &types);
+        for rows in [&[0, 1, 2][..], &[0][..]] {
+            let expected = a
+                .aggregates
+                .iter()
+                .find_map(|a| ev.eval(a.arg.as_ref().expect("arg"), rows).err())
+                .expect("overflow");
+            assert_eq!(
+                Program::new(&a)
+                    .evaluate(&b, &ev, &a, rows)
+                    .expect_err("same overflow"),
+                expected
+            );
+        }
+        Program::new(&a)
+            .evaluate(&b, &ev, &a, &[2])
+            .expect("NULLs masked");
+    }
+    #[test]
+    fn borrowed_parent_lifetime_and_sparse_selection() {
+        let ty = SqlType::Decimal {
+            precision: 15,
+            scale: 2,
+        };
+        let a = Aggregate {
+            keys: vec![],
+            aggregates: vec![AggregateExpr {
+                name: "sum".into(),
+                arg: Some(Expr::new(ExprKind::Column(0), ty, Pos::START)),
+                ty: SqlType::Decimal {
+                    precision: 38,
+                    scale: 2,
+                },
+                pos: Pos::START,
+            }],
+            having: None,
+        };
+        let array = Arc::new(
+            Decimal64Array::from(vec![Some(11), None, Some(33)])
+                .with_precision_and_scale(15, 2)
+                .expect("type"),
+        );
+        let ptr = array.values().as_ptr();
+        let b = RecordBatch::try_from_iter([("x", array.clone() as ArrayRef)]).expect("batch");
+        let types = [ty];
+        let ev = Evaluator::new(&b, &types);
+        let mut p = Program::new(&a);
+        let (_, args) = p.evaluate(&b, &ev, &a, &[0, 2]).expect("borrow");
+        let Argument::Decimal64(values) = args[0].as_ref().expect("arg") else {
+            panic!("native")
+        };
+        assert_eq!(values.values().as_ptr(), ptr);
+        drop(ev);
+        drop(b);
+        drop(array);
+        assert_eq!(values.value(2), 33);
+        drop(args);
+        p.release_text();
+        assert!(p.native.iter().all(Option::is_none));
     }
 }

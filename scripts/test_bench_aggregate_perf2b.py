@@ -15,10 +15,15 @@ class LocalBudgets(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
             data = base/'data'; data.mkdir(); (data/'lineitem.parquet').write_bytes(b'inert')
-            body = '#!/bin/sh\necho a,b,c,d\necho 1,2,3,4\n'
+            body = """#!/bin/sh
+echo a,b,c,d
+echo 1,2,3,4
+if [ -n "$NATA_STATS_JSON" ]; then printf '{"version":1}' > "$NATA_STATS_JSON"; fi
+"""
             for name in ('before', 'after', 'duckdb'):
                 binary = base/name; binary.write_text(body); binary.chmod(0o555)
-            env = dict(os.environ, PATH=str(base)+os.pathsep+os.environ['PATH'])
+            env = dict(os.environ, PATH=str(base)+os.pathsep+os.environ['PATH'],
+                       NATA_QUERY_STATS='1', NATA_STATS_DIR=str(base/'stats'))
             cmd = [sys.executable, str(RUNNER), 'inert', '--before', str(base/'before'),
                    '--after', str(base/'after'), '--data', str(data), '--out', str(base/'out'),
                    '--rounds', '2', '--queries', 'high_cardinality_tpch', '--budgets', '4294967296', '67108864']
@@ -27,6 +32,10 @@ class LocalBudgets(unittest.TestCase):
             gates = json.loads((base/'out/inert-gates.json').read_text())
             self.assertEqual(len(gates), 12)
             self.assertEqual(len(samples), 24)
+            for sample in samples:
+                self.assertEqual(sample['stats'], {'version': 1})
+                self.assertEqual(json.loads(Path(sample['stats_file']).read_text()), sample['stats'])
+            self.assertEqual(len({s['stats_file'] for s in samples}), 24)
             self.assertEqual({s['budget'] for s in samples}, {4294967296, 67108864})
             for i in range(0, 24, 6):
                 self.assertEqual([s['arm'] for s in samples[i:i+6]],

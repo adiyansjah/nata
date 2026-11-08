@@ -1,0 +1,334 @@
+{
+  "outcomes": [
+    {
+      "scenario": "Baseline",
+      "summary": "Success",
+      "log_path": "log/baseline.log",
+      "diff_path": null,
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.253914826,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151218409,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/native.rs:15:17: replace == with != in selected",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/native.rs",
+          "function": {
+            "function_name": "selected",
+            "return_type": "-> Result<(), E>",
+            "span": {
+              "start": {
+                "line": 5,
+                "column": 1
+              },
+              "end": {
+                "line": 34,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 15,
+              "column": 17
+            },
+            "end": {
+              "line": 15,
+              "column": 19
+            }
+          },
+          "replacement": "!=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__native.rs_line_15_col_17.log",
+      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_15_col_17.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.304218658,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.100975265,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/native.rs:29:32: replace << with >> in selected",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/native.rs",
+          "function": {
+            "function_name": "selected",
+            "return_type": "-> Result<(), E>",
+            "span": {
+              "start": {
+                "line": 5,
+                "column": 1
+              },
+              "end": {
+                "line": 34,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 29,
+              "column": 32
+            },
+            "end": {
+              "line": 29,
+              "column": 34
+            }
+          },
+          "replacement": ">>",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__native.rs_line_29_col_32.log",
+      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_29_col_32.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.203788737,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.151208863,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/native.rs:69:42: replace < with <= in Decimal64::check",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/native.rs",
+          "function": {
+            "function_name": "Decimal64::check",
+            "return_type": "-> Result<i64, Fail>",
+            "span": {
+              "start": {
+                "line": 67,
+                "column": 5
+              },
+              "end": {
+                "line": 71,
+                "column": 6
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 69,
+              "column": 42
+            },
+            "end": {
+              "line": 69,
+              "column": 43
+            }
+          },
+          "replacement": "<=",
+          "genre": "BinaryOperator"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__native.rs_line_69_col_42.log",
+      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_69_col_42.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.153656418,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.100919399,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "Mutant": {
+          "name": "crates/nata-kernels/src/native.rs:108:5: replace numbers -> Result<(), E> with Ok(())",
+          "package": "nata-kernels",
+          "file": "crates/nata-kernels/src/native.rs",
+          "function": {
+            "function_name": "numbers",
+            "return_type": "-> Result<(), E>",
+            "span": {
+              "start": {
+                "line": 101,
+                "column": 1
+              },
+              "end": {
+                "line": 109,
+                "column": 2
+              }
+            }
+          },
+          "span": {
+            "start": {
+              "line": 108,
+              "column": 5
+            },
+            "end": {
+              "line": 108,
+              "column": 63
+            }
+          },
+          "replacement": "Ok(())",
+          "genre": "FnValue"
+        }
+      },
+      "summary": "CaughtMutant",
+      "log_path": "log/crates__nata-kernels__src__native.rs_line_108_col_5.log",
+      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_108_col_5.diff",
+      "phase_results": [
+        {
+          "phase": "Build",
+          "duration": 1.205529619,
+          "process_status": "Success",
+          "argv": [
+            "cargo",
+            "test",
+            "--no-run",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        },
+        {
+          "phase": "Test",
+          "duration": 0.150774662,
+          "process_status": {
+            "Failure": 101
+          },
+          "argv": [
+            "cargo",
+            "test",
+            "--profile=release",
+            "--verbose",
+            "--package=nata-kernels@0.0.0",
+            "-j4",
+            "--lib"
+          ]
+        }
+      ]
+    }
+  ],
+  "total_mutants": 4,
+  "missed": 0,
+  "caught": 4,
+  "timeout": 0,
+  "unviable": 0,
+  "success": 0,
+  "start_time": "2026-11-08T11:09:53.068575698Z",
+  "end_time": "2026-11-08T11:09:59.849968874Z",
+  "cargo_mutants_version": "27.1.0"
+}
