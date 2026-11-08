@@ -279,6 +279,7 @@ jobs:
         run: |
           export TMPDIR="$RUNNER_TEMP/bridge"
           mkdir -p "$TMPDIR"
+          bash crates/nata-sched/test_bridge_mutants.sh
           bash crates/nata-sched/check_bridge_mutants.sh
 
   object-store-bridge-combined:
