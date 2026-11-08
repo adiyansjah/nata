@@ -17,6 +17,7 @@ import resource
 import signal
 import subprocess as sp
 import time
+from bench_verdict import invoke, legacy_summary as summarize, assess, aggregate_limit
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('settled', ROOT/'scripts/bench-aggregate-perf1-heavy.py')
@@ -70,36 +71,6 @@ def canonical(source, query, scratch, name='actual'):
     return result
 
 
-def invoke(argv, env, output, log, timeout):
-    rss = log.with_suffix('.usage')
-    load = os.getloadavg()
-    start = time.perf_counter_ns()
-    with output.open('w') as sink:
-        try:
-            p = sp.Popen(['/usr/bin/time','-f','%M %U %S','-o',str(rss),*map(str,argv)],
-                         env=env, stdout=sink, stderr=sp.PIPE, start_new_session=True)
-            # Pipe EOF reports completion without wait(timeout)'s 50 ms polling
-            # grid. Keep full CSV output and the process-group safety deadline.
-            _, stderr = p.communicate(timeout=timeout)
-            rc = p.returncode
-        except sp.TimeoutExpired:
-            os.killpg(p.pid, signal.SIGKILL)
-            _, stderr = p.communicate()
-            rc = 124
-    elapsed = (time.perf_counter_ns()-start)/1e9
-    log.write_bytes(stderr)
-    metrics = {}
-    for line in log.read_text().splitlines():
-        if line.startswith('aggregate:'):
-            metrics = {k:int(v) for k,v in (s.split('=') for s in line.split()[1:])}
-    usage = rss.read_text().splitlines()[-1].split() if rss.exists() and rss.stat().st_size else []
-    return dict(exit=rc, seconds=elapsed, load=load,
-                rss_bytes=int(usage[0])*1024 if len(usage)==3 else None,
-                user_seconds=float(usage[1]) if len(usage)==3 else None,
-                system_seconds=float(usage[2]) if len(usage)==3 else None,
-                output_bytes=output.stat().st_size, counters=metrics)
-
-
 def resource_gate(row, budget, baseline, disk):
     m = row['counters']
     if row['exit'] or not m or m['peak_reservation'] > budget:
@@ -110,37 +81,45 @@ def resource_gate(row, budget, baseline, disk):
         raise RuntimeError('FD/disk bound failure')
 
 
-def summarize(samples, complete_reference, settled):
-    result = dict(verdict='UNRESOLVED' if complete_reference else 'UNASSESSED', arms={})
-    # No numeric twin cutoff is frozen. Retain all evidence for the parent's
-    # noise judgment; an automated pass would invent a rule. UNSETTLED smoke
-    # and failed references can never be promoted to MET.
-    for v in ('main','duckdb'):
-        for role in ('primary','twin'):
-            rows=[s for s in samples if (s['variant'],s['role'])==(v,role)]
-            if len(rows)==5 and all(s['exit']==0 for s in rows):
-                result['arms'][v+'-'+role]=h.distribution([s['seconds'] for s in rows])
-    result['twin_ratios']={}
-    for v in ('main','duckdb'):
-        pairs=[[s for s in samples if (s['variant'],s['role'])==(v,role)] for role in ('primary','twin')]
-        if all(len(rows)==5 and all(s['exit']==0 for s in rows) for rows in pairs):
-            result['twin_ratios'][v]=h.distribution([t['seconds']/p['seconds'] for p,t in zip(*pairs)])
-    if settled and all(k in result['arms'] for k in ('main-primary','duckdb-primary')):
-        result['paired_latency_ratio']=h.distribution([n['seconds']/d['seconds'] for n,d in zip(
-            [s for s in samples if (s['variant'],s['role'])==('main','primary')],
-            [s for s in samples if (s['variant'],s['role'])==('duckdb','primary')])])
-    return result
+def selected_cells(a):
+    matrix = repair_cells(a.scale) if getattr(a, 'repair_rerun', False) else cells(a.scale)
+    if getattr(a, 'early_sf10', False):
+        if a.scale != 10 or getattr(a, 'policy', 'slice5') != '0008-v1':
+            raise ValueError('--early-sf10 requires --scale 10 --policy 0008-v1')
+        matrix = [c for c in matrix if c[0] == 'q1']
+    if a.resource_only:
+        matrix=[('high_cardinality_tpch',8,{1:64*MIB,10:256*MIB,100:4*GIB}[a.scale])]
+    return matrix
+
+
+def affinity_mask(threads):
+    allowed = os.sched_getaffinity(0)
+    topology = sp.check_output(['lscpu', '-p=CPU,CORE,SOCKET'], text=True)
+    cores = {}
+    for line in topology.splitlines():
+        if not line.startswith('#'):
+            cpu, core, socket = map(int, line.split(','))
+            if cpu in allowed:
+                cores.setdefault((socket, core), []).append(cpu)
+    # One sibling per physical core first; SMT siblings only after every core.
+    ordered = [v[0] for _, v in sorted(cores.items())]
+    ordered += [cpu for _, v in sorted(cores.items()) for cpu in v[1:]]
+    if len(ordered) < threads:
+        raise ValueError('insufficient allowed CPUs for requested affinity')
+    return ','.join(map(str, ordered[:threads]))
 
 
 def run(a):
     decimal.getcontext().prec = 80
     a.out = a.out.resolve(); a.data = a.data.resolve(); a.binary = a.binary.resolve()
     a.out.mkdir(parents=True, exist_ok=False)
+    # Bulk scratch (spill, query output, sort files, TMPDIR) lives OUTSIDE the results tree: the supervisor pulls $RESULTS every few
+    # minutes, and live spill files made every pull fail (closeout4-*, 2026-11-08). Only logs and JSON stay in a.out.
+    a.bulk = (Path(os.environ['WORK'])/'closeout-bulk' if os.environ.get('WORK') else a.out.parent/(a.out.name+'-bulk'))/a.out.name
+    a.bulk.mkdir(parents=True, exist_ok=False)
     if a.binary.stat().st_mode & 0o222:
         raise ValueError('use a read-only immutable binary copy')
-    matrix = repair_cells(a.scale) if getattr(a, 'repair_rerun', False) else cells(a.scale)
-    if a.resource_only:
-        matrix=[('high_cardinality_tpch',8,{1:64*MIB,10:256*MIB,100:4*GIB}[a.scale])]
+    matrix = selected_cells(a)
     expected = {'c3d-highcpu-8':('x86_64',8), 'n4a-highcpu-8':('aarch64',8),
                 'c3d-highcpu-30':('x86_64',30), 'n4a-highcpu-32':('aarch64',32)}[a.machine]
     if not a.smoke:
@@ -148,7 +127,10 @@ def run(a):
             raise ValueError('wrong machine topology for frozen cells')
         if a.machine=='c3d-highcpu-30':
             matrix=[(q,30 if t==32 else t,b) for q,t,b in matrix]
-    env = dict(os.environ, TMPDIR=str(a.out), LC_ALL='C')
+    env = dict(os.environ, TMPDIR=str(a.bulk), LC_ALL='C')
+    if getattr(a, 'policy', 'slice5') == '0008-v1':
+        env['NATA_QUERY_STATS'] = '1'
+        env['NATA_QUERY_TRACE'] = '1' if getattr(a, 'trace', False) else '0'
     for key in ('AI_AGENT','CODEX_CI','CLAUDECODE','CODEX_THREAD_ID'): env.pop(key,None)
     resource.setrlimit(resource.RLIMIT_NOFILE, (a.fd_limit,resource.getrlimit(resource.RLIMIT_NOFILE)[1]))
     metadata = dict(commit=a.commit,binary_sha256=h.digest(a.binary),machine=a.machine,
@@ -164,34 +146,44 @@ def run(a):
     metadata['input_rows']=int(list(csv.reader(count.splitlines()))[1][0])
     if not a.smoke and metadata['input_rows']!={1:6001215,10:59986052,100:600037902}[a.scale]:
         raise ValueError('input scale does not match frozen matrix')
+    metadata['policy'] = getattr(a, 'policy', 'slice5')
+    if metadata['policy'] == '0008-v1':
+        metadata['diagnostic'] = 'Native attribution is partial: complete=false blocks T6; record.missing lists remaining coverage. External per-query symbol profiles are still required.'
+    metadata['native_stats_enabled'] = env.get('NATA_QUERY_STATS') == '1'
+    metadata['trace_enabled'] = env.get('NATA_QUERY_TRACE') == '1'
+    metadata['affinity'] = getattr(a, 'affinity', 'unpinned')
+    metadata['cpu_core_socket'] = sp.check_output(['lscpu', '-p=CPU,CORE,SOCKET'], text=True)
     h.save(a.out/'metadata.json',metadata)
     observations=[]; summaries=[]; baseline={}; failed=False
     for i,(query,threads,budget) in enumerate(matrix):
         body=sql(query,a.data); scratch=a.out/f'cell-{i}';scratch.mkdir()
-        spill=scratch/'spill';spill.mkdir()
+        bulk=a.bulk/f'cell-{i}';bulk.mkdir()
+        spill=bulk/'spill';spill.mkdir()
         for variant in ('main','duckdb'): (spill/variant).mkdir()
         disk=(128 if a.scale==100 else 32)*GIB
         def command(variant, cap=budget, query_sql=body):
             argv=h.command('duckdb' if variant=='duckdb' else a.binary,query_sql,threads,cap,spill/variant)
             if variant=='main': argv[argv.index('--spill-disk-bytes')+1]=str(disk)
+            if getattr(a, 'affinity', 'unpinned') == 'pinned':
+                argv = ['taskset', '--cpu-list', affinity_mask(threads), *argv]
             return argv
         if threads not in baseline:
             probes=[]
             for r in range(1 if a.smoke else 5):
-                p=invoke(command('main',query_sql=f"SELECT l_orderkey FROM '{a.data}/lineitem.parquet' LIMIT 0"),env,scratch/'baseline.csv',scratch/f'baseline-{r}.log',a.timeout)
+                p=invoke(command('main',query_sql=f"SELECT l_orderkey FROM '{a.data}/lineitem.parquet' LIMIT 0"),env,bulk/'baseline.csv',scratch/f'baseline-{r}.log',a.timeout)
                 if p['exit'] or p['rss_bytes'] is None: raise RuntimeError('baseline failed')
                 probes.append(p['rss_bytes'])
             baseline[threads]=max(probes)
             h.save(a.out/'baselines.json',baseline)
-        output=scratch/'output.csv'
+        output=bulk/'output.csv'
         oracle=invoke(command('duckdb',cap=(32 if a.scale==100 else 4)*GIB),env,output,scratch/'oracle.log',a.timeout)
         if oracle['exit']: raise RuntimeError('unrestricted value oracle failed; stop')
-        expected_values=canonical(output,query,scratch,'expected')
+        expected_values=canonical(output,query,bulk,'expected')
         gates=[]
         for variant in ('main','duckdb'):
             row=invoke(command(variant),env,output,scratch/f'gate-{variant}.log',a.timeout)
             if row['exit']==0:
-                actual=canonical(output,query,scratch)
+                actual=canonical(output,query,bulk)
                 equal=h.equal_values(expected_values,actual,'q1') if query=='q1' else expected_values['rows']==actual['rows'] and filecmp.cmp(expected_values['path'],actual['path'],shallow=False)
                 if not equal: raise RuntimeError(f'value gate failed: {query}/{threads}/{budget}/{variant}')
                 row['result_rows']=sum(expected_values.values()) if query=='q1' else expected_values['rows']
@@ -209,6 +201,8 @@ def run(a):
         if gates[0].get('error'):
             summary=dict(query=query,threads=threads,budget=budget,verdict='FAIL',
                          error=gates[0]['error'],gates=str(scratch/'gates.json'))
+            if getattr(a, 'policy', 'slice5') == '0008-v1':
+                summary.update(slice5_verdict=summary['verdict'], verdict='NOT MET')
             summaries.append(summary);h.save(a.out/'summary.json',summaries)
             failed=True
             print('completed',query,threads,budget,'FAIL',summary['error'],flush=True)
@@ -248,8 +242,15 @@ def run(a):
         summary=dict(query=query,threads=threads,budget=budget,
                      target_latency_ratio=(1.5 if query=='q1' else 2.0) if a.scale<100 and budget==4*GIB and query!='high_cardinality_tpch' else (2.0 if gates[0]['counters']['spill_bytes_written'] else None),
                      **summarize(samples,complete,settled))
+        if getattr(a, 'policy', 'slice5') == '0008-v1':
+            summary['slice5_verdict'] = summary['verdict']
+            target = aggregate_limit(query, a.scale, gates[0]['counters']['spill_bytes_written'] > 0)
+            summary['target_latency_ratio'] = target
+            summary['package0'] = assess(samples, 'main', 'duckdb', target, settled=settled,
+                                         complete_reference=complete) if target else dict(verdict='UNASSESSED', reason='no frozen latency target')
+            summary['verdict'] = summary['package0']['verdict']
         if timing_error:
-            summary.update(verdict='FAIL',error=timing_error)
+            summary.update(verdict='NOT MET' if getattr(a, 'policy', 'slice5') == '0008-v1' else 'FAIL',error=timing_error)
             failed=True
         summaries.append(summary);h.save(a.out/'summary.json',summaries)
         print('completed',query,threads,budget,summary['verdict'],flush=True)
@@ -358,6 +359,10 @@ def self_test():
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--trace', action='store_true', help='bounded detailed native trace (0008-v1 only), separate from ordinary counters')
+    p.add_argument('--early-sf10', action='store_true', help='Q1 1/4/8 threads at all frozen SF10 budgets, before later packages')
+    p.add_argument('--affinity', choices=('unpinned', 'pinned'), default='unpinned')
+    p.add_argument('--policy', choices=('slice5', '0008-v1'), default='slice5')
     p.add_argument('--self-test',action='store_true');p.add_argument('--plan',action='store_true')
     p.add_argument('--repair-rerun',action='store_true',help='SF1/SF10: Q1 at all frozen budgets/threads; every scale: all 4 GiB cells')
     p.add_argument('--resource-only',action='store_true',help='HC completion budget at 8 threads, for the separate low-FD control')
@@ -367,9 +372,10 @@ def main():
     p.add_argument('--machine',choices=('c3d-highcpu-8','n4a-highcpu-8','c3d-highcpu-30','n4a-highcpu-32'),default='c3d-highcpu-8')
     p.add_argument('--timeout',type=int,default=1800)
     a=p.parse_args()
+    if a.trace and a.policy != '0008-v1': p.error('--trace requires --policy 0008-v1')
     if a.repair_rerun and a.resource_only: p.error('--repair-rerun cannot be combined with --resource-only')
     if a.self_test: return self_test()
-    if a.plan: print(json.dumps(repair_cells(a.scale) if a.repair_rerun else cells(a.scale),indent=2));return
+    if a.plan: print(json.dumps(selected_cells(a),indent=2));return
     if not all((a.binary,a.commit,a.data,a.out)):p.error('run requires --binary --commit --data --out')
     return run(a)
 
