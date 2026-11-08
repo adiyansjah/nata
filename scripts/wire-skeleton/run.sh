@@ -3,9 +3,12 @@
 set -euo pipefail
 : "${WORK:?}" "${RESULTS:?}"
 root=$(cd "$(dirname "$0")/../.." && pwd)
-if ! command -v javac >/dev/null || ! command -v psql >/dev/null || ! command -v pg_config >/dev/null || [ ! -x "$(pg_config --bindir)/initdb" ]; then
-    sudo apt-get update -qq
-    sudo apt-get install -y default-jdk-headless postgresql postgresql-client libpq-dev python3-venv
+# Any installed server major is enough (the closeout chain adds PGDG, whose libpq-dev moves pg_config's bindir). Never install the
+# unversioned `postgresql` package: with PGDG configured it pulls the newest major and opens an interactive debconf prompt
+# (found 2026-11-08: runs s10close2-* hung 40 minutes and installed PostgreSQL 18).
+if ! command -v javac >/dev/null || ! command -v psql >/dev/null || ! command -v pg_config >/dev/null || ! compgen -G '/usr/lib/postgresql/*/bin/initdb' >/dev/null; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q default-jdk-headless postgresql-15 postgresql-client-15 libpq-dev python3-venv
 fi
 export TMPDIR="$WORK/wire-skeleton-tmp"
 mkdir -p "$TMPDIR" "$RESULTS/wire-skeleton"

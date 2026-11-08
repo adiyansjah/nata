@@ -5,9 +5,9 @@
 # DBeaver failures, P16 misses/noise and resource excess remain failing gates.
 machine-type bash -o pipefail -c 'curl -fsS -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s,.*/,,"'
 machine-context bash -c 'uname -m; lscpu; rustc --version; cargo --version; ulimit -a'
-apt-index sudo apt-get update -qq
-timing-tools sudo apt-get install -y time linux-perf
-matrix-deps sudo apt-get install -y default-jdk-headless postgresql-15 postgresql-client-15 libpq-dev python3-venv
+apt-index sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+timing-tools sudo DEBIAN_FRONTEND=noninteractive apt-get install -y time linux-perf
+matrix-deps sudo DEBIAN_FRONTEND=noninteractive apt-get install -y default-jdk-headless postgresql-15 postgresql-client-15 libpq-dev python3-venv
 pg16-install bash scripts/wire-browse/install-pg16.sh
 matrix-psql-version bash scripts/wire-browse/install-matrix-client.sh
 matrix-and-deviations bash scripts/wire-browse/matrix-verdict.sh
