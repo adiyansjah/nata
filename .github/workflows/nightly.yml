@@ -261,8 +261,7 @@ jobs:
           echo "SEED $NATA_OBJ_FUZZ_SEED, $NATA_OBJ_FUZZ_CASES cases; replay NATA_OBJ_FUZZ_ONLY=<case>"
           cargo test --locked --release -p nata-objstore --test fuzz ${{ matrix.target }} -- --nocapture --test-threads=1
 
-  # The combined two-CPU/two-I/O (five-thread) exploration stays in the GCP
-  # heavy steps; its bound-2 local probe exceeded 180 seconds.
+  # Combined two-CPU/two-I/O exploration has its own longer job below.
   object-store-bridge:
     name: Parked bridge, fill waiters and grant gate at bound 3
     runs-on: ubuntu-latest
@@ -281,3 +280,25 @@ jobs:
           export TMPDIR="$RUNNER_TEMP/bridge"
           mkdir -p "$TMPDIR"
           bash crates/nata-sched/check_bridge_mutants.sh
+
+  object-store-bridge-combined:
+    # Closing runs cover this five-thread exploration at bound 2; bound 3 must
+    # finish here on the closing commit, never inferred from an older nightly.
+    name: Combined two-worker/two-waiter bridge at bound 3
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup show active-toolchain || rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: loom-bridge-combined
+      - name: Combined bridge at bound 3 (5.5 hour model limit)
+        env:
+          LOOM_MAX_PREEMPTIONS: "3"
+          BRIDGE_MODEL_TIMEOUT: "19800"
+          BRIDGE_COMBINED_IO: "1"
+          BRIDGE_ONLY: ^two_workers_two_waiters_keep_the_window_bound$
+          BRIDGE_RELEASE: "1"
+          CARGO_BUILD_JOBS: "4"
+        run: bash crates/nata-sched/run_bridge_loom.sh

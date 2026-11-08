@@ -258,9 +258,21 @@ pub(crate) fn query(
             .collect::<Result<Vec<_>, _>>()?
     };
     let fields = selected.iter().map(|i| fields[*i].clone()).collect();
+    // Move the last use of each cell; repeated projections still get identical values.
+    let last_use: Vec<_> = selected
+        .iter()
+        .enumerate()
+        .map(|(at, i)| !selected[at + 1..].contains(i))
+        .collect();
     let rows: Vec<_> = rows
         .into_iter()
-        .map(|r| selected.iter().map(|i| r[*i].clone()).collect())
+        .map(|mut r| {
+            selected
+                .iter()
+                .zip(&last_use)
+                .map(|(i, last)| if *last { r[*i].take() } else { r[*i].clone() })
+                .collect()
+        })
         .collect();
     Ok(Some(Response {
         fields,
@@ -288,6 +300,82 @@ pub(crate) fn query_with(
 #[cfg(test)]
 mod tests {
     use super::*;
+    // Opt-in release profiling: no clocks or logging on the serving path.
+    #[test]
+    #[ignore = "requires NATA_CATALOG_PROFILE registry; run with --release --nocapture"]
+    fn catalog_profile() {
+        use std::{hint::black_box, time::Instant};
+        let path = std::env::var("NATA_CATALOG_PROFILE").expect("registry path");
+        let start = Instant::now();
+        let snapshot = Snapshot::load(std::path::Path::new(&path)).expect("snapshot");
+        eprintln!("snapshot_us={}", start.elapsed().as_micros());
+        for sql in [
+            "SELECT table_name FROM information_schema.tables ORDER BY table_name",
+            "SELECT table_name,column_name,data_type,is_nullable,ordinal_position FROM information_schema.columns ORDER BY table_name,ordinal_position",
+        ] {
+            let start = Instant::now();
+            for _ in 0..100 {
+                black_box(crate::browse::recognizes(black_box(sql)));
+            }
+            let shape = start.elapsed().as_micros() / 100;
+            let relation_name = if sql.contains("information_schema.tables") {
+                "information_schema.tables"
+            } else {
+                "information_schema.columns"
+            };
+            let start = Instant::now();
+            for _ in 0..100 {
+                black_box(
+                    relation(&snapshot, "nata", relation_name)
+                        .unwrap_or_else(|_| panic!("relation")),
+                );
+            }
+            let relation_us = start.elapsed().as_micros() / 100;
+            let start = Instant::now();
+            for _ in 0..100 {
+                black_box(
+                    query(&snapshot, "nata", black_box(sql)).unwrap_or_else(|_| panic!("query")),
+                );
+            }
+            let generate = start.elapsed().as_micros() / 100;
+            let r = query(&snapshot, "nata", sql)
+                .unwrap_or_else(|_| panic!("query"))
+                .expect("response");
+            let start = Instant::now();
+            for _ in 0..100 {
+                for row in &r.rows {
+                    black_box(
+                        crate::binary::packet(
+                            crate::codec::row(row).expect("row"),
+                            &r.description().expect("description"),
+                            &[],
+                        )
+                        .unwrap_or_else(|_| panic!("packet")),
+                    );
+                }
+            }
+            let encode = start.elapsed().as_micros() / 100;
+            let description = r.description().expect("description");
+            let start = Instant::now();
+            for _ in 0..100 {
+                for row in &r.rows {
+                    black_box(
+                        crate::binary::packet(
+                            crate::codec::row(row).expect("row"),
+                            &description,
+                            &[],
+                        )
+                        .unwrap_or_else(|_| panic!("packet")),
+                    );
+                }
+            }
+            eprintln!(
+                "rows={} shape_us={shape} relation_us={relation_us} generate_sort_project_us={generate} encode_us={encode} encode_reused_description_us={}",
+                r.rows.len(),
+                start.elapsed().as_micros() / 100
+            );
+        }
+    }
     #[test]
     fn metadata_scratch_cap() {
         let charge =
@@ -358,6 +446,17 @@ mod tests {
             ]
         );
         assert_eq!(r.command, "SELECT 3");
+        let repeated = query(&snapshot, "nata", "SELECT column_name,column_name FROM information_schema.columns ORDER BY ordinal_position")
+            .unwrap_or_else(|_| panic!("metadata")).expect("response");
+        assert_eq!(
+            repeated.rows,
+            vec![
+                vec![Some("id".into()); 2],
+                vec![Some("Mixed Column".into()); 2],
+                vec![Some("txt".into()); 2]
+            ]
+        );
+
         let other = query(
             &snapshot,
             "empty",

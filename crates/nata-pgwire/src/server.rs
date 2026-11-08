@@ -877,14 +877,16 @@ async fn session_loop(
                                     .await
                                     .map_err(|_| WireError::internal())?;
                             }
+                            // The field layout and result formats are invariant for this response.
+                            // Keep one bounded description rather than rebuilding it per cell row.
+                            let description = r.description().map_err(|_| WireError::internal())?;
+                            let formats = portal.as_ref().map_or(&[][..], |p| p.results.as_slice());
                             for row in &r.rows {
                                 write
                                     .write_all(&crate::binary::packet(
                                         codec::row(row).map_err(|_| WireError::internal())?,
-                                        &r.description().map_err(|_| WireError::internal())?,
-                                        &portal
-                                            .as_ref()
-                                            .map_or_else(Vec::new, |p| p.results.clone()),
+                                        &description,
+                                        formats,
                                     )?)
                                     .await
                                     .map_err(|_| WireError::internal())?;

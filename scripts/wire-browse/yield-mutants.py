@@ -18,9 +18,11 @@ MUTANTS = {
     'skip-yield': ('_ = pressure => unreachable!(),', '_ = std::future::pending::<()>() => { let _ = pressure; unreachable!() },', None),
     'yield-young': ('at + Duration::from_millis(250)', 'at + Duration::ZERO', TEST),
     'yield-two': ('if yielded {\n                    break;', 'if yielded {\n                    self.yield_oldest();\n                    break;', TEST),
-    # Publish a producer as old/idle before it has flushed PortalSuspended.
-    'yield-executing': ('self.execution = Some(Execution { rx, resume, token, cancelled, join, idle });',
-        'self.phase.suspend(Instant::now() - Duration::from_secs(1)); queries.publish(&idle); self.execution = Some(Execution { rx, resume, token, cancelled, join, idle });', EXEC),
+    # Lie about eligibility through a separate candidate lease. Mutating the
+    # real Run phase also double-suspends it on completion, aborting in Drop
+    # before libtest can report the intended assertion (INVALID).
+    'yield-executing': ('let idle = Arc::new(Idle { phase: Arc::clone(&self.phase), token: token.clone(), cancelled: Arc::clone(&cancelled), resume: Arc::clone(&resume), join: Arc::clone(&join) });',
+        'let idle = Arc::new(Idle { phase: Arc::new(Lease::new()), token: token.clone(), cancelled: Arc::clone(&cancelled), resume: Arc::clone(&resume), join: Arc::clone(&join) }); idle.phase.enter(); idle.phase.suspend(Instant::now() - Duration::from_secs(1)); queries.publish(&idle);', EXEC),
 }
 
 
@@ -28,6 +30,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--work', type=Path, required=True)
     ap.add_argument('--target', type=Path, required=True)
+    ap.add_argument('--only', choices=list(MUTANTS), action='append')
     a = ap.parse_args()
     a.work = a.work.resolve(); a.work.mkdir(parents=True, exist_ok=True)
     ws = a.work/'source'
@@ -36,6 +39,9 @@ def main():
     for name in ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml']:
         shutil.copy(ROOT/name, ws/name)
     shutil.copytree(ROOT/'crates', ws/'crates', ignore=shutil.ignore_patterns('target', '__pycache__'))
+    # copy2 preserves old source mtimes: a shared target may still hold a newer
+    # mutant binary. Force Cargo to validate the fresh control source.
+    for source in ws.rglob('*.rs'): os.utime(source, None)
     env = dict(os.environ, CARGO_TARGET_DIR=str(a.target.resolve()))
     def run(cmd, log):
         with (a.work/log).open('w') as out:
@@ -58,15 +64,19 @@ def main():
     rc, _ = fairness('control-fairness')
     assert rc == 0, 'unmutated fairness control fails'
     for name, (old, new, test) in MUTANTS.items():
+        if a.only and name not in a.only: continue
         assert original.count(old) == 1, (name, 'anchor count', original.count(old))
         path.write_text(original.replace(old, new))
         try:
             rc, out = run(cargo+[test, '--', '--exact', '--nocapture'], name+'.log') if test else fairness(name)
             expected = ('test result: FAILED' in out and test in out) if test else ('query admission timeout' in out or 'admission deadline exceeded' in out)
             results[name] = 'CAUGHT' if rc not in [0,99] and expected and 'could not compile' not in out else ('MISSED' if rc == 0 else 'INVALID')
-            print(name, results[name], flush=True)
+            print(name, results[name], 'rc='+str(rc), flush=True)
+            if results[name] == 'INVALID': print(out[-6000:], flush=True)
         finally:
             path.write_text(original)
+    rc, _ = run(cargo+['admission_pressure', '--', '--nocapture'], 'restored-protocol.log')
+    assert rc == 0, 'restored protocol control fails'
     rc, _ = fairness('restored-fairness')
     assert rc == 0, 'restored fairness control fails'
     (a.work/'results.json').write_text(json.dumps(results, indent=2)+'\n')

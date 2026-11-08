@@ -3,6 +3,7 @@
 # Serial steps; every exit is a gate.
 # Matrix exit 1 is retained separately and accepted ONLY by exact deviations.
 # DBeaver failures, P16 misses/noise and resource excess remain failing gates.
+package-inputs bash scripts/wire-browse/check-close-package.sh
 machine-type bash -o pipefail -c 'curl -fsS -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s,.*/,,"'
 machine-context bash -c 'uname -m; lscpu; rustc --version; cargo --version; ulimit -a'
 apt-index sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
@@ -19,14 +20,18 @@ metadata-fuzz NATA_METADATA_CASES=1000000 cargo test --locked -j 4 -p nata-pgwir
 wire-mutants LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 python3 crates/nata-pgwire/mutate.py --work "$WORK/wire-browse-mutants"
 # Includes admission_yield_races_resume, admission_yield_races_close and two_admission_waiters_one_idle_portal.
 portal-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 bash crates/nata-pgwire/run_portal_loom.sh
-scheduler-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash crates/nata-sched/run_loom.sh
+# Nightly time boxes: 3000 s for ordinary models (including m09/m14), 19800 s for m21.
+scheduler-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash -euc 'SCHED_SKIP="^m21_" SCHED_TIMEOUT=3000 bash crates/nata-sched/run_loom.sh; SCHED_ONLY="^m21_" SCHED_TIMEOUT=19800 bash crates/nata-sched/run_loom.sh'
 memory-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash crates/nata-sched/run_memory_loom.sh
-bridge-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 BRIDGE_COMBINED_IO=1 bash crates/nata-sched/run_bridge_loom.sh
+bridge-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 BRIDGE_RELEASE=1 BRIDGE_MODEL_TIMEOUT=1200 bash crates/nata-sched/run_bridge_loom.sh
+# Combined five-thread case: bound 2 here; bound 3 is a separate nightly job on the closing commit (must pass before closeout).
+bridge-combined-bound-2 LOOM_MAX_PREEMPTIONS=2 CARGO_BUILD_JOBS=4 BRIDGE_RELEASE=1 BRIDGE_COMBINED_IO=1 BRIDGE_ONLY='^two_workers_two_waiters_keep_the_window_bound$' BRIDGE_MODEL_TIMEOUT=3600 bash crates/nata-sched/run_bridge_loom.sh
 resource-gate-mutants "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/check-gate-mutants.py
 p16-gate-controls "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/test_p16.py
 admission-yield-mutants "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/yield-mutants.py --target "${CARGO_TARGET_DIR:-target}" --work "$WORK/yield-mutants"
 loaded-fairness "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/resources.py --nata "${CARGO_TARGET_DIR:-target}/debug/nata" --work "$RESULTS/loaded-fairness" --smoke --sessions 64 --workers 1 8 --repeat 3
-resource-gates ORACLE_EXTRA=resources PG_MAJOR=15 bash scripts/wire-browse/run-oracle.sh
+browse-release-build cargo build --locked --release -p nata -j 4
+resource-gates NATA_BROWSE_BIN="${CARGO_TARGET_DIR:-target}/release/nata" ORACLE_EXTRA=resources PG_MAJOR=15 bash scripts/wire-browse/run-oracle.sh
 snapshot-cap-mutant "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/snapshot-mutant.py --nata "${CARGO_TARGET_DIR:-target}/debug/nata" --work "$WORK/snapshot-cap-mutant"
 pg16-parity PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh
 dbeaver-r24 bash scripts/wire-browse/dbeaver-gate.sh

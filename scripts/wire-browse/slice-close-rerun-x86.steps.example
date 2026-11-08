@@ -1,0 +1,13 @@
+# Retry only failed/unreached closing gates; prerequisite setup is not a new matrix verdict.
+# Combined bridge uses bound 2 here; new nightly combined bound-3 job must pass on closing commit.
+package-inputs bash scripts/wire-browse/check-close-package.sh
+rerun-prerequisites bash -euc 'sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y time linux-perf default-jdk-headless postgresql-15 postgresql-client-15 libpq-dev python3-venv; bash scripts/wire-browse/install-pg16.sh; bash scripts/wire-browse/install-matrix-client.sh; bash scripts/wire-skeleton/run.sh --prepare-only; cargo build --locked --release -p nata -j 4'
+resource-gates NATA_BROWSE_BIN="${CARGO_TARGET_DIR:-target}/release/nata" ORACLE_EXTRA=resources PG_MAJOR=15 bash scripts/wire-browse/run-oracle.sh
+scheduler-failed-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 bash -euc 'SCHED_ONLY="^m(09|14)_" SCHED_TIMEOUT=3000 bash crates/nata-sched/run_loom.sh; SCHED_ONLY="^m21_" SCHED_TIMEOUT=19800 bash crates/nata-sched/run_loom.sh'
+bridge-loom-bound-3 LOOM_MAX_PREEMPTIONS=3 CARGO_BUILD_JOBS=4 BRIDGE_RELEASE=1 BRIDGE_MODEL_TIMEOUT=1200 bash crates/nata-sched/run_bridge_loom.sh
+bridge-combined-bound-2 LOOM_MAX_PREEMPTIONS=2 CARGO_BUILD_JOBS=4 BRIDGE_RELEASE=1 BRIDGE_COMBINED_IO=1 BRIDGE_ONLY='^two_workers_two_waiters_keep_the_window_bound$' BRIDGE_MODEL_TIMEOUT=3600 bash crates/nata-sched/run_bridge_loom.sh
+snapshot-cap-mutant "$WORK/wire-skeleton-venv/bin/python" scripts/wire-browse/snapshot-mutant.py --nata "${CARGO_TARGET_DIR:-target}/debug/nata" --work "$WORK/snapshot-cap-mutant"
+pg16-parity PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh
+dbeaver-r24 bash scripts/wire-browse/dbeaver-gate.sh
+p16-builds bash scripts/wire-browse/prepare-p16.sh
+p16-streaming-and-regression ORACLE_EXTRA=p16 PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh

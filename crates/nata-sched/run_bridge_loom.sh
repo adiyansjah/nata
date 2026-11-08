@@ -7,9 +7,11 @@ export RUSTFLAGS="--cfg nata_loom"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-target/loom-bridge}"
 export LOOM_MAX_PREEMPTIONS="${LOOM_MAX_PREEMPTIONS:-2}"
 export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
+profile=()
+[ -z "${BRIDGE_RELEASE:-}" ] || profile=(--release)
 features=()
 [ -z "${BRIDGE_MUTANT:-}" ] || features=(--features "$BRIDGE_MUTANT")
-binaries=$(cargo test --locked -p nata-sched --lib --test bridge "${features[@]}" --no-run --message-format=json | python3 -c '
+binaries=$(cargo test --locked "${profile[@]}" -p nata-sched --lib --test bridge "${features[@]}" --no-run --message-format=json | python3 -c '
 import json,sys
 xs=[json.loads(l) for l in sys.stdin]
 for x in xs:

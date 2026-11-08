@@ -22,6 +22,9 @@ FORMULA='idle RSS + S × (16 MiB snapshot cap + 512 KiB wire buffers) + the engi
 def budget(idle,sessions,engine):
     return idle+sessions*(16*MiB+512*1024)+engine+64*MiB
 
+def browse_ok(ratio):
+    return ratio <= 1.20
+
 def peak_ok(peak, ceiling):
     return peak <= ceiling
 
@@ -99,8 +102,8 @@ def run(a, count, width, workers, fd_limit):
                             assert got==expected
                             samples[name].append(elapsed)
                     ratio=st.median(samples['nata'])/st.median(samples['postgres'])
-                    browse_gate=dict(samples=samples,ratio=ratio,budget=1.20,verdict='SMOKE ONLY' if a.smoke else ('PASS' if ratio<=1.20 else 'FAIL'))
-                    assert a.smoke or ratio<=1.20, ('large catalog browse budget exceeded',browse_gate)
+                    browse_gate=dict(samples=samples,ratio=ratio,budget=1.20,verdict='SMOKE ONLY' if a.smoke else ('PASS' if browse_ok(ratio) else 'FAIL'))
+                    assert a.smoke or browse_ok(ratio), ('large catalog browse budget exceeded',browse_gate)
             def browse(c):
                 rows=c.execute('SHOW TABLES FROM public').fetchall()
                 assert len(rows)==count

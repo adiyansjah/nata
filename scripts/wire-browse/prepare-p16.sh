@@ -2,6 +2,7 @@
 set -euo pipefail
 : "${WORK:?}"
 root=$(cd "$(dirname "$0")/../.." && pwd)
+bash "$root/scripts/wire-browse/check-close-package.sh"
 # Paired baseline is this task's stated starting main; record its immutable SHA.
 cd "$root/.slice-close"
 sha256sum -c baseline.sha256

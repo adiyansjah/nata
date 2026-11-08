@@ -66,6 +66,10 @@ def main(a):
     pq.write_table(pa.table({'v':pa.array(range(a.rows),type=pa.int64())}),a.work/'million.parquet')
     (a.work/'catalog.tsv').write_text(f'nata\tpublic\tmillion\t{a.work}/million.parquet\n')
     with psycopg.connect(a.postgres,autocommit=True) as c:
+        # The value oracle requires physical insertion order. PostgreSQL's
+        # synchronized scans may start mid-heap after a concurrent/previous scan.
+        # Every measured client opens a fresh connection and inherits this setting.
+        c.execute('ALTER DATABASE nata SET synchronize_seqscans = off')
         c.execute('DROP TABLE IF EXISTS million');c.execute('CREATE TABLE million(v bigint)')
         c.execute(f'INSERT INTO million SELECT generate_series(0,{a.rows-1})::bigint')
         context=dict(postgres=c.execute('SELECT version()').fetchone()[0],source=sp.check_output(['bash','scripts/code-tree.sh'],cwd=ROOT,text=True).strip(),rows=a.rows,smoke=a.smoke,limits='warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim')
