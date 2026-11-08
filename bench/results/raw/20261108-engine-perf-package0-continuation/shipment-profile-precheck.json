@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "architecture": "x86_64",
+  "verdict": "MET",
+  "attempts": [
+    {
+      "event": "cpu-clock:u",
+      "command": [
+        "perf",
+        "record",
+        "-e",
+        "cpu-clock:u",
+        "-F",
+        "99",
+        "--call-graph",
+        "dwarf",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/cpu-clock.data",
+        "--",
+        "/usr/bin/time",
+        "-f",
+        "%e %U %S",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/cpu-clock.data.usage",
+        "/tmp/pkg0-shipment-trial/profile/smoke"
+      ],
+      "exit": 0,
+      "stderr": "[ perf record: Woken up 4 times to write data ]\n[ perf record: Captured and wrote 0.803 MB /tmp/pkg0-shipment-trial/profile/cpu-clock.data (99 samples) ]\n",
+      "script_command": [
+        "perf",
+        "script",
+        "--show-lost-events",
+        "-i",
+        "/tmp/pkg0-shipment-trial/profile/cpu-clock.data"
+      ],
+      "script_exit": 0,
+      "script_stderr": "",
+      "useful_chains": 99,
+      "unknown_frames": 0,
+      "total_frames": 396,
+      "lost_records": 0,
+      "wall_user_system_seconds": [
+        1.0,
+        0.99,
+        0.0
+      ],
+      "unwind_report": "known parent+leaf chains; unknown frames counted, raw stacks retained"
+    },
+    {
+      "event": "task-clock:u",
+      "command": [
+        "perf",
+        "record",
+        "-e",
+        "task-clock:u",
+        "-F",
+        "99",
+        "--call-graph",
+        "dwarf",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/task-clock.data",
+        "--",
+        "/usr/bin/time",
+        "-f",
+        "%e %U %S",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/task-clock.data.usage",
+        "/tmp/pkg0-shipment-trial/profile/smoke"
+      ],
+      "exit": 0,
+      "stderr": "[ perf record: Woken up 4 times to write data ]\n[ perf record: Captured and wrote 0.803 MB /tmp/pkg0-shipment-trial/profile/task-clock.data (99 samples) ]\n",
+      "script_command": [
+        "perf",
+        "script",
+        "--show-lost-events",
+        "-i",
+        "/tmp/pkg0-shipment-trial/profile/task-clock.data"
+      ],
+      "script_exit": 0,
+      "script_stderr": "",
+      "useful_chains": 99,
+      "unknown_frames": 0,
+      "total_frames": 594,
+      "lost_records": 0,
+      "wall_user_system_seconds": [
+        1.0,
+        0.99,
+        0.0
+      ],
+      "unwind_report": "known parent+leaf chains; unknown frames counted, raw stacks retained"
+    },
+    {
+      "event": "cycles:u",
+      "command": [
+        "perf",
+        "record",
+        "-e",
+        "cycles:u",
+        "-F",
+        "99",
+        "--call-graph",
+        "dwarf",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/cycles.data",
+        "--",
+        "/usr/bin/time",
+        "-f",
+        "%e %U %S",
+        "-o",
+        "/tmp/pkg0-shipment-trial/profile/cycles.data.usage",
+        "/tmp/pkg0-shipment-trial/profile/smoke"
+      ],
+      "exit": 0,
+      "stderr": "[ perf record: Woken up 4 times to write data ]\n[ perf record: Captured and wrote 0.803 MB /tmp/pkg0-shipment-trial/profile/cycles.data (99 samples) ]\n",
+      "script_command": [
+        "perf",
+        "script",
+        "--show-lost-events",
+        "-i",
+        "/tmp/pkg0-shipment-trial/profile/cycles.data"
+      ],
+      "script_exit": 0,
+      "script_stderr": "",
+      "useful_chains": 99,
+      "unknown_frames": 0,
+      "total_frames": 396,
+      "lost_records": 0,
+      "wall_user_system_seconds": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "unwind_report": "known parent+leaf chains; unknown frames counted, raw stacks retained"
+    }
+  ],
+  "working_events": [
+    "cpu-clock:u",
+    "task-clock:u",
+    "cycles:u"
+  ],
+  "selected_event": "cpu-clock:u"
+}

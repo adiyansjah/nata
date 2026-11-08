@@ -212,6 +212,18 @@ Checks: two profiler tests, including software-event rejection, two successful
 fallbacks and all-events-rejected negative controls; shell syntax and complete
 job-chain checks pass. Commit `65ff547`.
 
+Local shipment trial of source commit `cc72f41`: checksum verified, archive
+extracted, thirteen verdict tests, nine mutants and both complete inert
+harnesses pass from that tree. The actual x86 all-event trial passes **3/3**:
+`cpu-clock:u`, `task-clock:u`, `cycles:u` each produce **99 useful parent+leaf
+chains**, zero unknown frames and zero reported lost records. Wall/user/system
+seconds are respectively 1.00/0.99/0.00, 1.00/0.99/0.00, 1.00/1.00/0.00.
+`shipment-profile-precheck.json` retains every command/error and selection.
+This is local x86 evidence; ARM remains NOT RUN. Command from the extracted
+source: `python3 scripts/profile-precheck.py --all-events --out /tmp/pkg0-shipment-trial/profile`.
+The final archive is regenerated after recording this trial; no code or step
+contents change after the tested source commit.
+
 ## 5. Reference shipment and exact launch recipe (not executed)
 
 Rule: early SF10 Q1 1/8 threads at frozen 4 GiB / 64 MiB / 256 MiB, with the
@@ -272,7 +284,7 @@ source identities are recorded below. No cloud call has been made.
 Implementation commits: `65ff547` R26 event/tooling preparation; `ce5af76`
 source shipment/freeze/off-cost steps; `c45e9f1` per-invocation file consumption;
 `520e4ed` Rust instrumentation/writer/byte controls; `96df7bd` compatibility,
-native-record and mutation evidence. The final report/evidence commits are
+native-record and mutation evidence; `cc72f41` off-cost numbers and handoff. The final report/evidence commits are
 listed in the implementation handback. Every commit passed the staged leak
 check. All Cargo builds/tests were serialized at `-j 4`; stale incremental
 caches were deleted when the initial free space was below 20 GiB. No lockfile
