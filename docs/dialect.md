@@ -115,6 +115,7 @@ owner's delegation, `bench/results/20261106-sql-frontend.md`):
 | `d IN (CAST(1.5 AS DOUBLE))` | allowed | `not supported yet`: the list holds literals (a `CAST` of a literal is not one) |
 | negating a negative minimum literal: `- -2147483648`, `- -9223372036854775808` (also parenthesized) | folds to the positive value in a wider literal type | INTEGER / BIGINT overflow, respectively: the inner negative literal is typed by its value (8b.10), and outer negation keeps that type |
 | `(w % 99999999.99) * d`, with `w DECIMAL(25,5)` and `d DECIMAL(10,2)` | wider `%` result permits a wider multiplication | `%` is DECIMAL(13,5); multiplication is checked DECIMAL(18,7) and can overflow (decimal-rules 3, 9) |
+| `(-12345678901234567890.12345 % a) * d`, with `a INTEGER` and `d DECIMAL(10,2)` | `%` retains DECIMAL(25,5), so the product is DECIMAL(35,7) | INTEGER participates as DECIMAL(10,0); `%` is DECIMAL(15,5), then the product is checked DECIMAL(18,7). For `a = -2147483648`, `d = 12345.67`, the exact product `-22187594890987.7329615` overflows (decimal-rules 2–3, 9) |
 | what is evaluated for which rows | see section 9b | see section 9b |
 
 ## 9b. What is evaluated for which rows (decided while building step 3, 2026-11-06)

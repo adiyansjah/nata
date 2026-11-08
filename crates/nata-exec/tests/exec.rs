@@ -32,6 +32,67 @@ fn ids(v: impl Iterator<Item = i32>) -> Vec<String> {
 }
 
 #[test]
+fn decimal_integer_remainder_product_uses_the_tight_checked_type() {
+    use std::sync::Arc;
+
+    use arrow_array::{ArrayRef, Decimal128Array, Int32Array, RecordBatch};
+    use nata_sql::types::SqlType;
+    use nata_sql::{FsSource, plan_sql};
+
+    let path = dir("decimal-integer-remainder").join("t.parquet");
+    let a: ArrayRef = Arc::new(Int32Array::from(vec![Some(i32::MIN), Some(i32::MIN), None]));
+    let d: ArrayRef = Arc::new(
+        Decimal128Array::from(vec![Some(1_234_567), Some(1), Some(1_234_567)])
+            .with_precision_and_scale(10, 2)
+            .expect("decimal"),
+    );
+    write_batch(
+        &path,
+        &RecordBatch::try_from_iter([("a", a), ("d", d)]).expect("batch"),
+        3,
+    );
+    let path = path.display();
+    let remainder = "(-12345678901234567890.12345 % a)";
+    for (expr, precision, scale) in [
+        (remainder.to_string(), 15, 5),
+        (format!("{remainder} * d"), 18, 7),
+    ] {
+        let planned =
+            plan_sql(&format!("SELECT {expr} AS x FROM '{path}'"), &FsSource).expect("plan");
+        assert_eq!(planned.output[0].ty, SqlType::Decimal { precision, scale });
+    }
+    assert_eq!(
+        rows(&format!("SELECT {remainder} AS x FROM '{path}'")),
+        ["-1797196498.12345", "-1797196498.12345", "NULL"]
+    );
+    let error = err(&format!("SELECT {remainder} * d AS x FROM '{path}'"));
+    assert!(
+        error.contains("decimal overflow in `*`: the result does not fit DECIMAL(18,7)"),
+        "{error}"
+    );
+    // Exact wider arithmetic records the overflowing value independently of the cap.
+    assert_eq!(
+        rows(&format!(
+            "SELECT CAST({remainder} AS DECIMAL(25,5)) * d AS x FROM '{path}'"
+        )),
+        ["-22187594890987.7329615", "-17971964.9812345", "NULL"]
+    );
+    // A small selected product fits, and a NULL remainder cannot overflow.
+    assert_eq!(
+        rows(&format!(
+            "SELECT {remainder} * d AS x FROM '{path}' WHERE d = 0.01"
+        )),
+        ["-17971964.9812345"]
+    );
+    assert_eq!(
+        rows(&format!(
+            "SELECT {remainder} * d AS x FROM '{path}' WHERE a IS NULL"
+        )),
+        ["NULL"]
+    );
+}
+
+#[test]
 fn rows_come_in_file_order_for_any_thread_count_and_window() {
     let p = fixture("order");
     let q = format!("SELECT id FROM '{p}' WHERE id >= 3 LIMIT 5 OFFSET 2");

@@ -103,6 +103,38 @@ class DifferenceClasses(unittest.TestCase):
         # A '%' in SQL cannot excuse an unrelated decimal overflow.
         self.assertTrue(subset_cli.shrunk_class(why, "SELECT (d * d), (a % 3) FROM t1").startswith("BUG?"))
 
+    def test_decimal_integer_remainder_product_requires_the_exact_reaching_witness(self):
+        from dataclasses import replace
+        from decimal import Decimal, localcontext
+        tables, queries = subset_cli.build(20261108, 1868, 40, 25)
+        rem = Bin("DECIMAL(25,5)", "%", Lit("DECIMAL(25,5)", "-12345678901234567890.12345"), Col("INTEGER", "a"))
+        product = Bin("DECIMAL(25,5)", "*", rem, Col("DECIMAL(10,2)", "d"))
+        query = replace(queries[39], items=(Item(product, "c0"),), where=None)
+        witness = list(tables["t2"][0])
+        witness[1], witness[7] = "-2147483648", "12345.67"
+        tables = {"t2": [witness]}
+        with localcontext() as ctx:
+            ctx.prec = 80
+            r = Decimal(rem.l.text) % Decimal(witness[1])
+            self.assertEqual(r, Decimal("-1797196498.12345"))
+            self.assertEqual(r * Decimal(witness[7]), Decimal("-22187594890987.7329615"))
+        why = "target raised an error: decimal overflow in `*`: the result does not fit DECIMAL(18,7)."
+        classify = lambda q=query, t=tables, w=why: subset_cli.shrunk_class(w, q.sql(NO), q, t)
+        self.assertTrue(classify().startswith("listed: tight decimal % INTEGER"))
+        for a, d in [("NULL", "12345.67"), ("0", "12345.67"), ("-2147483648", "NULL"), ("-2147483648", "0.01")]:
+            row = list(witness); row[1], row[7] = a, d
+            self.assertTrue(classify(t={"t2": [row]}).startswith("BUG?"))
+        self.assertTrue(classify(t={"t2": []}).startswith("BUG?"))
+        zero = list(witness); zero[1] = "0"
+        self.assertTrue(classify(t={"t2": [witness, zero]}).startswith("BUG?"))
+        for q in (replace(query, where=Lit("BOOLEAN", "false")), replace(query, limit=0), replace(query, offset=1),
+                  replace(query, items=(Item(Case(product.t, ((Lit("BOOLEAN", "false"), product),), Lit(product.t, "0")), "c0"),)),
+                  replace(query, items=(Item(replace(product, r=Col("DECIMAL(25,5)", "w")), "c0"),)),
+                  replace(query, items=(Item(replace(product, l=replace(rem, r=Col("BIGINT", "b"))), "c0"),))):
+            self.assertTrue(classify(q=q).startswith("BUG?"))
+        for w in (why.replace("18,7", "25,7"), why.replace("`*`", "`%`")):
+            self.assertTrue(classify(w=w).startswith("BUG?"))
+
     def test_between_null_upper_cast_requires_a_reaching_null_row_and_the_exact_error(self):
         from dataclasses import replace
         tables, queries = subset_cli.build(20261107, 2202, 40, 25)

@@ -288,6 +288,41 @@ def decimal_remainder_product_class(why, query, tables):
     return None
 
 
+def decimal_integer_remainder_product_class(why, query, tables):
+    """The nightly's literal % INTEGER -> Decimal64 product, with a reaching witness.
+
+    Certify only the bare projection and exact operand types/values. In
+    particular, a guard, a zero divisor or a different overflow stays BUG?.
+    """
+    from decimal import Decimal, localcontext
+    from .render import Bin, Col, Lit
+    if not why.startswith("target raised an error") or "decimal overflow in `*`: the result does not fit DECIMAL(18,7)." not in why:
+        return None
+    if query is None or tables is None or query.where is not None or query.limit is not None or query.offset is not None:
+        return None
+    if query.group or query.having is not None or query.distinct or len(query.items) != 1:
+        return None
+    product = query.items[0].e
+    remainder = Bin("DECIMAL(25,5)", "%", Lit("DECIMAL(25,5)", "-12345678901234567890.12345"), Col("INTEGER", "a"))
+    if product != Bin("DECIMAL(25,5)", "*", remainder, Col("DECIMAL(10,2)", "d")):
+        return None
+    names = [n for n, _ in subset.COLS]
+    with localcontext() as ctx:
+        ctx.prec = 80
+        witness = False
+        for row in tables[query.frm.name]:
+            a, d = row[names.index("a")], row[names.index("d")]
+            if a == "NULL": continue
+            # Refuse a competing remainder error anywhere in the input.
+            if Decimal(a) == 0: return None
+            if d == "NULL": continue
+            value = (Decimal("-12345678901234567890.12345") % Decimal(a)) * Decimal(d)
+            witness |= abs(value) >= Decimal(10) ** 11
+        if witness:
+            return "listed: tight decimal % INTEGER result makes multiplication overflow DECIMAL(18,7) (decimal-rules 2-3, 9; dialect 9)"
+    return None
+
+
 def shrunk_class(why, sql, query=None, tables=None):
     """The class of a difference from the SHRUNK query (what is left once everything that does not matter is gone). `listed:` classes are differences that
     docs/dialect.md section 9 or docs/decimal-rules.md section 9 lists and that are consequences of one rule of Nata: errors are raised only for the rows an
@@ -296,7 +331,8 @@ def shrunk_class(why, sql, query=None, tables=None):
         return "listed: BETWEEN with a NULL lower comparison still evaluates its upper-bound cast in a CASE condition; DuckDB skips it (dialect 9b)"
     minimum = minimum_negation_ast_class(why, query)
     if minimum: return minimum
-    decimal = decimal_remainder_product_class(why, query, tables)
+    decimal = (decimal_remainder_product_class(why, query, tables)
+               or decimal_integer_remainder_product_class(why, query, tables))
     if decimal: return decimal
     up = sql.upper()
     m = re.match(r"row \d+ differs: oracle (.*) vs target (.*)$", why)
