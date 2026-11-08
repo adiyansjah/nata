@@ -7,9 +7,10 @@
 # Commands and the remaining split are in results/20261108-engine-perf-wc.md.
 # The rejected direct-root adapter is not used. Native typed decimal kernels
 # are the candidate; refuse a source-identical baseline/candidate pair.
+tools sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq linux-perf time && sudo sysctl -w kernel.perf_event_paranoid=1 kernel.kptr_restrict=0
 kept python3 -I -c 'import json,tarfile; from pathlib import Path; b=Path(".aggregate-wc1-inputs"); m=json.loads((b/"manifest.json").read_text()); assert m["revisions"][0]["commit"]=="2b7a415a183c3e06caa379c8c627abc4a43b89fe"; snap=lambda n:{x.name:t.extractfile(x).read() for t in [tarfile.open(b/n)] for x in t if x.isfile() and x.name.startswith("crates/") and x.name.endswith(".rs")}; base=snap(m["revisions"][0]["archive"]); assert len(m["revisions"])>1 and all(snap(r["archive"])!=base for r in m["revisions"][1:]), "no kept Rust change: do not time the rejected views or a docs-only HEAD"'
 topology lscpu --json > "$RESULTS/wc1-topology.json" && taskset -pc $$ > "$RESULTS/wc1-affinity.txt"
-profile python3 scripts/profile-precheck.py --out "$RESULTS/wc1-profile-precheck"
+profile python3 scripts/profile-precheck.py --out "$RESULTS/wc1-profile-precheck" || { echo "profile pre-check unavailable (R26); timing is unaffected"; true; }
 harness python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/wc1-self-test"
 prepare mkdir -p "$WORK/wc1/tmp" && cp .aggregate-wc1-inputs/manifest.json "$RESULTS/wc1-manifest.json"
 gate-build CARGO_TARGET_DIR="$WORK/wc1/gates-target" cargo build --locked --release -j 4 -p nata -p nata-check

@@ -1,5 +1,6 @@
 # gate-exits
 # No fixtures or Nata timing until symbols work. Eight logical CPUs, same committed source.
+tools sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq linux-perf time && sudo sysctl -w kernel.perf_event_paranoid=1 kernel.kptr_restrict=0
 prepare mkdir -p "$WORK/package0/source" && cd "$SRC" && sha256sum -c .engine-perf-package0-source.sha256 && tar -xf .engine-perf-package0-source.tar -C "$WORK/package0/source"
 harness cd "$WORK/package0/source" && python3 -m unittest discover -s scripts -p test_bench_verdict.py && python3 scripts/check-verdict-mutants.py && python3 scripts/bench-aggregate-closeout.py --self-test && python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/package0-self-test"
 profile cd "$WORK/package0/source" && python3 scripts/profile-precheck.py --all-events --out "$RESULTS/package0-profile"

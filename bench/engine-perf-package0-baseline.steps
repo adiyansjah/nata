@@ -1,6 +1,7 @@
 # gate-exits
 # PREPARED ONLY: requires approved reference freeze before Nata timing.
 # 8 logical CPUs; 150 GB work disk; 6 VM-hour cap per CPU. No optimization variants.
+tools sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq linux-perf time && sudo sysctl -w kernel.perf_event_paranoid=1 kernel.kptr_restrict=0
 prepare mkdir -p "$WORK/package0/source" && cd "$SRC" && sha256sum -c .engine-perf-package0-source.sha256 && tar -xf .engine-perf-package0-source.tar -C "$WORK/package0/source"
 profile cd "$WORK/package0/source" && python3 scripts/profile-precheck.py --all-events --out "$RESULTS/package0-profile"
 freeze cd "$SRC" && python3 "$WORK/package0/source/scripts/check-engine-perf-freeze.py" .engine-perf-package0-freeze.json
