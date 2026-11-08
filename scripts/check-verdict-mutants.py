@@ -8,11 +8,12 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent
 MUTANTS = {
+    'relax_frozen_q1': ('return 1.5', 'return 2.0'),
     'accept_slowdown': ("verdict = 'MET' if median_ok and sum(within) >= 4", "verdict = 'MET' if True"),
     'ignore_noise': ('max(noises.values()) > tolerance', 'False'),
     'three_of_five': ('sum(within) >= 4', 'sum(within) >= 3'),
     'ignore_stats': ('if require_stats:', 'if False:'),
-    'ignore_drops': ("record.get('dropped_events') != 0", 'False'),
+    'ignore_drops': ("if record.get('dropped_events'):", 'if False:'),
     'reverse_floor': ('r >= limit if floor else r <= limit', 'r <= limit if floor else r <= limit'),
     'pair_arrival_order': ("sorted(rows, key=lambda s: s['round'])", 'rows'),
     'ignore_reference_exit': ("not complete_reference or any(s['exit'] for s in samples if s['variant'] == reference)", 'False'),

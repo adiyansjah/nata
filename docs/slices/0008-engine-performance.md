@@ -193,6 +193,15 @@ work outside it, a new dependency, a threshold/default change or an extra rerun.
 cost approval. Report each verdict as the card rule, measured numbers, verdict the rule gives and reproduction command. Out-of-scope
 findings are proposals, not completed work.
 
+### Package 0 progress (2026-11-08)
+
+**Stopped; not certified**: stats-on forced spill is 63/65 (overflow diagnostic ordering changed). Shared timer/verdict policy and its negative controls,
+external profiler pre-check, opt-in attribution hooks and gated SF10/affinity job
+steps are on the implementation branch; Rust instrumentation remains uncommitted after the failing gate. Results/checks and remaining gaps:
+[`20261108-engine-perf-package0.md`](../../bench/results/20261108-engine-perf-package0.md).
+R26 remains open until a useful ARM capture passes; no paid reference run or
+numeric target freeze is claimed. Slice 5 remains pinned to `bb946ab`.
+
 ## 6. Closeout (fill in when done)
 
 - Results file: pending; one verdict per target/query/CPU, raw samples, commands, hashes and profile coverage.

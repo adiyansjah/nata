@@ -17,7 +17,7 @@ import resource
 import signal
 import subprocess as sp
 import time
-from bench_verdict import invoke, legacy_summary as summarize, assess
+from bench_verdict import invoke, legacy_summary as summarize, assess, aggregate_limit
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('settled', ROOT/'scripts/bench-aggregate-perf1-heavy.py')
@@ -81,6 +81,17 @@ def resource_gate(row, budget, baseline, disk):
         raise RuntimeError('FD/disk bound failure')
 
 
+def selected_cells(a):
+    matrix = repair_cells(a.scale) if getattr(a, 'repair_rerun', False) else cells(a.scale)
+    if getattr(a, 'early_sf10', False):
+        if a.scale != 10 or getattr(a, 'policy', 'slice5') != '0008-v1':
+            raise ValueError('--early-sf10 requires --scale 10 --policy 0008-v1')
+        matrix = [c for c in matrix if c[0] == 'q1']
+    if a.resource_only:
+        matrix=[('high_cardinality_tpch',8,{1:64*MIB,10:256*MIB,100:4*GIB}[a.scale])]
+    return matrix
+
+
 def affinity_mask(threads):
     allowed = os.sched_getaffinity(0)
     topology = sp.check_output(['lscpu', '-p=CPU,CORE,SOCKET'], text=True)
@@ -104,13 +115,7 @@ def run(a):
     a.out.mkdir(parents=True, exist_ok=False)
     if a.binary.stat().st_mode & 0o222:
         raise ValueError('use a read-only immutable binary copy')
-    matrix = repair_cells(a.scale) if getattr(a, 'repair_rerun', False) else cells(a.scale)
-    if getattr(a, 'early_sf10', False):
-        if a.scale != 10 or getattr(a, 'policy', 'slice5') != '0008-v1':
-            raise ValueError('--early-sf10 requires --scale 10 --policy 0008-v1')
-        matrix = [c for c in matrix if c[0] == 'q1']
-    if a.resource_only:
-        matrix=[('high_cardinality_tpch',8,{1:64*MIB,10:256*MIB,100:4*GIB}[a.scale])]
+    matrix = selected_cells(a)
     expected = {'c3d-highcpu-8':('x86_64',8), 'n4a-highcpu-8':('aarch64',8),
                 'c3d-highcpu-30':('x86_64',30), 'n4a-highcpu-32':('aarch64',32)}[a.machine]
     if not a.smoke:
@@ -121,6 +126,7 @@ def run(a):
     env = dict(os.environ, TMPDIR=str(a.out), LC_ALL='C')
     if getattr(a, 'policy', 'slice5') == '0008-v1':
         env['NATA_QUERY_STATS'] = '1'
+        env['NATA_QUERY_TRACE'] = '1' if getattr(a, 'trace', False) else '0'
     for key in ('AI_AGENT','CODEX_CI','CLAUDECODE','CODEX_THREAD_ID'): env.pop(key,None)
     resource.setrlimit(resource.RLIMIT_NOFILE, (a.fd_limit,resource.getrlimit(resource.RLIMIT_NOFILE)[1]))
     metadata = dict(commit=a.commit,binary_sha256=h.digest(a.binary),machine=a.machine,
@@ -136,6 +142,11 @@ def run(a):
     metadata['input_rows']=int(list(csv.reader(count.splitlines()))[1][0])
     if not a.smoke and metadata['input_rows']!={1:6001215,10:59986052,100:600037902}[a.scale]:
         raise ValueError('input scale does not match frozen matrix')
+    metadata['policy'] = getattr(a, 'policy', 'slice5')
+    if metadata['policy'] == '0008-v1':
+        metadata['diagnostic'] = 'Native attribution is partial: complete=false blocks T6; record.missing lists remaining coverage. External per-query symbol profiles are still required.'
+    metadata['native_stats_enabled'] = env.get('NATA_QUERY_STATS') == '1'
+    metadata['trace_enabled'] = env.get('NATA_QUERY_TRACE') == '1'
     metadata['affinity'] = getattr(a, 'affinity', 'unpinned')
     metadata['cpu_core_socket'] = sp.check_output(['lscpu', '-p=CPU,CORE,SOCKET'], text=True)
     h.save(a.out/'metadata.json',metadata)
@@ -185,6 +196,8 @@ def run(a):
         if gates[0].get('error'):
             summary=dict(query=query,threads=threads,budget=budget,verdict='FAIL',
                          error=gates[0]['error'],gates=str(scratch/'gates.json'))
+            if getattr(a, 'policy', 'slice5') == '0008-v1':
+                summary.update(slice5_verdict=summary['verdict'], verdict='NOT MET')
             summaries.append(summary);h.save(a.out/'summary.json',summaries)
             failed=True
             print('completed',query,threads,budget,'FAIL',summary['error'],flush=True)
@@ -225,11 +238,14 @@ def run(a):
                      target_latency_ratio=(1.5 if query=='q1' else 2.0) if a.scale<100 and budget==4*GIB and query!='high_cardinality_tpch' else (2.0 if gates[0]['counters']['spill_bytes_written'] else None),
                      **summarize(samples,complete,settled))
         if getattr(a, 'policy', 'slice5') == '0008-v1':
-            target = summary['target_latency_ratio']
+            summary['slice5_verdict'] = summary['verdict']
+            target = aggregate_limit(query, a.scale, gates[0]['counters']['spill_bytes_written'] > 0)
+            summary['target_latency_ratio'] = target
             summary['package0'] = assess(samples, 'main', 'duckdb', target, settled=settled,
                                          complete_reference=complete) if target else dict(verdict='UNASSESSED', reason='no frozen latency target')
+            summary['verdict'] = summary['package0']['verdict']
         if timing_error:
-            summary.update(verdict='FAIL',error=timing_error)
+            summary.update(verdict='NOT MET' if getattr(a, 'policy', 'slice5') == '0008-v1' else 'FAIL',error=timing_error)
             failed=True
         summaries.append(summary);h.save(a.out/'summary.json',summaries)
         print('completed',query,threads,budget,summary['verdict'],flush=True)
@@ -338,6 +354,7 @@ def self_test():
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--trace', action='store_true', help='bounded detailed native trace (0008-v1 only), separate from ordinary counters')
     p.add_argument('--early-sf10', action='store_true', help='Q1 1/4/8 threads at all frozen SF10 budgets, before later packages')
     p.add_argument('--affinity', choices=('unpinned', 'pinned'), default='unpinned')
     p.add_argument('--policy', choices=('slice5', '0008-v1'), default='slice5')
@@ -350,9 +367,10 @@ def main():
     p.add_argument('--machine',choices=('c3d-highcpu-8','n4a-highcpu-8','c3d-highcpu-30','n4a-highcpu-32'),default='c3d-highcpu-8')
     p.add_argument('--timeout',type=int,default=1800)
     a=p.parse_args()
+    if a.trace and a.policy != '0008-v1': p.error('--trace requires --policy 0008-v1')
     if a.repair_rerun and a.resource_only: p.error('--repair-rerun cannot be combined with --resource-only')
     if a.self_test: return self_test()
-    if a.plan: print(json.dumps(repair_cells(a.scale) if a.repair_rerun else cells(a.scale),indent=2));return
+    if a.plan: print(json.dumps(selected_cells(a),indent=2));return
     if not all((a.binary,a.commit,a.data,a.out)):p.error('run requires --binary --commit --data --out')
     return run(a)
 

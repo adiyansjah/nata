@@ -141,7 +141,7 @@ def command(binary, sql, threads, budget, spill):
 def invoke(argv, env, destination=None):
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
-        row = invoke_process(argv, env, destination or root/'out', root/'stderr', 600)
+        row = invoke_process(argv, env, destination or root/'out', root/'stderr', 600, capture_usage=False)
         if row['exit']:
             row['error'] = (root/'stderr').read_text()[-2000:]
         return row
@@ -306,7 +306,7 @@ def run(args):
                     for label, role in arms(revisions,round_number):
                         binary = 'duckdb' if label == 'duckdb' else binaries[label]
                         observation = invoke(command(binary,sqls[query],threads,budget,spill),env)
-                        observation.update(query=query,threads=threads,budget=budget,round=round_number,variant=label,role=role)
+                        observation.update(query=query,threads=threads,budget=budget,round=round_number,variant=label,role=role,settled=True)
                         observations.append(observation)
                         save(out / 'timings.json',observations)
                         if label != 'duckdb' and observation['exit']:
