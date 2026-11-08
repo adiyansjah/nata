@@ -40,9 +40,9 @@ def useful(script):
                 lost_records=len(re.findall(r'PERF_RECORD_LOST|LOST [0-9]+', script)))
 
 
-def run(out):
+def run(out, all_events=False):
     out.mkdir(parents=True, exist_ok=False)
-    record = dict(version=1, architecture=platform.machine(), verdict='NOT RUN', attempts=[])
+    record = dict(version=1, architecture=platform.machine(), verdict='NOT RUN', attempts=[], working_events=[])
     def save():
         (out/'precheck.json').write_text(json.dumps(record, indent=2)+'\n')
     save()
@@ -75,10 +75,14 @@ def run(out):
                     and attempt['unknown_frames'] <= .05 * max(1, attempt['total_frames'])
                     and len(usage) == 3
                     and float(usage[0]) >= .9):
-                record.update(verdict='MET', selected_event=event)
+                record.update(verdict='MET')
+                record.setdefault('selected_event', event)
+                record['working_events'].append(event)
         record['attempts'].append(attempt); save()
-        if record['verdict'] == 'MET':
+        if record['verdict'] == 'MET' and not all_events:
             return 0
+    if record['verdict'] == 'MET':
+        return 0
     record.update(verdict='NOT MET', reason='no event produced useful symbol stacks with wall/CPU and zero reported loss')
     save(); return 1
 
@@ -86,5 +90,6 @@ def run(out):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--all-events', action='store_true', help='record all ARM event trials, even after success')
     a = p.parse_args()
-    sys.exit(run(a.out.resolve()))
+    sys.exit(run(a.out.resolve(), a.all_events))
