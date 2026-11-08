@@ -1560,33 +1560,67 @@ mod wc1_proofs {
         kani::cover!(got.is_ok());
         kani::cover!(got.is_err());
     }
-    #[kani::proof]
-    #[kani::unwind(20)]
-    fn wc1_numbers_and_selection() {
+    fn numbers_contract<const CODE: u8, const NULLABLE: bool>() {
         let values: [i64; 3] = kani::any();
-        let mask: u64 = kani::any();
-        kani::assume(mask < 8 || mask == u64::MAX);
+        let validity = u64::from(kani::any::<u8>() & 7);
+        let (rows, n): ([u32; 3], usize) = match CODE {
+            0 => ([0, 0, 0], 0),
+            1 => ([0, 0, 0], 1),
+            2 => ([1, 0, 0], 1),
+            3 => ([0, 1, 0], 2),
+            4 => ([2, 0, 0], 1),
+            5 => ([0, 2, 0], 2),
+            6 => ([1, 2, 0], 2),
+            _ => ([0, 1, 2], 3),
+        };
+        let mask = [u64::from(CODE) & validity];
         let mut got = [None; 3];
-        native::numbers(&values, &[mask], |i, v| {
-            assert!(got[i].is_none(), "each selected row is visited once");
-            got[i] = Some(v);
+        native::numbers(&values, &rows[..n], if NULLABLE {Some(&mask)} else {None}, |offset, value| {
+            assert!(got[offset].is_none(), "each selected row is visited once");
+            got[offset] = Some(value);
             Ok::<_, Fail>(())
-        })
-        .unwrap();
-        for i in 0..3 {
-            assert_eq!(
-                got[i],
-                if mask & (1 << i) != 0 {
-                    Some(i128::from(values[i]))
-                } else {
-                    None
-                }
-            );
+        }).unwrap();
+        for i in 0..n {
+            let row=rows[i] as usize;
+            if !NULLABLE || validity & (1<<row) != 0 {
+                assert!(got[i].is_some());
+                if let Some(value)=got[i] { assert_eq!(value, i128::from(values[row])); }
+            } else { assert!(got[i].is_none()); }
         }
-        kani::cover!(mask == u64::MAX);
-        kani::cover!(mask == 0);
-        kani::cover!(mask == 5);
+        for value in &got[n..] { assert!(value.is_none()); }
+        if CODE == 0 { kani::cover!(true); }
+        else if NULLABLE {
+            kani::cover!(mask[0] == 0);
+            kani::cover!(mask[0] == u64::from(CODE));
+        } else { kani::cover!(got[0].is_some()); }
     }
+    // Concrete selection families avoid multiplying symbolic loop/alias paths.
+    // Across these eight harnesses, every subset of three rows and both modes
+    // are proved, with arbitrary i64 values and every validity subset.
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_and_selection() { numbers_contract::<7, false>(); numbers_contract::<7, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_empty() { numbers_contract::<0, false>(); numbers_contract::<0, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows0() { numbers_contract::<1, false>(); numbers_contract::<1, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows1() { numbers_contract::<2, false>(); numbers_contract::<2, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows01() { numbers_contract::<3, false>(); numbers_contract::<3, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows2() { numbers_contract::<4, false>(); numbers_contract::<4, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows02() { numbers_contract::<5, false>(); numbers_contract::<5, true>(); }
+    #[kani::proof]
+    #[kani::unwind(4)]
+    fn wc1_numbers_rows12() { numbers_contract::<6, false>(); numbers_contract::<6, true>(); }
 }
 
 #[cfg(kani)]

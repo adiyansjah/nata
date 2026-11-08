@@ -98,14 +98,38 @@ impl Decimal64 {
     }
 }
 
-/// Feed native inputs into the existing exact accumulator consumer. T is fixed
-/// once per batch (i64 or i128); neither type nor validity dispatch is per row.
+/// Feed typed inputs into the exact accumulator consumer. `rows` is sorted,
+/// unique and in bounds. The optional word mask is selection AND validity;
+/// when present, its active rows must be a subset of `rows`. The callback gets
+/// the selection ordinal (the index into the caller's admitted group IDs).
+/// No-NULL inputs use the selection directly: no bitmap or row/ordinal merge.
+#[inline(always)]
 pub fn numbers<T: Copy + Into<i128>, E>(
     values: &[T],
-    mask: &[u64],
+    rows: &[u32],
+    mask: Option<&[u64]>,
     mut add: impl FnMut(usize, i128) -> Result<(), E>,
 ) -> Result<(), E> {
-    selected(mask, values.len(), |i| add(i, values[i].into()))
+    if let Some(mask) = mask {
+        let mut ordinal = 0;
+        selected(mask, values.len(), |row| {
+            while rows[ordinal] as usize != row {
+                ordinal = ordinal
+                    .checked_add(1)
+                    .expect("selection ordinal fits usize");
+            }
+            let current = ordinal;
+            ordinal = ordinal
+                .checked_add(1)
+                .expect("selection ordinal fits usize");
+            add(current, values[row].into())
+        })
+    } else {
+        for (ordinal, &row) in rows.iter().enumerate() {
+            add(ordinal, values[row as usize].into())?;
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -175,12 +199,35 @@ mod tests {
         assert_eq!(out[65], 0);
         let mut visited = vec![];
         let values: [i128; 65] = std::array::from_fn(|i| i128::try_from(i).expect("bounded"));
-        numbers(&values, &[u64::MAX, u64::MAX], |i, v| {
+        let rows: Vec<u32> = (0..65).collect();
+        numbers(&values, &rows, None, |i, v| {
             visited.push((i, v));
             Ok::<_, Fail>(())
         })
         .expect("numbers");
         assert_eq!(visited.len(), 65);
         assert_eq!(visited[64], (64, 64));
+    }
+}
+
+#[cfg(test)]
+mod selection_offsets {
+    use super::*;
+    #[test]
+    fn sparse_selection_ordinals_skip_nulls_without_losing_group_ids() {
+        let values: [i128; 130] = std::array::from_fn(|i| i128::try_from(i).expect("bounded"));
+        let rows = [0, 63, 64, 129];
+        for (mask, expected) in [
+            (None, vec![(0, 0), (1, 63), (2, 64), (3, 129)]),
+            (Some(&[1u64, 1, 2][..]), vec![(0, 0), (2, 64), (3, 129)]),
+        ] {
+            let mut got = vec![];
+            numbers(&values, &rows, mask, |offset, v| {
+                got.push((offset, v));
+                Ok::<_, Fail>(())
+            })
+            .expect("typed inputs");
+            assert_eq!(got, expected);
+        }
     }
 }

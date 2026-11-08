@@ -8,7 +8,7 @@
       "phase_results": [
         {
           "phase": "Build",
-          "duration": 1.253914826,
+          "duration": 1.553862423,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -23,7 +23,7 @@
         },
         {
           "phase": "Test",
-          "duration": 0.151218409,
+          "duration": 0.150731896,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -77,7 +77,7 @@
       "phase_results": [
         {
           "phase": "Build",
-          "duration": 1.304218658,
+          "duration": 1.4035978949999999,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -92,7 +92,7 @@
         },
         {
           "phase": "Test",
-          "duration": 0.100975265,
+          "duration": 0.150808275,
           "process_status": {
             "Failure": 101
           },
@@ -148,7 +148,7 @@
       "phase_results": [
         {
           "phase": "Build",
-          "duration": 1.203788737,
+          "duration": 1.25391414,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -163,7 +163,7 @@
         },
         {
           "phase": "Test",
-          "duration": 0.151208863,
+          "duration": 0.150783136,
           "process_status": {
             "Failure": 101
           },
@@ -219,7 +219,7 @@
       "phase_results": [
         {
           "phase": "Build",
-          "duration": 1.153656418,
+          "duration": 1.253681521,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -234,7 +234,7 @@
         },
         {
           "phase": "Test",
-          "duration": 0.100919399,
+          "duration": 0.150793946,
           "process_status": {
             "Failure": 101
           },
@@ -253,7 +253,7 @@
     {
       "scenario": {
         "Mutant": {
-          "name": "crates/nata-kernels/src/native.rs:108:5: replace numbers -> Result<(), E> with Ok(())",
+          "name": "crates/nata-kernels/src/native.rs:113:5: replace numbers -> Result<(), E> with Ok(())",
           "package": "nata-kernels",
           "file": "crates/nata-kernels/src/native.rs",
           "function": {
@@ -265,19 +265,19 @@
                 "column": 1
               },
               "end": {
-                "line": 109,
+                "line": 133,
                 "column": 2
               }
             }
           },
           "span": {
             "start": {
-              "line": 108,
+              "line": 113,
               "column": 5
             },
             "end": {
-              "line": 108,
-              "column": 63
+              "line": 132,
+              "column": 6
             }
           },
           "replacement": "Ok(())",
@@ -285,12 +285,12 @@
         }
       },
       "summary": "CaughtMutant",
-      "log_path": "log/crates__nata-kernels__src__native.rs_line_108_col_5.log",
-      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_108_col_5.diff",
+      "log_path": "log/crates__nata-kernels__src__native.rs_line_113_col_5.log",
+      "diff_path": "diff/crates__nata-kernels__src__native.rs_line_113_col_5.diff",
       "phase_results": [
         {
           "phase": "Build",
-          "duration": 1.205529619,
+          "duration": 1.404478475,
           "process_status": "Success",
           "argv": [
             "cargo",
@@ -305,7 +305,7 @@
         },
         {
           "phase": "Test",
-          "duration": 0.150774662,
+          "duration": 0.151051016,
           "process_status": {
             "Failure": 101
           },
@@ -328,7 +328,7 @@
   "timeout": 0,
   "unviable": 0,
   "success": 0,
-  "start_time": "2026-11-08T11:09:53.068575698Z",
-  "end_time": "2026-11-08T11:09:59.849968874Z",
+  "start_time": "2026-11-08T11:42:17.091706483Z",
+  "end_time": "2026-11-08T11:42:24.722866075Z",
   "cargo_mutants_version": "27.1.0"
 }

@@ -6,17 +6,22 @@
   "release_debug": 1,
   "release_overflow_checks": true,
   "sources": {
-    "crates/nata-kernels/src/native.rs": "5f1656e712cd8e78c60338cce46572a85c878972077e0a641baab0b8e48d0b43",
+    "crates/nata-kernels/src/native.rs": "69301761c25cd6b5a5d0fb1926187f95f2fe15519ac20c3eee06310f6c350673",
     "crates/nata-exec/src/aggregate/native.rs": "5de10e7c481a755423936cddff915716fff49f22599d34185330c1f5340886a3",
     "crates/nata-exec/src/aggregate/fusion.rs": "d3c7516d34653c1bc857e75ba08b224998f2aee616fc91fc2089f32309f3be9c",
-    "crates/nata-exec/src/aggregate.rs": "bd15e2cb98f9fef02534c5aa3d3ba7f7f7610d10c5bf9aa7c68e4062f8bb26c6",
-    "spikes/kani-nata-kernels/src/lib.rs": "f10a490fff00426f106d4d8893e9e2004460dc09a724029a60a5792837f47d4d"
+    "crates/nata-exec/src/aggregate.rs": "9e08812a15d58b05dad11b2c923cd09b850950aae51eb2abaf355b153f74a628",
+    "spikes/kani-nata-kernels/src/lib.rs": "62b1b1db317e40459beb027293638c598dd7344edf1140fd58bce57f9553532e"
   },
-  "proved_native_callable_sha256": "0a6e2efe40f9b2514fae487b871fa76d30d22b839a457168b9e179a046a00060",
-  "proof_source_note": "Only the cfg(test) bitmap contract was strengthened after proofs; the proved callable prefix is byte-identical. Final controls and mutants use the strengthened file.",
+  "proved_native_callable_sha256": "2823643b77bbf917ec558d6afbcba3644bd060f206231044a0530eabb87347c3",
+  "proof_source_note": "Final 15-harness matrix includes all eight three-row selection families, each in no-NULL and nullable modes; final callable source and full native file match the final caught controls.",
   "binaries": {
     "before": "eca935c58ca8b12aec3a20c6c67f7c1d8c962bf7280cf43a3a0467a82667760c",
-    "after": "a92f3d9228f57f173479cb376638c7d32691c24815a306fa027650f87b6106d7"
+    "after": "ca36c26645dcba40b188fe7fe9bb58ed22935e8390777e013ad0f3e53c022806"
   },
-  "mutants_version": "cargo-mutants 27.1.0"
+  "mutants_version": "cargo-mutants 27.1.0",
+  "initial_candidate_commit": "e755653659f6b795c6fbf43bf7439d7d25a5228c",
+  "initial_binaries": {
+    "before": "eca935c58ca8b12aec3a20c6c67f7c1d8c962bf7280cf43a3a0467a82667760c",
+    "after": "a92f3d9228f57f173479cb376638c7d32691c24815a306fa027650f87b6106d7"
+  }
 }

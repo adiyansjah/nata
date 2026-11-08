@@ -367,70 +367,70 @@ Unwinding loop memcmp.0 iteration 16 file <builtin-library-memcmp> line 25 funct
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
-Runtime Symex: 8.46549s
+Runtime Symex: 8.33541s
 size of program expression: 272353 steps
 slicing removed 250027 assignments
 Generated 4523 VCC(s), 487 remaining after simplification
-Runtime Postprocess Equation: 0.15426s
+Runtime Postprocess Equation: 0.161072s
 Passing problem to propositional reduction
 converting SSA
-Runtime Convert SSA: 0.576737s
+Runtime Convert SSA: 0.583811s
 Running propositional reduction
 Post-processing
-Runtime Post-process: 5.939e-06s
+Runtime Post-process: 6.452e-06s
 Solving with CaDiCaL 3.0.0
 293130 variables, 687626 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0346241s
-Runtime decision procedure: 0.633307s
+Runtime Solver: 0.0348636s
+Runtime decision procedure: 0.642126s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293131 variables, 687627 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.439729s
-Runtime decision procedure: 0.441903s
+Runtime Solver: 0.444036s
+Runtime decision procedure: 0.446183s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293132 variables, 687628 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.520238s
-Runtime decision procedure: 0.522516s
+Runtime Solver: 0.567762s
+Runtime decision procedure: 0.570123s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293133 variables, 687629 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0365752s
-Runtime decision procedure: 0.042134s
+Runtime Solver: 0.0421543s
+Runtime decision procedure: 0.0487062s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293134 variables, 687630 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.339626s
-Runtime decision procedure: 0.342119s
+Runtime Solver: 0.321172s
+Runtime decision procedure: 0.323567s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293135 variables, 687631 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 1.02216s
-Runtime decision procedure: 1.0252s
+Runtime Solver: 1.09719s
+Runtime decision procedure: 1.10023s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293136 variables, 687632 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0377652s
-Runtime decision procedure: 0.0441559s
+Runtime Solver: 0.0384748s
+Runtime decision procedure: 0.0444402s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293137 variables, 687633 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.00995869s
-Runtime decision procedure: 0.012348s
+Runtime Solver: 0.0101512s
+Runtime decision procedure: 0.0126163s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293138 variables, 687634 clauses
 SAT checker: instance is UNSATISFIABLE
-Runtime Solver: 0.00141082s
-Runtime decision procedure: 0.00214129s
+Runtime Solver: 0.00146266s
+Runtime decision procedure: 0.00218831s
 
 RESULTS:
 Check 1: <std::option::Option<native::Decimal64> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
@@ -3905,12 +3905,12 @@ Failed Checks: assertion failed: out == reference
  File: "src/lib.rs", line 1522, in wc1_proofs::arithmetic
 
 VERIFICATION:- FAILED
-Verification Time: 16.93069s
+Verification Time: 17.120802s
 
 Manual Harness Summary:
 Verification failed for - wc1_proofs::wc1_add
 Complete - 0 successfully verified harnesses, 1 failures, 1 total.
    Compiling kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.68s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.67s
 warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`

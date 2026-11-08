@@ -14,7 +14,7 @@ out.mkdir(parents=True, exist_ok=True)
 controls = [
     ('precision', 'v.unsigned_abs() < self.limit', 'v.unsigned_abs() <= self.limit', 'wc1_proofs::wc1_add'),
     ('selection', 'if bits == u64::MAX {', 'if true {', 'wc1_proofs::wc1_numbers_and_selection'),
-    ('input-row', 'values[i].into()', 'values[0].into()', 'wc1_proofs::wc1_numbers_and_selection'),
+    ('input-row', 'values[row as usize].into()', 'values[0].into()', 'wc1_proofs::wc1_numbers_and_selection'),
     ('product', 'self.check(x.checked_mul(y))', 'self.check(x.checked_add(y))', 'wc1_full_product::wc1_mul_full_i64'),
 ]
 results = []

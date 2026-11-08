@@ -85,7 +85,7 @@ warning: Found the following unsupported constructs:
          Verification will fail if one or more of these constructs is reachable.
          See https://model-checking.github.io/kani/rust-feature-support.html for more details.
 
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.69s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.83s
 warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`
 Checking harness wc1_proofs::wc1_add...
@@ -371,46 +371,46 @@ Unwinding loop memcmp.0 iteration 16 file <builtin-library-memcmp> line 25 funct
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
-Runtime Symex: 8.39364s
+Runtime Symex: 8.56942s
 size of program expression: 272353 steps
 slicing removed 250027 assignments
 Generated 4523 VCC(s), 487 remaining after simplification
-Runtime Postprocess Equation: 0.165841s
+Runtime Postprocess Equation: 0.161548s
 Passing problem to propositional reduction
 converting SSA
-Runtime Convert SSA: 0.582842s
+Runtime Convert SSA: 0.597514s
 Running propositional reduction
 Post-processing
-Runtime Post-process: 6.661e-06s
+Runtime Post-process: 5.955e-06s
 Solving with CaDiCaL 3.0.0
 293130 variables, 687626 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.0357656s
-Runtime decision procedure: 0.640731s
+Runtime Solver: 0.0352679s
+Runtime decision procedure: 0.655784s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293131 variables, 687627 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.476525s
-Runtime decision procedure: 0.478689s
+Runtime Solver: 0.497463s
+Runtime decision procedure: 0.499667s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293132 variables, 687628 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.535421s
-Runtime decision procedure: 0.537878s
+Runtime Solver: 0.543129s
+Runtime decision procedure: 0.54566s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293133 variables, 687629 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 3.03458s
-Runtime decision procedure: 3.0435s
+Runtime Solver: 2.89066s
+Runtime decision procedure: 2.89931s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 293134 variables, 687630 clauses
 SAT checker: instance is UNSATISFIABLE
-Runtime Solver: 1.23197s
-Runtime decision procedure: 1.23504s
+Runtime Solver: 1.15504s
+Runtime decision procedure: 1.15903s
 
 RESULTS:
 Check 1: <std::option::Option<native::Decimal64> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
@@ -3881,7 +3881,7 @@ SUMMARY:
 
 
 VERIFICATION:- SUCCESSFUL
-Verification Time: 19.342793s
+Verification Time: 19.432175s
 
 Manual Harness Summary:
 Complete - 1 successfully verified harnesses, 0 failures, 1 total.

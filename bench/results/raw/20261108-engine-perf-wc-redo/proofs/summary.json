@@ -2,73 +2,121 @@
   {
     "harness": "wc1_proofs::wc1_add",
     "verified": true,
-    "verification_seconds": 19.342793,
+    "verification_seconds": 19.432175,
     "covers": [
       "3 of 3 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_proofs::wc1_alignment",
     "verified": true,
-    "verification_seconds": 92.187935,
+    "verification_seconds": 90.69527,
     "covers": [
       "2 of 2 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_proofs::wc1_mul",
     "verified": true,
-    "verification_seconds": 52.75379,
+    "verification_seconds": 51.458187,
     "covers": [
       "2 of 3 cover properties satisfied (1 unreachable)"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_full_product::wc1_mul_full_i64",
     "verified": true,
-    "verification_seconds": 19.305223,
+    "verification_seconds": 19.02014,
     "covers": [
       "3 of 3 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_proofs::wc1_numbers_and_selection",
     "verified": true,
-    "verification_seconds": 3.0431402,
+    "verification_seconds": 2.6270685,
     "covers": [
-      "3 of 3 cover properties satisfied"
-    ],
-    "failures": 0
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_empty",
+    "verified": true,
+    "verification_seconds": 0.834107,
+    "covers": [
+      "2 of 8 cover properties satisfied (6 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows0",
+    "verified": true,
+    "verification_seconds": 2.2338455,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows01",
+    "verified": true,
+    "verification_seconds": 2.4930642,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows02",
+    "verified": true,
+    "verification_seconds": 2.6678472,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows1",
+    "verified": true,
+    "verification_seconds": 2.1737773,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows12",
+    "verified": true,
+    "verification_seconds": 2.467446,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
+  },
+  {
+    "harness": "wc1_proofs::wc1_numbers_rows2",
+    "verified": true,
+    "verification_seconds": 2.253318,
+    "covers": [
+      "3 of 8 cover properties satisfied (5 unreachable)"
+    ]
   },
   {
     "harness": "wc1_q1::wc1_q1_alignment",
     "verified": true,
-    "verification_seconds": 78.203926,
+    "verification_seconds": 75.73557,
     "covers": [
       "2 of 2 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_proofs::wc1_sub",
     "verified": true,
-    "verification_seconds": 21.027468,
+    "verification_seconds": 20.587284,
     "covers": [
       "3 of 3 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   },
   {
     "harness": "wc1_words::wc1_word_boundary",
     "verified": true,
-    "verification_seconds": 7.8730664,
+    "verification_seconds": 7.8151913,
     "covers": [
       "2 of 2 cover properties satisfied"
-    ],
-    "failures": 0
+    ]
   }
 ]

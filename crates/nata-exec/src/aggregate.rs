@@ -542,32 +542,31 @@ impl Partial {
             );
             let rows = &evaluated.rows[begin..evaluated.next];
             let ids = &groups[..rows.len()];
-            let selected = native::selection(rows, rows.last().map_or(0, |r| *r as usize + 1));
+            let mut selected = None;
             // Dispatch argument representation and aggregate once per column,
             // rather than constructing an Atom for every numeric addend.
             for (slot, (agg, arg)) in a.aggregates.iter().zip(&evaluated.args).enumerate() {
                 if let Some(Argument::Decimal64(values)) = arg {
-                    let nullable = values.null_count() != 0;
-                    let mut masked;
-                    let mask = if nullable {
-                        masked = selected.clone();
+                    let mask = (values.null_count() != 0).then(|| {
+                        let selected =
+                            selected.get_or_insert_with(|| native::selection(rows, values.len()));
+                        let mut masked = selected.clone();
                         native::intersect(&mut masked, values.nulls());
-                        &masked
-                    } else {
-                        &selected
-                    };
-                    let mut ordinal = 0;
-                    nata_kernels::native::numbers(values.values().as_ref(), mask, |row, value| {
-                        while rows[ordinal] as usize != row {
-                            ordinal += 1;
-                        }
-                        let (p, id) = ids[ordinal];
-                        ordinal += 1;
-                        if let State::Sum(sum) = &mut self.tables[p].groups.entries[id].1[slot] {
-                            sum.add(value).map_err(|_| overflow(agg))?;
-                        }
-                        Ok::<_, EvalError>(())
-                    })?;
+                        masked
+                    });
+                    nata_kernels::native::numbers(
+                        values.values().as_ref(),
+                        rows,
+                        mask.as_deref(),
+                        |offset, value| {
+                            let (p, id) = ids[offset];
+                            if let State::Sum(sum) = &mut self.tables[p].groups.entries[id].1[slot]
+                            {
+                                sum.add(value).map_err(|_| overflow(agg))?;
+                            }
+                            Ok::<_, EvalError>(())
+                        },
+                    )?;
                     continue;
                 }
                 let arg = arg.as_ref().and_then(Argument::general);

@@ -85,7 +85,7 @@ warning: Found the following unsupported constructs:
          Verification will fail if one or more of these constructs is reachable.
          See https://model-checking.github.io/kani/rust-feature-support.html for more details.
 
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.65s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.66s
 warning: the following packages contain code that will be rejected by a future version of Rust: kani-nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-fdf657a2/spikes/kani-nata-kernels)
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 2`
 Checking harness wc1_q1::wc1_q1_alignment...
@@ -177,667 +177,667 @@ aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs line 1334 column 15 function std::option::Option::<i128>::ok_or::<decimal::Fail> thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<i128, decimal::Fail>::is_ok thread 0
-aborting path on assume(false) at file src/lib.rs line 1654 column 5 function wc1_q1::wc1_q1_alignment thread 0
+aborting path on assume(false) at file src/lib.rs line 1688 column 5 function wc1_q1::wc1_q1_alignment thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
 aborting path on assume(false) at file /home/runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs line 594 column 5 function std::result::Result::<(), decimal::Fail>::is_ok thread 0
-Runtime Symex: 0.923831s
+Runtime Symex: 0.923725s
 size of program expression: 34714 steps
 slicing removed 27146 assignments
 Generated 1074 VCC(s), 117 remaining after simplification
-Runtime Postprocess Equation: 0.0157981s
+Runtime Postprocess Equation: 0.0164291s
 Passing problem to propositional reduction
 converting SSA
-Runtime Convert SSA: 0.631536s
+Runtime Convert SSA: 0.654748s
 Running propositional reduction
 Post-processing
-Runtime Post-process: 7.109e-06s
+Runtime Post-process: 6.438e-06s
 Solving with CaDiCaL 3.0.0
 510146 variables, 2307633 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 3.87752s
-Runtime decision procedure: 4.51791s
+Runtime Solver: 4.02141s
+Runtime decision procedure: 4.68538s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510147 variables, 2307634 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.219554s
-Runtime decision procedure: 0.22621s
+Runtime Solver: 0.215473s
+Runtime decision procedure: 0.221838s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510148 variables, 2307635 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.236563s
-Runtime decision procedure: 0.242064s
+Runtime Solver: 0.234642s
+Runtime decision procedure: 0.239967s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510149 variables, 2307636 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.197593s
-Runtime decision procedure: 0.203045s
+Runtime Solver: 0.196807s
+Runtime decision procedure: 0.202107s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510150 variables, 2307637 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.963468s
-Runtime decision procedure: 0.969186s
+Runtime Solver: 0.944453s
+Runtime decision procedure: 0.950137s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510151 variables, 2307638 clauses
 SAT checker: instance is SATISFIABLE
-Runtime Solver: 0.84872s
-Runtime decision procedure: 0.85966s
+Runtime Solver: 0.761998s
+Runtime decision procedure: 0.771846s
 Running propositional reduction
 Solving with CaDiCaL 3.0.0
 510152 variables, 2307639 clauses
 SAT checker: instance is UNSATISFIABLE
-Runtime Solver: 68.8949s
-Runtime decision procedure: 68.8975s
+Runtime Solver: 66.4383s
+Runtime decision procedure: 66.4407s
 
 RESULTS:
-Check 1: core::num::<impl i128>::checked_div.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to divide with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
-
-Check 2: core::num::<impl i128>::checked_div.arithmetic_overflow.2
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
-
-Check 3: <std::option::Option<i128> as std::ops::Try>::branch.unreachable.1
+Check 1: std::option::Option::<i64>::ok_or::<decimal::Fail>.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i128> as std::ops::Try>::branch
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<i64>::ok_or::<decimal::Fail>
 
-Check 4: <std::option::Option<u128> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u128> as std::ops::Try>::branch
-
-Check 5: <std::option::Option<&u64> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<&u64> as std::ops::Try>::branch
-
-Check 6: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch
-
-Check 7: core::num::<impl usize>::unchecked_add.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_add` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1013:17 in function core::num::<impl usize>::unchecked_add
-
-Check 8: std::num::NonZero::<u128>::ilog2.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to subtract with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
-
-Check 9: std::num::NonZero::<u128>::ilog2.assertion.2
-	 - Status: UNREACHABLE
-	 - Description: "attempt to subtract with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
-
-Check 10: core::num::<impl usize>::checked_add.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_add` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl usize>::checked_add
-
-Check 11: <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/iter/adapters/enumerate.rs:80:17 in function <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next
-
-Check 12: <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next.assertion.1
-	 - Status: SUCCESS
-	 - Description: "attempt to add with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/iter/adapters/enumerate.rs:82:9 in function <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next
-
-Check 13: std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:126:31: 126:34}>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:126:31: 126:34}>
-
-Check 14: <std::option::Option<i64> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i64> as std::ops::Try>::branch
-
-Check 15: std::fmt::Arguments::<'_>::from_str.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to shift left with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:820:38 in function std::fmt::Arguments::<'_>::from_str
-
-Check 16: <std::ops::RangeInclusive<u8> as std::ops::RangeBounds<u8>>::contains::<u8>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function <std::ops::RangeInclusive<u8> as std::ops::RangeBounds<u8>>::contains::<u8>
-
-Check 17: decimal::Decimal::aligned.unreachable.1
+Check 2: decimal::Decimal::aligned.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: src/lib.rs:0:0 in function decimal::Decimal::aligned
 
-Check 18: native::Decimal64::column.assertion.1
+Check 3: <std::option::Option<u128> as std::ops::Try>::branch.unreachable.1
 	 - Status: SUCCESS
-	 - Description: "internal error: entered unreachable code: constructor restricts operations"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:96:18 in function native::Decimal64::column
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u128> as std::ops::Try>::branch
 
-Check 19: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>.unreachable.1
+Check 4: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 5: decimal::div_round_away.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function decimal::div_round_away
+
+Check 6: decimal::Decimal::product.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:209:5 in function decimal::Decimal::product
+
+Check 7: core::num::<impl i64>::unchecked_shl.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift by excessive shift distance"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1489:17 in function core::num::<impl i64>::unchecked_shl
+
+Check 8: core::num::<impl u32>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u32>::checked_add
+
+Check 9: std::num::NonZero::<u64>::ilog2.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u64>::ilog2
+
+Check 10: std::num::NonZero::<u64>::ilog2.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u64>::ilog2
+
+Check 11: core::num::<impl i128>::checked_pow.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
+
+Check 12: core::num::<impl i128>::checked_pow.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
+
+Check 13: core::num::<impl i128>::checked_pow.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
+
+Check 14: core::num::<impl i128>::checked_pow.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
+
+Check 15: core::num::<impl i128>::checked_pow.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
+
+Check 16: core::num::<impl i128>::checked_pow.arithmetic_overflow.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
+
+Check 17: core::num::<impl i128>::checked_pow.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function core::num::<impl i128>::checked_pow
+
+Check 18: core::num::<impl i64>::checked_pow.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i64>::checked_pow
+
+Check 19: core::num::<impl i64>::checked_pow.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i64>::checked_pow
+
+Check 20: core::num::<impl i64>::checked_pow.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i64>::checked_pow
+
+Check 21: core::num::<impl i64>::checked_pow.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i64>::checked_pow
+
+Check 22: core::num::<impl i64>::checked_pow.assertion.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i64>::checked_pow
+
+Check 23: core::num::<impl i64>::checked_pow.arithmetic_overflow.3
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i64>::checked_pow
+
+Check 24: core::num::<impl i64>::checked_pow.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function core::num::<impl i64>::checked_pow
+
+Check 25: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: src/lib.rs:0:0 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>
 
-Check 20: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>.assertion.1
+Check 26: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>.assertion.1
 	 - Status: SUCCESS
 	 - Description: "attempt to shift left with overflow"
 	 - Location: src/../../../crates/nata-kernels/src/native.rs:29:26 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:84:50: 84:53}>
 
-Check 21: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.1
-	 - Status: SUCCESS
-	 - Description: "Offset in bytes overflows isize"
-	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
-
-Check 22: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.2
-	 - Status: SUCCESS
-	 - Description: "Offset result address must equal original pointer address plus offset"
-	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
-
-Check 23: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.3
-	 - Status: SUCCESS
-	 - Description: "Offset result and original pointer must point to the same allocation"
-	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
-
-Check 24: core::num::<impl i128>::checked_rem.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to calculate the remainder with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
-
-Check 25: core::num::<impl i128>::checked_rem.arithmetic_overflow.2
-	 - Status: SUCCESS
-	 - Description: "attempt to calculate the remainder with a divisor of zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
-
-Check 26: <std::option::Option<u64> as std::ops::Try>::branch.unreachable.1
+Check 27: <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u64> as std::ops::Try>::branch
-
-Check 27: <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch
 
 Check 28: std::option::Option::<usize>::expect.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:967:15 in function std::option::Option::<usize>::expect
 
-Check 29: core::num::<impl u64>::checked_ilog2.unreachable.1
+Check 29: <std::option::Option<u64> as std::ops::Try>::branch.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u64>::checked_ilog2
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u64> as std::ops::Try>::branch
 
-Check 30: core::num::<impl u32>::checked_sub.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_sub` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1096:31 in function core::num::<impl u32>::checked_sub
-
-Check 31: decimal::Decimal::new.unreachable.1
+Check 30: <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function decimal::Decimal::new
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/iter/adapters/enumerate.rs:80:17 in function <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next
 
-Check 32: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>.unreachable.1
+Check 31: <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next.assertion.1
 	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>
+	 - Description: "attempt to add with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/iter/adapters/enumerate.rs:82:9 in function <std::iter::Enumerate<std::slice::Iter<'_, u64>> as std::iter::Iterator>::next
 
-Check 33: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>.assertion.1
-	 - Status: SUCCESS
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:29:26 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>
-
-Check 34: std::option::expect_failed.assertion.1
-	 - Status: SUCCESS
-	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2257:5 in function std::option::expect_failed
-
-Check 35: core::num::<impl u32>::checked_add.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_add` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u32>::checked_add
-
-Check 36: std::panic::Location::<'_>::caller.unsupported_construct.1
-	 - Status: SUCCESS
-	 - Description: "caller_location is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/374"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panic/location.rs:181:9 in function std::panic::Location::<'_>::caller
-
-Check 37: core::num::<impl usize>::unchecked_sub.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_sub` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1192:17 in function core::num::<impl usize>::unchecked_sub
-
-Check 38: core::panicking::panic_nounwind_fmt::runtime.unsupported_construct.1
-	 - Status: SUCCESS
-	 - Description: "call to foreign "Rust" function `_RNvCskSgPeDzUGbv_7___rustc17rust_begin_unwind` is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/new/choose"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panicking.rs:110:17 in function core::panicking::panic_nounwind_fmt::runtime
-
-Check 39: <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
-
-Check 40: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>
-
-Check 41: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>.assertion.1
+Check 32: std::num::NonZero::<u128>::ilog2.assertion.1
 	 - Status: UNREACHABLE
-	 - Description: "attempt to shift left with overflow"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:29:26 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
 
-Check 42: std::option::Option::<i128>::ok_or::<decimal::Fail>.unreachable.1
+Check 33: std::num::NonZero::<u128>::ilog2.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "attempt to subtract with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u128>::ilog2
+
+Check 34: std::option::Option::<i128>::ok_or::<decimal::Fail>.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<i128>::ok_or::<decimal::Fail>
 
-Check 43: core::num::<impl i128>::unchecked_shl.arithmetic_overflow.1
+Check 35: std::panic::Location::<'_>::caller.unsupported_construct.1
 	 - Status: SUCCESS
-	 - Description: "attempt to shift by excessive shift distance"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1489:17 in function core::num::<impl i128>::unchecked_shl
+	 - Description: "caller_location is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/374"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panic/location.rs:181:9 in function std::panic::Location::<'_>::caller
 
-Check 44: std::option::Option::<u32>::ok_or::<decimal::Fail>.unreachable.1
+Check 36: <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch
+
+Check 37: std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:218:18: 218:21}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1574:5 in function std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:218:18: 218:21}>
+
+Check 38: <std::option::Option<(usize, &u64)> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<(usize, &u64)> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
+
+Check 39: core::num::<impl i128>::checked_rem.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
+
+Check 40: core::num::<impl i128>::checked_rem.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to calculate the remainder with a divisor of zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1216:31 in function core::num::<impl i128>::checked_rem
+
+Check 41: std::ptr::NonNull::<u64>::as_ref::<'_>.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "misaligned pointer to reference cast: address must be a multiple of its type's alignment"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u64>::as_ref::<'_>
+
+Check 42: std::ptr::NonNull::<u64>::as_ref::<'_>.safety_check.2
+	 - Status: SUCCESS
+	 - Description: "dereference failure: pointer invalid"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u64>::as_ref::<'_>
+
+Check 43: std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:126:31: 126:34}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<u32>::and_then::<u32, {closure@src/../../../crates/nata-kernels/src/decimal.rs:126:31: 126:34}>
+
+Check 44: <std::option::Option<i64> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i64> as std::ops::Try>::branch
+
+Check 45: <std::option::Option<u8> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u8> as std::ops::Try>::branch
+
+Check 46: <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<i128, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 47: <std::option::Option<&u64> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<&u64> as std::ops::Try>::branch
+
+Check 48: core::num::<impl usize>::unchecked_sub.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_sub` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1192:17 in function core::num::<impl usize>::unchecked_sub
+
+Check 49: core::num::<impl u128>::checked_ilog2.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u128>::checked_ilog2
+
+Check 50: <std::option::Option<i128> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<i128> as std::ops::Try>::branch
+
+Check 51: std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:242:62: 242:65}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:242:62: 242:65}>
+
+Check 52: core::num::imp::int_log10::panic_for_nonpositive_argument.assertion.1
+	 - Status: SUCCESS
+	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/imp/int_log10.rs:170:5 in function core::num::imp::int_log10::panic_for_nonpositive_argument
+
+Check 53: std::result::Result::<i128, decimal::Fail>::is_ok.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:594:5 in function std::result::Result::<i128, decimal::Fail>::is_ok
+
+Check 54: core::panicking::panic_nounwind_fmt::runtime.unsupported_construct.1
+	 - Status: SUCCESS
+	 - Description: "call to foreign "Rust" function `_RNvCskSgPeDzUGbv_7___rustc17rust_begin_unwind` is not currently supported by Kani. Please post your example at https://github.com/model-checking/kani/issues/new/choose"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panicking.rs:110:17 in function core::panicking::panic_nounwind_fmt::runtime
+
+Check 55: std::fmt::Arguments::<'_>::from_str.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to shift left with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:820:38 in function std::fmt::Arguments::<'_>::from_str
+
+Check 56: core::num::<impl usize>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl usize>::checked_add
+
+Check 57: std::option::Option::<u32>::ok_or::<decimal::Fail>.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<u32>::ok_or::<decimal::Fail>
-
-Check 45: decimal::Decimal::product.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/../../../crates/nata-kernels/src/decimal.rs:209:5 in function decimal::Decimal::product
-
-Check 46: core::num::<impl u64>::ilog2.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1808:9 in function core::num::<impl u64>::ilog2
-
-Check 47: std::option::Option::<i64>::ok_or::<decimal::Fail>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1334:15 in function std::option::Option::<i64>::ok_or::<decimal::Fail>
-
-Check 48: core::num::<impl i64>::checked_pow.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to calculate the remainder with a divisor of zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i64>::checked_pow
-
-Check 49: core::num::<impl i64>::checked_pow.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to calculate the remainder with a divisor of zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i64>::checked_pow
-
-Check 50: core::num::<impl i64>::checked_pow.assertion.2
-	 - Status: UNREACHABLE
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i64>::checked_pow
-
-Check 51: core::num::<impl i64>::checked_pow.arithmetic_overflow.2
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i64>::checked_pow
-
-Check 52: core::num::<impl i64>::checked_pow.assertion.3
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i64>::checked_pow
-
-Check 53: core::num::<impl i64>::checked_pow.arithmetic_overflow.3
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i64>::checked_pow
-
-Check 54: core::num::<impl i64>::checked_pow.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function core::num::<impl i64>::checked_pow
-
-Check 55: <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(), decimal::Fail> as std::ops::Try>::branch
-
-Check 56: core::num::<impl i64>::unchecked_shl.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to shift by excessive shift distance"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1489:17 in function core::num::<impl i64>::unchecked_shl
-
-Check 57: std::option::Option::<native::Decimal64>::unwrap.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<native::Decimal64>::unwrap
 
 Check 58: <std::result::Result<i128, decimal::Fail> as std::ops::Try>::branch.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<i128, decimal::Fail> as std::ops::Try>::branch
 
-Check 59: std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap.unreachable.1
+Check 59: std::option::expect_failed.assertion.1
+	 - Status: SUCCESS
+	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2257:5 in function std::option::expect_failed
+
+Check 60: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::Try>::branch
 
-Check 60: std::option::unwrap_failed.assertion.1
+Check 61: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>
+
+Check 62: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:29:26 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>
+
+Check 63: <std::ops::RangeInclusive<u8> as std::ops::RangeBounds<u8>>::contains::<u8>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function <std::ops::RangeInclusive<u8> as std::ops::RangeBounds<u8>>::contains::<u8>
+
+Check 64: <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<i128> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
+
+Check 65: core::num::<impl u64>::checked_ilog2.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u64>::checked_ilog2
+
+Check 66: core::num::<impl i128>::checked_div.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to divide with overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
+
+Check 67: core::num::<impl i128>::checked_div.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:970:31 in function core::num::<impl i128>::checked_div
+
+Check 68: core::num::<impl i128>::unchecked_shl.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift by excessive shift distance"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1489:17 in function core::num::<impl i128>::unchecked_shl
+
+Check 69: std::option::unwrap_failed.assertion.1
 	 - Status: SUCCESS
 	 - Description: "called `Option::unwrap()` on a `None` value"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2248:5 in function std::option::unwrap_failed
 
-Check 61: std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:218:18: 218:21}>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1574:5 in function std::option::Option::<i128>::filter::<{closure@src/../../../crates/nata-kernels/src/decimal.rs:218:18: 218:21}>
-
-Check 62: <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(i128, i128), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
-
-Check 63: std::result::unwrap_failed.assertion.1
-	 - Status: SUCCESS
-	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1871:5 in function std::result::unwrap_failed
-
-Check 64: std::result::Result::<(), decimal::Fail>::is_ok.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:594:5 in function std::result::Result::<(), decimal::Fail>::is_ok
-
-Check 65: decimal::Decimal::scalar.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function decimal::Decimal::scalar
-
-Check 66: native::Decimal64::column::{closure#1}.assertion.1
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:85:36 in function native::Decimal64::column::{closure#1}
-
-Check 67: native::Decimal64::column::{closure#1}.assertion.2
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:86:36 in function native::Decimal64::column::{closure#1}
-
-Check 68: native::Decimal64::column::{closure#1}.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function native::Decimal64::column::{closure#1}
-
-Check 69: native::Decimal64::column::{closure#1}.assertion.3
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:87:17 in function native::Decimal64::column::{closure#1}
-
-Check 70: std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1162:15 in function std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>
-
-Check 71: <usize as kani::rustc_intrinsics::ToISize>::to_isize.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: library/kani_core/src/models.rs:203:17 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
-
-Check 72: <usize as kani::rustc_intrinsics::ToISize>::to_isize.safety_check.1
-	 - Status: SUCCESS
-	 - Description: "Offset value overflows isize"
-	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
-
-Check 73: <usize as kani::rustc_intrinsics::ToISize>::to_isize.assertion.1
-	 - Status: SUCCESS
-	 - Description: "internal error: entered unreachable code"
-	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
-
-Check 74: <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<i64, decimal::Fail> as std::ops::Try>::branch
-
-Check 75: core::num::<impl u8>::checked_add.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to compute `unchecked_add` which would overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u8>::checked_add
-
-Check 76: core::num::<impl i128>::checked_pow.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to calculate the remainder with a divisor of zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
-
-Check 77: core::num::<impl i128>::checked_pow.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to calculate the remainder with a divisor of zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1847:39 in function core::num::<impl i128>::checked_pow
-
-Check 78: core::num::<impl i128>::checked_pow.assertion.2
-	 - Status: UNREACHABLE
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
-
-Check 79: core::num::<impl i128>::checked_pow.arithmetic_overflow.2
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1863:21 in function core::num::<impl i128>::checked_pow
-
-Check 80: core::num::<impl i128>::checked_pow.assertion.3
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
-
-Check 81: core::num::<impl i128>::checked_pow.arithmetic_overflow.3
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/int_macros.rs:1882:17 in function core::num::<impl i128>::checked_pow
-
-Check 82: core::num::<impl i128>::checked_pow.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function core::num::<impl i128>::checked_pow
-
-Check 83: <std::option::Option<(usize, &u64)> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<(usize, &u64)> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
-
-Check 84: kani::mem::cbmc::same_allocation.unsupported_construct.1
+Check 70: kani::mem::cbmc::same_allocation.unsupported_construct.1
 	 - Status: SUCCESS
 	 - Description: "Kani does not support reasoning about pointer to unallocated memory"
 	 - Location: library/kani/src/lib.rs:57:1 in function kani::mem::cbmc::same_allocation
 
-Check 85: core::num::imp::int_log10::panic_for_nonpositive_argument.assertion.1
+Check 71: std::result::unwrap_failed.assertion.1
 	 - Status: SUCCESS
 	 - Description: "This is a placeholder message; Kani doesn't support message formatted at runtime"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/imp/int_log10.rs:170:5 in function core::num::imp::int_log10::panic_for_nonpositive_argument
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1871:5 in function std::result::unwrap_failed
 
-Check 86: <std::option::Option<u8> as std::ops::Try>::branch.unreachable.1
+Check 72: wc1_q1::wc1_q1_alignment.assertion.1
+	 - Status: SUCCESS
+	 - Description: "assertion failed: got.is_ok() == reference.is_ok()"
+	 - Location: src/lib.rs:1704:9 in function wc1_q1::wc1_q1_alignment
+
+Check 73: wc1_q1::wc1_q1_alignment.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2869:15 in function <std::option::Option<u8> as std::ops::Try>::branch
+	 - Location: src/lib.rs:1688:5 in function wc1_q1::wc1_q1_alignment
 
-Check 87: core::num::<impl u64>::checked_pow.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2423:21 in function core::num::<impl u64>::checked_pow
-
-Check 88: core::num::<impl u64>::checked_pow.arithmetic_overflow.1
+Check 74: wc1_q1::wc1_q1_alignment.assertion.2
 	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2423:21 in function core::num::<impl u64>::checked_pow
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/lib.rs:1706:35 in function wc1_q1::wc1_q1_alignment
 
-Check 89: core::num::<impl u64>::checked_pow.assertion.2
+Check 75: wc1_q1::wc1_q1_alignment.assertion.3
 	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2442:17 in function core::num::<impl u64>::checked_pow
+	 - Description: "assertion failed: i128::from(out[0]) == value"
+	 - Location: src/lib.rs:1706:13 in function wc1_q1::wc1_q1_alignment
 
-Check 90: core::num::<impl u64>::checked_pow.arithmetic_overflow.2
-	 - Status: SUCCESS
-	 - Description: "attempt to divide by zero"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2442:17 in function core::num::<impl u64>::checked_pow
+Check 76: wc1_q1::wc1_q1_alignment.cover.1
+	 - Status: SATISFIED
+	 - Description: "cover condition: got.is_ok()"
+	 - Location: src/lib.rs:1708:9 in function wc1_q1::wc1_q1_alignment
 
-Check 91: core::num::<impl u64>::checked_pow.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function core::num::<impl u64>::checked_pow
+Check 77: wc1_q1::wc1_q1_alignment.cover.2
+	 - Status: SATISFIED
+	 - Description: "cover condition: got.is_err()"
+	 - Location: src/lib.rs:1709:9 in function wc1_q1::wc1_q1_alignment
 
-Check 92: <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+Check 78: decimal::Decimal::scalar.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+	 - Location: src/lib.rs:0:0 in function decimal::Decimal::scalar
 
-Check 93: <std::option::Option<native::Decimal64> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
+Check 79: std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1230:15 in function std::result::Result::<decimal::Decimal, decimal::Fail>::unwrap
+
+Check 80: core::num::<impl u32>::checked_sub.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_sub` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1096:31 in function core::num::<impl u32>::checked_sub
+
+Check 81: std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1162:15 in function std::option::Option::<i64>::map::<i128, fn(i64) -> i128 {<i128 as std::convert::From<i64>>::from}>
+
+Check 82: <std::option::Option<native::Decimal64> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:2883:15 in function <std::option::Option<native::Decimal64> as std::ops::FromResidual<std::option::Option<std::convert::Infallible>>>::from_residual
 
-Check 94: std::num::NonZero::<u64>::ilog2.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "attempt to subtract with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u64>::ilog2
-
-Check 95: std::num::NonZero::<u64>::ilog2.assertion.2
-	 - Status: UNREACHABLE
-	 - Description: "attempt to subtract with overflow"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/nonzero.rs:1802:13 in function std::num::NonZero::<u64>::ilog2
-
-Check 96: std::result::Result::<i128, decimal::Fail>::is_ok.unreachable.1
+Check 83: core::num::<impl usize>::unchecked_add.arithmetic_overflow.1
 	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:594:5 in function std::result::Result::<i128, decimal::Fail>::is_ok
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1013:17 in function core::num::<impl usize>::unchecked_add
 
-Check 97: wc1_q1::wc1_q1_alignment.assertion.1
-	 - Status: SUCCESS
-	 - Description: "assertion failed: got.is_ok() == reference.is_ok()"
-	 - Location: src/lib.rs:1670:9 in function wc1_q1::wc1_q1_alignment
-
-Check 98: wc1_q1::wc1_q1_alignment.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:1654:5 in function wc1_q1::wc1_q1_alignment
-
-Check 99: wc1_q1::wc1_q1_alignment.assertion.2
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/lib.rs:1672:35 in function wc1_q1::wc1_q1_alignment
-
-Check 100: wc1_q1::wc1_q1_alignment.assertion.3
-	 - Status: SUCCESS
-	 - Description: "assertion failed: i128::from(out[0]) == value"
-	 - Location: src/lib.rs:1672:13 in function wc1_q1::wc1_q1_alignment
-
-Check 101: wc1_q1::wc1_q1_alignment.cover.1
-	 - Status: SATISFIED
-	 - Description: "cover condition: got.is_ok()"
-	 - Location: src/lib.rs:1674:9 in function wc1_q1::wc1_q1_alignment
-
-Check 102: wc1_q1::wc1_q1_alignment.cover.2
-	 - Status: SATISFIED
-	 - Description: "cover condition: got.is_err()"
-	 - Location: src/lib.rs:1675:9 in function wc1_q1::wc1_q1_alignment
-
-Check 103: <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
-
-Check 104: native::Decimal64::column::{closure#0}.assertion.1
-	 - Status: UNREACHABLE
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:39 in function native::Decimal64::column::{closure#0}
-
-Check 105: native::Decimal64::column::{closure#0}.assertion.2
-	 - Status: UNREACHABLE
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:45 in function native::Decimal64::column::{closure#0}
-
-Check 106: native::Decimal64::column::{closure#0}.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:26 in function native::Decimal64::column::{closure#0}
-
-Check 107: native::Decimal64::column::{closure#0}.assertion.3
-	 - Status: UNREACHABLE
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:17 in function native::Decimal64::column::{closure#0}
-
-Check 108: core::num::<impl u128>::ilog2.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1808:9 in function core::num::<impl u128>::ilog2
-
-Check 109: decimal::div_round_away.unreachable.1
-	 - Status: SUCCESS
-	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function decimal::div_round_away
-
-Check 110: core::num::<impl u64>::unchecked_shl.arithmetic_overflow.1
-	 - Status: SUCCESS
-	 - Description: "attempt to shift by excessive shift distance"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2096:17 in function core::num::<impl u64>::unchecked_shl
-
-Check 111: std::ptr::NonNull::<u64>::as_ref::<'_>.safety_check.1
-	 - Status: SUCCESS
-	 - Description: "misaligned pointer to reference cast: address must be a multiple of its type's alignment"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u64>::as_ref::<'_>
-
-Check 112: std::ptr::NonNull::<u64>::as_ref::<'_>.safety_check.2
-	 - Status: SUCCESS
-	 - Description: "dereference failure: pointer invalid"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ptr/non_null.rs:454:18 in function std::ptr::NonNull::<u64>::as_ref::<'_>
-
-Check 113: native::Decimal64::new.unreachable.1
+Check 84: native::Decimal64::new.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: src/lib.rs:0:0 in function native::Decimal64::new
 
-Check 114: core::num::<impl u128>::checked_ilog2.unreachable.1
+Check 85: decimal::Decimal::new.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1932:19 in function core::num::<impl u128>::checked_ilog2
+	 - Location: src/lib.rs:0:0 in function decimal::Decimal::new
 
-Check 115: <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch.unreachable.1
+Check 86: core::num::<impl u128>::ilog2.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1808:9 in function core::num::<impl u128>::ilog2
 
-Check 116: native::Decimal64::column::{closure#2}.assertion.1
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:91:36 in function native::Decimal64::column::{closure#2}
-
-Check 117: native::Decimal64::column::{closure#2}.assertion.2
-	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:92:36 in function native::Decimal64::column::{closure#2}
-
-Check 118: native::Decimal64::column::{closure#2}.unreachable.1
+Check 87: <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: src/lib.rs:0:0 in function native::Decimal64::column::{closure#2}
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<decimal::Decimal, decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
 
-Check 119: native::Decimal64::column::{closure#2}.assertion.3
+Check 88: core::num::<impl u64>::ilog2.unreachable.1
 	 - Status: SUCCESS
-	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/../../../crates/nata-kernels/src/native.rs:93:17 in function native::Decimal64::column::{closure#2}
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:1808:9 in function core::num::<impl u64>::ilog2
 
-Check 120: std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}>.unreachable.1
+Check 89: std::result::Result::<(), decimal::Fail>::is_ok.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:594:5 in function std::result::Result::<(), decimal::Fail>::is_ok
+
+Check 90: std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}>.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
 	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1574:5 in function std::option::Option::<i64>::filter::<{closure@src/../../../crates/nata-kernels/src/native.rs:69:21: 69:24}>
 
-Check 121: std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:242:62: 242:65}>.unreachable.1
+Check 91: native::Decimal64::column.assertion.1
+	 - Status: SUCCESS
+	 - Description: "internal error: entered unreachable code: constructor restricts operations"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:96:18 in function native::Decimal64::column
+
+Check 92: std::option::Option::<native::Decimal64>::unwrap.unreachable.1
 	 - Status: SUCCESS
 	 - Description: "unreachable code"
-	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1541:15 in function std::option::Option::<i128>::and_then::<i128, {closure@src/../../../crates/nata-kernels/src/decimal.rs:242:62: 242:65}>
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1012:15 in function std::option::Option::<native::Decimal64>::unwrap
+
+Check 93: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>
+
+Check 94: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>.assertion.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift left with overflow"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:29:26 in function native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:90:50: 90:53}>
+
+Check 95: core::num::<impl u64>::unchecked_shl.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to shift by excessive shift distance"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2096:17 in function core::num::<impl u64>::unchecked_shl
+
+Check 96: native::Decimal64::column::{closure#1}.assertion.1
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:85:36 in function native::Decimal64::column::{closure#1}
+
+Check 97: native::Decimal64::column::{closure#1}.assertion.2
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:86:36 in function native::Decimal64::column::{closure#1}
+
+Check 98: native::Decimal64::column::{closure#1}.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function native::Decimal64::column::{closure#1}
+
+Check 99: native::Decimal64::column::{closure#1}.assertion.3
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:87:17 in function native::Decimal64::column::{closure#1}
+
+Check 100: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "Offset in bytes overflows isize"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
+
+Check 101: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.2
+	 - Status: SUCCESS
+	 - Description: "Offset result address must equal original pointer address plus offset"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
+
+Check 102: kani::rustc_intrinsics::offset::<u64, *mut u64, usize>.safety_check.3
+	 - Status: SUCCESS
+	 - Description: "Offset result and original pointer must point to the same allocation"
+	 - Location: library/kani/src/lib.rs:57:1 in function kani::rustc_intrinsics::offset::<u64, *mut u64, usize>
+
+Check 103: <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2177:15 in function <std::result::Result<u32, decimal::Fail> as std::ops::Try>::branch
+
+Check 104: core::num::<impl u64>::checked_pow.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2423:21 in function core::num::<impl u64>::checked_pow
+
+Check 105: core::num::<impl u64>::checked_pow.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2423:21 in function core::num::<impl u64>::checked_pow
+
+Check 106: core::num::<impl u64>::checked_pow.assertion.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2442:17 in function core::num::<impl u64>::checked_pow
+
+Check 107: core::num::<impl u64>::checked_pow.arithmetic_overflow.2
+	 - Status: SUCCESS
+	 - Description: "attempt to divide by zero"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:2442:17 in function core::num::<impl u64>::checked_pow
+
+Check 108: core::num::<impl u64>::checked_pow.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function core::num::<impl u64>::checked_pow
+
+Check 109: native::Decimal64::column::{closure#0}.assertion.1
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:39 in function native::Decimal64::column::{closure#0}
+
+Check 110: native::Decimal64::column::{closure#0}.assertion.2
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:45 in function native::Decimal64::column::{closure#0}
+
+Check 111: native::Decimal64::column::{closure#0}.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:26 in function native::Decimal64::column::{closure#0}
+
+Check 112: native::Decimal64::column::{closure#0}.assertion.3
+	 - Status: UNREACHABLE
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:81:17 in function native::Decimal64::column::{closure#0}
+
+Check 113: core::num::<impl u8>::checked_add.arithmetic_overflow.1
+	 - Status: SUCCESS
+	 - Description: "attempt to compute `unchecked_add` which would overflow"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/num/uint_macros.rs:942:31 in function core::num::<impl u8>::checked_add
+
+Check 114: <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: ../../../../../../../runner/.rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:2192:15 in function <std::result::Result<(), decimal::Fail> as std::ops::FromResidual<std::result::Result<std::convert::Infallible, decimal::Fail>>>::from_residual
+
+Check 115: <usize as kani::rustc_intrinsics::ToISize>::to_isize.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: library/kani_core/src/models.rs:203:17 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 116: <usize as kani::rustc_intrinsics::ToISize>::to_isize.safety_check.1
+	 - Status: SUCCESS
+	 - Description: "Offset value overflows isize"
+	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 117: <usize as kani::rustc_intrinsics::ToISize>::to_isize.assertion.1
+	 - Status: SUCCESS
+	 - Description: "internal error: entered unreachable code"
+	 - Location: library/kani/src/lib.rs:57:1 in function <usize as kani::rustc_intrinsics::ToISize>::to_isize
+
+Check 118: native::Decimal64::column::{closure#2}.assertion.1
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:91:36 in function native::Decimal64::column::{closure#2}
+
+Check 119: native::Decimal64::column::{closure#2}.assertion.2
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:92:36 in function native::Decimal64::column::{closure#2}
+
+Check 120: native::Decimal64::column::{closure#2}.unreachable.1
+	 - Status: SUCCESS
+	 - Description: "unreachable code"
+	 - Location: src/lib.rs:0:0 in function native::Decimal64::column::{closure#2}
+
+Check 121: native::Decimal64::column::{closure#2}.assertion.3
+	 - Status: SUCCESS
+	 - Description: "index out of bounds: the length is less than or equal to the given index"
+	 - Location: src/../../../crates/nata-kernels/src/native.rs:93:17 in function native::Decimal64::column::{closure#2}
 
 Check 122: native::selected::<decimal::Fail, {closure@src/../../../crates/nata-kernels/src/native.rs:80:50: 80:53}>.pointer_dereference.1
 	 - Status: SUCCESS
@@ -2807,7 +2807,7 @@ Check 514: core::num::<impl u128>::checked_ilog2.pointer_dereference.1
 Check 515: wc1_q1::wc1_q1_alignment.array_bounds.1
 	 - Status: SUCCESS
 	 - Description: "index out of bounds: the length is less than or equal to the given index"
-	 - Location: src/lib.rs:1672:35 in function wc1_q1::wc1_q1_alignment
+	 - Location: src/lib.rs:1706:35 in function wc1_q1::wc1_q1_alignment
 
 Check 516: <std::slice::Iter<'_, u64> as std::iter::Iterator>::next.pointer_dereference.1
 	 - Status: SUCCESS
@@ -3557,7 +3557,7 @@ SUMMARY:
 
 
 VERIFICATION:- SUCCESSFUL
-Verification Time: 78.203926s
+Verification Time: 75.73557s
 
 Manual Harness Summary:
 Complete - 1 successfully verified harnesses, 0 failures, 1 total.
