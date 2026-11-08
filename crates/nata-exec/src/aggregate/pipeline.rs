@@ -100,11 +100,11 @@ struct ScanState {
     strings: Scratch,
     _decode: Grant,
 }
-fn empty_tables() -> Vec<Table> {
-    (0..PARTITIONS).map(|_| Table::new()).collect()
+fn empty_tables(fanout: usize) -> Vec<Table> {
+    (0..fanout).map(|_| Table::new()).collect()
 }
-fn files(registry: &Arc<Registry>) -> Result<Files, ScanError> {
-    (0..PARTITIONS)
+fn files(registry: &Arc<Registry>, fanout: usize) -> Result<Files, ScanError> {
+    (0..fanout)
         .map(|_| registry.create().map_err(scan_error))
         .collect()
 }
@@ -115,7 +115,7 @@ fn submit_write(
     io: &IoService<Completion>,
     wake: Arc<dyn Wake>,
 ) -> Result<(), ScanError> {
-    let tables = std::mem::replace(&mut state.partial.tables, empty_tables());
+    let tables = std::mem::replace(&mut state.partial.tables, empty_tables(PARTITIONS));
     let storage = Arc::clone(storage);
     let files = files.clone();
     let shared = Arc::clone(&state.partial.shared);
@@ -221,18 +221,39 @@ pub(super) fn accumulate(
     if let Some(after) = cfg.aggregate_spill_fail_after {
         registry.inject_write_failure(after);
     }
+    let workspace = Workspace::new(&shared.manager).map_err(scan_error)?;
+    let io = IoService::new(32, &shared.manager).map_err(scan_error)?;
+    let expected_rows = tasks.iter().try_fold(0usize, |rows, (_, task)| {
+        rows.checked_add(
+            usize::try_from(task.rows()).map_err(|_| scan_error("spill estimator overflow"))?,
+        )
+        .ok_or_else(|| scan_error("spill estimator overflow"))
+    })?;
+    let a = shared
+        .plan
+        .aggregate
+        .as_ref()
+        .ok_or_else(|| scan_error("aggregate missing"))?;
+    let resident_estimate = estimate_resident(expected_rows, a.keys.len(), a.aggregates.len())?;
+    let snapshot = shared.manager.snapshot();
+    let merge_budget = snapshot
+        .budget
+        .saturating_sub(snapshot.progress)
+        .saturating_sub(snapshot.held);
+    let initial_fanout = initial_fanout(resident_estimate, merge_budget);
     let storage = Arc::new(Storage {
         registry,
         runtime,
+        initial_fanout,
+        resident_estimate,
         cancel: cancel.cloned(),
         hash: shared.hash,
         partial_rows: Arc::default(),
         largest_partial: Arc::default(),
         rehashes: Arc::default(),
-        workspace: Mutex::new(Workspace::new(&shared.manager).map_err(scan_error)?),
+        workspace: Mutex::new(workspace),
     });
-    let io = IoService::new(32, &shared.manager).map_err(scan_error)?;
-    let targets = files(&storage.registry)?;
+    let targets = files(&storage.registry, storage.initial_fanout)?;
     let before_decode = shared.manager.snapshot();
     let free = before_decode
         .budget
@@ -271,7 +292,7 @@ pub(super) fn accumulate(
         states.push(ScanState {
             partial: Partial {
                 shared: Arc::clone(shared),
-                tables: empty_tables(),
+                tables: empty_tables(PARTITIONS),
                 program: None,
                 rows: Vec::new(),
                 hashes: Vec::new(),
@@ -326,12 +347,12 @@ pub(super) fn accumulate(
                     if failed_at.is_some_and(|failed| {
                         state.source.as_ref().is_some_and(|(i, _, _)| *i > failed)
                     }) {
-                        return Ok(Step::Done(Ok(empty_tables())));
+                        return Ok(Step::Done(Ok(empty_tables(PARTITIONS))));
                     }
                     if state.finishing {
                         return Ok(Step::Done(Ok(std::mem::replace(
                             &mut state.partial.tables,
-                            empty_tables(),
+                            empty_tables(PARTITIONS),
                         ))));
                     }
                     if let Some(evaluated) = &mut state.evaluated {
@@ -365,7 +386,7 @@ pub(super) fn accumulate(
                                         "aggregate minimum record cannot fit memory budget",
                                     ));
                                 }
-                                state.partial.tables = empty_tables();
+                                state.partial.tables = empty_tables(PARTITIONS);
                                 shared
                                     .manager
                                     .finish(0)
@@ -440,7 +461,7 @@ pub(super) fn accumulate(
                             .as_ref()
                             .is_some_and(|(failed, _)| index >= *failed)
                         {
-                            return Ok(Step::Done(Ok(empty_tables())));
+                            return Ok(Step::Done(Ok(empty_tables(PARTITIONS))));
                         }
                         state.source = Some((index, task.path().to_path_buf(), task.row_group()));
                         state.cursor = Some(task.cursor(256)?);
@@ -476,7 +497,7 @@ pub(super) fn accumulate(
                     if error.as_ref().is_none_or(|(i, _)| index < *i) {
                         *error = Some((index, e));
                     }
-                    Step::Done(Ok(empty_tables()))
+                    Step::Done(Ok(empty_tables(PARTITIONS)))
                 }
             }
         },
@@ -553,7 +574,7 @@ pub(super) fn accumulate(
             .flat_map(|(p, ts)| ts.into_iter().map(move |t| (p, t)))
             .collect::<Vec<_>>();
         for (p, t) in states {
-            let mut tables = empty_tables();
+            let mut tables = empty_tables(PARTITIONS);
             tables[p] = t;
             let storage = Arc::clone(&storage);
             let files = targets.clone();
@@ -593,6 +614,34 @@ pub(super) fn accumulate(
     };
     let report = ScanReport::from_stats(&scan, 0, n, n, false);
     Ok((report, partitions, storage, io))
+}
+
+/// Resident charges, not serialized bytes. Each input row may produce a partial.
+/// The per-row charge mirrors reserve_entry plus geometric table capacity/rehash
+/// overlap (256), and allows 64 estimated text bytes per key/state. Actual text
+/// and skew still go through grants and bounded recursive repartitioning.
+fn estimate_resident(rows: usize, keys: usize, states: usize) -> Result<usize, ScanError> {
+    keys.checked_mul(128)
+        .and_then(|k| states.checked_mul(192).and_then(|s| k.checked_add(s)))
+        .and_then(|n| n.checked_add(512))
+        .and_then(|n| n.checked_mul(rows))
+        .ok_or_else(|| scan_error("resource error: spill estimator overflow"))
+}
+fn initial_fanout(estimate: usize, merge_budget: usize) -> usize {
+    let mut fanout = PARTITIONS;
+    while fanout < 256 && estimate.div_ceil(fanout) > merge_budget / 2 {
+        fanout *= 2;
+    }
+    fanout
+}
+fn merge_concurrency(threads: usize, budget: usize, partition_estimate: usize) -> usize {
+    // Half each share is table space, the rest covers read/output workspaces,
+    // capacity rounding and overlap. At least one task attempts the bounded
+    // fallback if even the 256-way estimate exceeds the single-task grant.
+    threads
+        .clamp(1, 16)
+        .min((budget / (4 << 20)).max(1))
+        .min((budget / 2 / partition_estimate.max(1)).max(1))
 }
 
 struct MergeTask {
@@ -657,10 +706,16 @@ pub(super) fn finalize(
         .enumerate()
         .map(|(partition, file)| (file, partition, 0))
         .collect();
-    let concurrency = cfg
-        .threads
-        .clamp(1, 16)
-        .min((shared.manager.snapshot().budget / (4 << 20)).max(1));
+    let snapshot = shared.manager.snapshot();
+    let merge_budget = snapshot
+        .budget
+        .saturating_sub(snapshot.progress)
+        .saturating_sub(snapshot.held);
+    let concurrency = merge_concurrency(
+        cfg.threads,
+        merge_budget,
+        storage.resident_estimate.div_ceil(storage.initial_fanout),
+    );
     while !pending.is_empty() {
         let mut tasks = Vec::new();
         for _ in 0..concurrency {
@@ -682,14 +737,16 @@ pub(super) fn finalize(
                     runtime: Arc::clone(&storage.runtime),
                     cancel: cancel.cloned(),
                     hash: shared.hash,
+                    initial_fanout: storage.initial_fanout,
+                    resident_estimate: storage.resident_estimate,
                     partial_rows: Arc::clone(&storage.partial_rows),
                     largest_partial: Arc::clone(&storage.largest_partial),
                     rehashes: Arc::clone(&storage.rehashes),
                     workspace: Mutex::new(workspace),
                 }),
-                limit: cfg.aggregate_merge_partition_bytes.unwrap_or(
-                    shared.manager.snapshot().budget.saturating_sub(3 << 20) / concurrency / 2,
-                ),
+                limit: cfg
+                    .aggregate_merge_partition_bytes
+                    .unwrap_or(merge_budget / concurrency / 2),
             });
         }
         cooperative::run(
@@ -791,9 +848,16 @@ fn merge_step(
     }
     if let Some(frame) = &task.frame {
         while task.row < frame.batch().num_rows() {
-            let (key, state) =
-                storage::record(frame, task.row, a, task.partition, task.depth, shared.hash)
-                    .map_err(scan_error)?;
+            let (key, state) = storage::record(
+                frame,
+                task.row,
+                a,
+                task.partition,
+                task.depth,
+                shared.hash,
+                task.storage.initial_fanout,
+            )
+            .map_err(scan_error)?;
             let previous = task.table.groups.get(&key);
             let string_bytes = state
                 .iter()
@@ -883,7 +947,7 @@ fn files_for_repartition(
         .finish(0)
         .map_err(|_| scan_error("repartition pressure cleanup"))?;
     let output = Workspace::new(&shared.manager).map_err(scan_error)?;
-    let children = files(&storage.registry)?;
+    let children = files(&storage.registry, PARTITIONS)?;
     let storage = Arc::clone(storage);
     let child_files = children.clone();
     let shared = Arc::clone(shared);
@@ -920,6 +984,28 @@ fn files_for_repartition(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fanout_estimator_overflow_clamps_and_merge_grants() {
+        assert_eq!(estimate_resident(1, 1, 3).expect("estimate"), 1216);
+        for (rows, keys, states) in [(usize::MAX, 1, 1), (1, usize::MAX, 0), (1, 0, usize::MAX)] {
+            assert!(estimate_resident(rows, keys, states).is_err());
+        }
+        assert_eq!(estimate_resident(0, 1, 3).expect("empty"), 0);
+        assert_eq!(initial_fanout(0, 0), 16);
+        assert_eq!(initial_fanout(16 * 50, 100), 16);
+        assert_eq!(initial_fanout(16 * 50 + 1, 100), 32);
+        assert_eq!(initial_fanout(usize::MAX, 0), 256);
+        assert_eq!(initial_fanout(256 * 50, 100), 256);
+        for f in [16, 32, 64, 128, 256] {
+            assert_eq!(initial_fanout(f * 1024, 2048), f);
+        }
+        assert_eq!(merge_concurrency(8, 64 << 20, 1 << 20), 8);
+        assert_eq!(merge_concurrency(8, 64 << 20, 8 << 20), 4);
+        assert_eq!(merge_concurrency(8, 64 << 20, 32 << 20), 1);
+        assert_eq!(merge_concurrency(0, 0, usize::MAX), 1);
+        assert_eq!(merge_concurrency(32, 256 << 20, 0), 16);
+        assert_eq!(merge_concurrency(8, 8 << 20, 0), 2);
+    }
     #[test]
     fn dictionary_scratch_admission_precedes_revocable_tables() {
         let manager = MemoryManager::new(2 << 20, 4096, 1).expect("manager");

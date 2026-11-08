@@ -2166,3 +2166,115 @@ After reverting replay, the final normal release build and clippy pass.
 Its CLI SHA256 is `fcdb2e9973dd2219cf597d2bfb5f5aa76dac273a95114e11439f65307dc2ae1a`,
 **identical to the immutable step-0 binary that passed all gates**.
 [Final rebuild and digest comparison](raw/20261108-hash-aggregate-perf2d/final-build.txt).
+
+## Performance step 2d (fan-out)
+
+2026-11-08, continuation from `b065675` after the parent accepted ADR 0010's
+last amendment. This supersedes the earlier design stop, not the rejected
+ready-read experiment. The main equivalent of kept `b893561` is `a3f71fe`.
+No ready-read handoff change, dependency, SQL kernel, input batch size,
+performance target or ADR change is included. GCP is **not run**; the parent
+makes the settled two-CPU decision. Timings below are **unsettled**.
+
+Local evidence uses warm SF1, whole CLI/startup/planning/CSV to `/dev/null`,
+the existing five-round alternating before/after/identical-before control,
+DuckDB value gates for all 24 arms, and whole-system cpu-clock profiles.
+The pre-change binary SHA256 matches the previous kept no-small binary
+(`fcdb2e9973dd2219cf597d2bfb5f5aa76dac273a95114e11439f65307dc2ae1a`).
+Use counters and profile shares as local evidence; local timing alone rejects
+only a regression beyond the twin-control spread (the preceding experiment's
+controls ranged 0.76–1.14). Neither local timing nor a reduced kernel share
+certifies frozen targets. Raw evidence is under
+`raw/20261108-hash-aggregate-perf2d/`, with `fanout-`, `decode-` and `ipc-` prefixes.
+
+### 1. Budget-sized logical initial fan-out
+
+**Rule:** estimate resident bytes from expected partial rows, charged keys,
+states and table capacity; choose the smallest power of two in 16..256 whose
+estimated partition fits half the available merge-table budget. Reduce merge
+concurrency when that estimate exceeds per-task grants. Keep recursive fan-out
+16, depth 8, the 64 KiB scratch floor, canonical XXH3 and every IPC/typed-reader
+check. The reader takes fan-out from query-owned storage, never disk.
+
+The estimate is checked `input_rows * (512 + 128*keys + 192*aggregates)`:
+256 base entry bytes, 64/key and 128/state from `reserve_entry`, 256 for table
+capacity/rehash overlap, plus an estimated 64 text bytes/key or state. Input
+rows conservatively bound expected partial rows; the text allowance is a
+heuristic, **not** a bound. Grants, skew fallback, record caps and depth still
+bound execution independently of this estimate. Overflow returns a resource
+error. Available bytes exclude admitted runtime, registry, I/O, workspace and
+progress reservations; final merge recomputes them after scan teardown.
+
+The 16 resident tables and their allocation thresholds are preserved. Spill
+routing sorts each consumed table in place by logical bucket, then writes its
+chosen partitions with one bounded encode buffer. This avoids multiplying
+minimum table chunks by 256. The consumed probing index is never used after
+routing. Files are opened sequentially through the existing registry; live
+parent/child bytes remain charged together until successful replacement.
+The existing collision/no-progress process-deadline test still reaches and
+checks depth 8; no fault/damage assertion was weakened.
+
+**Verdict: kept for the parent’s settled run.** Both high-cardinality spill
+cells eliminate recursion, sharply reduce bytes and file opens, and reduce
+kernel share. Local paired spill time improves, but remains unsettled.
+No other cell regresses beyond the twin-control spread.
+
+High cardinality, 64 MiB; exact ranges over five timed observations:
+
+| Threads | Arm | Bytes written | Bytes read | Partitions | Depth |
+|---|---|---:|---:|---:|---:|
+| 1 | before | 603859856 | 692131960 | 272 | 1 |
+| 1 | after | 253743048 | 253743048 | 256 | 0 |
+| 1 | control | 603859856 | 692131960 | 272 | 1 |
+| 8 | before | 959500184–959718912 | 1218843288–1218956000 | 4368 | 2 |
+| 8 | after | 279644192–286307024 | 279644192–286307024 | 256 | 0 |
+| 8 | control | 959539920–959716584 | 1218825240–1218943736 | 4368 | 2 |
+
+Unsettled seconds, medians; paired after/before and identical-control/before ratios:
+
+| Query | Threads | MiB | Before | After | Control | A/B | C/B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 8192 | 1.123 | 1.116 | 1.137 | 1.012 | 0.992 |
+| q1 | 8 | 8192 | 0.331 | 0.323 | 0.332 | 0.989 | 1.034 |
+| q1 | 1 | 64 | 1.125 | 1.116 | 1.097 | 0.972 | 0.978 |
+| q1 | 8 | 64 | 0.615 | 0.608 | 0.584 | 0.986 | 0.970 |
+| high_cardinality_tpch | 1 | 8192 | 2.688 | 2.665 | 2.615 | 0.996 | 0.972 |
+| high_cardinality_tpch | 8 | 8192 | 1.973 | 1.945 | 1.943 | 1.003 | 0.989 |
+| high_cardinality_tpch | 1 | 64 | 11.766 | 4.953 | 11.737 | 0.418 | 1.005 |
+| high_cardinality_tpch | 8 | 64 | 15.178 | 7.299 | 15.003 | 0.475 | 0.984 |
+
+Whole-system self-sample shares (Nata/kernel/libc), high cardinality at 64 MiB:
+
+1 thread(s): 44.93/30.93/23.89% → 57.17/15.02/27.73%.
+8 thread(s): 46.85/23.59/29.37% → 52.36/22.70/24.65%.
+
+At the value gate, file opens were 143,628 → 12,800 (one thread) and
+299,373 → 56,995 (eight); the full timed ranges are retained in samples.
+[Samples/counters/load](raw/20261108-hash-aggregate-perf2d/fanout-samples.json),
+[summary/binary hashes](raw/20261108-hash-aggregate-perf2d/fanout-summary.json),
+[24 value gates](raw/20261108-hash-aggregate-perf2d/fanout-gates.json),
+[checks](raw/20261108-hash-aggregate-perf2d/fanout-checks.txt).
+Self-symbol and DSO reports accompany every profiled cell in the same directory.
+
+Checks: `cargo test --locked --release -j 4 -p nata-exec` (including spill,
+cleanup, damage, collision/no-progress and new estimator/membership/256-file
+FD/quota/merge-concurrency tests), fmt, clippy/all targets, locked release build
+of nata/nata-check, fresh SF0.01 plus SQL fixtures, aggregate **65/65**,
+forced-spill aggregate **65/65**, SQL **252/252**: **PASS**.
+
+```sh
+python3 scripts/bench-aggregate-perf2d-local.py fanout --before /home/dev/perf2d-fanout/before --after /home/dev/perf2d-fanout/fanout --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2d --profile
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2d/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2d-fanout/mutants-fanout -p nata-exec -f crates/nata-exec/src/aggregate/pipeline.rs -f crates/nata-exec/src/aggregate/storage.rs -F 'estimate_resident|initial_fanout|merge_concurrency|member' --timeout 180
+```
+
+Focused mutants: **41 caught, 1 missed, 1 unviable, 0 timeout**, unmutated
+baseline PASS (43 tested). The miss is `member`'s explicit `< fanout` →
+`<= fanout`: masked hash equality still requires `partition < fanout`, so the
+extra admitted comparison boundary cannot accept a record (equivalent within
+validated 16..256). It is recorded as missed, not caught. The unviable mutant
+changes `4 << 20` to `4 >> 20`, producing a compile-time divide by zero.
+[Outcomes](raw/20261108-hash-aggregate-perf2d/fanout-mutants-outcomes.json),
+[deciding log](raw/20261108-hash-aggregate-perf2d/fanout-mutants.txt).
+Profile reports retain the first 90 symbol lines, with padding collapsed;
+full perf recordings are discarded. All local cargo jobs are serial at `-j 4`.
+Disk headroom remained 25 GiB; no stale-output removal was needed.

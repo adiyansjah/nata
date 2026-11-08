@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 2K of event 'cpu-clock'
+# Event count (approx.): 5505009976
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 63.05% before
+ 18.60% libc.so.6
+ 18.35% [kernel.kallsyms]
+
+
+#
+# (Tip: To show assembler sample context control flow use perf record -b / perf report --samples 10 and then browse context)
+#

@@ -519,3 +519,35 @@ fn owner_lock_creation_failure_leaves_no_directory() {
         .env(CHILD,"1").status().expect("limited child");
     assert!(status.success(), "owner-lock error leaked a directory");
 }
+
+#[test]
+fn logical_256_way_fanout_bounds_fds_and_charges_parent_child_overlap() {
+    let base = Base::new();
+    let m = memory();
+    {
+        let registry = Registry::new(&base.0, 4096, 4, Arc::clone(&m)).expect("registry");
+        let files: Vec<_> = (0..256)
+            .map(|_| registry.create().expect("logical file"))
+            .collect();
+        assert_eq!(registry.snapshot().open, 0);
+        let mut parent = files[0].open().expect("parent");
+        let mut w = Workspace::new(&m).expect("workspace");
+        w.write(&mut parent, &batch(8), 0, 0).expect("parent bytes");
+        let parent_bytes = registry.snapshot().live_bytes;
+        let mut child = files[1].open().expect("child");
+        w.write(&mut child, &batch(8), 1, 1).expect("overlap fits");
+        while w.write(&mut child, &batch(8), 1, 1).is_ok() {}
+        assert!(registry.snapshot().live_bytes >= parent_bytes * 2);
+        let other = files[2].open().expect("last descriptor");
+        assert!(files[3].open().is_err());
+        let s = registry.snapshot();
+        assert_eq!(s.peak_open, 3); // ownership lock is the fourth descriptor
+        assert!(s.live_bytes + parent_bytes > 4096);
+        assert!(s.peak_bytes <= 4096);
+        drop(other);
+        drop(child);
+        drop(parent);
+    }
+    clean(&m);
+    base.empty();
+}

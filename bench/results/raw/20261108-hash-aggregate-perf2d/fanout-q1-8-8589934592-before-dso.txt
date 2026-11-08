@@ -1,0 +1,20 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 979 of event 'cpu-clock'
+# Event count (approx.): 1961923832
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 87.33% before
+ 11.24% libc.so.6
+ 1.33% [kernel.kallsyms]
+ 0.10% [nf_tables]
+
+
+#
+# (Tip: To record every process run by a user: perf record -u <user>)
+#

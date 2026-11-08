@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 512 of event 'cpu-clock'
+# Event count (approx.): 1026052096
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 90.43% fanout
+ 8.59% libc.so.6
+ 0.98% [kernel.kallsyms]
+
+
+#
+# (Tip: To analyze cache line scalability issues use perf c2c record ... ; perf c2c report)
+#
