@@ -21,6 +21,7 @@ import subprocess
 import tarfile
 import tempfile
 import time
+from bench_verdict import distribution, invoke as invoke_process
 
 ROUNDS = 5
 BUDGETS = (8 << 30, 64 << 20)
@@ -138,19 +139,12 @@ def command(binary, sql, threads, budget, spill):
 
 
 def invoke(argv, env, destination=None):
-    load = os.getloadavg()
-    start = time.perf_counter()
-    with (destination.open('w') if destination else open(os.devnull, 'w')) as output:
-        result = subprocess.run(argv, env=env, stdout=output, stderr=subprocess.PIPE, text=True, timeout=600)
-    elapsed = time.perf_counter() - start
-    metrics = {}
-    for line in result.stderr.splitlines():
-        if line.startswith('aggregate:'):
-            metrics = {k: int(v) for k, v in (part.split('=', 1) for part in line.split()[1:])}
-    observation = dict(seconds=elapsed, load=load, exit=result.returncode, counters=metrics)
-    if result.returncode:
-        observation['error'] = result.stderr[-2000:]
-    return observation
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        row = invoke_process(argv, env, destination or root/'out', root/'stderr', 600)
+        if row['exit']:
+            row['error'] = (root/'stderr').read_text()[-2000:]
+        return row
 
 
 def rows(path, query):
@@ -181,11 +175,6 @@ def equal_values(expected, actual, query):
             if not (abs(x-y) < decimal.Decimal('1e-8') if 6 <= slot <= 8 else x == y):
                 return False
     return True
-
-
-def distribution(values):
-    q1, _, q3 = statistics.quantiles(values, n=4, method='inclusive')
-    return dict(n=len(values), min=min(values), q1=q1, median=statistics.median(values), q3=q3, max=max(values))
 
 
 def summarize(observations, labels):

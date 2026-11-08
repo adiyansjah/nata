@@ -24,13 +24,14 @@ class Completion(unittest.TestCase):
                     ticks.append(clock())
                     return ticks[-1]
                 child = [sys.executable, '-c',
-                         f'import time; time.sleep({delay}); print(time.perf_counter_ns(), file=__import__("sys").stderr)']
+                         f'import time, os, sys; time.sleep({delay}); print(time.perf_counter_ns(), file=sys.stderr, flush=True); os._exit(0)']
                 with patch.object(c.time, 'perf_counter_ns', side_effect=sample):
                     row = c.invoke(child, os.environ, base/'out', base/'err', 2)
                 self.assertEqual(row['exit'], 0)
                 self.assertLess(row['seconds'], .050)
                 child_end = int((base/'err').read_text())
-                # Child reports immediately before exit: includes startup and
+                # _exit excludes interpreter teardown from the exit-to-EOF
+                # residual; the timed interval still includes startup and
                 # sleep, independently exposes a polling wait's overshoot.
                 self.assertLess(ticks[-1] - child_end, 5_000_000)
                 self.assertGreaterEqual(ticks[-1], child_end)
