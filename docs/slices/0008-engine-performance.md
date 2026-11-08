@@ -195,12 +195,22 @@ findings are proposals, not completed work.
 
 ### Package 0 progress (2026-11-08)
 
-**Stopped; not certified**: stats-on forced spill is 63/65 (overflow diagnostic ordering changed). Shared timer/verdict policy and its negative controls,
-external profiler pre-check, opt-in attribution hooks and gated SF10/affinity job
-steps are on the implementation branch; Rust instrumentation remains uncommitted after the failing gate. Results/checks and remaining gaps:
+**Requested implementation and local gates delivered; reference certification pending.**
+Caller-selected `NATA_STATS_JSON` is published after query success/error and sink
+finish; stats never enter query stderr. Off/on each pass aggregate **65/65**,
+forced spill **65/65**, SQL **252/252**, scan **5/5**; parallel overflow stdout/
+stderr bytes match. Native stage/spill/I/O reconciliation, EXPLAIN owner identity,
+322 Rust tests (zero failures, two existing ignored), fmt/Clippy, harness controls
+and **3/3 focused Rust mutants** pass. Verdicts consume fresh per-invocation files.
+Local compiled-in/disabled versus compiled-out twins are **4/4 UNRESOLVED**
+(unsettled; Q1 SF1 and small HC control); no zero-cost claim. Gated immutable-source
+R26 all-event and SF10 1/4/8-thread frozen-budget/affinity/off-cost steps are prepared.
+The record retains `complete:false` for remaining full T6/R33 coverage; neither
+reference MET verdicts nor a complete allocation/worker-CPU inventory are claimed.
+Results, exact rules/commands, hashes, raw evidence and commits:
 [`20261108-engine-perf-package0.md`](../../bench/results/20261108-engine-perf-package0.md).
-R26 remains open until a useful ARM capture passes; no paid reference run or
-numeric target freeze is claimed. Slice 5 remains pinned to `bb946ab`.
+R26 stays open until useful ARM capture; settled cost, paid reference execution
+and owner target/manifest freeze remain NOT RUN. Slice 5 stays pinned to `bb946ab`.
 
 ## 6. Closeout (fill in when done)
 

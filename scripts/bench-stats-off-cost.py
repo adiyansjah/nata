@@ -25,6 +25,8 @@ def run(a):
     for key in ('AI_AGENT', 'CODEX_CI', 'NATA_QUERY_STATS', 'NATA_STATS_JSON', 'NATA_QUERY_TRACE'):
         env.pop(key, None)
     metadata = dict(rule='within 1±N; N=max median abs(primary/twin-1), N<=5%; median and four of five both bounds',
+                    source_commit=getattr(a,'commit','working-tree'), compiled_out_cfg='nata_stats_disabled',
+                    instrumentation_environment='all stats destination/enabling variables removed',
                     settled=a.settled, label='settled reference' if a.settled else 'unsettled local',
                     binaries={k:h.digest(v) for k,v in [('without',a.without),('disabled',a.disabled)]},
                     input_sha256=h.digest(a.data/'lineitem.parquet'), topology=subprocess.check_output(['lscpu'],text=True),
@@ -78,6 +80,7 @@ if __name__=='__main__':
     p.add_argument('--queries',nargs='+',choices=h.QUERIES,default=['q1','high_cardinality_tpch'])
     p.add_argument('--threads',nargs='+',type=int,default=[1,8])
     p.add_argument('--budgets',nargs='+',type=int,default=[4<<30,64<<20,256<<20])
+    p.add_argument('--commit',default='working-tree')
     p.add_argument('--settled',action='store_true')
     a=p.parse_args()
     if any(x<=0 for x in a.threads+a.budgets): p.error('positive threads/budgets required')
