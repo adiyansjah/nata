@@ -1,0 +1,24 @@
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-57edad32/crates/nata-exec)
+    Finished `release` profile [optimized] target(s) in 3.60s
+     Running unittests src/lib.rs (/home/dev/perf2b/target/release/deps/nata_exec-8949f767bcb46cc5)
+
+running 1 test
+test aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message ... FAILED
+
+failures:
+
+---- aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message stdout ----
+
+thread 'aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message' (3084776) panicked at crates/nata-exec/src/aggregate/storage.rs:427:13:
+assertion `left == right` failed
+  left: 128
+ right: 256
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 37 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p nata-exec --lib`

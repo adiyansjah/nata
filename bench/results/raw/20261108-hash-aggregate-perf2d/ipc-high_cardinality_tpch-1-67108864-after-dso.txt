@@ -1,0 +1,20 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 2K of event 'cpu-clock'
+# Event count (approx.): 4765531024
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 60.51% ipc
+ 27.38% libc.so.6
+ 11.94% [kernel.kallsyms]
+ 0.17% [vdso]
+
+
+#
+# (Tip: To add Node.js USDT(User-Level Statically Defined Tracing): perf buildid-cache --add `which node`)
+#

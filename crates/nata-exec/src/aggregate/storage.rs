@@ -4,7 +4,7 @@
 use super::State;
 use super::{Atom, CANCEL_ROWS, Table, replay};
 use crate::spill::{Registry, SpillBatch, SpillFile, Workspace, schema};
-use arrow_array::{Array, ArrayRef, BinaryArray, RecordBatch, UInt64Array};
+use arrow_array::{Array, ArrayRef, BinaryArray, RecordBatch, UInt64Array, builder::BinaryBuilder};
 use nata_sql::bind::Aggregate;
 use std::io;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -92,7 +92,9 @@ impl Storage {
                 let size = replay::size(&key, &state)?;
                 let target = usize::try_from(bucket(&key)).map_err(|_| invalid())?;
                 if !keys.is_empty()
-                    && (target != partition || bytes + size > 24 << 10 || keys.len() == 128)
+                    && (target != partition
+                        || bytes + size > 24 << 10
+                        || keys.len() == crate::spill::MAX_ROWS)
                 {
                     flush(
                         &mut workspace,
@@ -136,6 +138,16 @@ impl Storage {
         Ok(())
     }
 }
+/// Exact capacity keeps larger messages below the unchanged Arrow input bound.
+/// Geometric growth can retain 32 KiB for a 17 KiB state buffer by itself.
+/// Callers cap the total encoded key/state bytes at 24 KiB and rows at MAX_ROWS.
+fn binary_column(values: &[Vec<u8>]) -> BinaryArray {
+    let mut builder = BinaryBuilder::with_capacity(values.len(), values.iter().map(Vec::len).sum());
+    for value in values {
+        builder.append_value(value);
+    }
+    builder.finish()
+}
 fn flush(
     w: &mut Workspace,
     h: &mut crate::spill::SpillHandle,
@@ -147,8 +159,8 @@ fn flush(
 ) -> io::Result<()> {
     let arrays: Vec<ArrayRef> = vec![
         Arc::new(UInt64Array::from_iter_values(hashes.iter().copied())),
-        Arc::new(BinaryArray::from_iter_values(keys.iter())),
-        Arc::new(BinaryArray::from_iter_values(states.iter())),
+        Arc::new(binary_column(keys)),
+        Arc::new(binary_column(states)),
     ];
     let batch = RecordBatch::try_new(Arc::new(schema()), arrays)
         .map_err(|_| io::Error::other("spill encode schema"))?;
@@ -294,7 +306,7 @@ impl Storage {
                 }
                 let h = (self.hash)(&key, depth + 1);
                 let p = usize::try_from(h & 15).map_err(|_| invalid())?;
-                if keys[p].len() == 128 {
+                if keys[p].len() == crate::spill::MAX_ROWS {
                     flush(
                         &mut output,
                         &mut children[p].open()?,
@@ -351,6 +363,87 @@ fn member(hash: u64, partition: usize, depth: u8, initial_fanout: usize) -> bool
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn writer_fills_the_existing_ipc_row_cap_before_validating_a_message() {
+        use nata_sched::memory::MemoryManager;
+        use nata_sql::{
+            Pos,
+            bind::AggregateExpr,
+            texpr::{Expr, ExprKind, Value},
+            types::SqlType,
+        };
+        use std::io::Seek;
+        let base = std::env::temp_dir().join(format!("nata-ipc-message-{}", std::process::id()));
+        std::fs::create_dir(&base).expect("base");
+        let m = MemoryManager::new(4 << 20, 4096, 1).expect("memory");
+        {
+            let registry = Registry::new(&base, 4 << 20, 32, Arc::clone(&m)).expect("registry");
+            let files: Vec<_> = (0..16).map(|_| registry.create().expect("file")).collect();
+            let mut a = Aggregate {
+                keys: vec![Expr {
+                    kind: ExprKind::Literal(Value::Null),
+                    ty: SqlType::BigInt,
+                    pos: Pos::NONE,
+                }],
+                aggregates: vec![AggregateExpr {
+                    name: "count".into(),
+                    arg: None,
+                    ty: SqlType::BigInt,
+                    pos: Pos::NONE,
+                }],
+                having: None,
+            };
+            a.aggregates.push(AggregateExpr {
+                name: "sum".into(),
+                arg: Some(Expr {
+                    kind: ExprKind::Literal(Value::Null),
+                    ty: SqlType::BigInt,
+                    pos: Pos::NONE,
+                }),
+                ty: SqlType::Decimal {
+                    precision: 38,
+                    scale: 0,
+                },
+                pos: Pos::NONE,
+            });
+            let mut table = Table::new();
+            for n in 0..crate::spill::MAX_ROWS {
+                let key = vec![Atom::Int(i64::try_from(n).expect("row"))];
+                table.reserve(&m, &key, &a).expect("charged entry");
+                let mut sum = nata_kernels::aggregate::ExactSum::default();
+                sum.add(i128::try_from(n).expect("row")).expect("sum");
+                table
+                    .groups
+                    .insert(key, vec![State::Count(1), State::Sum(sum)]);
+            }
+            let storage = Storage {
+                registry: Arc::clone(&registry),
+                runtime: Arc::new(crate::aggregate::grant(&m, 64 << 10).expect("runtime")),
+                cancel: None,
+                hash: |_, _| 0,
+                initial_fanout: 16,
+                resident_estimate: 0,
+                partial_rows: Arc::default(),
+                largest_partial: Arc::default(),
+                rehashes: Arc::default(),
+                workspace: Mutex::new(Workspace::new(&m).expect("workspace")),
+            };
+            storage.write(vec![table], &files, &a, 0).expect("write");
+            let mut handle = files[0].open().expect("handle");
+            handle.rewind().expect("rewind");
+            let mut reader = Workspace::new(&m).expect("reader");
+            let frame = reader
+                .read(&mut handle, 0, 0)
+                .expect("read")
+                .expect("frame");
+            assert_eq!(frame.batch().num_rows(), crate::spill::MAX_ROWS);
+            drop(frame);
+            assert!(reader.read(&mut handle, 0, 0).expect("end").is_none());
+        }
+        assert_eq!(m.snapshot().held, 0);
+        assert_eq!(std::fs::read_dir(&base).expect("base").count(), 0);
+        std::fs::remove_dir(base).expect("cleanup");
+    }
     #[test]
     fn membership_uses_query_fanout_and_recursive_sixteen() {
         for f in [16, 32, 64, 128, 256] {

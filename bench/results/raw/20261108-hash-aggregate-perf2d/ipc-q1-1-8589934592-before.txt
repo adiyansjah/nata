@@ -1,0 +1,90 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 581 of event 'cpu-clock'
+# Event count (approx.): 1164328648
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ......................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+ 25.82% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Partial>::resume - -
+ 11.02% [.] <nata_kernels[db7d3267bcbae0d6]::decimal::Decimal>::column - -
+ 8.26% [.] <nata_kernels[db7d3267bcbae0d6]::aggregate::ExactSum>::add - -
+ 5.34% [.] nata_exec[4c49c1bbac024b15]::aggregate::hashing::columns_into - -
+ 3.61% [.] <alloc[c23e483dde3f7cfb]::sync::Arc<dyn arrow_array[9ed3d45f03f1605c]::array::Array> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 3.10% [.] <arrow_array[9ed3d45f03f1605c]::array::dictionary_array::DictionaryArray<arrow_array[9ed3d45f03f1605c]::types::UInt16Type> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 2.75% [.] <snap[82e2e42986d23ed9]::decompress::Decoder>::decompress - -
+ 2.58% [.] nata_exec[4c49c1bbac024b15]::aggregate::hashing::value - -
+ 2.41% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::IntervalMonthDayNanoType> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 1.72% [.] <parquet[e458b8dcf9d2ea19]::encodings::rle::RleDecoder>::get_batch_with_dict::<i64> - -
+ 1.55% [.] <nata_exec[4c49c1bbac024b15]::value::Col>::read_arrow - -
+ 1.38% [.] <nata_exec[4c49c1bbac024b15]::value::Col>::from_arrow - -
+ 1.38% [.] malloc - -
+ 1.20% [.] <arrow_array[9ed3d45f03f1605c]::array::dictionary_array::DictionaryArray<arrow_array[9ed3d45f03f1605c]::types::UInt16Type> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 1.20% [.] _int_malloc - -
+ 1.03% [.] <nata_exec[4c49c1bbac024b15]::aggregate::fusion::Program>::evaluate - -
+ 1.03% [.] nata_exec[4c49c1bbac024b15]::aggregate::string_scratch - -
+ 1.03% [.] <alloc[c23e483dde3f7cfb]::vec::Vec<u32> as alloc[c23e483dde3f7cfb]::vec::spec_from_iter_nested::SpecFromIterNested<u32, core[efd5e57aef94d71e]::iter::adapters::filter_map::FilterMap<core[efd5e57aef94d71e]::ops::range::Range<usize>, <nata_exec[4c49c1bbac024b15]::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter - -
+ 1.03% [.] __memset_avx2_unaligned_erms - -
+ 1.03% [k] _copy_to_iter - -
+ 0.86% [.] nata_parquet[17183a7513f4d913]::filter::evaluate - -
+ 0.69% [.] <parquet[e458b8dcf9d2ea19]::encodings::rle::RleDecoder>::get_batch::<i32> - -
+ 0.69% [.] <nata_sql[dc3773ce38637b84]::texpr::Expr>::children - -
+ 0.69% [.] malloc_consolidate - -
+ 0.52% [.] <parquet[e458b8dcf9d2ea19]::encodings::rle::RleDecoder>::get_batch_with_dict::<i32> - -
+ 0.52% [.] <arrow_buffer[e1b2048a49d8ff6c]::buffer::scalar::ScalarBuffer<u32>>::new - -
+ 0.52% [.] <alloc[c23e483dde3f7cfb]::sync::Arc<dyn arrow_array[9ed3d45f03f1605c]::array::Array>>::drop_slow - -
+ 0.52% [.] <parquet[e458b8dcf9d2ea19]::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet[e458b8dcf9d2ea19]::data_type::Int64Type> as parquet[e458b8dcf9d2ea19]::arrow::array_reader::ArrayReader>::consume_batch - -
+ 0.52% [.] <alloc[c23e483dde3f7cfb]::vec::Vec<u32> as alloc[c23e483dde3f7cfb]::vec::spec_from_iter_nested::SpecFromIterNested<u32, core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<i32>, <nata_exec[4c49c1bbac024b15]::value::Col>::from_arrow::{closure#8}>>>::from_iter - -
+ 0.52% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::TimestampMicrosecondType> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 0.52% [.] __memmove_avx_unaligned_erms - -
+ 0.52% [.] _int_free_chunk - -
+ 0.34% [.] <parquet[e458b8dcf9d2ea19]::util::bit_util::BitReader>::get_batch::<i32> - -
+ 0.34% [.] core[efd5e57aef94d71e]::ptr::drop_glue::<arrow_array[9ed3d45f03f1605c]::record_batch::RecordBatch> - -
+ 0.34% [.] <core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<alloc[c23e483dde3f7cfb]::string::String>, <nata_parquet[17183a7513f4d913]::reader::RowGroupCursor>::next_batch::{closure#0}::{closure#3}> as core[efd5e57aef94d71e]::iter::traits::iterator::Iterator>::try_fold::<(), <core[efd5e57aef94d71e]::iter::adapters::GenericShunt<core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<alloc[c23e483dde3f7cfb]::string::String>, <nata_parquet[17183a7513f4d913]::reader::RowGroupCursor>::next_batch::{closure#0}::{closure#3}>, core[efd5e57aef94d71e]::result::Result<core[efd5e57aef94d71e]::convert::Infallible, arrow_schema[395d6192e2601cb2]::error::ArrowError>> as core[efd5e57aef94d71e]::iter::traits::iterator::Iterator>::try_fold<(), core[efd5e57aef94d71e]::iter::traits::iterator::Iterator::try_for_each::call<usize, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<usize>, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<usize>::Break>::{closure#0}, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<usize>>::{closure#0}, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<usize>>> - -
+ 0.34% [.] __rustc[3d2f79520d6fa809]::__rust_no_alloc_shim_is_unstable_v2 - -
+ 0.34% [.] <nata_kernels[db7d3267bcbae0d6]::decimal::Decimal>::with_precisions - -
+ 0.34% [.] <alloc[c23e483dde3f7cfb]::raw_vec::RawVec<(&nata_sql[dc3773ce38637b84]::texpr::Expr, usize)>>::grow_one - -
+ 0.34% [.] <arrow_array[9ed3d45f03f1605c]::record_batch::RecordBatch>::column_by_name - -
+ 0.34% [.] <arrow_buffer[e1b2048a49d8ff6c]::buffer::scalar::ScalarBuffer<u64>>::new - -
+ 0.34% [.] <nata_parquet[17183a7513f4d913]::reader::RowGroupCursor>::next_batch - -
+ 0.34% [.] <alloc[c23e483dde3f7cfb]::sync::Arc<arrow_buffer[e1b2048a49d8ff6c]::bytes::Bytes>>::drop_slow - -
+ 0.34% [.] nata_kernels[db7d3267bcbae0d6]::aggregate::add_count - -
+ 0.34% [.] core[efd5e57aef94d71e]::fmt::write - -
+ 0.34% [.] <parquet[e458b8dcf9d2ea19]::column::reader::decoder::ColumnValueDecoderImpl<parquet[e458b8dcf9d2ea19]::data_type::Int64Type> as parquet[e458b8dcf9d2ea19]::column::reader::decoder::ColumnValueDecoder>::read - -
+ 0.34% [.] <parquet[e458b8dcf9d2ea19]::arrow::array_reader::byte_array_dictionary::DictionaryDecoder<i32, i32> as parquet[e458b8dcf9d2ea19]::column::reader::decoder::ColumnValueDecoder>::read - -
+ 0.34% [.] <parquet[e458b8dcf9d2ea19]::arrow::array_reader::primitive_array::PrimitiveArrayReader<parquet[e458b8dcf9d2ea19]::data_type::Int64Type> as parquet[e458b8dcf9d2ea19]::arrow::array_reader::ArrayReader>::read_records - -
+ 0.34% [.] <arrow_schema[395d6192e2601cb2]::datatype::DataType as core[efd5e57aef94d71e]::clone::Clone>::clone - -
+ 0.34% [.] <arrow_array[9ed3d45f03f1605c]::array::boolean_array::BooleanArray as core[efd5e57aef94d71e]::convert::From<alloc[c23e483dde3f7cfb]::vec::Vec<bool>>>::from - -
+ 0.34% [.] __memcmp_avx2_movbe - -
+ 0.34% [.] _mid_memalign.isra.0 - -
+ 0.34% [.] cfree@GLIBC_2.2.5 - -
+ 0.34% [.] realloc - -
+ 0.34% [.] unlink_chunk.isra.0 - -
+ 0.17% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Int64Type>>::reinterpret_cast::<arrow_array[9ed3d45f03f1605c]::types::Decimal64Type> - -
+ 0.17% [.] <parquet[e458b8dcf9d2ea19]::column::reader::GenericColumnReader<parquet[e458b8dcf9d2ea19]::column::reader::decoder::RepetitionLevelDecoderImpl, parquet[e458b8dcf9d2ea19]::arrow::record_reader::definition_levels::DefinitionLevelBufferDecoder, parquet[e458b8dcf9d2ea19]::column::reader::decoder::ColumnValueDecoderImpl<parquet[e458b8dcf9d2ea19]::data_type::Int64Type>>>::read_records_with_reservation::<<parquet[e458b8dcf9d2ea19]::arrow::record_reader::GenericRecordReader<alloc[c23e483dde3f7cfb]::vec::Vec<i64>, parquet[e458b8dcf9d2ea19]::column::reader::decoder::ColumnValueDecoderImpl<parquet[e458b8dcf9d2ea19]::data_type::Int64Type>>>::read_one_batch::{closure#1}> - -
+ 0.17% [.] arrow_array[9ed3d45f03f1605c]::cast::as_primitive_array::<arrow_array[9ed3d45f03f1605c]::types::Decimal64Type> - -
+ 0.17% [.] arrow_select[bea6aa8a53cdd371]::filter::filter_native::<i64> - -
+ 0.17% [.] core[efd5e57aef94d71e]::ptr::drop_glue::<arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Date32Type>> - -
+ 0.17% [.] std[68c81ae915296b05]::sys::backtrace::__rust_begin_short_backtrace::<nata_sched[b58b82030f2f62c6]::cooperative::run<nata_exec[4c49c1bbac024b15]::aggregate::pipeline::ScanState, alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::Table>, nata_parquet[17183a7513f4d913]::error::ScanError, nata_exec[4c49c1bbac024b15]::aggregate::pipeline::accumulate::{closure#13}, nata_exec[4c49c1bbac024b15]::aggregate::pipeline::accumulate::{closure#14}>::{closure#1}::{closure#0}, ()> - -
+ 0.17% [.] alloc[c23e483dde3f7cfb]::io::read::default_read_exact::<<parquet[e458b8dcf9d2ea19]::file::serialized_reader::SerializedPageReader<_>>::read_page_header_len::TrackedRead<&mut nata_parquet[17183a7513f4d913]::reader::CountingRead<nata_parquet[17183a7513f4d913]::reader::SourceRead>>> - -
+ 0.17% [.] <core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<usize>, <arrow_schema[395d6192e2601cb2]::schema::Schema>::project::{closure#0}> as core[efd5e57aef94d71e]::iter::traits::iterator::Iterator>::try_fold::<(), <core[efd5e57aef94d71e]::iter::adapters::GenericShunt<core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<usize>, <arrow_schema[395d6192e2601cb2]::schema::Schema>::project::{closure#0}>, core[efd5e57aef94d71e]::result::Result<core[efd5e57aef94d71e]::convert::Infallible, arrow_schema[395d6192e2601cb2]::error::ArrowError>> as core[efd5e57aef94d71e]::iter::traits::iterator::Iterator>::try_fold<(), core[efd5e57aef94d71e]::iter::traits::iterator::Iterator::try_for_each::call<alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>>, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>>::Break>::{closure#0}, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>>>::{closure#0}, core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<core[efd5e57aef94d71e]::ops::control_flow::ControlFlow<alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>>>> - -
+ 0.17% [.] __rustc[3d2f79520d6fa809]::__rust_dealloc - -
+ 0.17% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Table>::reserve_bytes - -
+ 0.17% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Partial>::evaluate - -
+ 0.17% [.] <arrow_select[bea6aa8a53cdd371]::filter::FilterBuilder>::new - -
+ 0.17% [.] <arrow_select[bea6aa8a53cdd371]::filter::FilterBuilder>::build - -
+ 0.17% [.] <parquet[e458b8dcf9d2ea19]::util::bit_util::BitReader>::get_vlq_int - -
+ 0.17% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Decimal64Type>>::with_data_type - -
+ 0.17% [.] <arrow_array[9ed3d45f03f1605c]::array::dictionary_array::DictionaryArray<arrow_array[9ed3d45f03f1605c]::types::UInt16Type>>::new_unchecked - -
+ 0.17% [.] <std[68c81ae915296b05]::sync::mpmc::array::Channel<(usize, nata_exec[4c49c1bbac024b15]::aggregate::pipeline::ScanState, alloc[c23e483dde3f7cfb]::sync::Arc<nata_sched[b58b82030f2f62c6]::cooperative::Signal>)>>::recv - -
+ 0.17% [.] <core[efd5e57aef94d71e]::fmt::Formatter>::pad - -
+ 0.17% [.] <alloc[c23e483dde3f7cfb]::sync::Arc<[alloc[c23e483dde3f7cfb]::sync::Arc<arrow_schema[395d6192e2601cb2]::field::Field>]>>::drop_slow - -
+ 0.17% [.] nata_exec[4c49c1bbac024b15]::eval::literal_into - -
+ 0.17% [.] nata_exec[4c49c1bbac024b15]::aggregate::expression_slots - -
+ 0.17% [.] arrow_select[bea6aa8a53cdd371]::filter::filter_record_batch - -
+ 0.17% [.] parquet[e458b8dcf9d2ea19]::util::bit_pack::unpack8 - -
+ 0.17% [.] parquet[e458b8dcf9d2ea19]::arrow::array_reader::primitive_array::coerce_i32 - -
+ 0.17% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Int64Type> as core[efd5e57aef94d71e]::any::Any>::type_id - -

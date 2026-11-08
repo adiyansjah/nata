@@ -1,0 +1,90 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 2K of event 'cpu-clock'
+# Event count (approx.): 4765531024
+#
+# Overhead Symbol IPC [IPC Coverage]
+# ........ ....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................... ....................
+#
+ 5.85% [.] malloc - -
+ 5.59% [.] nata_exec[4c49c1bbac024b15]::aggregate::hashing::key - -
+ 4.50% [.] _int_free_chunk - -
+ 3.83% [.] cfree@GLIBC_2.2.5 - -
+ 3.74% [.] _int_malloc - -
+ 3.28% [.] nata_exec[4c49c1bbac024b15]::aggregate::pipeline::merge_step - -
+ 3.07% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Partial>::resume - -
+ 2.94% [.] <core[efd5e57aef94d71e]::iter::adapters::chain::Chain<core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<nata_exec[4c49c1bbac024b15]::aggregate::Atom>, nata_exec[4c49c1bbac024b15]::aggregate::replay::atom_size>, core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<nata_exec[4c49c1bbac024b15]::aggregate::State>, nata_exec[4c49c1bbac024b15]::aggregate::replay::size::{closure#0}>> as core[efd5e57aef94d71e]::iter::traits::iterator::Iterator>::try_fold::<usize, nata_exec[4c49c1bbac024b15]::aggregate::replay::size::{closure#1}, core[efd5e57aef94d71e]::result::Result<usize, core[efd5e57aef94d71e]::io::error::Error>> - -
+ 2.19% [k] _raw_spin_unlock_irqrestore - -
+ 2.10% [.] __memmove_avx_unaligned_erms - -
+ 2.06% [k] finish_task_switch.isra.0 - -
+ 1.77% [.] <nata_exec[4c49c1bbac024b15]::aggregate::replay::States>::next - -
+ 1.72% [.] unlink_chunk.isra.0 - -
+ 1.60% [.] <snap[82e2e42986d23ed9]::decompress::Decoder>::decompress - -
+ 1.47% [.] <nata_kernels[db7d3267bcbae0d6]::decimal::Decimal>::column - -
+ 1.47% [.] nata_exec[4c49c1bbac024b15]::aggregate::replay::encode - -
+ 1.43% [.] <nata_exec[4c49c1bbac024b15]::aggregate::State>::finalize - -
+ 1.35% [.] malloc_consolidate - -
+ 1.22% [.] <alloc[c23e483dde3f7cfb]::sync::Arc<dyn arrow_array[9ed3d45f03f1605c]::array::Array>>::drop_slow - -
+ 1.18% [.] nata_exec[4c49c1bbac024b15]::aggregate::batch - -
+ 1.14% [.] <arrow_buffer[e1b2048a49d8ff6c]::buffer::scalar::ScalarBuffer<f64>>::slice - -
+ 1.09% [.] core[efd5e57aef94d71e]::ptr::drop_glue::<arrow_array[9ed3d45f03f1605c]::record_batch::RecordBatch> - -
+ 1.09% [.] <arrow_buffer[e1b2048a49d8ff6c]::buffer::scalar::ScalarBuffer<i128>>::slice - -
+ 1.01% [.] _int_free_create_chunk - -
+ 0.88% [.] realloc - -
+ 0.84% [.] <hashbrown[62f4442045928552]::raw::RawTable<usize>>::reserve_rehash::<<nata_exec[4c49c1bbac024b15]::aggregate::Groups>::try_reserve::{closure#0}> - -
+ 0.84% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Groups>::insert - -
+ 0.80% [.] core[efd5e57aef94d71e]::ptr::drop_glue::<arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Decimal128Type>> - -
+ 0.76% [.] <arrow_buffer[e1b2048a49d8ff6c]::buffer::immutable::Buffer>::slice_with_length - -
+ 0.71% [k] _copy_to_iter - -
+ 0.67% [.] core[efd5e57aef94d71e]::slice::sort::unstable::quicksort::quicksort::<(alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::Atom>, alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::State>), <[(alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::Atom>, alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::State>)]>::sort_unstable_by_key<u64, <nata_exec[4c49c1bbac024b15]::aggregate::storage::Storage>::write::{closure#2}>::{closure#0}> - -
+ 0.67% [.] nata_parquet[17183a7513f4d913]::csv::push_field - -
+ 0.63% [.] <nata_kernels[db7d3267bcbae0d6]::aggregate::ExactSum>::decimal_sum - -
+ 0.59% [.] nata_parquet[17183a7513f4d913]::csv::write_batch::<nata[14d8da78c127bf13]::sql::Out<alloc[c23e483dde3f7cfb]::io::buffered::bufwriter::BufWriter<std[68c81ae915296b05]::io::stdio::StdoutLock>>> - -
+ 0.59% [.] <nata_kernels[db7d3267bcbae0d6]::aggregate::ExactSum>::add - -
+ 0.59% [.] nata_parquet[17183a7513f4d913]::csv::cell - -
+ 0.55% [.] <u128>::_fmt_inner - -
+ 0.55% [.] nata_parquet[17183a7513f4d913]::csv::format_decimal - -
+ 0.55% [.] crc32fast[f642a4e5dfbcd13b]::specialized::pclmulqdq::calculate_avx2 - -
+ 0.55% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Decimal128Type> as arrow_array[9ed3d45f03f1605c]::array::Array>::slice - -
+ 0.55% [.] __memset_avx2_unaligned_erms - -
+ 0.50% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Int64Type> as arrow_array[9ed3d45f03f1605c]::array::Array>::slice - -
+ 0.50% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::IntervalMonthDayNanoType> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 0.46% [.] <arrow_schema[395d6192e2601cb2]::datatype::DataType as core[efd5e57aef94d71e]::clone::Clone>::clone - -
+ 0.46% [.] _int_free_merge_chunk - -
+ 0.42% [.] <hashbrown[62f4442045928552]::raw::RawTable<usize>>::insert::<<nata_exec[4c49c1bbac024b15]::aggregate::Groups>::insert::{closure#0}> - -
+ 0.42% [.] <nata_exec[4c49c1bbac024b15]::value::Col>::read_arrow - -
+ 0.42% [.] nata_exec[4c49c1bbac024b15]::aggregate::hashing::columns_into - -
+ 0.42% [.] <alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::Atom> as alloc[c23e483dde3f7cfb]::vec::spec_from_iter::SpecFromIter<nata_exec[4c49c1bbac024b15]::aggregate::Atom, core[efd5e57aef94d71e]::iter::adapters::GenericShunt<core[efd5e57aef94d71e]::iter::adapters::map::Map<core[efd5e57aef94d71e]::slice::iter::Iter<nata_sql[dc3773ce38637b84]::texpr::Expr>, nata_exec[4c49c1bbac024b15]::aggregate::replay::key::{closure#1}>, core[efd5e57aef94d71e]::result::Result<core[efd5e57aef94d71e]::convert::Infallible, core[efd5e57aef94d71e]::io::error::Error>>>>::from_iter - -
+ 0.38% [.] __rustc[3d2f79520d6fa809]::__rust_no_alloc_shim_is_unstable_v2 - -
+ 0.38% [.] nata_kernels[db7d3267bcbae0d6]::aggregate::add_count - -
+ 0.38% [.] <nata_exec[4c49c1bbac024b15]::aggregate::Atom as core[efd5e57aef94d71e]::slice::cmp::SlicePartialEq<nata_exec[4c49c1bbac024b15]::aggregate::Atom>>::equal_same_length - -
+ 0.34% [.] <nata_exec[4c49c1bbac024b15]::aggregate::storage::Storage>::write - -
+ 0.34% [.] <nata_exec[4c49c1bbac024b15]::value::Col>::to_arrow - -
+ 0.34% [k] __d_lookup_rcu - -
+ 0.34% [k] __filemap_add_folio - -
+ 0.34% [k] _raw_spin_unlock_irq - -
+ 0.34% [k] do_syscall_64 - -
+ 0.29% [.] nata_kernels[db7d3267bcbae0d6]::decimal::compare::<nata_exec[4c49c1bbac024b15]::error::EvalError, nata_exec[4c49c1bbac024b15]::eval::compare::{closure#0}> - -
+ 0.29% [.] <nata_exec[4c49c1bbac024b15]::value::Col>::from_arrow - -
+ 0.29% [.] <alloc[c23e483dde3f7cfb]::vec::Vec<u32> as alloc[c23e483dde3f7cfb]::vec::spec_from_iter_nested::SpecFromIterNested<u32, core[efd5e57aef94d71e]::iter::adapters::filter_map::FilterMap<core[efd5e57aef94d71e]::ops::range::Range<usize>, <nata_exec[4c49c1bbac024b15]::eval::Evaluator>::all_rows::{closure#0}>>>::from_iter - -
+ 0.25% [.] <flatbuffers[2a1da276a6a1b596]::verifier::TableVerifier>::visit_field::<flatbuffers[2a1da276a6a1b596]::primitives::ForwardsUOffset<flatbuffers[2a1da276a6a1b596]::vector::Vector<flatbuffers[2a1da276a6a1b596]::primitives::ForwardsUOffset<arrow_ipc[f9c4ab56eeb5e501]::gen::Schema::Field>>>, &str> - -
+ 0.25% [.] <alloc[c23e483dde3f7cfb]::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc[c23e483dde3f7cfb]::alloc::Global> - -
+ 0.25% [.] __rustc[3d2f79520d6fa809]::__rdl_alloc - -
+ 0.25% [.] <nata_sched[b58b82030f2f62c6]::memory::Chunks>::reserve - -
+ 0.25% [.] <nata_sched[b58b82030f2f62c6]::memory::Chunks>::reserved - -
+ 0.25% [.] <arrow_array[9ed3d45f03f1605c]::record_batch::RecordBatch>::slice - -
+ 0.25% [.] <std[68c81ae915296b05]::thread::thread::Thread>::park - -
+ 0.25% [.] <u64>::_fmt - -
+ 0.25% [.] nata_exec[4c49c1bbac024b15]::aggregate::expression_slots - -
+ 0.25% [.] bytes[91ce6cd3e551af1f]::bytes::shared_clone - -
+ 0.25% [.] <arrow_array[9ed3d45f03f1605c]::array::primitive_array::PrimitiveArray<arrow_array[9ed3d45f03f1605c]::types::Decimal128Type> as arrow_array[9ed3d45f03f1605c]::array::Array>::is_valid - -
+ 0.25% [.] syscall - -
+ 0.21% [.] <arrow_array[9ed3d45f03f1605c]::record_batch::RecordBatch>::try_from_iter::<alloc[c23e483dde3f7cfb]::vec::Vec<(alloc[c23e483dde3f7cfb]::string::String, alloc[c23e483dde3f7cfb]::sync::Arc<dyn arrow_array[9ed3d45f03f1605c]::array::Array>)>, alloc[c23e483dde3f7cfb]::string::String> - -
+ 0.21% [.] core[efd5e57aef94d71e]::ptr::drop_glue::<(alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::Atom>, alloc[c23e483dde3f7cfb]::vec::Vec<nata_exec[4c49c1bbac024b15]::aggregate::State>)> - -
+ 0.21% [.] __rustc[3d2f79520d6fa809]::__rust_dealloc - -
+ 0.21% [.] <nata_kernels[db7d3267bcbae0d6]::aggregate::ExactSum>::from_spill - -
+ 0.21% [.] <nata_exec[4c49c1bbac024b15]::eval::Comparer>::order - -
+ 0.21% [.] <nata_sql[dc3773ce38637b84]::texpr::Expr>::children - -

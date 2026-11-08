@@ -2179,6 +2179,8 @@ makes the settled two-CPU decision. Timings below are **unsettled**.
 Local evidence uses warm SF1, whole CLI/startup/planning/CSV to `/dev/null`,
 the existing five-round alternating before/after/identical-before control,
 DuckDB value gates for all 24 arms, and whole-system cpu-clock profiles.
+Every local arm uses the same explicit 4 GiB spill-disk quota; these runs do
+not certify completion under the default disk quota.
 The pre-change binary SHA256 matches the previous kept no-small binary
 (`fcdb2e9973dd2219cf597d2bfb5f5aa76dac273a95114e11439f65307dc2ae1a`).
 Use counters and profile shares as local evidence; local timing alone rejects
@@ -2365,3 +2367,93 @@ Repeated focused estimator/fan-out/concurrency/membership mutants: **41 caught,
 constant divide by zero), 0 timeout**; unmutated baseline PASS.
 [Outcomes](raw/20261108-hash-aggregate-perf2d/decode-mutants-outcomes.json),
 [deciding log](raw/20261108-hash-aggregate-perf2d/decode-mutants.txt).
+
+### 3. Validate larger bounded IPC messages
+
+Decode commit: `5529452e148f948a13452917b9c52c418cdeab85`.
+
+**Rule:** amortize IPC validation over larger messages while retaining every
+reader check. Fill up to the reader's existing `MAX_ROWS=256`, rather than
+flushing at 128, subject to the **unchanged** 24 KiB encoded-record buffer cap.
+Query scan/evaluation batch sizes, 64 KiB payload, 16 KiB metadata, 32 KiB Arrow
+writer-input bound, 512 KiB workspace, recursion and quota limits do not change.
+The entire IPC reader implementation is unchanged. Each message still passes
+writer preflight, envelope/checksum and reader preflight, Arrow decoding and
+all typed replay/membership checks; there is no file-wide trust shortcut.
+
+Use Arrow's existing BinaryBuilder with exact bounded key/state capacities.
+Geometric value-buffer growth otherwise retains 32 KiB for a 17 KiB state
+column alone and correctly trips the unchanged writer-input bound. Exact
+preallocation avoids that retained-capacity excess without relaxing any check.
+The same flush rule and buffer construction apply to recursive writes.
+
+The new writer check uses 256 rows of BIGINT key, COUNT and exact SUM (21,504
+encoded bytes), then validates one full message and EOF, zero held grants and
+complete cleanup. It fails on the old writer (**128 != 256**) and also fails
+on the naive 256-row writer with geometric buffers (**bounded spill rejection**).
+Both are intentional negative controls, not failed query gates or weakened
+fault tests. Final exact-capacity writer and unchanged reader pass.
+[Old-flush negative control](raw/20261108-hash-aggregate-perf2d/ipc-old-flush-negative.txt),
+[buffer-growth negative control](raw/20261108-hash-aggregate-perf2d/ipc-growing-buffer-negative.txt).
+
+```sh
+CARGO_TARGET_DIR=/home/dev/perf2b/target cargo test --locked --release -j 4 -p nata-exec --lib writer_fills_the_existing_ipc_row_cap_before_validating_a_message
+```
+
+**Verdict: kept for settled validation.** The full-message test proves larger
+messages remain within every existing bound; one-thread framing bytes fall
+0.94%. Eight-thread byte ranges overlap because source flushes vary. Local
+paired spill times are mildly lower, with no regression beyond twins
+(0.799–1.198 across this run), but neither net speed nor verifier CPU reduction
+is established. The parent decides on the settled two-CPU run.
+
+| Threads | Arm | Bytes written | Bytes read | Partitions | Depth |
+|---|---|---:|---:|---:|---:|
+| 1 | before | 253743048 | 253743048 | 256 | 0 |
+| 1 | after | 251359336 | 251359336 | 256 | 0 |
+| 1 | control | 253743048 | 253743048 | 256 | 0 |
+| 8 | before | 279293552–286719088 | 279293552–286719088 | 256 | 0 |
+| 8 | after | 281424408–286909712 | 281424408–286909712 | 256 | 0 |
+| 8 | control | 285538792–287913000 | 285538792–287913000 | 256 | 0 |
+
+Unsettled seconds, medians; paired after/before and identical-control/before ratios:
+
+| Query | Threads | MiB | Before | After | Control | A/B | C/B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 8192 | 1.100 | 1.090 | 1.095 | 0.986 | 0.987 |
+| q1 | 8 | 8192 | 0.428 | 0.392 | 0.406 | 0.958 | 0.902 |
+| q1 | 1 | 64 | 1.219 | 1.172 | 1.189 | 0.965 | 0.981 |
+| q1 | 8 | 64 | 0.637 | 0.637 | 0.660 | 1.006 | 1.024 |
+| high_cardinality_tpch | 1 | 8192 | 3.039 | 2.844 | 2.965 | 0.975 | 0.998 |
+| high_cardinality_tpch | 8 | 8192 | 2.302 | 2.142 | 2.045 | 0.967 | 0.982 |
+| high_cardinality_tpch | 1 | 64 | 4.990 | 4.720 | 4.949 | 0.966 | 0.978 |
+| high_cardinality_tpch | 8 | 64 | 6.728 | 6.752 | 6.917 | 0.973 | 1.061 |
+
+Whole-system self-sample shares (Nata/kernel/libc), high cardinality at 64 MiB:
+
+1 thread(s): 59.04/13.39/27.39% → 60.51/11.94/27.38%.
+8 thread(s): 50.49/23.53/25.90% → 51.71/22.24/25.80%.
+
+Summed **retained** TableVerifier symbols (first 90 lines, not a complete
+verification profile): 0.22% → 0.25% at one thread, 0.77% → 1.09% at eight.
+Those shares do not establish a verifier CPU gain; they are retained explicitly.
+[Samples/counters/load](raw/20261108-hash-aggregate-perf2d/ipc-samples.json),
+[summary/hashes](raw/20261108-hash-aggregate-perf2d/ipc-summary.json),
+[24 value gates](raw/20261108-hash-aggregate-perf2d/ipc-gates.json),
+[checks](raw/20261108-hash-aggregate-perf2d/ipc-checks.txt).
+Checks: serial locked release nata-exec tests at `-j 4`, including the new
+full-message test and unchanged spill/fault/damage/cleanup/recursive tests;
+fmt, clippy/all targets, locked release nata/nata-check build, fresh SF0.01/SQL
+fixtures, aggregate **65/65**, forced aggregate **65/65**, SQL **252/252**:
+**PASS**. No reader or fault/damage test is weakened.
+
+```sh
+python3 scripts/bench-aggregate-perf2d-local.py ipc --before /home/dev/perf2d-fanout/decode --after /home/dev/perf2d-fanout/ipc --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2d --profile
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2d/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2d-fanout/mutants-ipc -p nata-exec -f crates/nata-exec/src/aggregate/pipeline.rs -f crates/nata-exec/src/aggregate/storage.rs -F 'estimate_resident|initial_fanout|merge_concurrency|member' --timeout 180
+```
+
+Repeated focused estimator/fan-out/concurrency/membership mutants: **41 caught,
+1 missed (the same equivalent membership boundary), 1 unviable (the same
+constant divide by zero), 0 timeout**; unmutated baseline PASS.
+[Outcomes](raw/20261108-hash-aggregate-perf2d/ipc-mutants-outcomes.json),
+[deciding log](raw/20261108-hash-aggregate-perf2d/ipc-mutants.txt).
