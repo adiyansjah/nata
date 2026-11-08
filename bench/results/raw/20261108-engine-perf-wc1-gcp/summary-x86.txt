@@ -1,0 +1,8 @@
+high  1t 64M  baseline=3.848 wc1=3.791 duckdb=1.322 | final/base=0.99 final/duck=2.9x
+high  1t mem  baseline=3.053 wc1=3.030 duckdb=1.279 | final/base=0.99 final/duck=2.4x
+high  8t 64M  baseline=39.804 wc1=37.114 duckdb=1.342 | final/base=0.93 final/duck=27.6x
+high  8t mem  baseline=2.308 wc1=2.332 duckdb=1.014 | final/base=1.01 final/duck=2.3x
+q1    1t 64M  baseline=1.396 wc1=1.261 duckdb=0.276 | final/base=0.90 final/duck=4.6x
+q1    1t mem  baseline=1.366 wc1=1.199 duckdb=0.277 | final/base=0.88 final/duck=4.3x
+q1    8t 64M  baseline=0.387 wc1=0.342 duckdb=0.117 | final/base=0.88 final/duck=2.9x
+q1    8t mem  baseline=0.331 wc1=0.285 duckdb=0.115 | final/base=0.86 final/duck=2.5x

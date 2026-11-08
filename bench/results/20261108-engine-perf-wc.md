@@ -225,3 +225,30 @@ nominates that final evidence/source commit, whose Rust source is unchanged.
 GCP operation was made. Final shipment paths and SHA256 manifests are reported
 in the implementation handoff; they contain the final commit, not an uncommitted
 working tree.
+
+## W-C step 1 timing on settled machines (runs `wc1-x86`, `wc1-arm`, added by the parent, 2026-11-08)
+
+Baseline `2b7a415` against W-C (`9400b26`), SF1, value-gated against DuckDB 2.0.0, five alternating rounds with twins, c3d-highcpu-8 and
+n4a-highcpu-8, Spot; every gate step exited 0 on both CPUs. Raw: `raw/20261108-engine-perf-wc1-gcp/` (timings, per-CPU summaries). Medians,
+seconds. "Now / DuckDB" is W-C against DuckDB.
+
+| CPU | Query | Threads | Budget | Baseline | W-C | W-C / baseline | Now / DuckDB |
+|---|---|---:|---|---:|---:|---:|---:|
+| x86-64 | q1 | 1 | in memory | 1.366 | 1.199 | **0.88** | 4.3x |
+| x86-64 | q1 | 1 | 64 MiB | 1.396 | 1.261 | 0.90 | 4.6x |
+| x86-64 | q1 | 8 | in memory | 0.331 | 0.285 | **0.86** | 2.5x |
+| x86-64 | q1 | 8 | 64 MiB | 0.387 | 0.342 | 0.88 | 2.9x |
+| x86-64 | high cardinality | 1 | in memory | 3.053 | 3.030 | 0.99 | 2.4x |
+| x86-64 | high cardinality | 8 | in memory | 2.308 | 2.332 | 1.01 | 2.3x |
+| ARM64 | q1 | 1 | in memory | 1.006 | 0.961 | 0.95 | 4.4x |
+| ARM64 | q1 | 1 | 64 MiB | 1.005 | 0.962 | 0.96 | 4.3x |
+| ARM64 | q1 | 8 | in memory | 0.161 | 0.158 | 0.98 | 2.3x |
+| ARM64 | q1 | 8 | 64 MiB | 0.291 | 0.281 | 0.96 | 4.0x |
+| ARM64 | high cardinality | 1 | in memory | 2.340 | 2.335 | 1.00 | 2.4x |
+| ARM64 | high cardinality | 8 | in memory | 1.535 | 1.565 | 1.02 | 2.1x |
+
+**Verdict: kept.** Q1 is 10-14% faster on x86-64 and 2-5% on ARM64; high cardinality is neutral. Frozen targets remain NOT MET.
+
+**Regression found in the baseline, not caused by W-C:** high cardinality at 64 MiB and 8 threads is 39.804 s (x86-64) and 25.762 s (ARM64)
+at `2b7a415`, against about 4.9-5.5 s in the step 2e settled run. The 1-thread 64 MiB cells did not regress. Being bisected. The `profile`
+step reported the pre-check as unavailable on both CPUs; it does not affect these timings.
