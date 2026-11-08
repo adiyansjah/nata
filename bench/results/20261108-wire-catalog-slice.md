@@ -1596,3 +1596,12 @@ matrix/deviation wrapper, PG17 oracles, both harness gate mutants and all eleven
 focused Rust mutations (wrong-integer rerun after switching to itoa). **108**
 registered anchors still apply once. No required focused mutant is missed or
 INVALID; the full sweep and both-CPU deep campaigns are not claimed.
+
+### Parent note on the matrix count (2026-11-08)
+
+The P16 repair's record cites **76 PASS / 0 FAIL / 9 not run** (85 rows), but item 4 (`14eae3d`) brought the matrix to **81 PASS /
+0 FAIL / 9 not run** (90 rows). The five absent rows are exactly item 4's added client checks (`psql chunked-delivery`,
+`psycopg sql-cursor-refusal`, and `fetchmany-client-buffer` for psycopg, pgcli and ADBC); they are recorded unconditionally in
+`scripts/wire-skeleton/matrix.py` on main, so the 85-row file is stale evidence, not a lost check. The next clean-VM matrix run must
+show 90 rows, or this note becomes a finding. `scripts/wire-skeleton/run.sh` now installs only missing tools, choosing
+`postgresql-15` on Debian 12 and the distribution default elsewhere (the previous fix wrongly forced `postgresql-15` on Debian 13).
