@@ -2581,3 +2581,167 @@ Raw: `raw/20261108-hash-aggregate-perf2d-gcp/`. Medians of the primary arm, seco
 - Frozen targets: **NOT MET.** Spill 3.5-5.9x (target 2x); eight threads still spill slower than one on both CPUs, consistent with the
   single serial I/O service (card 0008, W-B). High cardinality in memory 2.7-3.0x (target 2x); Q1 4.4-5.2x at one thread and 2.2-2.8x
   at eight in memory (target 1.5x). Output batching (step 2e) is in progress.
+
+## Performance step 2e (output batching)
+
+2026-11-08. Baseline **4e59549a8350484713d409f23a2a52e13b1186e3**;
+implementation **f1063a1459b58f739763012e074261e148457476**. This entry records S2 only; no GCP run, dependency,
+spill-format, kernel, target, threshold or ADR change.
+
+**Rule.** S2 delivers survivor batches/ranges instead of an unconditional sink
+call per row; ADR 0009 requires construction to stay within charged workspace.
+ADR 0010 requires all group merge/final-value checks before HAVING and preserves
+projection's selected-error behavior. CSV row bytes and errors must remain
+identical. Frozen card 0005 targets are unchanged; local noisy timings cannot
+certify them.
+
+**Implementation / reasoned bounds.** Keep the existing construction cap
+`min(32, 1 MiB / (expression_slots * 128)).max(1)` and the existing runtime grant.
+Project at the original selected positions, then gather only fixed-width
+survivors under that allowance (a contiguous selection shares buffers).
+Variable-width survivors use contiguous ranges sharing Arrow data buffers;
+even large strings introduce no gathered data copy. A single surviving row can
+be an isolated range; there is no unconditional per-row slicing loop.
+`ResultWriter` and scan CLI retain CSV byte/numeric scratch across calls;
+integers, decimals, UTF-8 and dictionary strings avoid an owned cell String.
+Oversized row buffers are released after flushing; retained byte capacity stays
+at the existing 64 KiB allowance. The existing float/date/timestamp/blob
+formatters remain the fallback.
+Pgwire's existing batch callback already encodes rows inside a bounded buffer
+and checks cancellation/portal suspension per row; it receives these batches
+without any pgwire source or encoding change.
+
+**Numbers — UNSETTLED local screen.** Warm SF1 (6,001,215 input rows), Intel
+Core i3-1220P development VM, x86-64, 8 logical CPUs; whole CLI including startup,
+planning and complete CSV output to `/dev/null`. Immutable before/after binaries,
+DuckDB value gates, five alternating before/after/identical-before rounds per
+cell, 8 GiB and 64 MiB, 1/8 threads. The control is the same before executable.
+Both fixture queries have unordered output. All 24 gates compare exact CSV
+header/row-byte multisets, preserving decimal spelling as well as multiplicity;
+raw hashes also record scheduling-dependent order. DuckDB values use the
+existing 2b Q1 AVG tolerance only. High cardinality outputs 1,273,748 rows.
+
+Seconds are min/median; ratios are median [Q1, Q3] of paired round ratios,
+not ratios of medians. Ratios below one are faster.
+
+| query | threads | MiB | before s | after s | identical-before s | after/before | control/before |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Q1 | 1 | 8192 | 1.167/1.234 | 1.181/1.229 | 1.208/1.216 | 0.996 [0.981, 1.005] | 1.034 [0.997, 1.035] |
+| Q1 | 8 | 8192 | 0.362/0.369 | 0.353/0.375 | 0.373/0.410 | 0.982 [0.958, 1.017] | 1.115 [1.048, 1.154] |
+| Q1 | 1 | 64 | 1.208/1.220 | 1.208/1.241 | 1.205/1.235 | 1.002 [1.000, 1.007] | 0.998 [0.978, 1.014] |
+| Q1 | 8 | 64 | 0.695/0.726 | 0.669/0.712 | 0.666/0.703 | 0.962 [0.946, 0.969] | 0.939 [0.922, 1.007] |
+| HC | 1 | 8192 | 2.810/2.977 | 2.461/2.517 | 2.888/3.061 | 0.861 [0.814, 0.890] | 1.028 [0.982, 1.028] |
+| HC | 8 | 8192 | 2.071/2.098 | 1.608/1.637 | 2.057/2.170 | 0.770 [0.770, 0.771] | 1.030 [1.010, 1.035] |
+| HC | 1 | 64 | 4.701/4.964 | 4.317/4.361 | 4.749/4.975 | 0.897 [0.862, 0.913] | 1.032 [0.992, 1.039] |
+| HC | 8 | 64 | 6.768/7.039 | 6.361/6.702 | 6.603/7.023 | 0.952 [0.889, 1.002] | 1.026 [0.974, 1.038] |
+
+CSV byte gate detail (HC only; grouped output order is not promised):
+
+| threads | MiB | raw before = after | raw before = identical-before | sorted complete row bytes |
+|---|---:|---|---|---|
+| 1 | 8192 | identical | identical | identical |
+| 8 | 8192 | order differs | order differs | identical |
+| 1 | 64 | identical | identical | identical |
+| 8 | 64 | order differs | order differs | identical |
+
+Same-run **after** counters (output interval milliseconds min/median/max):
+
+| query | threads | MiB | sink calls (min..max) | output callback interval ms |
+|---|---:|---:|---:|---:|
+| Q1 | 1 | 8192 | 3..3 | 0.125/0.142/0.209 |
+| Q1 | 8 | 8192 | 3..3 | 0.122/0.143/0.158 |
+| Q1 | 1 | 64 | 3..3 | 0.103/0.148/0.159 |
+| Q1 | 8 | 64 | 3..3 | 0.141/0.155/0.165 |
+| HC | 1 | 8192 | 46678..46678 | 1023.301/1026.346/1120.990 |
+| HC | 8 | 8192 | 46678..46678 | 1100.042/1125.850/1141.703 |
+| HC | 1 | 64 | 46788..46788 | 826.809/878.834/896.347 |
+| HC | 8 | 64 | 46787..46790 | 938.441/959.357/1094.777 |
+
+The before loop makes one call per result row (1,273,748 for HC), a **source
+fact**, not an instrumented before counter. The immutable before has neither
+new counter. `output_ns` sums exclusive coordinator callback wall intervals:
+construction, HAVING, projection, sink delivery and table teardown. It excludes
+waiting for final merges, final stdout flush and storage/I/O teardown; workers
+may run concurrently. It is neither CPU time nor a measured critical path;
+no cross-run subtraction or before output-time estimate is claimed.
+
+**Verdict.** Structural batching and byte/error preservation: **PASS**. Local
+latency observations remain **UNSETTLED**, with same-run twin noise shown above;
+no frozen performance target or both-CPU speedup is certified. The standalone
+same-run counters establish call amortization, not allocation counts or the
+entire serial share.
+
+[Metadata](raw/20261108-hash-aggregate-perf2e/metadata.json),
+[summary / immutable hashes](raw/20261108-hash-aggregate-perf2e/output-summary.json),
+[samples / counters / load](raw/20261108-hash-aggregate-perf2e/output-samples.json),
+[value and CSV byte gates](raw/20261108-hash-aggregate-perf2e/output-gates.json),
+[local chart](raw/20261108-hash-aggregate-perf2e/output-ratios.html).
+
+**Checks.** Locked release four-crate tests, fmt, clippy/all-targets with warnings
+denied, locked release CLI/check build, fresh SF0.01 + SQL fixtures: **PASS**.
+Aggregate **65/65**, forced spill **65/65**, SQL **252/252**, scan **5/5**.
+Existing final-overflow-before-HAVING and selected projection tests remain;
+new checks cover sparse survivors, OFFSET/LIMIT, bounded batches, shared string
+buffers, retained CSV workspace, exact decimal text and NULL dictionary errors.
+Five additional before/after comparisons require identical stdout, stderr,
+exit status and positioned errors. No output-byte or error mismatch observed.
+See [checks](raw/20261108-hash-aggregate-perf2e/checks.txt) and
+[exact errors](raw/20261108-hash-aggregate-perf2e/error-gates.json).
+
+**Mutation evidence.**
+
+- Delivery/gather: **7 caught, 2 missed, 1 unviable**. Both misses preserve values and disable the contiguous zero-copy fast path. The unviable replacement requires a nonexistent `RecordBatch::default()` and is not a catch.
+- CSV: **20 caught, 1 timeout, 0 missed**. The timeout changes decimal padding into a nonterminating loop.
+- Two setup attempts are excluded: an argument rejection and an interrupted broad-target run after its passing baseline. Neither is a catch.
+
+Missed mutants and their classifications are recorded individually in
+[mutation outcomes](raw/20261108-hash-aggregate-perf2e/mutants-summary.json).
+Unviable runs are not catches. Reinstating the original per-row output loop is
+also caught by the new delivery test; the restored implementation passes.
+The focused sweeps cover delivery/gather, retained CSV writing/flush/field
+entry points, decimal formatting and the dictionary NULL-value guard, not a
+workspace-wide mutation campaign.
+
+Reproduce locally (one Cargo build/test at a time):
+
+```sh
+cargo test --locked --release -j 4 -p nata-exec -p nata-parquet -p nata -p nata-pgwire
+cargo fmt --all -- --check
+cargo clippy --locked --release -j 4 -p nata-exec -p nata-parquet -p nata -p nata-pgwire --all-targets -- -D warnings
+cargo build --locked --release -j 4 -p nata -p nata-check
+scripts/gen-tpch.sh 0.01 "$PERF2E_DATA"
+scripts/gen-sql-check-data.sh "$PERF2E_DATA"
+env -u AI_AGENT -u CODEX_CI target/release/nata-check --candidate target/release/nata --data "$PERF2E_DATA" --queries check/queries/aggregate
+env -u AI_AGENT -u CODEX_CI target/release/nata-check --candidate target/release/nata --data "$PERF2E_DATA" --queries check/queries/aggregate --force-aggregate-spill
+env -u AI_AGENT -u CODEX_CI target/release/nata-check --candidate target/release/nata --data "$PERF2E_DATA" --queries check/queries/sql
+env -u AI_AGENT -u CODEX_CI target/release/nata-check --candidate target/release/nata --data "$PERF2E_DATA" --queries check/queries/scan
+# BEFORE and AFTER are read-only copies of matching locked release builds;
+# SF1_DATA is the unchanged SF1 fixture, NEW_OUT is a fresh output directory.
+python3 scripts/bench-aggregate-perf2e-local.py output --before "$BEFORE" --after "$AFTER" --data "$SF1_DATA" --out "$NEW_OUT" --rounds 5
+python3 bench/results/raw/20261108-hash-aggregate-perf2e/check-errors.py --before "$BEFORE" --after "$AFTER" --data "$PERF2E_DATA" --out "$NEW_OUT/error-gates.json"
+```
+
+Mutation commands and the old-loop negative control are retained alongside
+[the raw evidence](raw/20261108-hash-aggregate-perf2e/mutants.sh) and
+[old-loop negative control](raw/20261108-hash-aggregate-perf2e/old-loop-negative.py).
+All local Cargo builds/tests use `-j 4`; focused mutant builds run serially.
+No new dependency or lockfile change. Free disk stayed above 20 GB.
+
+**GCP handoff, NOT RUN.** The owner reports the last comparable job took under
+an hour. Use a **two-hour total VM cap per architecture**, including replacement
+VMs: one observed-run allowance plus one hour for clean builds, slower ARM setup
+and a preemption. This is a spend bound, not permission to extend/retry a noisy
+run. Obtain the current plan's dollar approval separately before each run.
+The heavy runner retains matched-budget DuckDB primary/twin arms; failures stay
+incomplete. Job-chain tests, inert heavy-runner self-test, step syntax and local
+source-bundle preparation pass; these are not a claim of a real cloud trial.
+The bundle contains exactly the baseline and the implementation commit.
+
+```sh
+python3 scripts/bench-aggregate-perf1-heavy.py prepare --baseline 4e59549a8350484713d409f23a2a52e13b1186e3 --fix output=f1063a1459b58f739763012e074261e148457476 --bundle .aggregate-perf2e-inputs
+cp bench/aggregate-perf2e.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --run-id perf2e-20261108-x86 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id perf2e-20261108-x86 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_X86"
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2e-20261108-arm64 --data-gb 80 --max-vm-hours 2
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2e-20261108-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
+```

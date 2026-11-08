@@ -1,0 +1,32 @@
+[
+  {
+    "query": "SELECT id, 1 // (id - 2) AS v FROM '{data}/sqlcheck/types.parquet' GROUP BY id HAVING id = 2",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: execution error: division by zero in an integer division (//). Guard it with CASE WHEN divisor <> 0 THEN ... END, or restrict the rows with WHERE (line 1, column 12)\n  --> line 1, column 12\n  |\n1 | SELECT id, 1 // (id - 2) AS v FROM '/tmp/nata-perf2e/data/sqlcheck/types.parquet' GROUP BY id HAVING id = 2\n  |            ^\n"
+  },
+  {
+    "query": "SELECT id, 1 // (id - 2) AS v FROM '{data}/sqlcheck/types.parquet' GROUP BY id HAVING id <> 2",
+    "exit": 0,
+    "stdout": "id,v\n5,0\n12,0\n1,-1\n14,0\n9,0\n8,0\n10,0\n11,0\n15,0\n6,0\n13,0\n4,0\n7,0\n3,1\n",
+    "stderr": ""
+  },
+  {
+    "query": "SELECT id, 1 // (id - 2) AS v FROM '{data}/sqlcheck/types.parquet' GROUP BY id HAVING id = 2 LIMIT 0",
+    "exit": 0,
+    "stdout": "id,v\n",
+    "stderr": ""
+  },
+  {
+    "query": "SELECT sum(1 // (id - 2)) FROM '{data}/sqlcheck/types.parquet' HAVING false LIMIT 0",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: /tmp/nata-perf2e/data/sqlcheck/types.parquet: row group 0: execution error: division by zero in an integer division (//). Guard it with CASE WHEN divisor <> 0 THEN ... END, or restrict the rows with WHERE (line 1, column 12)\n  --> line 1, column 12\n  |\n1 | SELECT sum(1 // (id - 2)) FROM '/tmp/nata-perf2e/data/sqlcheck/types.parquet' HAVING false LIMIT 0\n  |            ^\n"
+  },
+  {
+    "query": "SELECT id, 1 // (id - 2) AS v, CAST('bad' AS INTEGER) AS w FROM '{data}/sqlcheck/types.parquet' GROUP BY id HAVING id = 2",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "error: execution error: division by zero in an integer division (//). Guard it with CASE WHEN divisor <> 0 THEN ... END, or restrict the rows with WHERE (line 1, column 12)\n  --> line 1, column 12\n  |\n1 | SELECT id, 1 // (id - 2) AS v, CAST('bad' AS INTEGER) AS w FROM '/tmp/nata-perf2e/data/sqlcheck/types.parquet' ...\n  |            ^\n"
+  }
+]

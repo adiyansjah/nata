@@ -1,0 +1,182 @@
+{
+  "builds": [
+    {
+      "variant": "baseline",
+      "commit": "4e59549a8350484713d409f23a2a52e13b1186e3",
+      "source": "/tmp/nata-perf2e/settled-plan/source/baseline-4e59549a8350484713d409f23a2a52e13b1186e3",
+      "target": "/tmp/nata-perf2e/settled-plan/target/baseline-4e59549a8350484713d409f23a2a52e13b1186e3",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "output",
+      "commit": "f1063a1459b58f739763012e074261e148457476",
+      "source": "/tmp/nata-perf2e/settled-plan/source/output-f1063a1459b58f739763012e074261e148457476",
+      "target": "/tmp/nata-perf2e/settled-plan/target/output-f1063a1459b58f739763012e074261e148457476",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "nata"
+      ]
+    }
+  ],
+  "queries": [
+    "q1",
+    "high_cardinality_tpch"
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "budgets": [
+    8589934592,
+    67108864
+  ],
+  "rounds": 5,
+  "roles": [
+    "primary",
+    "twin"
+  ],
+  "timed_processes": 240,
+  "order": [
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "output",
+        "primary"
+      ],
+      [
+        "output",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "output",
+        "twin"
+      ],
+      [
+        "output",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "output",
+        "primary"
+      ],
+      [
+        "output",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "output",
+        "twin"
+      ],
+      [
+        "output",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "output",
+        "primary"
+      ],
+      [
+        "output",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ]
+  ]
+}

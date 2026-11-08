@@ -1,0 +1,15 @@
+# Parent only: independent SF1 comparisons on c3d-highcpu-8 and n4a-highcpu-8.
+# Baseline 4e59549a8350484713d409f23a2a52e13b1186e3; fix = implementation
+# commit f1063a1459b58f739763012e074261e148457476, recorded under "Performance step 2e (output batching)" in the results.
+# Prepare --baseline 4e59549 --fix output=f1063a1459b58f739763012e074261e148457476 --bundle .aggregate-perf2e-inputs.
+# Two immutable source builds; Q1 and 1,273,748-row high-cardinality output;
+# 1/8 threads, 8 GiB/64 MiB, value gates, five alternating primary/twin rounds
+# and matched-budget DuckDB. CSV stays enabled; retain all aggregate counters.
+# Two-hour total VM cap per architecture, including replacements: the last
+# comparable run took under an hour; allow another hour for clean builds,
+# slower ARM setup and one preemption. A noisy/unsettled job may hit the cap;
+# it does not receive an automatic extension. No GCP execution from a child.
+# No GCP identifiers or credentials belong here.
+prepare mkdir -p "$WORK/aggregate-perf2e/tmp"
+fixtures rm -rf "$WORK/aggregate-perf2e-sf1" && TMPDIR="$WORK/aggregate-perf2e/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/aggregate-perf2e-sf1"
+timings perf2e_machine=$(uname -m) && case "$perf2e_machine" in x86_64) perf2e_machine=c3d-highcpu-8 ;; aarch64) perf2e_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && TMPDIR="$WORK/aggregate-perf2e/tmp" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$perf2e_machine" --bundle "$SRC/.aggregate-perf2e-inputs" --work "$WORK/aggregate-perf2e" --data "$WORK/aggregate-perf2e-sf1" --out "$RESULTS/aggregate-perf2e-$(date -u +%Y%m%dT%H%M%SZ)"

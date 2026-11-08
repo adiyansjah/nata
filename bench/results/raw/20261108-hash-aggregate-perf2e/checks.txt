@@ -1,0 +1,104 @@
+Local checks, 2026-11-08; baseline 4e59549; no GCP launched.
+cargo test --locked --release -j 4 -p nata-exec -p nata-parquet -p nata -p nata-pgwire (RUST_TEST_THREADS=1): PASS, 322 passed, 0 failed, 0 ignored.
+     Running unittests src/main.rs (target/release/deps/nata-f581de95e78d48f2)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/cli.rs (target/release/deps/cli-9bd21799844bfa83)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/object_store.rs (target/release/deps/object_store-5c90a8bb950d2da7)
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s
+     Running tests/resource_bounds.rs (target/release/deps/resource_bounds-97d48c87e7eabbdf)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.77s
+     Running tests/scan_cli.rs (target/release/deps/scan_cli-77ebbc2d4e21b707)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+     Running tests/serve_cli.rs (target/release/deps/serve_cli-dbe175aad5ca752b)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/sql_cli.rs (target/release/deps/sql_cli-40ebcf19da5f870c)
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.68s
+     Running tests/sql_reliability.rs (target/release/deps/sql_reliability-86c4955d981a10f1)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.91s
+     Running tests/sql_resource_bounds.rs (target/release/deps/sql_resource_bounds-8eef3b205b466cb2)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.43s
+     Running unittests src/lib.rs (target/release/deps/nata_exec-18d4ea7c9364baa8)
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/aggregate.rs (target/release/deps/aggregate-1012f28c52d8d0c1)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+     Running tests/aggregate_spill.rs (target/release/deps/aggregate_spill-f9e1300285a47fa4)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.03s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.25s
+     Running tests/deep.rs (target/release/deps/deep-444b69d78c434636)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.50s
+     Running tests/exec.rs (target/release/deps/exec-d51097db9a19876f)
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+     Running tests/scenarios.rs (target/release/deps/scenarios-f42b2e21afe7697b)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.03s
+     Running tests/spill.rs (target/release/deps/spill-a228bea3deef553f)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+     Running unittests src/lib.rs (target/release/deps/nata_parquet-f53aeeb517dab530)
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/adapter.rs (target/release/deps/adapter-3eab6ad8b5a23118)
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/checksums.rs (target/release/deps/checksums-7b367e10f9ec4255)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.66s
+     Running tests/damaged_regressions.rs (target/release/deps/damaged_regressions-ca5d4c3942cc1722)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/differential_edge.rs (target/release/deps/differential_edge-0451a69b70107117)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 152.84s
+     Running tests/differential_lineitem.rs (target/release/deps/differential_lineitem-2f58da73282a8fe6)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 54.84s
+     Running tests/errors.rs (target/release/deps/errors-2b0d7d544b1b322a)
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+     Running tests/fuzz_files.rs (target/release/deps/fuzz_files-fbdc1e98b1720ecd)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 51.37s
+     Running tests/late.rs (target/release/deps/late-f89b9feff53f8af8)
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+     Running tests/overflow_config.rs (target/release/deps/overflow_config-23c98ba673147ca5)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/parallel.rs (target/release/deps/parallel-76c49b077be3e566)
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.62s
+     Running tests/read_leaves.rs (target/release/deps/read_leaves-128d0a85ee6d387e)
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/report.rs (target/release/deps/report-499712da9ce5779e)
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/scenarios.rs (target/release/deps/scenarios-a656628305d1403a)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.00s
+     Running tests/soundness_files.rs (target/release/deps/soundness_files-95767d862b59a762)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.01s
+     Running tests/special_files.rs (target/release/deps/special_files-1e4334ab72d3d9d8)
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.55s
+     Running unittests src/lib.rs (target/release/deps/nata_pgwire-4eedfdce180d1b00)
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+     Running tests/codec.rs (target/release/deps/codec-d02f840bd4ec6e78)
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+     Running tests/portal_loom.rs (target/release/deps/portal_loom-c49e852ade0595fb)
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests/protocol.rs (target/release/deps/protocol-488266d5fce04808)
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.72s
+     Running tests/reliability.rs (target/release/deps/reliability-128b1569ceb10e36)
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.70s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+cargo fmt --all -- --check: PASS
+cargo clippy --locked --release -j 4 -p nata-exec -p nata-parquet -p nata -p nata-pgwire --all-targets -- -D warnings: PASS
+    Finished `release` profile [optimized] target(s) in 3.82s
+cargo build --locked --release -j 4 -p nata -p nata-check: PASS
+    Finished `release` profile [optimized] target(s) in 31.79s
+scripts/gen-tpch.sh 0.01 /tmp/nata-perf2e/data && scripts/gen-sql-check-data.sh /tmp/nata-perf2e/data: PASS
+aggregate differential: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+spill differential: 65 queries: 65 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+sql differential: 252 queries: 252 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+scan differential: 5 queries: 5 pass, 0 mismatch, 0 unsupported, 0 error, 0 reference-error, 0 pending, 0 pending-wrong
+Five exact stdout/stderr/exit/error-position comparisons: PASS (error-gates.json).
+Focused cargo-mutants: see mutants-summary.json. Serial --in-place, cargo -j4.
+Known-bad original one-row output loop: CAUGHT; repaired implementation restored and output_ tests PASS.
+Restored CSV unit suite: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+No Cargo.lock / manifest changes. Free disk observed >=22 GiB; no stale-output deletion needed.
+scripts/gcp/test/test-job-chains.sh: PASS (mocked cloud operations only).
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work /tmp/nata-perf2e/heavy-self-test: PASS (inert).
+bench/aggregate-perf2e.steps: each command passes bash -n.
+Invalid mutation setup attempts excluded: --in-place + --jobs argument rejection; broad-target run interrupted after successful baseline.
+Final normal release CLI equals immutable after binary: 89521e672c54ea3102d8710d7a5b022180fec24991015168abadb24b3477d045
+Local source bundle: PASS, exactly baseline + implementation, see settled-manifest.json.
+Inert heavy --plan: PASS; 2 revisions, both budgets, 1/8 threads, five rounds, twins + DuckDB (240 timed processes).
+Source commit staged leak scan: PASS. Evidence staged leak scan is required before committing this record.

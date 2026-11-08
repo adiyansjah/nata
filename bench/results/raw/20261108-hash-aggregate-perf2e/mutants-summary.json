@@ -1,0 +1,606 @@
+{
+  "gather/delivery": {
+    "baseline": "Success",
+    "counts": {
+      "Unviable": 1,
+      "MissedMutant": 2,
+      "CaughtMutant": 7
+    },
+    "outcomes": [
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:667:5: replace gather_output -> Result<RecordBatch, ScanError> with Ok(Default::default())",
+        "result": "Unviable",
+        "classification": "RecordBatch has no Default implementation; replacement does not compile. Not a catch.",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 1.303333908,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:668:52: replace == with != in gather_output",
+        "result": "MissedMutant",
+        "classification": "Equivalent values; disables contiguous zero-copy fast path, always uses correct gather. Performance-only survivor.",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 19.142469956,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.200908863,
+            "status": "Success"
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:668:61: replace + with - in gather_output",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.302941712,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150950019,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:668:61: replace + with * in gather_output",
+        "result": "MissedMutant",
+        "classification": "Equivalent values; disables contiguous zero-copy fast path, always uses correct gather. Performance-only survivor.",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.248416152,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.1508289,
+            "status": "Success"
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:686:5: replace deliver_output -> Result<u64, ScanError> with Ok(0)",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.952178631,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150926908,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:686:5: replace deliver_output -> Result<u64, ScanError> with Ok(1)",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.502106902,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.251105081,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:687:38: replace || with && in deliver_output",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 18.068043195,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.251275065,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:694:17: replace < with <= in deliver_output",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.957299538,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150845658,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:696:19: replace < with <= in deliver_output",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 18.553154324,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150855061,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-exec/src/aggregate.rs:696:53: replace == with != in deliver_output",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 17.511179885,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150977834,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "CSV": {
+    "baseline": "Success",
+    "counts": {
+      "CaughtMutant": 20,
+      "Timeout": 1
+    },
+    "outcomes": [
+      {
+        "name": "crates/nata-parquet/src/csv.rs:343:9: replace BatchWriter::write_batch -> Result<(), ScanError> with Ok(())",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.657697464,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150943258,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:361:9: replace BatchWriter::flush -> Result<(), ScanError> with Ok(())",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.656999369,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150907603,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:366:32: replace > with == in BatchWriter::flush",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.957999044,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151047573,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:366:32: replace > with < in BatchWriter::flush",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.658356002,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150907909,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:366:32: replace > with >= in BatchWriter::flush",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.720367128,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150735969,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:366:37: replace * with + in BatchWriter::flush",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.658073538,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151017591,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:366:37: replace * with / in BatchWriter::flush",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.708110264,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150958701,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:375:9: replace BatchWriter::field -> Result<(), ScanError> with Ok(())",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.506992402,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150843092,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:447:40: replace || with && in BatchWriter::field",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.456726384,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151152877,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:468:5: replace decimal_into with ()",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.859936658,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151209447,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:470:14: replace > with == in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.507463095,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.201054834,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:470:14: replace > with < in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.607683839,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150908931,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:470:14: replace > with >= in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.456979334,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150871838,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:471:26: replace <= with > in decimal_into",
+        "result": "Timeout",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.758302965,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 10.031869758,
+            "status": "Timeout"
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:474:32: replace - with + in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.307072554,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150792588,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:474:32: replace - with / in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.507823435,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151198357,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:475:44: replace && with || in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.407740094,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150853508,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:475:35: replace == with != in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.457661715,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151243651,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:479:14: replace < with == in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.707566344,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.151251127,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:479:14: replace < with > in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.507881484,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150851075,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      },
+      {
+        "name": "crates/nata-parquet/src/csv.rs:479:14: replace < with <= in decimal_into",
+        "result": "CaughtMutant",
+        "classification": "",
+        "phases": [
+          {
+            "phase": "Build",
+            "seconds": 2.658005713,
+            "status": "Success"
+          },
+          {
+            "phase": "Test",
+            "seconds": 0.150900387,
+            "status": {
+              "Failure": 101
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "invalid setup attempts": {
+    "counts": {
+      "argument_rejection": 1,
+      "interrupted_broad_target_run": 1
+    },
+    "note": "Not catches. First invocation combined --in-place and --jobs; second was stopped after its baseline when build-only targeting was too broad. Final run restricts common cargo arguments to relevant test targets."
+  }
+}
