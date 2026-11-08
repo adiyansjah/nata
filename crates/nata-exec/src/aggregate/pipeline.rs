@@ -282,13 +282,7 @@ pub(super) fn accumulate(
             budget.saturating_sub(free).saturating_add(minimum),
         ));
     }
-    let n = cfg
-        .threads
-        .max(1)
-        .min(tasks.len().max(1))
-        .min(32)
-        .min((free.saturating_sub(1 << 20) / task_bytes.max(1)).max(1))
-        .max(1);
+    let n = scan_concurrency(cfg.threads, tasks.len(), free, task_bytes, budget);
     if let Some(stats) = &shared.stats {
         stats.admission(n, free, decode_bytes, task_bytes);
     }
@@ -672,6 +666,29 @@ pub(super) fn accumulate(
     };
     let report = ScanReport::from_stats(&scan, 0, n, n, false);
     Ok((report, partitions, storage, io))
+}
+
+/// Leave room for each local partition's first table chunk, as well as the
+/// existing shared 1 MiB progress allowance. Admitting only cursor workspace
+/// can strand almost all of B in non-revocable readers: every small partial
+/// then spills and fans out into tiny IPC frames. This is admission headroom,
+/// not a reservation or a per-task table cap; tables still borrow through the
+/// query manager. A single task can still run when full chunks do not fit
+/// (Chunks borrows only available bytes), subject to the minimum check above.
+fn scan_concurrency(
+    threads: usize,
+    tasks: usize,
+    free: usize,
+    task_bytes: usize,
+    budget: usize,
+) -> usize {
+    let table_bytes = PARTITIONS * Table::chunk_size(budget);
+    let working_set = task_bytes.saturating_add(table_bytes);
+    threads
+        .max(1)
+        .min(tasks.max(1))
+        .min(32)
+        .min((free.saturating_sub(1 << 20) / working_set.max(1)).max(1))
 }
 
 /// The existing output grant covers bounded fixed-width batches/evaluator
@@ -1152,6 +1169,31 @@ fn files_for_repartition(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn scan_admission_leaves_table_chunk_headroom() {
+        assert_eq!(Table::chunk_size(0), 4096);
+        assert_eq!(Table::chunk_size(64 << 20), 256 << 10);
+        assert_eq!(Table::chunk_size(8 << 30), 1 << 20);
+        // SF1 HC, 64 MiB, after the piecewise footer decoder. Cursor-only
+        // admission chose three and caused hundreds of thousands of IPC opens.
+        let (free, cursor, budget) = (62_887_682, 19_607_401, 64 << 20);
+        assert_eq!(scan_concurrency(8, 49, free, cursor, budget), 2);
+        assert_eq!(scan_concurrency(1, 49, free, cursor, budget), 1);
+        assert_eq!(scan_concurrency(8, 1, free, cursor, budget), 1);
+        assert_eq!(scan_concurrency(8, 49, 7 << 30, cursor, 8 << 30), 8);
+        assert_eq!(scan_concurrency(64, 100, 7 << 30, cursor, 8 << 30), 32);
+        // Headroom is a concurrency policy, not a new minimum-set rejection.
+        assert_eq!(
+            scan_concurrency(8, 49, cursor + (1 << 20), cursor, budget),
+            1
+        );
+        assert_eq!(scan_concurrency(0, 0, 0, 0, budget), 1);
+        let per_task = cursor + PARTITIONS * Table::chunk_size(budget);
+        let boundary = 2 * per_task + (1 << 20);
+        assert_eq!(scan_concurrency(8, 49, boundary, cursor, budget), 2);
+        assert_eq!(scan_concurrency(8, 49, boundary - 1, cursor, budget), 1);
+    }
+
     #[test]
     fn resident_output_workspace_excludes_strings_even_inside_fixed_width_expressions() {
         use nata_parquet::schema::Kind;

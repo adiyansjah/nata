@@ -308,6 +308,10 @@ struct Table {
     chunk_bytes: usize,
 }
 impl Table {
+    fn chunk_size(budget: usize) -> usize {
+        (budget / 256).clamp(4096, 1 << 20)
+    }
+
     fn new() -> Self {
         Self {
             groups: Groups::new(),
@@ -320,7 +324,7 @@ impl Table {
             return Ok(());
         }
         if self.chunk_bytes == 0 {
-            self.chunk_bytes = (manager.snapshot().budget / 256).clamp(4096, 1 << 20);
+            self.chunk_bytes = Self::chunk_size(manager.snapshot().budget);
         }
         match self.grants.reserve(manager, 0, bytes, self.chunk_bytes) {
             Ok(true) => Ok(()),

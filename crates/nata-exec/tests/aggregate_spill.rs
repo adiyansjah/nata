@@ -26,6 +26,67 @@ fn empty(base: &std::path::Path) {
 }
 
 #[test]
+fn scan_admission_keeps_table_headroom_with_small_footer() {
+    use arrow_array::Int64Array;
+    use parquet::{arrow::ArrowWriter, file::properties::WriterProperties};
+
+    let d = dir("scan-table-headroom");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("base");
+    let path = d.join("t.parquet");
+    let batch = RecordBatch::try_from_iter((0..5).map(|i| {
+        (
+            format!("c{i}"),
+            Arc::new(Int64Array::from_iter_values(0..216_000)) as ArrayRef,
+        )
+    }))
+    .expect("batch");
+    let props = WriterProperties::builder()
+        .set_dictionary_enabled(false)
+        .set_max_row_group_row_count(Some(54_000))
+        .build();
+    let mut writer = ArrowWriter::try_new(
+        std::fs::File::create(&path).expect("file"),
+        batch.schema(),
+        Some(props),
+    )
+    .expect("writer");
+    writer.write(&batch).expect("write");
+    writer.close().expect("close");
+    let sql = format!(
+        "SELECT c0, count(*), sum(c1), sum(c2), sum(c3), sum(c4) FROM '{}' GROUP BY c0",
+        path.display()
+    );
+    for stats in [false, true] {
+        let mut config = cfg(&base, 8);
+        config.aggregate_force_spill = false;
+        config.aggregate_memory_bytes = Some(64 << 20);
+        config.aggregate_spill_disk_bytes = Some(1 << 30);
+        config.collect_stats = stats;
+        let plan = Arc::new(plan_sql(&sql, &FsSource).expect("plan").plan);
+        let mut observed = Observed::default();
+        let mut count = 0;
+        let report = execute_observed(plan, &config, None, &mut observed, |batch| {
+            count += batch.num_rows();
+            Ok(())
+        })
+        .expect("bounded spill");
+        assert_eq!(count, 216_000);
+        // The old cursor-only policy admitted three, starving partial tables.
+        // Assert scheduling, not elapsed time or timing-sensitive spill counts.
+        assert_eq!(report.scan.threads, 2);
+        let m = report.aggregate.expect("metrics");
+        assert!(m.spill_bytes_written > 0 && m.spill_bytes_read > 0);
+        assert_eq!(m.recursion_depth, 0);
+        let memory = observed.aggregate_memory.expect("memory").snapshot();
+        assert!(memory.peak <= 64 << 20);
+        assert_eq!((memory.held, memory.live_grants), (0, 0));
+        empty(&base);
+    }
+    std::fs::remove_dir_all(d).expect("cleanup");
+}
+
+#[test]
 fn resident_tail_must_merge_prior_spill_even_when_it_can_be_adopted() {
     let d = dir("resident-prior-spill");
     let base = d.join("spill");

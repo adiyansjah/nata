@@ -1,0 +1,19 @@
+# gate-exits
+# PREPARED ONLY: baseline 2b7a415 versus the committed admission repair.
+# Run independently on c3d-highcpu-8 and n4a-highcpu-8; 2h / 150GB cap per CPU.
+# Prepare with bench-aggregate-perf1-heavy.py prepare, as recorded in results.
+# Full original SF1 matrix retained: Q1 and HC, 1/8 threads, 8 GiB/64 MiB,
+# value gates before timing, five alternating primary/twin rounds, matched-budget
+# DuckDB, settling and all aggregate counters. HC/64 MiB is the repair target;
+# 1-thread and in-memory cells are controls. Preserve per-invocation sidecars.
+# Every build is serial and uses -j 4. No GCP identifiers belong in this file.
+harness python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/spill-regression-self-test"
+prepare mkdir -p "$WORK/spill-regression/tmp" && cp .aggregate-spill-regression-inputs/manifest.json "$RESULTS/spill-regression-manifest.json"
+gate-build CARGO_TARGET_DIR="$WORK/spill-regression/gates-target" cargo build --locked --release -j 4 -p nata -p nata-check
+gate-data env -u AI_AGENT scripts/gen-tpch.sh 0.01 "$WORK/spill-regression/gates" && scripts/gen-sql-check-data.sh "$WORK/spill-regression/gates"
+gate-aggregate env -u AI_AGENT "$WORK/spill-regression/gates-target/release/nata-check" --candidate "$WORK/spill-regression/gates-target/release/nata" --data "$WORK/spill-regression/gates" --queries check/queries/aggregate
+gate-spill env -u AI_AGENT "$WORK/spill-regression/gates-target/release/nata-check" --candidate "$WORK/spill-regression/gates-target/release/nata" --data "$WORK/spill-regression/gates" --queries check/queries/aggregate --force-aggregate-spill
+gate-sql env -u AI_AGENT "$WORK/spill-regression/gates-target/release/nata-check" --candidate "$WORK/spill-regression/gates-target/release/nata" --data "$WORK/spill-regression/gates" --queries check/queries/sql
+gate-scan env -u AI_AGENT "$WORK/spill-regression/gates-target/release/nata-check" --candidate "$WORK/spill-regression/gates-target/release/nata" --data "$WORK/spill-regression/gates" --queries check/queries/scan
+fixtures TMPDIR="$WORK/spill-regression/tmp" env -u AI_AGENT -u CODEX_CI scripts/gen-tpch.sh 1 "$WORK/spill-regression/sf1"
+timings spill_regression_machine=$(uname -m) && case "$spill_regression_machine" in x86_64) spill_regression_machine=c3d-highcpu-8 ;; aarch64) spill_regression_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && NATA_QUERY_STATS=1 NATA_STATS_DIR="$RESULTS/spill-regression-stats" CARGO_BUILD_JOBS=4 python3 scripts/bench-aggregate-perf1-heavy.py run --machine "$spill_regression_machine" --bundle "$SRC/.aggregate-spill-regression-inputs" --work "$WORK/spill-regression/timing" --data "$WORK/spill-regression/sf1" --out "$RESULTS/spill-regression-$(date -u +%Y%m%dT%H%M%SZ)"
