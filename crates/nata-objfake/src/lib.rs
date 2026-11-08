@@ -922,11 +922,12 @@ pub enum ImdsFault {
 
 struct ImdsShared {
     creds: ImdsCreds,
+    gcs: Option<(String, u64)>,
     fault: Mutex<Option<ImdsFault>>,
     log: Mutex<Vec<String>>,
 }
 
-/// The EC2 instance metadata service (IMDSv2: a token PUT, the role listing, the role credentials), on loopback.
+/// Loopback instance metadata: EC2 IMDSv2 by default, or GCE token JSON via `start_gcs`.
 pub struct FakeImds {
     pub addr: String,
     shared: Arc<ImdsShared>,
@@ -944,10 +945,30 @@ const IMDS_TOKEN: &str = "fake-imds-session-token";
 
 impl FakeImds {
     pub async fn start(creds: ImdsCreds) -> FakeImds {
+        Self::start_mode(creds, None).await
+    }
+
+    /// GCE metadata mode: requires Metadata-Flavor: Google and returns the token
+    /// JSON used by object_store's real instance credential provider. No keys or TLS.
+    /// The Credentials and EndlessCredentials faults also apply in this mode.
+    pub async fn start_gcs(token: &str, expires_in: u64) -> FakeImds {
+        Self::start_mode(
+            ImdsCreds {
+                key_id: String::new(),
+                secret: String::new(),
+                token: None,
+            },
+            Some((token.to_string(), expires_in)),
+        )
+        .await
+    }
+
+    async fn start_mode(creds: ImdsCreds, gcs: Option<(String, u64)>) -> FakeImds {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = format!("http://{}", listener.local_addr().expect("addr"));
         let shared = Arc::new(ImdsShared {
             creds,
+            gcs,
             fault: Mutex::new(None),
             log: Mutex::new(Vec::new()),
         });
@@ -1004,6 +1025,11 @@ async fn serve_imds(mut sock: TcpStream, sh: Arc<ImdsShared>) -> std::io::Result
             first.next().unwrap_or("").to_string(),
             first.next().unwrap_or("").to_string(),
         );
+        let google_ok = head.split("\r\n").skip(1).any(|l| {
+            l.split_once(':').is_some_and(|(k, v)| {
+                k.eq_ignore_ascii_case("metadata-flavor") && v.trim() == "Google"
+            })
+        });
         let token_ok = lines.any(|l| {
             l.to_ascii_lowercase()
                 .starts_with("x-aws-ec2-metadata-token:")
@@ -1036,6 +1062,30 @@ async fn serve_imds(mut sock: TcpStream, sh: Arc<ImdsShared>) -> std::io::Result
             }
             _ => ("401 Unauthorized", Some(Vec::new())),
         };
+        if let Some((token, expires_in)) = &sh.gcs {
+            let is_token = method == "GET"
+                && path.split('?').next()
+                    == Some("/computeMetadata/v1/instance/service-accounts/default/token")
+                && google_ok;
+            if is_token && fault == Some(ImdsFault::EndlessCredentials) {
+                sock.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 1099511627776\r\n\r\n")
+                    .await?;
+                endless_body(&mut sock).await;
+                return Ok(());
+            }
+            let status = if is_token { "200 OK" } else { "403 Forbidden" };
+            let token = token.replace('\\', "\\\\").replace('"', "\\\"");
+            let body = if !is_token {
+                Vec::new()
+            } else if let Some(ImdsFault::Credentials(doc)) = &fault {
+                doc.clone()
+            } else {
+                format!(r#"{{"access_token":"{token}","expires_in":{expires_in},"token_type":"Bearer"}}"#).into_bytes()
+            };
+            sock.write_all(format!("HTTP/1.1 {status}\r\nMetadata-Flavor: Google\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n", body.len()).as_bytes()).await?;
+            sock.write_all(&body).await?;
+            continue;
+        }
         let endless = matches!(
             (&fault, method.as_str(), path.as_str()),
             (Some(ImdsFault::EndlessToken), "PUT", _)

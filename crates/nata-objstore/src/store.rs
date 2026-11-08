@@ -338,7 +338,7 @@ fn no_retry() -> object_store::RetryConfig {
 /// The connector of EVERY store (and so of every HTTP client `object_store` makes for it: reads, LIST, metadata and token services). It builds the reqwest
 /// client itself so that it can set `redirect::Policy::none()`: a redirect from the endpoint is never followed (`x-amz-security-token` and other custom
 /// credential headers would travel to the new origin). Read paths never need one: the endpoint and the addressing style are configured explicitly.
-fn connector(cfg: &Config, m: &Mutants, allow_http: bool) -> BoundedConnector {
+fn connector(cfg: &Config, m: &Mutants) -> BoundedConnector {
     BoundedConnector {
         cap: cfg.error_body_cap,
         meta_cap: cfg.meta_body_cap,
@@ -352,7 +352,6 @@ fn connector(cfg: &Config, m: &Mutants, allow_http: bool) -> BoundedConnector {
                 Some(cfg.op_deadline + Duration::from_secs(10))
             },
             pool_max_idle_per_host: 64,
-            allow_http,
             follow_redirects: m.default_redirects(),
         },
     }
@@ -399,7 +398,7 @@ pub fn build_s3(
         b = b.with_region("us-east-1");
     }
     if !m.no_transport_bound() {
-        b = b.with_http_connector(connector(cfg, m, allow_http));
+        b = b.with_http_connector(connector(cfg, m));
     }
     b.build()
         .map(|s| Arc::new(s) as Arc<dyn ObjectStore>)
@@ -434,7 +433,7 @@ pub fn build_gcs_with(
         b = b.with_config(*k, v.clone());
     }
     if !m.no_transport_bound() {
-        b = b.with_http_connector(connector(cfg, m, o.allow_http));
+        b = b.with_http_connector(connector(cfg, m));
     }
     if let Some(c) = credentials {
         b = b.with_credentials(c);

@@ -199,7 +199,7 @@ pub struct BoundedConnector {
     pub client: ClientSettings,
 }
 
-/// What the reqwest client needs (the part of `ClientOptions` we use; that type cannot be read back). Every HTTP client of every store comes from
+/// Nata-owned reqwest bounds. The HTTP permission comes from each call's `ClientOptions`, including the library's metadata-only override. Every client comes from
 /// [`BoundedConnector::connect`], so every one of them has these settings and no redirect policy but `none`.
 #[derive(Clone, Debug)]
 pub struct ClientSettings {
@@ -207,14 +207,12 @@ pub struct ClientSettings {
     /// The client's own far backstop timeout (the per-attempt timeout is ours); `None` disables it.
     pub timeout: Option<Duration>,
     pub pool_max_idle_per_host: usize,
-    /// Plain http allowed (a local test endpoint); otherwise https only. Plain http also means HTTP/1.1 only.
-    pub allow_http: bool,
     /// MUTANT ONLY (`default_redirects`): reqwest's default policy (follow up to 10 redirects).
     pub follow_redirects: bool,
 }
 
 impl ClientSettings {
-    fn build(&self) -> object_store::Result<reqwest::Client> {
+    fn build(&self, allow_http: bool) -> object_store::Result<reqwest::Client> {
         let mut b = reqwest::Client::builder()
             .user_agent(concat!("nata-objstore/", env!("CARGO_PKG_VERSION")))
             .connect_timeout(self.connect_timeout)
@@ -224,7 +222,7 @@ impl ClientSettings {
             .no_brotli()
             .no_zstd()
             .no_deflate()
-            .https_only(!self.allow_http)
+            .https_only(!allow_http)
             .redirect(if self.follow_redirects {
                 reqwest::redirect::Policy::default()
             } else {
@@ -233,7 +231,7 @@ impl ClientSettings {
         if let Some(t) = self.timeout {
             b = b.timeout(t);
         }
-        if self.allow_http {
+        if allow_http {
             b = b.http1_only();
         }
         b.build().map_err(|_| object_store::Error::Generic {
@@ -244,8 +242,19 @@ impl ClientSettings {
 }
 
 impl HttpConnector for BoundedConnector {
-    fn connect(&self, _options: &ClientOptions) -> object_store::Result<HttpClient> {
-        let inner = HttpClient::new(self.client.build()?);
+    fn connect(&self, options: &ClientOptions) -> object_store::Result<HttpClient> {
+        // object_store creates a separate HTTP-enabled client for instance metadata.
+        // Reusing the object's TLS-only policy here blocks VM credentials before
+        // an object request is sent. Apply the permission per client, never globally.
+        let allow_http = options
+            .get_config_value(&object_store::ClientConfigKey::AllowHttp)
+            .unwrap_or_else(|| "false".into())
+            .parse::<bool>()
+            .map_err(|_| object_store::Error::Generic {
+                store: "http",
+                source: "invalid HTTP transport policy".into(),
+            })?;
+        let inner = HttpClient::new(self.client.build(allow_http)?);
         Ok(HttpClient::new(BoundedService {
             inner,
             cap: self.cap,

@@ -216,3 +216,111 @@ run sequentially if reusing the one env file. Inspect every `.exit`, both
 diagnostic traces, cleanup and leak scan even when cells miss. The real-bucket
 example intentionally keeps running later steps after a failure to retain
 cleanup and evidence. No real-store performance verdict is changed here.
+
+### Malformed-response code-path audit
+
+The single user-facing literal is `node.rs::describe(Class::BadResponse)`.
+All production constructors of that class are in `remote.rs`:
+`classify_http` maps HTTP kinds other than Timeout/Connect/Interrupted/Request
+(including Decode and Unknown) to it; `parse_status` maps unrecognized/missing
+status markers and statuses outside the specific retry/auth/not-found/identity/
+range/redirect table to it. `classify` reaches those through a Generic error's
+source chain. Provider credential errors and client header parsing errors can
+therefore produce the same wording as an actual malformed object response.
+`classify_body` changes BadResponse to retryable Truncated **only after a valid
+GetResult has been returned**, while consuming its stream. This distinction
+explains why the same underlying kind can have different retry behavior.
+
+| Input / condition | Current behavior (unchanged by the auth fix) |
+|---|---|
+| GCS token request/body failure before HEAD | Wrapped credential error reaches the generic/HTTP classifier; can become BadResponse without any object response. Metadata success JSON still has the 8 MiB transport cap. |
+| Missing ETag, Last-Modified or Content-Length; non-ASCII validator; invalid unsigned length or RFC2822 date | `object_store` `client/header.rs::header_meta` returns Generic header error, then BadResponse. Missing version is allowed if ETag pins identity; no validator reaching our own HEAD check gives NoValidator. |
+| Ranged GET status other than 206, including 200 for a full-object range | `get_range_meta` returns NotPartial, then BadResponse, without consuming a full-object body. No special 200 acceptance is added. |
+| Missing, non-text, unparsable Content-Range, unknown total `*`, overflow or returned offsets different from requested range | Dependency `parse_range`/`GetRange::as_range`/exact-range check fail; Generic errors map to BadResponse. Wrapper separately compares `res.range`, giving BadRange. |
+| Object size, ETag or supplied generation disagrees with pinned identity | Wrapper gives IdentityChanged; 412 also gives IdentityChanged. Version is sent as `generation` and If-Match as the opaque XML ETag. No JSON/XML ETag substitution. |
+| Content-Length disagrees with Content-Range/body | Dependency requires Content-Length but does not equate it to the range length. Our cumulative stream bound rejects excess bytes before extending the buffer and rejects clean short EOF as BadLength. Transport-incomplete framing becomes Truncated under bounded retries. |
+| Chunked range without Content-Length | Header metadata extraction fails closed as BadResponse before streaming, per the existing ADR amendment. Chunked framing is not permission to omit a required range length. |
+| Truncated, reset or invalid chunk framing after valid headers | Stream error becomes Truncated, at most four complete attempts; no partial append. A malformed response before GetResult stays permanent unless its HTTP kind is explicitly transient. |
+| Range past EOF / empty / beyond pinned size | Our checked half-open planner rejects before issuing a request (BadRange); server 416 also maps to BadRange. Diagnostic intentionally sends a past-EOF HTTP request outside the production planner. |
+| multipart/byteranges | Production sends exactly one bounded range per request. A multipart response normally lacks a single valid Content-Range and fails; if falsely labelled as a single range its extra framing/body still has to pass exact cumulative byte counts and Parquet validation. No multipart decoder exists. |
+| Content-Encoding / x-goog-stored-content-encoding | Reqwest automatic decompression is disabled. The dependency validates text attributes but does not use x-goog-stored-* as a replacement for Content-Length or Content-Range. GCS decompressive transcoding can omit length and ignore Range, so such responses remain rejected. No gzip evidence was saved for this run. |
+| HEAD vs GET / JSON vs XML | Production HEAD and GET both use GCS XML object URLs, with the same required metadata headers; HEAD has no body to compare to object length. JSON is used for credentials, not object HEAD. JSON object metadata is a diagnostic comparison only. |
+| Non-range success body cap | The connector counts actual streamed bytes, independent of declared length, and rejects beyond 8 MiB (LIST/token/credential). A HEAD's object Content-Length does not allocate a body of that size. Ranged reads retain their grant, exact requested-byte bound and 64 MiB request limit. |
+| Huge/invalid HTTP headers, malformed status/framing | Rejected by the bounded reqwest/hyper transport; HTTP kind determines BadResponse vs the explicit transport/truncation cases. No parser/transport bounds are loosened. |
+| Redirect or unsupported status | Redirects remain disabled for every constructed client, including metadata, and errors contain a fixed Location marker. All supported status classes keep their existing retry rules. |
+
+Primary protocol references: [GCS XML object download](https://docs.cloud.google.com/storage/docs/xml-api/get-object-download)
+and [GCS decompressive transcoding](https://docs.cloud.google.com/storage/docs/transcoding).
+These document possible server behavior, not observations of the deleted objects.
+There is no evidence requiring acceptance of chunked ranges, transcoded full
+responses, or 200 in place of 206, so the ADR's rejection policy is retained.
+
+### Verified VM-credential fix and local checks
+
+**Cause reproduced:** with the pre-fix bounded connector, the new GCE fixture
+fails the real `GoogleCloudStorageBuilder` credential provider with
+`reqwest::Builder / BadScheme`, inside `HttpErrorKind::Unknown`; the outer
+classifier maps that to BadResponse. No object response was needed. This is a
+source-level defect sufficient to explain the real VM failure across objects;
+confirmation on both real CPUs is still the parent's rerun, not a claimed cloud
+PASS. There is no demonstrated object-specific framing defect to fix.
+
+`BoundedConnector` now parses AllowHttp from each supplied `ClientOptions`.
+The library's separate metadata client can use HTTP; the normal object client
+keeps its TLS-only setting. The obsolete store-global copy is removed. Invalid
+permission values fail closed with a fixed error rather than echoing input.
+All Nata-owned timeouts, permits/grants, retries, 206/exact-range/identity/body
+checks, no-decompression behavior, error-body cap, 8 MiB success-body cap and
+redirect prohibition are unchanged. This implements the already accepted
+instance-metadata credential chain; **no ADR amendment or dependency change**
+is required, and `Cargo.lock` is unchanged.
+
+`nata-objfake::FakeImds::start_gcs` is the GCS-compatible response mode for the
+identified behavior: it requires Metadata-Flavor: Google, returns GCE token
+JSON and supports expired tokens, malformed/oversized JSON and endless-body
+faults. The regression runs credential acquisition/refresh in isolated child
+processes (no racy environment mutation), checks bearer-authenticated HEAD and
+range bytes at an explicit local object endpoint, and separately proves a
+TLS-only object client emits no plaintext request after metadata access.
+
+Checks, run sequentially with four Cargo jobs on this x86-64 development host:
+
+```sh
+export CARGO_BUILD_JOBS=4 CARGO_PROFILE_TEST_DEBUG=0 CARGO_PROFILE_DEV_DEBUG=0
+cargo fmt --all --check
+cargo clippy --locked -j 4 -p nata-objstore -p nata-objfake --all-targets --features nata-objstore/mutants -- -D warnings
+NATA_OBJ_FUZZ_CASES=24 NATA_OBJ_FUZZ_SEED=20261108 cargo test --locked -j 4 -p nata-objstore -p nata-objfake -- --test-threads=1
+bash scripts/gen-tpch.sh 0.01 /home/dev/tmp-gcs-s11/data
+bash scripts/gen-sql-check-data.sh /home/dev/tmp-gcs-s11/data
+bash scripts/object-store/check.sh /home/dev/tmp-gcs-s11/data fake
+python3 -I scripts/object-store/test-real-step.py
+bash scripts/gcp/test/test-job-chains.sh
+scripts/check-leaks.sh --staged
+```
+
+**PASS:** 45 crate/integration tests, one existing ignored manual window
+experiment; hostile-body children under the existing 1.5 GiB address-space
+limit; both fuzz targets at 24 cases / seed 20261108; formatting and Clippy
+including mutant-feature targets. Differential local/fake arms each passed
+5/5 scan, 252/252 SQL, 55/55 SQL-differences and 65/65 aggregate queries.
+The three offline evidence-boundary tests and job-chain checks passed. Disk
+free stayed above 35 GB; no stale build outputs needed deletion.
+
+Focused source mutants used the same locked `cargo test -j 4 -p nata-objstore
+--test gcs_metadata` command, each individually, restoring the source in a
+`finally` block. No header parser was changed; the changed boolean permission
+parser and transport boundary are the mutation targets:
+
+| Mutant | Expected failure | Result |
+|---|---|---|
+| Force HTTP permission false (restore metadata rejection) | VM credential acquisition fails with BadScheme | CAUGHT, test assertion, exit 101 |
+| Force HTTP permission true for every client | TLS-only object HEAD succeeds over plaintext | CAUGHT, test assertion, exit 101 |
+| Invalid permission silently defaults to false | Invalid-value canary is accepted instead of rejected | CAUGHT, test assertion, exit 101 |
+
+Both clean focused controls passed before and after the mutations. Build errors
+and timeouts were not counted as caught mutants. The original full-object 200,
+chunked-without-length, wrong-range, oversized/truncated body and redirect
+negative checks remain passing. This local trial does not replace nightly-size
+fuzz, both-CPU cloud correctness/auth/refresh checks, or the frozen performance
+gates. Scripts/diagnostics/redaction were committed as `de63e19`; the following
+implementation commit contains this verified audit and credential repair.
