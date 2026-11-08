@@ -1,0 +1,4 @@
+# gate-exits
+# No fixtures or Nata timing until symbols work. Eight logical CPUs, same committed source.
+harness python3 -m unittest discover -s scripts -p test_bench_verdict.py && python3 scripts/check-verdict-mutants.py && python3 scripts/bench-aggregate-closeout.py --self-test && python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/package0-self-test"
+profile python3 scripts/profile-precheck.py --out "$RESULTS/package0-profile"

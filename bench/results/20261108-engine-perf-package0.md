@@ -69,3 +69,49 @@ The existing recorded n4a `cpu-clock:u` rejection is retained; neither
 records their exact attempted commands/errors when run there. No working ARM
 sampling path is claimed; a failed pre-check must stop reference timing and be
 returned to the owner for a userspace-tool or alternate-machine brief.
+
+## Prepared jobs (not run)
+
+`bench/engine-perf-package0-precheck.steps` is the inexpensive event/tooling job;
+`bench/engine-perf-package0-baseline.steps` gates timing on an owner-accepted
+`.engine-perf-package0-freeze.json`, then prepares SF10 Q1 at **1/4/8 threads ×
+4 GiB / 64 MiB / 256 MiB**, first unpinned then pinned. It includes the requested
+1/8 cells and a four-thread physical-core control. On x86 the pinned four-thread
+mask selects four distinct physical cores; eight threads then uses their SMT
+siblings. ARM uses four/eight distinct cores. Every cell saves topology and
+keeps affinity as its own output dimension. Nothing edits slice 5's fixtures.
+
+Prepare shipment on this branch only after all checks/coverage gaps are settled:
+
+```sh
+cp bench/engine-perf-package0-precheck.steps heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --data-gb 30 --max-vm-hours 0.25 --run-id pkg0-precheck-x86
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --data-gb 30 --max-vm-hours 0.25 --run-id pkg0-precheck-arm
+# After pre-checks, reference evidence and the owner's explicit freeze:
+cp bench/engine-perf-package0-baseline.steps heavy.steps
+git rev-parse HEAD > .engine-perf-package0-commit
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --data-gb 150 --max-vm-hours 6 --run-id pkg0-baseline-x86
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --data-gb 150 --max-vm-hours 6 --run-id pkg0-baseline-arm
+# NOT EXECUTED. Only after local trial + separate cost approval:
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --data-gb 150 --max-vm-hours 6 --run-id pkg0-baseline-x86 --approved-usd APPROVED_X86_BOUND
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --data-gb 150 --max-vm-hours 6 --run-id pkg0-baseline-arm --approved-usd APPROVED_ARM_BOUND
+```
+
+Sizing is reasoned: eight logical CPUs preserve the frozen comparison topology;
+16 GiB fits the frozen 4 GiB caps, and stepped SF10 generation (`GEN_CHILDREN=10`)
+avoids generating the full scale in memory. 150 GB leaves room for toolchain,
+builds, SF10 Parquet, generation scratch, complete CSV and spill; six VM-hours
+bounds two nine-cell blocks with twenty timed processes per cell, gates, load
+settling and build/generation. The 1800-second per-process deadline remains a
+safety cap, not an expected latency. No automatic retries into a pass.
+
+Offline `plan` only prints repository-price bounds of $0.577 x86 / $0.755 ARM.
+These are **not current-price verification or spend approval**. A run still
+requires the current pricing check, a passing local trial of the exact shipment,
+and owner approval. `scripts/gcp/test/test-job-chains.sh`: all checks pass.
+
+**Reference preparation gap:** the full card reference manifest (all kernel,
+scan/expression, successor sort/join/window fixtures and their hashes) is not yet
+prepared. The baseline steps do not claim to freeze it; their explicit freeze
+gate refuses its absence. Successor budgets and package-0 cost certification
+remain NOT RUN, not silently accepted.
