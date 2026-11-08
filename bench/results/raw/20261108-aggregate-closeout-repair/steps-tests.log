@@ -1,0 +1,17 @@
+ok   SIGTERM stops the job with 143
+ok   the interrupted step is marked and not done
+ok   the completed step stays done
+ok   the slow step's child was killed too
+ok   the job finishes after the restart
+ok   step a ran once
+ok   the interrupted step ran twice (once interrupted, once complete)
+ok   all four shards ran once
+ok   rerunning a finished job repeats no step
+ok   SIGKILL leaves shard 2 not done
+ok   after SIGKILL the job finishes
+FAIL shards 0 and 1 ran once, shard 2 twice, shard 3 once
+ok   a failing step marks the job failed
+ok   a failing step is attempted once only
+ok   markers record the boot id
+
+1 failed

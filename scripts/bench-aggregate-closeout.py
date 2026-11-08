@@ -34,6 +34,13 @@ def cells(scale):
             for b in (4*GIB,64*MIB,256*MIB)]
 
 
+def repair_cells(scale):
+    # Original cells/queries/budgets only: repair short timers and the 4 GiB
+    # boundary, without substituting the 8 GiB mechanism control.
+    return [cell for cell in cells(scale)
+            if (scale < 100 and cell[0] == 'q1') or cell[2] == 4*GIB]
+
+
 def sql(query, data):
     if query.startswith('agg_'):
         body = (ROOT/f'spikes/hash-ops/sql/{query}.sql').read_text()
@@ -131,7 +138,7 @@ def run(a):
     a.out.mkdir(parents=True, exist_ok=False)
     if a.binary.stat().st_mode & 0o222:
         raise ValueError('use a read-only immutable binary copy')
-    matrix = cells(a.scale)
+    matrix = repair_cells(a.scale) if getattr(a, 'repair_rerun', False) else cells(a.scale)
     if a.resource_only:
         matrix=[('high_cardinality_tpch',8,{1:64*MIB,10:256*MIB,100:4*GIB}[a.scale])]
     expected = {'c3d-highcpu-8':('x86_64',8), 'n4a-highcpu-8':('aarch64',8),
@@ -261,6 +268,10 @@ def run(a):
 
 def self_test():
     assert len(cells(1))==36 and len(cells(10))==36 and len(cells(100))==5
+    assert len(repair_cells(1)) == len(repair_cells(10)) == 18
+    assert repair_cells(100) == [('high_cardinality_tpch', 8, 4*GIB)]
+    assert set(repair_cells(1)) <= set(cells(1))
+    assert all(c in repair_cells(1) for c in cells(1) if c[0] == 'q1' or c[2] == 4*GIB)
     assert {c[0] for c in cells(1)}==set(QUERIES)
     assert {c[1] for c in cells(1)}=={1,4,8}
     assert summarize([],False,True)['verdict']=='UNASSESSED'
@@ -298,7 +309,24 @@ def self_test():
         assert x['rows']!=y['rows'] and not filecmp.cmp(x['path'],y['path'],shallow=False)
         saved=json.loads((a.out/'timings.json').read_text())
         assert len(saved)==144 and all(not row['settled'] for row in saved)
-        assert len(json.loads((a.out/'summary.json').read_text()))==36
+        summaries=json.loads((a.out/'summary.json').read_text())
+        assert len(summaries)==36
+        assert all(row['target_latency_ratio'] is None for row in summaries if row['query']=='high_cardinality_tpch' and row['budget']==4*GIB)  # HC has a spill latency rule, not a newly invented resident threshold
+        a.out=base/'repair-out'; a.repair_rerun=True
+        calls.clear()
+        with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
+            assert run(a)==0
+        assert len(calls)==129
+        assert len(json.loads((a.out/'summary.json').read_text()))==18
+        assert len(json.loads((a.out/'timings.json').read_text()))==72
+        a.out=base/'repair-scale-out'; a.scale=100
+        calls.clear()
+        with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
+            assert run(a)==0
+        assert len(calls)==8
+        assert len(json.loads((a.out/'summary.json').read_text()))==1
+        assert len(json.loads((a.out/'timings.json').read_text()))==4
+        a.repair_rerun=False; a.scale=1
         a.out=base/'failed-reference-out';fail_reference[0]=True
         with patch(__name__+'.invoke',fake), patch.object(sp,'check_output',return_value='n\n1\n'), contextlib.redirect_stdout(io.StringIO()):
             run(a)
@@ -331,6 +359,7 @@ def self_test():
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--self-test',action='store_true');p.add_argument('--plan',action='store_true')
+    p.add_argument('--repair-rerun',action='store_true',help='SF1/SF10: Q1 at all frozen budgets/threads; every scale: all 4 GiB cells')
     p.add_argument('--resource-only',action='store_true',help='HC completion budget at 8 threads, for the separate low-FD control')
     p.add_argument('--fd-limit',type=int,choices=(32,1024),default=1024)
     p.add_argument('--scale',type=int,choices=(1,10,100),default=1);p.add_argument('--smoke',action='store_true')
@@ -338,8 +367,9 @@ def main():
     p.add_argument('--machine',choices=('c3d-highcpu-8','n4a-highcpu-8','c3d-highcpu-30','n4a-highcpu-32'),default='c3d-highcpu-8')
     p.add_argument('--timeout',type=int,default=1800)
     a=p.parse_args()
+    if a.repair_rerun and a.resource_only: p.error('--repair-rerun cannot be combined with --resource-only')
     if a.self_test: return self_test()
-    if a.plan: print(json.dumps(cells(a.scale),indent=2));return
+    if a.plan: print(json.dumps(repair_cells(a.scale) if a.repair_rerun else cells(a.scale),indent=2));return
     if not all((a.binary,a.commit,a.data,a.out)):p.error('run requires --binary --commit --data --out')
     return run(a)
 

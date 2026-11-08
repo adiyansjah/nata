@@ -3158,3 +3158,214 @@ All pass. **`bench-aggregate-perf1-heavy.py` is unaffected:** its
 no-pipe polling wait. The 2b local runner imports that helper; 2d/2e use the
 same method. Their recorded results are not invalidated by this timer defect.
 No Rust function changed in this timer correction; cargo-mutants is inapplicable.
+
+## 2026-11-08: narrow resident finalization at the frozen budget
+
+**Scope and cause (source trace).** The old `3 * resident > B - 3 MiB`
+guard is a conservative merge-overlap estimate, not a requirement to copy
+every final table three times. `merge` adopts the largest input table in a
+partition. For each other table, source allocations/grants remain live while
+new destination groups request their own per-entry and geometric growth/rehash
+charges. Source grants are then appended to the destination and retained
+through output. Queued source tables and up to `2 * threads + 1` completed or
+consumed result tables can coexist. Finalization converts numeric states in
+place and **moves** string extrema; it does not clone the entire table.
+The coordinator constructs at most 32 result rows at a time under its existing
+runtime/output grant, not one whole-result copy. Thus a general "2x instead
+of 3x" rule is not proved by table counts alone.
+
+**Fix.** Only if **every resident partition has at most one input table**,
+with neither prior nor forced spill, and **fixed-width aggregate output,
+HAVING and projection (including intermediate expression types)**, skip this
+overlap estimate. String keys/states/output keep the original guard: their
+result payload copies are not bounded by the fixed-width runtime workspace.
+There are then no destination insert/growth loops. Existing table grants accompany the
+adopted tables through worker queues, finalization and output; the unchanged
+runtime/output workspace was granted before scanning. Actual allocations still
+use the query MemoryManager. Multiple-table partitions retain the original
+3x guard and spill fallback; real accumulation pressure, prior spill, forced
+spill, recursive limits, disk and FD bounds stay active. This is an
+implementation refinement within accepted ADRs 0009/0010, with no amendment,
+new dependency, storage representation or budget change.
+
+A full-budget unit control checks **zero additional reservation calls** and
+unchanged held bytes during adoption, a pointer-identical 1 MiB string extremum,
+final overflow/cancellation and complete release. This string control covers
+state finalization only; it explicitly checks that string output keeps the
+spill guard. Further controls check intermediate string expressions, string
+keys/states, multi-input pressure and the exact guard boundary. The end-to-end 14,000-group fixture
+crosses the old guard, compares exact results, checks zero natural spill,
+positive forced spill, the variable-width output fallback, peak <= B and zero
+retained grants/files. Empty-global forced final spill is checked separately. Existing
+empty/global/NULL/overflow/sink-error/fault/damage suites remain regression gates.
+
+### Prepared both-CPU timer/4-GiB rerun (not executed)
+
+[Steps](../../bench/aggregate-closeout-repair.steps) retain `# gate-exits` and
+all original value/resource/noise gates. `--repair-rerun` selects **18 original
+cells per scale**: Q1 at 1/4/8 threads and 4 GiB/64 MiB/256 MiB, plus
+HC/agg_orderkey/agg_partkey at 1/4/8 threads and 4 GiB. SF1 and SF10 are both
+included (36 cells per CPU); frozen cells, full CSV, startup, five alternating
+primary/twin rounds and DuckDB gating are unchanged. This covers all short
+cells and the finalization boundary, rather than replacing 4 GiB by 8 GiB.
+The inert self-test executes the selected matrix and checks 18 summaries and
+72 smoke arms, as well as the original full matrix/failure controls.
+
+**Cap: 6 VM-hours per CPU, 150 GB data**, inherited conservatively from the
+previous 72-cell job. This smaller job has 36 cells, 720 timed processes plus
+value/resource gates, serial build, SF1/SF10 generation and settling. Long
+SF10 spill/output cells remain; this is a safety cap, not a duration forecast.
+Each process retains its 1800-second safety deadline; no automatic MET verdict
+or additional cloud spend is authorized here. Exact preparation and commands,
+after committing all source/results (fresh run suffix for each rerun):
+
+```sh
+git archive HEAD --format=tar --output=.aggregate-closeout-source.tar
+git rev-parse HEAD > .aggregate-closeout-commit
+sha256sum .aggregate-closeout-source.tar > .aggregate-closeout-source.sha256
+sha256sum -c .aggregate-closeout-source.sha256
+cp bench/aggregate-closeout-repair.steps heavy.steps
+cmp bench/aggregate-closeout-repair.steps heavy.steps
+: "${CLOSEOUT_RUN_SUFFIX:?set a fresh run suffix}"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-x86-small" --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-x86-small" --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-arm-small" --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+```
+
+The separate [SF100 repair steps](../../bench/aggregate-closeout-repair-scale.steps)
+select the remaining original **HC / 8 threads / 4 GiB** cell, so every 4 GiB
+cell is covered. These reuse the existing scale job's **4 VM-hour / 300 GB**
+cap per CPU: fixture generation is unchanged, but only one of its five original
+cells is rerun. This is a bounded prepared job, not a new performance forecast.
+Use the same committed archive/commit/checksum preparation above, then:
+
+```sh
+cp bench/aggregate-closeout-repair-scale.steps heavy.steps
+cmp bench/aggregate-closeout-repair-scale.steps heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-x86-scale" --machines c3d-highcpu-30 --max-vm-hours 4 --data-gb 300
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-x86-scale" --machines c3d-highcpu-30 --max-vm-hours 4 --data-gb 300 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-arm-scale" --machines n4a-highcpu-32 --max-vm-hours 4 --data-gb 300
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "closeout-repair-${CLOSEOUT_RUN_SUFFIX}-arm-scale" --machines n4a-highcpu-32 --max-vm-hours 4 --data-gb 300 --approved-usd "${CLOSEOUT_APPROVED_USD:?set this plan's owner-approved bound}"
+```
+
+### Optional spill-sort hash cache
+
+**Deferred; no measured gain claimed.** Comparisons in the current partition
+sort still recompute XXH3. A cached-key sort introduces O(groups) temporary
+capacity (and needs a query-charged denial/fallback path); it is not a free
+change to an in-place comparator. After restricting the resident fix to the
+proved output case, this is no longer a cheap addition to the same repair.
+It remains a separate candidate with depth/collision/membership and charged
+capacity checks and its own before/after/twin measurements. No W-A/W-B work,
+hash changes, dependency or unmeasured hash-cache claim is included here.
+
+### Local numbers: SF1, x86-64, UNSETTLED
+
+**Mechanism confirmed; timing remains UNSETTLED.** All 12 candidate/twin value gates match DuckDB exactly (1,273,748 output rows), before all 60 timed processes. Five alternating rounds, immutable release binaries, whole CLI/startup/planning/CSV, warm cache; Intel i3-1220P developer VM, 8 logical CPUs; DuckDB 2.0.0, Rust 1.99.1. No clean-VM, ARM or frozen-target pass is claimed. [Raw counters, distributions, identities and commands](raw/20261108-aggregate-closeout-repair/).
+
+| Threads | Budget | Before min / median s | After min / median s | Before-twin min / median s | Paired after/before median | Paired twin/before min–max |
+|---:|---|---:|---:|---:|---:|---:|
+| 1 | 4 GiB | 4.868 / 5.093 | 2.792 / 2.831 | 4.778 / 5.101 | 0.569 | 0.924–1.048 |
+| 1 | 64 MiB | 5.803 / 6.460 | 5.667 / 6.205 | 5.314 / 6.227 | 1.041 | 0.770–1.123 |
+| 8 | 4 GiB | 3.588 / 3.668 | 3.479 / 3.932 | 3.487 / 4.025 | 0.981 | 0.952–1.122 |
+| 8 | 64 MiB | 21.916 / 26.324 | 22.502 / 26.958 | 21.393 / 26.504 | 1.041 | 0.850–1.442 |
+
+Ratios are medians of **round-paired ratios**, not quotients of independent arm medians. Full min/quartiles/median/max for each arm and ratio remain in the raw summary.
+
+| Threads | Budget | Before spill written = read bytes | After spill written = read bytes | Before / after peak reservation bytes |
+|---:|---|---:|---:|---:|
+| 1 | 4 GiB | 248407664 | 0 | 1544266635 / 1544266635 |
+| 1 | 64 MiB | 250783272 | 250783272 | 67108864 / 67108864 |
+| 8 | 4 GiB | 248458824–248461120 | 248458824 | 1766316906 / 1766316906 |
+| 8 | 64 MiB | 465576264–509186616 | 467007128–506147776 | 67108864 / 67108864 |
+
+**Verdict:** keep the bounded one-table/fixed-width refinement; one-thread 4 GiB avoids the full final spill without changing its peak charge. **Eight-thread 4 GiB still spills**: multiple contributing tables retain the conservative guard. Both 64 MiB paths still spill under real pressure. No general merge-bound improvement or portability/target verdict is inferred. The large eight-thread 64 MiB variation (including twin ratios up to 1.442) prevents a regression/win judgment for unchanged spill paths.
+
+The untouched heavy runner also timed five inert `sleep .017` children at **19.929, 20.837, 20.614, 20.760, 20.676 ms** including startup, corroborating its piped-completion path.
+
+Exact local measurement command (both binaries must be read-only copies; build the baseline from `a710ae7`):
+
+```sh
+python3 scripts/bench-aggregate-perf2b-local.py adoption \
+  --before "$BEFORE" --after "$AFTER" --data "$SF1_DATA" --out "$LOCAL_OUT" \
+  --queries high_cardinality_tpch --budgets 4294967296 67108864 --rounds 5
+```
+
+### Final resource and verification controls
+
+**All eight independent RSS probes pass** (before/after, 1/8 threads,
+4 GiB/64 MiB): peak reservation <= B, RSS <= the measured no-data baseline +
+B + 32 MiB, spill FD peak <=32, live disk <= the explicit 4 GiB local quota,
+and zero residual query spill directories. Final-image RSS ranges from
+30,486,528 to 626,515,968 bytes. These extra probes are resource controls,
+not paired latency results. Raw observations include baseline RSS, CPU,
+wall time and all counters in `resources.json`.
+
+The measured candidate SHA-256 is
+`430ac46cdf7c641cbd63048bd418aff614cdc9bc8b6bdb5a1608ebf8ae5af2e5`.
+The final checked rebuild, after test additions, is
+`e52a35fb43e3d8ed3baf8b3cc2eb22cfcc99eace8d37294d102b136bdf62a314`.
+**Their runtime images are identical:** `.text` SHA-256 is
+`2705fe4e8373a3c5b435d49d9a50fe09e3209bb79a44d485386f3a2e307cbb65`;
+every ELF PT_LOAD byte matches after normalizing only the GNU build-id
+note descriptor. Differences are its 20 bytes and 162 bytes in the non-loaded
+`.strtab`, not executable instructions or runtime data. The independent
+[image checker](raw/20261108-aggregate-closeout-repair/verify-images.py),
+`binary-equivalence.json` and an instruction-bit-flip negative control retain
+this evidence. Differential gates and RSS probes use the final checked image;
+timing uses the immutable measured image. Baseline SHA-256:
+`f3abdab839cb7e9fb993ba5c1ddae4910047c45e398d7e8d29289f88fef87ce6`.
+
+**Checks:** locked `nata-exec` tests pass (42 unit + 62 integration tests,
+including the spill fault/damage/cancel/restart suites and child deadline
+controls), workspace fmt and workspace/all-target clippy with warnings denied
+pass. Locked release build of `nata` and `nata-check` passes. Fresh SF0.01 plus
+generated SQL data: **65/65 aggregate, 65/65 forced spill, 252/252 SQL,
+5/5 scan**. The two inert harness self-tests, three Python unittests, Python
+compile and both step-file shell syntax checks pass. The completion regression
+is tightened to **5 ms** in the final test; restoring polling fails at
+**12.524 ms** detection delay. Harness tests also reject changed values before
+any timing and check selected SF1/SF100 matrices. The HC resident cell keeps
+its existing lack of a separate resident latency threshold; no new target
+or automatic MET verdict is introduced.
+
+Job-chain tests pass. The unchanged process-resume step test failed once at
+the SIGKILL shard-count assertion, then passed on rerun; both logs are kept.
+No claim is made that this repair fixes that unrelated intermittent failure.
+
+**Focused cargo-mutants: 19 unique mutations accounted for.** Initial run:
+18 CAUGHT, one MISSED, zero timeouts/unviable. The survivor changed `||` to
+`&&` in the string-output eligibility guard. Projected string keys still hit
+the expression walker, so the initial tests did not require the separate
+key guard. Added `SELECT count(*) ... GROUP BY s` with an **unprojected** string
+key; the batch constructor must still copy that key. Passing new baseline
+and focused rerun: **1/1 CAUGHT**, zero misses/timeouts/unviable. Production
+logic did not change for this coverage fix. Initial and rerun outcomes are
+retained separately; there are no known surviving mutations in the selected
+cohort. It covers forced/prior spill, output types, multiplicity and the exact
+pressure boundary. Invalid guessed `Default`/I/O return constructors are
+excluded explicitly, not counted as catches.
+
+Commands (run serially, one local Cargo build/test at a time):
+
+```sh
+cargo test --locked -j 4 -p nata-exec
+cargo fmt --all -- --check
+cargo clippy --locked -j 4 --workspace --all-targets -- -D warnings
+cargo build --locked --release -j 4 -p nata -p nata-check
+scripts/gen-tpch.sh 0.01 "$CHECK_DATA"
+scripts/gen-sql-check-data.sh "$CHECK_DATA"
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$CHECK_DATA" --queries check/queries/aggregate
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$CHECK_DATA" --queries check/queries/aggregate --force-aggregate-spill
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$CHECK_DATA" --queries check/queries/sql
+env -u AI_AGENT target/release/nata-check --candidate target/release/nata --data "$CHECK_DATA" --queries check/queries/scan
+```
+
+Mutation commands, local paired runner and resource/image reproduction are in
+[the raw README](raw/20261108-aggregate-closeout-repair/README.md). Cargo work
+used `-j 4` and disk-backed temporary storage throughout; disk stayed above
+20 GB free (about 39 GB at final checks). Cargo.lock, dependency set and build
+profiles are unchanged. No GCP, push or merge was run. Both-CPU settled reruns
+and slice-wide closing/nightly certification remain outstanding; this repair
+does not close slice 5 or promote historical marginal verdicts.

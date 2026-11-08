@@ -1,0 +1,22 @@
+Found 19 mutants to test
+ok       Unmutated baseline in 0s build + 6s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:561:9: replace || with && in accumulate in 7s build + 7s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:560:9: replace || with && in accumulate in 8s build + 6s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:560:54: replace > with == in accumulate in 6s build + 5s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:560:54: replace > with < in accumulate in 6s build + 5s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:560:54: replace > with >= in accumulate in 7s build + 8s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:620:5: replace fixed_width_output -> bool with true in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:620:5: replace fixed_width_output -> bool with false in 6s build + 0s test
+MISSED   crates/nata-exec/src/aggregate/pipeline.rs:621:9: replace || with && in fixed_width_output in 6s build + 6s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:620:35: replace == with != in fixed_width_output in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:621:45: replace == with != in fixed_width_output in 8s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:628:20: replace == with != in fixed_width_output in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:648:5: replace resident_merge_needs_spill -> bool with true in 8s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:648:5: replace resident_merge_needs_spill -> bool with false in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:648:21: replace && with || in resident_merge_needs_spill in 8s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:648:68: replace <= with > in resident_merge_needs_spill in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:656:38: replace > with == in resident_merge_needs_spill in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:656:38: replace > with < in resident_merge_needs_spill in 6s build + 1s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:656:38: replace > with >= in resident_merge_needs_spill in 7s build + 0s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:656:64: replace << with >> in resident_merge_needs_spill in 8s build + 0s test
+19 mutants tested in 3m: 1 missed, 18 caught

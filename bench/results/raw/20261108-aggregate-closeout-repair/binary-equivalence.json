@@ -1,0 +1,41 @@
+{
+  "difference": "Every PT_LOAD byte is identical except the GNU build-id. Executable .text and runtime data are byte-identical. Remaining changes are non-allocated symbol/string tables.",
+  "measured_sha256": "430ac46cdf7c641cbd63048bd418aff614cdc9bc8b6bdb5a1608ebf8ae5af2e5",
+  "checked_sha256": "e52a35fb43e3d8ed3baf8b3cc2eb22cfcc99eace8d37294d102b136bdf62a314",
+  "elf_size": 45857432,
+  "differing_sections": [
+    {
+      "section": ".note.gnu.build-id",
+      "allocated": true,
+      "bytes_different": 20
+    },
+    {
+      "section": ".strtab",
+      "allocated": false,
+      "bytes_different": 162
+    }
+  ],
+  "normalized_load_segments": [
+    {
+      "offset": 0,
+      "size": 9328180,
+      "normalized_sha256": "0c10a9dac0235ff90a6617f2f460a9ca5ca46645a136f8c4fc09ced655e66cc3"
+    },
+    {
+      "offset": 9328192,
+      "size": 25088320,
+      "normalized_sha256": "d9f88609cc658e4803ffd7257bf070175e4493c39f6d5c60e6e09fc73f82d5d7"
+    },
+    {
+      "offset": 34416512,
+      "size": 962032,
+      "normalized_sha256": "de94c9d929b819ff30c4d721c20c617b80182af2223c608577744a9ccd020aa4"
+    },
+    {
+      "offset": 35378544,
+      "size": 11872,
+      "normalized_sha256": "a16cab2684abe342f23cc90f4c6e7f0763c34ba86c881c4b26b1a3c15a6003a3"
+    }
+  ],
+  "text_sha256": "2705fe4e8373a3c5b435d49d9a50fe09e3209bb79a44d485386f3a2e307cbb65"
+}

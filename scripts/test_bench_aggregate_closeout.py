@@ -32,7 +32,7 @@ class Completion(unittest.TestCase):
                 child_end = int((base/'err').read_text())
                 # Child reports immediately before exit: includes startup and
                 # sleep, independently exposes a polling wait's overshoot.
-                self.assertLess(ticks[-1] - child_end, 8_000_000)
+                self.assertLess(ticks[-1] - child_end, 5_000_000)
                 self.assertGreaterEqual(ticks[-1], child_end)
                 self.assertEqual(row['seconds'], (ticks[-1]-ticks[0])/1e9)
 

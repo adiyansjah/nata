@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_short_child_completion_is_within_a_few_ms (test.Completion.test_short_child_completion_is_within_a_few_ms)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/.t3/worktrees/nata/t3-a8cdd790/scripts/test_bench_aggregate_closeout.py", line 35, in test_short_child_completion_is_within_a_few_ms
+    self.assertLess(ticks[-1] - child_end, 5_000_000)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 12523758 not less than 5000000
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)

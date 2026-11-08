@@ -1,0 +1,4 @@
+Found 1 mutant to test
+ok       Unmutated baseline in 5s build + 5s test
+caught   crates/nata-exec/src/aggregate/pipeline.rs:621:9: replace || with && in fixed_width_output in 6s build + 0s test
+1 mutant tested in 17s: 1 caught

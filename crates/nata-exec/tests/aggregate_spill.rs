@@ -26,6 +26,128 @@ fn empty(base: &std::path::Path) {
 }
 
 #[test]
+fn resident_tail_must_merge_prior_spill_even_when_it_can_be_adopted() {
+    let d = dir("resident-prior-spill");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("base");
+    let p = d.join("t.parquet");
+    let id: ArrayRef = Arc::new(Int32Array::from_iter_values(0..20_000));
+    write_batch(
+        &p,
+        &RecordBatch::try_from_iter([("id", id)]).expect("batch"),
+        1024,
+    );
+    let q = format!(
+        "SELECT id, count(*) AS n, sum(id) AS s, avg(id) AS a FROM '{}' GROUP BY id",
+        p.display()
+    );
+    let mut config = cfg(&base, 1);
+    config.aggregate_force_spill = false;
+    let plan = Arc::new(plan_sql(&q, &FsSource).expect("plan").plan);
+    let mut observed = Observed::default();
+    let mut count = 0;
+    let report = execute_observed(plan, &config, None, &mut observed, |batch| {
+        count += batch.num_rows();
+        Ok(())
+    })
+    .expect("prior spill and resident tail");
+    assert_eq!(count, 20_000, "prior spilled groups must not be discarded");
+    let m = report.aggregate.expect("metrics");
+    assert!(m.spill_bytes_written > 0 && m.spill_bytes_read > 0, "{m:?}");
+    let memory = observed.aggregate_memory.expect("memory").snapshot();
+    assert!(memory.peak <= 16 << 20);
+    assert_eq!((memory.held, memory.live_grants), (0, 0));
+    empty(&base);
+}
+
+#[test]
+fn resident_empty_global_keeps_forced_final_spill() {
+    let d = dir("resident-empty-global");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("base");
+    let p = d.join("t.parquet");
+    let id: ArrayRef = Arc::new(Int32Array::from(vec![1]));
+    write_batch(
+        &p,
+        &RecordBatch::try_from_iter([("id", id)]).expect("batch"),
+        1,
+    );
+    let q = format!("SELECT count(*) AS n FROM '{}' WHERE false", p.display());
+    for force in [false, true] {
+        let mut config = cfg(&base, 1);
+        config.aggregate_force_spill = force;
+        let plan = Arc::new(plan_sql(&q, &FsSource).expect("plan").plan);
+        let mut observed = Observed::default();
+        let report = execute_observed(plan, &config, None, &mut observed, |batch| {
+            assert_eq!(batch.num_rows(), 1);
+            Ok(())
+        })
+        .expect("empty global");
+        assert_eq!(
+            report.aggregate.expect("metrics").spill_bytes_written > 0,
+            force
+        );
+        assert_eq!(run_with(&q, &config).csv.expect("values"), "n\n0\n");
+        let memory = observed.aggregate_memory.expect("memory").snapshot();
+        assert_eq!((memory.held, memory.live_grants), (0, 0));
+        empty(&base);
+    }
+}
+
+#[test]
+fn sole_resident_tables_finalize_without_spill_at_the_overlap_cliff() {
+    let d = dir("resident-adoption");
+    let base = d.join("spill");
+    std::fs::create_dir(&base).expect("base");
+    let p = d.join("t.parquet");
+    let id: ArrayRef = Arc::new(Int32Array::from_iter_values(0..14_000));
+    write_batch(
+        &p,
+        &RecordBatch::try_from_iter([("id", id)]).expect("batch"),
+        1024,
+    );
+    let q = format!(
+        "SELECT id, count(*) AS n, sum(id) AS s, avg(id) AS a FROM '{}' GROUP BY id",
+        p.display()
+    );
+    for text_output in [false, true] {
+        let q = if text_output {
+            q.replacen("SELECT id", "SELECT CAST(id AS VARCHAR) AS id", 1)
+        } else {
+            q.clone()
+        };
+        let expected = rows(run_with(&q, &ExecConfig::new(1)).csv.expect("reference"));
+        for force in [false, true] {
+            let mut config = cfg(&base, 1);
+            config.aggregate_memory_bytes = Some(32 << 20);
+            config.aggregate_force_spill = force;
+            let plan = Arc::new(plan_sql(&q, &FsSource).expect("plan").plan);
+            let mut observed = Observed::default();
+            let mut count = 0;
+            let report = execute_observed(plan, &config, None, &mut observed, |batch| {
+                count += batch.num_rows();
+                Ok(())
+            })
+            .expect("finalize");
+            assert_eq!(count, 14_000);
+            let m = report.aggregate.expect("metrics");
+            assert_eq!(m.spill_bytes_written > 0, force || text_output, "{m:?}");
+            if !force && !text_output {
+                assert!(
+                    m.peak_reservation * 3 > 32 << 20,
+                    "fixture must cross old guard: {m:?}"
+                );
+            }
+            let snapshot = observed.aggregate_memory.expect("memory").snapshot();
+            assert!(snapshot.peak <= 32 << 20);
+            assert_eq!((snapshot.held, snapshot.live_grants), (0, 0));
+            assert_eq!(rows(run_with(&q, &config).csv.expect("values")), expected);
+            empty(&base);
+        }
+    }
+}
+
+#[test]
 fn dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget() {
     use arrow_array::{Int64Array, StringArray};
     let d = dir("spill-dictionary-fresh");

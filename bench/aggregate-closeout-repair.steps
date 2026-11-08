@@ -1,0 +1,15 @@
+# gate-exits
+# Timer/adoption rerun: 18 original SF1 cells + 18 original SF10 cells per CPU.
+# Q1: 1/4/8 threads x 4 GiB/64 MiB/256 MiB. HC/orderkey/partkey: 1/4/8 x 4 GiB.
+# Prepare committed archive + commit + sha256 locally as documented in results.
+# c3d-highcpu-8 or n4a-highcpu-8, 150GB data, cap 6 VM-hours per CPU.
+# Conservative cap inherited from the full 72-cell job: build + SF10 generation
+# plus 36 cells (20 timed arms + value/resource gates and baselines each).
+# Every process retains the 1800s safety timeout; the VM cap bounds the whole job.
+prepare mkdir -p "$WORK/closeout/source" "$WORK/closeout/tmp" && cd "$SRC" && sha256sum -c .aggregate-closeout-source.sha256 && test "$(wc -c < .aggregate-closeout-commit)" -eq 41 && tar -xf .aggregate-closeout-source.tar -C "$WORK/closeout/source"
+build cd "$WORK/closeout/source" && CARGO_TARGET_DIR="$WORK/closeout/target" CARGO_INCREMENTAL=0 cargo build --locked --release -j 4 -p nata -p nata-check && cp "$WORK/closeout/target/release/nata" "$WORK/closeout/nata" && chmod a-w "$WORK/closeout/nata"
+harness cd "$WORK/closeout/source" && python3 scripts/bench-aggregate-closeout.py --self-test && python3 -m unittest discover -s scripts -p test_bench_aggregate_closeout.py && python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/closeout/self-test"
+fixtures-one cd "$WORK/closeout/source" && TMPDIR="$WORK/closeout/tmp" scripts/gen-tpch.sh 1 "$WORK/closeout/sf1"
+fixtures-ten cd "$WORK/closeout/source" && TMPDIR="$WORK/closeout/tmp" scripts/gen-tpch.sh 10 "$WORK/closeout/sf10"
+sf-one closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-8 ;; aarch64) closeout_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && python3 "$WORK/closeout/source/scripts/bench-aggregate-closeout.py" --repair-rerun --scale 1 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf1" --out "$RESULTS/closeout-repair-sf1-$(date -u +%Y%m%dT%H%M%SZ)"
+sf-ten closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-8 ;; aarch64) closeout_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && python3 "$WORK/closeout/source/scripts/bench-aggregate-closeout.py" --repair-rerun --scale 10 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf10" --out "$RESULTS/closeout-repair-sf10-$(date -u +%Y%m%dT%H%M%SZ)"

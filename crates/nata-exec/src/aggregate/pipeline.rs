@@ -556,16 +556,13 @@ pub(super) fn accumulate(
             .map_err(|_| scan_error("global partition"))?]
         .push(table);
     }
-    let resident_bytes: usize = partitions
-        .iter()
-        .flatten()
-        .map(|t| t.grants.reserved())
-        .sum();
     let partitions = if cfg.aggregate_force_spill
         || storage.registry.snapshot().bytes_written > 0
-        || resident_bytes.saturating_mul(3)
-            > shared.manager.snapshot().budget.saturating_sub(3 << 20)
-    {
+        || resident_merge_needs_spill(
+            &partitions,
+            shared.manager.snapshot().budget,
+            fixed_width_output(&shared.plan, a),
+        ) {
         // Flush remaining resident contributions through the same continuation
         // seam. No partial is published before all writes have succeeded.
         let states = partitions
@@ -614,6 +611,49 @@ pub(super) fn accumulate(
     };
     let report = ScanReport::from_stats(&scan, 0, n, n, false);
     Ok((report, partitions, storage, io))
+}
+
+/// The existing output grant covers bounded fixed-width batches/evaluator
+/// slots, not arbitrary string payload copies. Inspect intermediate expressions
+/// too: a fixed-width result can still contain a variable-width cast/CASE arm.
+fn fixed_width_output(plan: &LogicalPlan, a: &Aggregate) -> bool {
+    if a.keys.iter().any(|e| e.ty == SqlType::Varchar)
+        || a.aggregates.iter().any(|e| e.ty == SqlType::Varchar)
+    {
+        return false;
+    }
+    let mut pending: Vec<_> = plan.project.exprs.iter().map(|p| &p.expr).collect();
+    pending.extend(a.having.as_ref());
+    while let Some(expr) = pending.pop() {
+        if expr.ty == SqlType::Varchar {
+            return false;
+        }
+        pending.extend(expr.children());
+    }
+    true
+}
+
+/// A sole table is adopted by `merge`: no destination inserts or rehashes,
+/// and states finalize in place (including moved string extrema). Its grants
+/// remain live through queued results and output. Runtime/output workspace was
+/// already granted before scanning. Only fixed-width output uses this path:
+/// string payload copies during output need a separate capacity bound.
+/// Multiple inputs still retain the conservative overlap guard: sources,
+/// destination inserts/rehash and buffered results may all coexist.
+fn resident_merge_needs_spill(
+    partitions: &[Vec<Table>],
+    budget: usize,
+    fixed_output: bool,
+) -> bool {
+    if fixed_output && partitions.iter().all(|tables| tables.len() <= 1) {
+        return false;
+    }
+    let resident_bytes: usize = partitions
+        .iter()
+        .flatten()
+        .map(|t| t.grants.reserved())
+        .sum();
+    resident_bytes.saturating_mul(3) > budget.saturating_sub(3 << 20)
 }
 
 /// Resident charges, not serialized bytes. Each input row may produce a partial.
@@ -1023,6 +1063,125 @@ fn files_for_repartition(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn resident_output_workspace_excludes_strings_even_inside_fixed_width_expressions() {
+        use nata_parquet::schema::Kind;
+        use nata_sql::{plan_sql, source::MemSource};
+        let source = MemSource::new().file(
+            "t.parquet",
+            &[
+                (
+                    "id",
+                    Ok(Kind::Int {
+                        bits: 32,
+                        signed: true,
+                    }),
+                ),
+                ("s", Ok(Kind::Utf8)),
+            ],
+        );
+        for (sql, expected) in [
+            ("SELECT id, count(*) FROM 't.parquet' GROUP BY id", true),
+            ("SELECT s, count(*) FROM 't.parquet' GROUP BY s", false),
+            ("SELECT count(*) FROM 't.parquet' GROUP BY s", false),
+            ("SELECT id, min(s) FROM 't.parquet' GROUP BY id", false),
+            (
+                "SELECT CAST(id AS VARCHAR), count(*) FROM 't.parquet' GROUP BY id",
+                false,
+            ),
+            (
+                "SELECT CAST(CAST(id AS VARCHAR) AS INTEGER), count(*) FROM 't.parquet' GROUP BY id",
+                false,
+            ),
+            (
+                "SELECT id, count(*) FROM 't.parquet' GROUP BY id HAVING CAST(id AS VARCHAR) <> ''",
+                false,
+            ),
+        ] {
+            let plan = plan_sql(sql, &source).expect("plan").plan;
+            assert_eq!(
+                fixed_width_output(&plan, plan.aggregate.as_ref().expect("aggregate")),
+                expected,
+                "{sql}"
+            );
+        }
+    }
+
+    #[test]
+    fn resident_adoption_keeps_grants_without_merge_overlap() {
+        use nata_sql::{Pos, bind::AggregateExpr, types::SqlType};
+        let manager = MemoryManager::new(8 << 20, 4096, 1).expect("manager");
+        let mut a = Aggregate {
+            keys: vec![],
+            aggregates: vec![AggregateExpr {
+                name: "min".into(),
+                arg: None,
+                ty: SqlType::Varchar,
+                pos: Pos::NONE,
+            }],
+            having: None,
+        };
+        let mut table = Table::new();
+        table
+            .reserve_bytes(&manager, 6 << 20)
+            .expect("state charge");
+        let text = "x".repeat(1 << 20);
+        let ptr = text.as_ptr();
+        table
+            .groups
+            .insert(vec![], vec![State::Extreme(Atom::Str(text))]);
+        let partitions = vec![vec![], vec![table]];
+        assert!(resident_merge_needs_spill(&partitions, 8 << 20, false));
+        let before = manager.snapshot();
+        let remaining = grant(&manager, before.budget - before.progress - before.held)
+            .expect("occupy all remaining workspace");
+        let before = manager.snapshot();
+        let tables = partitions.into_iter().nth(1).expect("partition");
+        let out = merge(tables, &a, &manager, &|| false).expect("adopt");
+        assert_eq!(manager.snapshot().requests, before.requests);
+        assert_eq!(manager.snapshot().held, before.held);
+        let State::Final(Atom::Str(value)) = &out.groups.entries[0].1[0] else {
+            panic!("final string");
+        };
+        assert_eq!(value.as_ptr(), ptr, "extremum moved without a copy");
+        assert!(
+            merge(vec![out], &a, &manager, &|| true).is_err(),
+            "cancel finalization"
+        );
+        drop(remaining);
+        a.aggregates[0].name = "count".into();
+        a.aggregates[0].ty = SqlType::BigInt;
+        let mut overflow = Table::new();
+        overflow.reserve_bytes(&manager, 4096).expect("charge");
+        overflow.groups.insert(vec![], vec![State::Count(u64::MAX)]);
+        assert!(
+            merge(vec![overflow], &a, &manager, &|| false).is_err(),
+            "final overflow"
+        );
+        assert_eq!(
+            (manager.snapshot().held, manager.snapshot().live_grants),
+            (0, 0)
+        );
+    }
+
+    #[test]
+    fn resident_multiple_inputs_keep_the_pressure_fallback() {
+        let manager = MemoryManager::new(16 << 20, 4096, 1).expect("manager");
+        let mut table = Table::new();
+        table
+            .reserve_bytes(&manager, 6 << 20)
+            .expect("state charge");
+        let partitions = vec![vec![Table::new(), table]];
+        assert!(resident_merge_needs_spill(&partitions, 16 << 20, true));
+        assert!(!resident_merge_needs_spill(&partitions, 32 << 20, true));
+        let boundary = 3 * partitions[0][1].grants.reserved() + (3 << 20);
+        assert!(!resident_merge_needs_spill(&partitions, boundary, true));
+        assert!(resident_merge_needs_spill(&partitions, boundary - 1, true));
+        assert!(!resident_merge_needs_spill(&[], 0, true));
+        drop(partitions);
+        assert_eq!(manager.snapshot().held, 0);
+    }
+
     #[test]
     fn fanout_estimator_overflow_clamps_and_merge_grants() {
         assert_eq!(estimate_resident(1, 1, 3).expect("estimate"), 1216);
