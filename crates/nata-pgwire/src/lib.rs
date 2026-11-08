@@ -12,3 +12,5 @@ pub mod server;
 mod session;
 
 mod browse;
+
+mod row;

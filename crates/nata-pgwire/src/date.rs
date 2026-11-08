@@ -26,6 +26,9 @@ pub(crate) fn text(days: i32) -> Result<String, WireError> {
         format!("{y:04}-{m:02}-{d:02}")
     })
 }
+pub(crate) fn binary_days(days: i32) -> Result<[u8; 4], WireError> {
+    Ok(check(i64::from(days) - EPOCH)?.to_be_bytes())
+}
 pub(crate) fn binary(s: &str) -> Result<[u8; 4], WireError> {
     let (date, bc) = s.strip_suffix(" BC").map_or((s, false), |s| (s, true));
     let mut parts = date.split('-');

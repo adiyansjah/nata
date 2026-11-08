@@ -1228,7 +1228,7 @@ impl WireError {
     fn cancel() -> Self {
         Self::new("57014", "canceling statement due to user request")
     }
-    fn internal() -> Self {
+    pub(super) fn internal() -> Self {
         Self::new("XX000", "internal query error")
     }
     fn sql(e: nata_sql::SqlError) -> Self {
@@ -1251,7 +1251,7 @@ impl WireError {
             hint: e.suggestion.map(|s| format!("did you mean {s:?}?")),
         }
     }
-    fn scan(e: ScanError) -> Self {
+    pub(super) fn scan(e: ScanError) -> Self {
         match e.kind {
             ErrorKind::Cancelled(_) => Self::cancel(),
             ErrorKind::Eval {
@@ -1297,7 +1297,8 @@ impl FrameBoundary {
     fn complete(&self) -> bool {
         self.used == 0 && self.remaining == 0
     }
-    fn consume(&mut self, mut bytes: &[u8]) {
+    fn consume(&mut self, mut bytes: &[u8]) -> u64 {
+        let mut rows = 0;
         while !bytes.is_empty() {
             if self.remaining != 0 {
                 let n = self.remaining.min(bytes.len());
@@ -1314,9 +1315,11 @@ impl FrameBoundary {
                         u32::from_be_bytes(self.header[1..].try_into().expect("header")) as usize
                             - 4;
                     self.used = 0;
+                    rows += u64::from(self.header[0] == b'D');
                 }
             }
         }
+        rows
     }
 }
 
@@ -1511,7 +1514,6 @@ fn produce(
     } else {
         send(encode(codec::description(&fields))?)?;
     }
-    let description = codec::description(&fields).map_err(|_| WireError::internal())?;
     let mut rows = 0u64;
     let mut config = execution.clone();
     if p.plan
@@ -1525,6 +1527,7 @@ fn produce(
     config.opener = metrics.and_then(|m| m.opener.clone());
     let mut observed = nata_exec::Observed::default();
     let mut copy_error = None;
+    let mut row_scratch = Vec::new();
     let result = nata_exec::execute_observed(
         Arc::new(p.plan),
         &config,
@@ -1544,33 +1547,31 @@ fn produce(
                 if cancelled.load(Ordering::SeqCst) {
                     return Err(ScanError::new(ErrorKind::Cancelled("cancelled".into())));
                 }
-                let values = batch
-                    .columns()
-                    .iter()
-                    .zip(&fields)
-                    .map(|(a, (_, ty))| {
-                        if *ty == SqlType::Date {
-                            use arrow_array::{Array, cast::AsArray};
-                            let dates = a.as_primitive::<arrow_array::types::Date32Type>();
-                            return if dates.is_null(i) {
-                                Ok(None)
-                            } else {
-                                crate::date::text(dates.value(i)).map(Some).map_err(|e| {
-                                    ScanError::new(ErrorKind::Eval {
-                                        message: e.message,
-                                        line: 1,
-                                        column: 1,
+                let bytes = if let Some(c) = inner.as_ref().filter(|_| !binary_copy) {
+                    let values = batch
+                        .columns()
+                        .iter()
+                        .zip(&fields)
+                        .map(|(a, (_, ty))| {
+                            if *ty == SqlType::Date {
+                                use arrow_array::{Array, cast::AsArray};
+                                let dates = a.as_primitive::<arrow_array::types::Date32Type>();
+                                return if dates.is_null(i) {
+                                    Ok(None)
+                                } else {
+                                    crate::date::text(dates.value(i)).map(Some).map_err(|e| {
+                                        ScanError::new(ErrorKind::Eval {
+                                            message: e.message,
+                                            line: 1,
+                                            column: 1,
+                                        })
                                     })
-                                })
-                            };
-                        }
-                        let value = nata_parquet::csv::cell_text(a.as_ref(), i)?;
-                        value.map(|s| wire_text(*ty, s)).transpose()
-                    })
-                    .collect::<Result<Vec<_>, ScanError>>()?;
-                let bytes = if let Some(c) = &inner
-                    && !binary_copy
-                {
+                                };
+                            }
+                            let value = nata_parquet::csv::cell_text(a.as_ref(), i)?;
+                            value.map(|s| wire_text(*ty, s)).transpose()
+                        })
+                        .collect::<Result<Vec<_>, ScanError>>()?;
                     let body = crate::copy::record(&values, c.format).map_err(|e| {
                         copy_error = Some(e);
                         ScanError::new(ErrorKind::Eval {
@@ -1579,40 +1580,28 @@ fn produce(
                             column: 1,
                         })
                     })?;
-                    codec::packet(b'd', &body).map_err(|_| {
+                    row_scratch = codec::packet(b'd', &body).map_err(|_| {
                         ScanError::new(ErrorKind::Eval {
                             message: "COPY row exceeds frame limit".into(),
                             line: 1,
                             column: 1,
                         })
-                    })?
-                } else {
-                    let bytes = codec::row(&values).map_err(|_| {
-                        ScanError::new(ErrorKind::Eval {
-                            message: "unrepresentable text".into(),
-                            line: 1,
-                            column: 1,
-                        })
                     })?;
-                    let bytes = crate::binary::packet(
-                        bytes,
-                        &description,
-                        if copying { &[1] } else { result_formats },
+                    row_scratch.as_slice()
+                } else {
+                    crate::row::encode(
+                        batch,
+                        &fields,
+                        result_formats,
+                        i,
+                        copying.then_some(rows == 0),
+                        &mut row_scratch,
                     )
-                    .map_err(|_| ScanError::new(ErrorKind::Internal("wire conversion".into())))?;
-                    if copying {
-                        // PostgreSQL (and ADBC's reader) puts the header and first
-                        // tuple in the same CopyData; later messages carry one tuple.
-                        let mut body = if rows == 0 {
-                            crate::copy::HEADER.to_vec()
-                        } else {
-                            Vec::new()
-                        };
-                        body.extend_from_slice(&bytes[5..]);
-                        codec::packet(b'd', &body).expect("checked row size")
-                    } else {
-                        bytes
-                    }
+                    .map_err(|e| {
+                        copy_error = Some(e);
+                        ScanError::new(ErrorKind::Internal("wire encoding".into()))
+                    })?;
+                    row_scratch.as_slice()
                 };
                 // A single wide row may span buffers. Never increase the bridge byte bound.
                 for chunk in bytes.chunks(OUTPUT_BYTES) {
@@ -1698,7 +1687,7 @@ fn produce(
     }
     Ok(rows)
 }
-fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
+pub(super) fn wire_text(ty: SqlType, s: String) -> Result<String, ScanError> {
     Ok(match ty {
         SqlType::Boolean => {
             if s == "true" {
@@ -1829,6 +1818,77 @@ pub(crate) fn column_count(description: &[u8]) -> usize {
 #[cfg(test)]
 mod resource_error_tests {
     use super::*;
+    #[test]
+    fn frame_boundary_counts_rows_across_every_header_split() {
+        let rows = [
+            codec::row(&[Some("DDD".into())]).expect("row"),
+            codec::packet(b'C', b"DDDD\0").expect("command"),
+            codec::row(&[None]).expect("row"),
+            codec::row(&[Some("tail".into())]).expect("row"),
+        ]
+        .concat();
+        for split in 0..=rows.len() {
+            let mut boundary = FrameBoundary::default();
+            assert_eq!(
+                boundary.consume(&rows[..split]) + boundary.consume(&rows[split..]),
+                3,
+                "split {split}"
+            );
+            assert!(boundary.complete());
+        }
+        let mut boundary = FrameBoundary::default();
+        let counted: u64 = rows
+            .iter()
+            .map(|b| boundary.consume(std::slice::from_ref(b)))
+            .sum();
+        assert_eq!(counted, 3);
+        assert!(boundary.complete());
+        let wide = codec::row(&[Some("D".repeat(OUTPUT_BYTES + 20))]).expect("wide row");
+        let mut boundary = FrameBoundary::default();
+        assert_eq!(boundary.consume(&wide[..4]), 0);
+        assert_eq!(boundary.consume(&wide[4..5]), 1); // count when the header completes
+        assert!(!boundary.complete());
+        assert_eq!(boundary.consume(&wide[5..OUTPUT_BYTES]), 0);
+        assert!(!boundary.complete());
+        assert_eq!(boundary.consume(&wide[OUTPUT_BYTES..]), 0);
+        assert!(boundary.complete());
+    }
+    #[test]
+    fn typed_row_errors_keep_legacy_wire_bytes() {
+        use arrow_array::{Array, Date32Array, RecordBatch, StringArray};
+        for (ty, array, message) in [
+            (
+                SqlType::Varchar,
+                Arc::new(StringArray::from(vec!["a\0b"])) as Arc<dyn Array>,
+                "unrepresentable text",
+            ),
+            (
+                SqlType::Date,
+                Arc::new(Date32Array::from(vec![i32::MAX])) as Arc<dyn Array>,
+                "date outside PostgreSQL range (4713 BC to 5874897 AD)",
+            ),
+        ] {
+            let batch = RecordBatch::try_from_iter([("v", array)]).expect("fixture");
+            let old = WireError::scan(ScanError::new(ErrorKind::Eval {
+                message: message.into(),
+                line: 1,
+                column: 1,
+            }));
+            for fs in [vec![], vec![1]] {
+                let mut out = vec![];
+                let new = crate::row::encode(&batch, &[("v".into(), ty)], &fs, 0, None, &mut out)
+                    .expect_err("invalid value");
+                let packet = |e: &WireError| {
+                    codec::error(
+                        e.code,
+                        &e.message,
+                        e.pos.map(|p| codec::position("SELECT v", p)),
+                    )
+                };
+                assert_eq!(packet(&new), packet(&old));
+            }
+        }
+    }
     #[test]
     fn memory_limit_preserves_sqlstate_message_and_position() {
         let message =

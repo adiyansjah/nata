@@ -1,0 +1,25 @@
+Final release code, 100000 rows per format/type (2 non-NULL + 1 NULL repeated), no scan/socket/client; diagnostic only.
+Boolean [] legacy=28.821819ms typed=8.647057ms
+Boolean [1] legacy=49.023369ms typed=7.561021ms
+TinyInt [] legacy=23.658822ms typed=9.499931ms
+TinyInt [1] legacy=45.67825ms typed=13.215047ms
+SmallInt [] legacy=24.240763ms typed=9.435626ms
+SmallInt [1] legacy=32.419295ms typed=4.314615ms
+Integer [] legacy=13.646452ms typed=6.429984ms
+Integer [1] legacy=27.405482ms typed=5.315409ms
+BigInt [] legacy=16.644635ms typed=6.381577ms
+BigInt [1] legacy=31.447334ms typed=4.495876ms
+Float [] legacy=14.650766ms typed=9.29626ms
+Float [1] legacy=29.384225ms typed=11.331953ms
+Double [] legacy=15.624915ms typed=9.726207ms
+Double [1] legacy=31.414976ms typed=11.224718ms
+Decimal { precision: 38, scale: 3 } [] legacy=23.065215ms typed=14.270937ms
+Decimal { precision: 38, scale: 3 } [1] legacy=72.820221ms typed=44.866205ms
+Decimal { precision: 3, scale: 3 } [] legacy=27.448544ms typed=22.603824ms
+Decimal { precision: 3, scale: 3 } [1] legacy=71.841273ms typed=39.834847ms
+Varchar [] legacy=12.11746ms typed=4.636346ms
+Varchar [1] legacy=23.19095ms typed=4.76904ms
+Varchar [] legacy=13.060732ms typed=5.741636ms
+Varchar [1] legacy=24.633695ms typed=5.964956ms
+Date [] legacy=18.976919ms typed=13.017185ms
+Date [1] legacy=39.073989ms typed=4.212517ms

@@ -1,0 +1,22 @@
+{
+  "binary": {
+    "rows": 10000,
+    "total_heap_usage": "4,403 allocs, 4,327 frees, 23,087,438 bytes allocated",
+    "errors": "0 errors from 0 contexts (suppressed: 0 from 0)",
+    "million_row_io": [
+      "60.49    0.077687         233       333        27 futex",
+      "4.85    0.006228          16       380           sendto",
+      "0.72    0.000926           3       250           write"
+    ]
+  },
+  "text": {
+    "rows": 10000,
+    "total_heap_usage": "4,139 allocs, 4,063 frees, 22,981,332 bytes allocated",
+    "errors": "0 errors from 0 contexts (suppressed: 0 from 0)",
+    "million_row_io": [
+      "66.29    0.080435         158       506        92 futex",
+      "2.35    0.002854           7       368           sendto",
+      "0.33    0.000397           1       257           write"
+    ]
+  }
+}

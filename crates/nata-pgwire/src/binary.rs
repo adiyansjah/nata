@@ -65,7 +65,7 @@ pub(crate) fn parameters(
         })
         .collect()
 }
-fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
+pub(crate) fn encode(ty: i32, s: &str) -> Result<Vec<u8>, WireError> {
     Ok(match ty {
         16 => vec![u8::from(s == "t")],
         21 => s

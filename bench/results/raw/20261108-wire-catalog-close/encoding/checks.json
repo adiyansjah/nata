@@ -1,0 +1,90 @@
+{
+  "tests": {
+    "sha256": "76213453482ecadfe074486e42c5b8a834c06b867ba0bcafb63dbb6a193a8c8d",
+    "summary": [
+      "    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.13s",
+      "test result: ok. 23 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.09s",
+      "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+      "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+      "test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.80s",
+      "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.11s",
+      "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    ]
+  },
+  "clippy": {
+    "sha256": "062a02eefe95d0dbf06683d544024b63fac987a19b25dea3253574db3ff0f162",
+    "summary": [
+      "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.58s"
+    ]
+  },
+  "fmt": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "summary": []
+  },
+  "job-chain-stubs": {
+    "sha256": "56dcad044207ce612bb5f43c40da97175d68b0d49b30f1a5ad0fb29199f234a6",
+    "summary": [
+      "all job-chain tests passed"
+    ]
+  },
+  "mutants": {
+    "unmutated lib": "PASS",
+    "typed-text-wrong-integer": "CAUGHT",
+    "typed-row-little-endian": "CAUGHT",
+    "typed-row-null-as-empty": "CAUGHT",
+    "typed-row-ignore-format": "CAUGHT",
+    "typed-row-copy-header-every-row": "CAUGHT",
+    "typed-row-nul-unchecked": "CAUGHT",
+    "typed-row-length-wrap": "CAUGHT",
+    "typed-row-date-unchecked": "CAUGHT",
+    "unmutated protocol": "PASS",
+    "copy-null-length-zero": "CAUGHT",
+    "frame-count-split-header-missed": "CAUGHT",
+    "frame-count-non-row-as-row": "CAUGHT"
+  },
+  "harness_mutants": {
+    "small-regression-threshold-bypass": "CAUGHT",
+    "reference-noise-bypass": "CAUGHT"
+  },
+  "anchors": "108/108 apply once; full mutant sweep not run",
+  "validation_notes": [
+    "Shared mutant/main target initially reused a stale NULL-mutant test executable. cargo clean -p nata-pgwire removed the affected artifacts; the target link was removed before main checks were rerun.",
+    "Default concurrent post-clean protocol run had 1 inherited 80-ms timeout test failure under parallel compilation; unchanged assertions pass with --test-threads=1 (all 77 tests)."
+  ],
+  "oracles": {
+    "pg17-browse-closing/comparison.json": {
+      "entries": 56,
+      "sha256": "71ba5737fc7c9eeaecbb63175cf8a3015017a2b6c730a23315b71bce365cc4f5"
+    },
+    "pg17-browse-closing/helper-comparison.json": {
+      "entries": 95,
+      "sha256": "dbecf7ce727fa362cf5b2d41d7d1669718baa96055aeed47cb5738d967d76aa6"
+    },
+    "pg17-browse-closing/binary-comparison.json": {
+      "entries": 3,
+      "sha256": "b22b59db83cc91674173269d5f57e26e2e472c8d6c73b095fe9db1c8b1df88e8"
+    },
+    "pg17-browse-closing/inventory-36.json": {
+      "entries": 36,
+      "sha256": "328036d3f0ae4917a62bd1d93779a9f22399a95dc240e6048cea68c2b934d221"
+    },
+    "pg17-browse-closing/oracle-context.json": {
+      "entries": 4,
+      "sha256": "35b3295839e59019a4fb88f8729100458437f7ca9ae44f19ba2e4c89e407e23a"
+    },
+    "pg17-copy-closing/copy-comparison.json": {
+      "entries": 44,
+      "sha256": "0bd443d33d5d29b6ac35a36eef01f413e5e8b7d8697d2f2b0b1dbb1e76d8700f"
+    }
+  },
+  "release-row-controls": {
+    "sha256": "bb241b0805237d0aacaff58eac469b5fffddf65f2c179aa0439c87860173327c",
+    "summary": [
+      "    Finished `release` profile [optimized] target(s) in 9.52s",
+      "test result: ok. 23 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.79s"
+    ]
+  },
+  "staged_leak_scan": "PASS before final commit",
+  "original_matrix_exit": 1,
+  "deviation_check": "PASS with nine accepted API deviations"
+}

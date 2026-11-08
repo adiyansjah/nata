@@ -1,0 +1,24 @@
+{
+  "postgres": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+  "source": "f6157b4847e064d63d0c41a699c8584aceed2d6c47206e2c31dcf22bd437ae91",
+  "rows": 1000000,
+  "smoke": false,
+  "local_unsettled": true,
+  "timer": "perf_counter_ns + pipe EOF, timeout 180 s",
+  "limits": "warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim",
+  "clients": {
+    "psycopg": "3.3.8",
+    "pgcli": "4.7.1",
+    "adbc-driver-postgresql": "1.13.0",
+    "pyarrow": "26.0.1"
+  },
+  "java": "openjdk version \"21.0.13\" 2026-10-20\nOpenJDK Runtime Environment (build 21.0.13+9-1-deb13u2-Debian)\nOpenJDK 64-Bit Server VM (build 21.0.13+9-1-deb13u2-Debian, mixed mode, sharing)",
+  "psql": "psql (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1)",
+  "python": "3.12.16",
+  "jar_sha256": "73914527305a40cce504b0d3d90b23caf565136912d607ae8ae7c5895512332c",
+  "clock_resolution_seconds": 1e-09,
+  "binaries_sha256": {
+    "nata": "a0ea91183dab71d3818e5c75e467be384f48eaa1b1adc24bf726396534c9dbf1",
+    "baseline": "690a809bfdbf186342a1bd2c8126de9c9db529f40e6618d1d020e549549af7c2"
+  }
+}

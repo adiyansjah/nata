@@ -321,12 +321,9 @@ impl Run {
                         if !extended::same_types(&portal.statement.description, &p) { return Err(WireError::unsupported("parameter changes result type")); }
                     }
                     Event::Packet(p) | Event::Data(p) => {
-                        // Count complete DataRows across bounded chunks without collecting them.
-                        for byte in &p {
-                            let header = boundary.remaining == 0 && boundary.used == 4;
-                            boundary.consume(std::slice::from_ref(byte));
-                            if header && boundary.header[0] == b'D' { rows += 1; }
-                        }
+                        // Count headers in the same incremental whole-buffer scan used
+                        // for partial-frame safety; never rescan every payload byte.
+                        rows += boundary.consume(&p);
                         let writing = async { write.write_all(&p).await?; write.flush().await };
                         tokio::pin!(writing);
                         tokio::select! {

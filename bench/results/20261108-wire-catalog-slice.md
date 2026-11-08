@@ -1178,3 +1178,421 @@ Implementation commit: **fa988c9ba33224998b26f4b28367b2c9fdd88c4b**. Its staged 
 After the private projection-mutant check, touched the root metadata source to force fresh Cargo validation of the shared target, then reran the complete pgwire suite, clippy and fmt: **PASS again** (73 tests, one opt-in profile ignored).
 
 The fresh **actual packaged-baseline/current-release P16 smoke also PASS** (14 arms, all seven clients; still SMOKE ONLY). The earlier smoke used the repair’s pre-change release control; this second smoke checks the intended a3e8e3b paired binary. Final disk headroom was **21.46 GiB**, above the 20 GiB cleanup floor. Both staged leak scans pass; no Cargo.lock change.
+
+
+## Clean-VM retry and P16 encoding follow-up (2026-11-08)
+
+The retry measured source tree `fd7a8b970201b7a4ad7e63d1e5089933d688e167590ffd5b32983dfc2bd0697e`,
+PostgreSQL 16.15 for P16, and the packaged pre-slice baseline `a3e8e3b`.
+This follow-up starts at main `506c9ff`. Targets remain **streaming ≤1.10x
+PostgreSQL per client/worker/CPU**, paired small queries **≤1.20x pre-slice
+Nata**; PostgreSQL twin noise >5% means **UNRESOLVED**. The original coarse-timer
+results below remain recorded, not retroactively passed. R24 remains open.
+
+Raw inputs were read directly from the two local `s10retry-{arm,x86}/pulled/results`
+directories. [Compact evidence](raw/20261108-wire-catalog-close/retry/) contains
+all per-arm samples, resource records, step exits and hashes of every input
+`.txt`/`.exit` and P16 server log. No full perf traces, fixtures or VM identities
+are copied into git.
+
+| Retry step | ARM | x86 | Meaning |
+|---|---|---|---|
+| package-inputs / rerun-prerequisites / p16-builds | 0 / 0 / 0 | 0 / 0 / 0 | PASS prerequisites, no acceptance claim |
+| admission-yield-mutants | 0; all four CAUGHT | not scheduled in retry | skip-yield, yield-young, yield-two, yield-executing |
+| snapshot-cap-mutant | not scheduled in retry | 0; CAUGHT | real cap removal peak 163,766,272 > budget 163,364,864 bytes |
+| pg16-parity | not scheduled in retry | 0; PASS | projected catalog/helper parity |
+| bridge-combined-bound-2 | 0; 1/1, 2255.55 s | 0; 1/1, 3324.08 s | bound 2 only; closing bound 3 remains separate |
+| resource-gates | 1 | 1 | all **17/17 Nata verdicts per CPU** PASS (34 total); reference lock exhaustion stops remaining grid |
+| dbeaver-r24 | 1 | 1 | same five known failures; outside this work |
+| p16-streaming-and-regression | 1 | 1 | misses/noisy cells below; remains NOT MET |
+
+Resource failure is PostgreSQL `out of shared memory`, with the hint to increase
+`max_locks_per_transaction`, during the next schema drop. Main `506c9ff` already
+sizes the reference locks for the grid; this follow-up does not call the aborted
+full resource grid PASS. Large-catalog browse ratios are 0.24–0.40x PostgreSQL;
+RSS/return-to-idle/FD and admission-yield checks pass in each completed cell.
+The two retries split the focused controls; absent per-CPU steps are not inferred
+passes.
+
+Every P16 arm (ratio shown as **Nata/PG; Nata/baseline; verdict**):
+
+| Client / kind | ARM w1 | ARM w8 | x86 w1 | x86 w8 |
+|---|---|---|---|---|
+| psql / stream | 1.2416; 0.9997; NOT MET | 1.1074; 0.9998; NOT MET | 1.1946; 1.0001; NOT MET | 1.0975; 0.9185; MET |
+| psql / small | 1.3065; 1.0002; MET | 1.0001; 0.9997; MET | 0.9999; 1.0000; MET | 1.0001; 1.0000; MET |
+| raw-text / stream | 1.1903; 1.0000; NOT MET | 1.3774; 1.1593; NOT MET | 1.3795; 0.9999; UNRESOLVED | 1.3794; 1.0000; UNRESOLVED |
+| raw-text / small | 0.9997; 0.9998; MET | 1.0001; 1.0002; MET | 1.3057; 1.3054; NOT MET | 1.0003; 0.9997; MET |
+| raw-binary / stream | 1.7591; 1.0001; NOT MET | 1.7583; 1.0000; NOT MET | 1.7590; 0.9999; NOT MET | 1.9482; 1.1075; NOT MET |
+| raw-binary / small | 1.0002; 0.9997; MET | 0.9997; 0.9999; MET | 1.3057; 1.3053; NOT MET | 1.3059; 1.3055; NOT MET |
+| jdbc / stream | 1.4312; 1.0000; NOT MET | 1.4312; 1.0002; NOT MET | 1.3549; 1.0000; NOT MET | 1.3552; 0.9387; UNRESOLVED |
+| jdbc / small | 1.1601; 0.8797; MET | 1.3189; 1.0000; MET | 1.2751; 1.1208; MET | 1.1375; 1.0000; MET |
+| psycopg / stream | 1.2431; 1.0000; NOT MET | 1.2429; 1.0001; NOT MET | 1.0973; 0.9185; MET | 1.0972; 0.9186; MET |
+| psycopg / small | 1.6126; 1.0005; MET | 1.6112; 0.9999; MET | 1.6114; 1.0000; MET | 1.6113; 1.0000; MET |
+| adbc-copy / stream | 1.3626; 0.9994; NOT MET | 1.3638; 0.9194; NOT MET | 1.3235; 0.9999; NOT MET | 1.3235; 1.0003; NOT MET |
+| adbc-copy / small | 1.0002; 1.0001; MET | 1.0007; 0.9999; MET | 0.8104; 1.0000; MET | 0.8102; 1.0000; MET |
+| pgcli / stream | 1.0657; 1.0002; MET | 1.0662; 1.0001; MET | 1.0616; 1.0001; MET | 1.1230; 1.0578; NOT MET |
+| pgcli / small | 1.3058; 1.0001; MET | 1.3062; 1.0003; MET | 0.9999; 1.0000; MET | 1.0002; 0.9998; MET |
+
+### Small-arm timer diagnosis
+
+Cause: `perf_counter()` was already monotonic/high resolution. The deadline wait,
+not clock resolution, quantized completion: Python `Popen.wait(timeout)` with
+uncaptured output polls with delays up to 50 ms. Retry x86 small raw medians
+jump from about 163.9 to 214.0 ms (214/163.9 ≈ 1.3057). The baseline and current
+samples both occupy those same modes. It cannot establish a 30.5% code regression.
+
+Change: time `subprocess.run` with captured stdout/stderr, so `communicate()`
+waits for pipe readiness/EOF, and use `perf_counter_ns()` explicitly. Keep the
+180 s deadline and expose child output on failure. A deterministic test checks
+the pipe/deadline/clock path; the threshold and noise tests retain the frozen
+rules and planted >1.20 regression. A 120 ms subprocess control measures
+~165 ms on the old path versus 122–125 ms on the corrected path. This establishes
+the timer mechanism; corrected paired server samples below test for a residual
+real regression. No historical verdict is overwritten.
+
+### Encoding design and profiling boundary
+
+The retry binary profiles identify allocator/row reconstruction work on both
+CPUs (compact top-self summaries are alongside the retry evidence). PostgreSQL
+16's [`printtup.c`](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/access/common/printtup.c)
+caches each column's output/send function and reuses a per-destination message
+buffer. [`pqcomm.c`](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/backend/libpq/pqcomm.c)
+coalesces messages in its normally 8 KiB send buffer. It does not issue a socket
+write for each DataRow. Nata already batches at 64 KiB, but was formatting typed
+values as strings, allocating a values vector, building a text DataRow,
+cloning/parsing its description for binary types, reparsing values and rebuilding
+the final frame for every row. Binary COPY then copied that row into another
+body/frame. This is the on-path P14 allocation work, distinct from engine time.
+
+Candidate 1: encode binary BOOL/INT2/INT4/INT8/DATE and borrowed VARCHAR directly
+from Arrow into reusable current-row scratch; build binary COPY header/tuple in
+the same scratch. Float, decimal and TINYINT retain the existing exact conversion
+at this stage. Candidate 2: extend reused framing to text and mixed formats;
+format integers into a 20-byte stack buffer, write bool and borrowed UTF8 directly.
+Keep established float/decimal/date text spellings. Text/CSV COPY keeps its
+existing quoting/escaping encoder. The first two candidates add no dependency; the final locked-itoa amendment is below.
+
+Bounds and delivery stay unchanged: signed-i32 backend frame lengths checked
+before scratch growth, frontend frame/session/object caps, two queued 64 KiB
+buffers, producer/writer ownership and 64 KiB socket writer. Current-row scratch
+is reused, not a result spool. Backend wide rows retain their original framing;
+frontend MAX_FRAME is not applied to them. Batch boundaries still flush, as do
+suspension and protocol response boundaries. No modification to cancellation,
+admission, fetch credit, deadlines, source execution, or the socket flush policy.
+The new row code has byte comparisons against the old path for every mapped
+scalar, text/binary/mixed formats, dictionaries, NULL/empty/controls, decimal
+extremes, exceptional dates and first/subsequent COPY tuples. Existing live wide
+row/cancellation and client fixtures remain required checks.
+
+### Prepared P16-only clean-VM rerun (NOT RUN)
+
+Use the same `n4a-highcpu-16` / `c3d-highcpu-16` sizes as the retry: 16 vCPUs
+leave room for the measured eight-worker server and the client; 32 GiB-class
+memory covers the existing limits and serial `-j 4` builds. Retain the default
+30 GB data disk and **1.5 VM-hour cap per CPU**. Retry reference settling consumed
+470 s ARM / 605 s x86; the two release builds took about 5 minutes total per CPU.
+The cap leaves setup, serial debug/client preparation, all reference-first arms,
+paired baseline arms and miss profiles room to finish. If settling cannot finish
+within that cap, the run remains incomplete; no automatic extension or relaxed
+noise threshold. Parent must inspect the plan's cost bound before supplying its
+approved budget. No GCP plan/run was executed by this child.
+
+Each CPU's steps header requires `package-close.sh`: this creates the archived
+pre-slice baseline, checksum and commit files in `.slice-close/`, checks them,
+and copies the chosen steps to `heavy.steps`. The first line is the runner’s required `# gate-exits` sentinel: every nonzero
+step exit fails its resumable job step, rather than becoming a successful wrapper.
+Every step exit is a gate;
+`DEBIAN_FRONTEND=noninteractive` is explicit for all apt commands. There are no
+R24, full mutant/resource or loom jobs in these reruns. `run-oracle.sh` retains its
+small PG16 browse sanity precheck before the P16-only performance extra. P16 runs
+all seven clients, both kinds and worker counts, five alternating rounds; the
+full acceptance invocation refuses local-only filters or changed round counts.
+
+Run the ARM group, then package/run the x86 group so `heavy.steps` is not
+accidentally overwritten before upload. These are exact commands with the
+parent's run IDs and approved budget supplied only through environment variables:
+
+```sh
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/p16-rerun-arm.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --max-vm-hours 1.5
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --max-vm-hours 1.5 --run-id "$P16_ARM_RUN" --approved-usd "$P16_ARM_BUDGET"
+
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/p16-rerun-x86.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --max-vm-hours 1.5
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --max-vm-hours 1.5 --run-id "$P16_X86_RUN" --approved-usd "$P16_X86_BUDGET"
+```
+
+### Local measurements and limits
+
+All local timings use the existing P16 fixture/reader/client validation and
+reference-first order, alternate primary/twin rounds and paired current/baseline
+order, and are **LOCAL UNSETTLED**. This host is an eight-vCPU Intel i3-1220P KVM
+x86-64 environment, PostgreSQL 17.11, Python 3.12.16, the pinned matrix clients and
+JDK 21; it is neither clean-VM CPU and cannot close P16 or prove a gain on ARM.
+Early comparisons overlap local compilation and are especially noisy. No local
+run's MET suffix is an acceptance verdict. The `--local` switch skips settling
+and VM perf-on-miss collection, not correctness checks, alternation or the
+reference-noise rule. Filters/round overrides are forbidden in acceptance mode.
+
+[Local samples and counters](raw/20261108-wire-catalog-close/encoding/):
+
+| Isolated change | w1 current/previous | w8 current/previous | Verdict |
+|---|---:|---:|---|
+| typed binary/framing, raw-binary stream vs main 506c9ff | 0.5621x | 0.6014x | large local diagnostic gain; reference twins noisy, not acceptance |
+| text framing/stack integers, raw-text stream vs binary-only candidate | 0.9616x | 0.7794x | local diagnostic; w1 gain small, both-CPU confirmation pending |
+
+Counter probe: one validated 10,000-row raw query, one worker, same million-row
+Parquet fixture. Counts include process startup, planning and scan, so these are
+**whole-process totals**, not an allocator interposer inside the encoder:
+
+| Probe | main allocations | final allocations | Difference |
+|---|---:|---:|---:|
+| binary | 134,303 | 4,402 | −129,901 (−96.7%; about 13 eliminated per result row) |
+| text | 64,037 | 4,139 | −59,898 (−93.5%; about 6 eliminated per result row) |
+
+Both baseline and final Valgrind probes report zero memory errors. Native perf
+samples (five separately validated million-row reads per format) move from
+`malloc`/`realloc`/`cfree`, text vectors and binary packet reconstruction to
+`row::encode`/checked append, memcpy, frame-boundary accounting, integer formatting
+and Parquet decompression. Sampling percentages are not wall-clock ratios.
+The raw syscall probes retain **380 binary / 368 text `sendto` calls** for a
+million rows in both builds. Neither had per-row socket writes; the flush policy
+and socket buffer are deliberately unchanged. Remaining per-row primitive work
+is framing/type dispatch, length checks, writing network-endian fields and the
+single row-to-bridge copy. Float/decimal fallback still allocates current-cell
+conversion scratch, with exact byte behavior retained.
+
+Reproduce the isolated timings (save a release binary for each source variant;
+`BASE`, `BINARY`, `FINAL` below are those absolute paths, `PG` is a local synthetic
+reference DSN, and `PY`/`JAR` select the pinned client environment):
+
+```sh
+"$PY" scripts/wire-browse/p16.py --local --clients raw-binary,raw-text --workers 1,8 --rounds 5 --nata "$BINARY" --baseline "$BASE" --jar "$JAR" --work "$WORK/binary" --postgres "$PG"
+"$PY" scripts/wire-browse/p16.py --local --clients raw-text --kinds stream --workers 1,8 --rounds 5 --nata "$FINAL" --baseline "$BINARY" --jar "$JAR" --work "$WORK/text" --postgres "$PG"
+python3 scripts/wire-browse/profile-local.py --nata "$BASE" --work "$WORK/binary" --out "$WORK/base-perf" --tool perf
+python3 scripts/wire-browse/profile-local.py --nata "$FINAL" --work "$WORK/binary" --out "$WORK/final-perf" --tool perf
+python3 scripts/wire-browse/profile-local.py --nata "$BASE" --work "$WORK/binary" --out "$WORK/base-counts" --tool counts
+python3 scripts/wire-browse/profile-local.py --nata "$FINAL" --work "$WORK/binary" --out "$WORK/final-counts" --tool counts
+P16_ENCODER_PROFILE=1 cargo test --locked --release -p nata-pgwire -j 4 --lib profile_typed_rows -- --nocapture
+```
+
+The raw probe script validates every value; its heap arm reads 10,000 rows and
+its perf/syscall arms one million. Perf/Valgrind/strace data remain local; only
+compact sample/counter summaries are committed. No custom allocator, new-to-lock crate, unsafe code, engine/source optimization
+or client timing-boundary change.
+
+Additional timer evidence from the **original retry**, not the optimized code:
+[three-row server timings](raw/20261108-wire-catalog-close/retry/small-server-times.json)
+aggregate successful three-row executions across clients. On x86, current vs
+baseline medians are **13.045 / 12.908 ms (w1, 1.0107x)** and **12.932 / 12.919 ms
+(w8, 1.0010x)**; maximum current duration is 13.897 ms. ARM medians are
+9.846 / 10.157 ms and 10.068 / 10.113 ms. This cannot account for a 50 ms client
+wait-mode jump. Server durations exclude connection/client startup and are not
+a replacement denominator for the frozen end-to-end gate.
+
+The corrected-timer repeat comparing **unchanged main 506c9ff against a3e8e3b**
+(no new encoding in either arm) yields raw-binary small ratios **0.9781x / 1.0005x**
+and raw-text **0.9446x / 1.1558x** at w1/w8. The fixed 50 ms modes disappear;
+reference noise still makes three of four cells UNRESOLVED on this busy host.
+The w8 raw-binary MET suffix remains LOCAL UNSETTLED. Earlier more contended
+repeats are also retained, including a 1.3403x unresolved small arm; none is
+silently discarded or presented as a clean regression pass. The polling artifact
+is established; final small-query acceptance awaits the corrected clean-VM run.
+
+A third optimization candidate added inlining hints to the checked append/length
+helpers after they appeared in native profiles. It was **discarded**: three
+alternating local repeats did not establish a consistent gain beyond paired
+noise (last repeat current/previous: binary 1.0140x / 0.9621x, text 1.0248x /
+1.0259x at w1/w8). The inlining hints are absent from the final code; the later whole-buffer
+counting and locked-formatter changes below are separate measurements. No
+unmeasured compiler-hint speedup is claimed.
+
+### Final local checks and focused mutants
+
+- `cargo test --locked -p nata-pgwire -j 4 -- --test-threads=1`: **78 passed,
+  zero failed**, including all **38 protocol tests**. One inherited ignored
+  catalog profiling hook requires its own registry and is unrelated to these
+  tests. The new release row/profile run also passes all lib controls (23 passed; one inherited profiling hook ignored). No timeout or assertion was weakened.
+- `cargo fmt --all -- --check` and
+  `cargo clippy --locked --workspace --all-targets -j 4 -- -D warnings`: PASS.
+- `scripts/wire-skeleton/run.sh` through `matrix-verdict.sh`: **76 PASS, zero
+  FAIL, nine accepted API not-run cells**; original matrix exit **1** is retained,
+  exact deviation check PASS. Pinned pgjdbc **42.7.14**. No R24/UI claim.
+- PG17.11 browse oracle: **56/56** statements, **36/36** inventory additions,
+  **95/95** helper comparisons and **3/3** binary metadata controls PASS.
+  COPY oracle: **40/40 exact backend-byte comparisons** PASS. Raw frozen
+  execute-limit byte fixtures and declared suspended-fixture projections PASS
+  in the matrix; the existing projection limitations remain unchanged.
+- **11/11 focused Rust mutants CAUGHT**, zero SURVIVED/INVALID, with passing
+  unmutated lib/protocol controls: `typed-text-wrong-integer`,
+  `typed-row-little-endian`, `typed-row-null-as-empty`, `typed-row-ignore-format`,
+  `typed-row-copy-header-every-row`, `typed-row-nul-unchecked`,
+  `typed-row-length-wrap`, `typed-row-date-unchecked`, the retargeted inherited
+  `copy-null-length-zero`, `frame-count-split-header-missed`, and
+  `frame-count-non-row-as-row`. **108/108 registered edit anchors** apply exactly
+  once; the full sweep is not run locally.
+- Python harness tests **2/2 PASS**. Planted small-threshold bypass and
+  reference-noise bypass both fail their assertions (**2/2 CAUGHT**).
+  Python syntax, staged whitespace checks and local job-chain stubs PASS,
+  including strict exit propagation. Both CPU packages/checks validated locally;
+  no cloud calls. Only the nata-pgwire dependency list in Cargo.lock changes, adding the already
+  locked **itoa 1.0.18**; package/version/checksum identities are unchanged. No new
+  unsafe code. Disk stayed above 20 GB throughout (minimum observed over 45 GB).
+
+Validation tooling notes: sharing a target directory between private mutant
+copies and the main tree reused a stale NULL-mutant protocol executable in an
+initial post-check. Sources were unchanged. The shared target link was removed,
+`cargo clean -p nata-pgwire` purged affected artifacts, and main checks rebuilt.
+A concurrent post-clean run then hit the inherited 80 ms extended-timeout test
+under the other child's compilation; unchanged assertions pass in the complete
+serial test run above. These failed runs are not counted as passing checks.
+The copied release benchmark binaries and earlier byte oracles preceded the
+mutant cache and were unaffected. Subsequent final row/profile tests rebuilt
+from main after dropping the inlining candidate.
+
+Reproduce using a **private** mutant target directory (do not share target
+outputs with the main build):
+
+```sh
+python3 crates/nata-pgwire/mutate.py typed-text-wrong-integer typed-row-little-endian typed-row-null-as-empty typed-row-ignore-format typed-row-copy-header-every-row typed-row-nul-unchecked typed-row-length-wrap typed-row-date-unchecked --filter row --work "$WORK/mutants"
+python3 crates/nata-pgwire/mutate.py copy-null-length-zero --filter copy_ --work "$WORK/mutants"
+WORK="$WORK/clients" RESULTS="$WORK/matrix-results" CARGO_BUILD_JOBS=4 bash scripts/wire-browse/matrix-verdict.sh
+"$PY" scripts/wire-browse/compare.py --nata "$FINAL" --work "$WORK/pg17-browse" --postgres "$PG"
+"$PY" scripts/wire-skeleton/compare-copy.py --nata "$FINAL" --work "$WORK/pg17-copy"
+bash scripts/gcp/test/test-job-chains.sh
+```
+
+[Compact check outcomes, versions and original matrix](raw/20261108-wire-catalog-close/encoding/checks.json).
+Full logs, native perf files, generated Parquet, binaries and build outputs remain
+local. The prepared GCP jobs are P16-only; full deep-check/loom/fuzz/R24/resource
+closeout obligations remain with the parent.
+
+### Residual JDBC profile and two final send/text changes
+
+The encoding-only full local sweep still missed JDBC: **1.2814x PostgreSQL w1**,
+**1.3639x w8** (w8 UNRESOLVED, reference noise 7.70%). Other streaming ratios were
+below 1.10x, with several noisy references still UNRESOLVED. Its raw counters and
+all small arms are retained, not promoted to final-code or clean-VM acceptance.
+
+The follow-up JDBC profile identifies a concrete cost: `fetch.rs` called
+`FrameBoundary::consume` on **each byte**, solely to count DataRow headers for
+CommandComplete. It consumed **22.39% self CPU** in the JDBC sample, versus
+4.48% in the raw text sample. A validated million-row JDBC query made **3,144
+sendto / 7,581 futex calls**, versus 368 / 1,126 for the raw text counter probe;
+JDBC's fixed fetchSize=1000 causes repeated suspend/resume and terminal flushes.
+These counts explain workload shape, not a causal allocation of all wall time.
+
+Change 3: the existing incremental boundary scan returns the number of completed
+DataRow **headers** while skipping bodies by length. Fetch uses that one whole-
+buffer scan, rather than calling it once per byte. Counting at header completion
+matches the prior implementation exactly, even when a row body spans buffers.
+The parser state, cancellation/partial-frame rules, flushes, queue bounds and
+portal transitions do not change. A permanent test covers **every split point**,
+byte-at-a-time delivery, non-row frames containing `D`, split headers and a row
+larger than 64 KiB; both new mutants are CAUGHT.
+
+Its isolated P16 comparison against the encoding-only binary improves JDBC
+**0.9392x w1 / 0.8480x w8**, while raw controls and all small arms remain recorded
+alongside it. PostgreSQL ratios are **1.4528x / 1.1149x**, still NOT MET locally.
+Absolute PG ratios shift substantially across unsettled repeats; same-round
+Nata/baseline gains are diagnostic, not a new denominator or accepted deviation.
+
+Change 4: text integers use **itoa =1.0.18**, already in Cargo.lock, in place of
+`std::fmt` through a stack Cursor. Native text profiles show the formatting
+callbacks as remaining work. This adds one direct dependency edge only:
+old/new lockfiles have identical `(name, version, source, checksum)` sets. The
+explicit user authorization permits an already-locked crate; no new package,
+version, parser, unsafe block or formatting domain is introduced. Integer minima,
+maxima, NULL/mixed formats and complete wire bytes remain under the same tests.
+The wrong-integer mutant is retargeted and rerun against the new implementation.
+
+Reproduce these isolated changes and the residual profile:
+
+```sh
+"$PY" scripts/wire-browse/p16.py --local --clients jdbc,raw-binary,raw-text --workers 1,8 --rounds 5 --nata "$BULK_COUNT" --baseline "$ENCODING_ONLY" --jar "$JAR" --work "$WORK/frame-count" --postgres "$PG"
+"$PY" scripts/wire-browse/p16.py --local --clients jdbc,raw-text --workers 1,8 --rounds 5 --nata "$FINAL" --baseline "$BULK_COUNT" --jar "$JAR" --work "$WORK/itoa" --postgres "$PG"
+python3 scripts/wire-browse/profile-local.py --nata "$ENCODING_ONLY" --work "$WORK/frame-count" --out "$WORK/jdbc-perf" --jdbc --jar "$JAR" --tool perf
+python3 scripts/wire-browse/profile-local.py --nata "$ENCODING_ONLY" --work "$WORK/frame-count" --out "$WORK/jdbc-counts" --jdbc --jar "$JAR" --tool counts
+python3 crates/nata-pgwire/mutate.py frame-count-split-header-missed frame-count-non-row-as-row --filter frame_boundary_counts --work "$WORK/frame-mutants"
+```
+
+
+### Closing-code local P16 readout (all seven clients)
+
+This final full sweep uses the **exact closing release binary**, PostgreSQL
+17.11, five alternating rounds, both configured worker/admission settings, and
+all value checks. It is **LOCAL UNSETTLED**, not the required clean ARM/x86 PG16
+acceptance. Labels below are the frozen-rule diagnostic suffixes: M=MET,
+N=NOT MET, U=UNRESOLVED. No averaging across arms. Small-query ratios use the
+paired archived **a3e8e3b** baseline, not PostgreSQL.
+
+| Client | Stream / PG w1 | Stream / PG w8 | Stream / baseline w1 / w8 | Small / baseline w1 / w8 |
+|---|---:|---:|---:|---:|
+| psql | 0.9758 M | 0.9204 U | 0.7933 / 0.8242 | 1.1099 / 1.0065 |
+| raw-text | 0.9004 M | 0.8708 M | 0.6929 / 0.6554 | 1.0010 / 0.9715 |
+| raw-binary | 0.8144 M | 0.8315 M | 0.5107 / 0.5212 | 1.0135 / 0.9556 |
+| jdbc | 1.1596 N | 1.2937 N | 0.7807 / 0.6370 | 1.0063 / 0.9904 |
+| psycopg | 0.9834 M | 1.0213 U | 0.8458 / 0.8075 | 0.9871 / 0.9736 |
+| adbc-copy | 0.9825 U | 0.9842 M | 0.6546 / 0.7280 | 0.9982 / 0.9898 |
+| pgcli | 0.9192 M | 0.9729 M | 0.9476 / 0.8929 | 1.0234 / 0.9795 |
+
+All **14 small-query arms** have a MET diagnostic suffix; maximum paired ratio
+is **1.1099x**, below 1.20x. Streaming: **9 MET / 2 NOT MET / 3 UNRESOLVED**.
+The three unresolved streams are ADBC w1, psql w8 and psycopg w8. Their reference
+noise is preserved in the raw JSON, including psql w8 slightly above 5%.
+Every arm remains LOCAL UNSETTLED, including those with low measured twin noise.
+
+**Remaining gap after all four fixes:** JDBC is **1.1596x / 1.2937x PG**, with
+reference twin noise **1.8% / 2.3%**. That is 0.0596x / 0.1937x over the allowed
+ratio; another **5.1% / 15.0% reduction of current time** would be needed locally.
+It is nevertheless **0.7807x / 0.6370x the paired old Nata build**. The final
+profile reduces frame-boundary self CPU from **22.39% to 4.34%**. Remaining work
+includes row/frame copies, typed-column dispatch, Parquet decode, and kernel/
+scheduler wakeups around the fixed 1,000-row fetch cycle. Context-switch and
+kernel-lock symbols now lead the JDBC sample. These samples establish remaining
+costs, not a complete causal attribution of the PG ratio or proof that 1.10x is
+unattainable. Fetch-response coalescing would need its own cancellation and
+partial-frame validation before retention. No fetch-size/client workaround,
+portal policy, cap or target is changed here.
+
+Other clients show no numerical gap in this closing local sweep, but the three
+noisy cells and every ARM cell still require the prepared clean-VM run. **P16
+remains open / NOT MET.** Parent should use those runs to decide further work or
+a recorded deviation; this child approves none. Earlier misses, unresolved
+repeats and discarded hints remain in the evidence.
+
+The final whole-process allocation probe reports **4,403 binary / 4,139 text
+allocations** for 10,000 validated rows, versus **134,303 / 64,037** on main
+506c9ff (the earlier encoding-only binary count was 4,402). Both final probes
+have zero Valgrind memory errors; million-row raw send counts remain **380 / 368**.
+The final release per-type profile also runs all lib controls: **23 passed**, one
+inherited catalog profiling hook ignored. Every mapped type/format's profile is
+retained in `encoder-types-final.txt`; for example BIGINT text is 14.835→4.462 ms
+and binary 27.852→3.804 ms per 100,000 mixed NULL/non-NULL rows.
+
+Reproduce the complete final local sweep:
+
+```sh
+"$PY" scripts/wire-browse/p16.py --local --rounds 5 --nata "$FINAL" --baseline "$PRE_SLICE" --jar "$JAR" --work "$WORK/closing-p16" --postgres "$PG"
+```
+
+Final source content identity (`scripts/code-tree.sh`):
+`f6157b4847e064d63d0c41a699c8584aceed2d6c47206e2c31dcf22bd437ae91`.
+The closing context records this same identity, client/JVM/Python versions, jar
+and binary hashes. Exact commit SHA is supplied in the implementation handoff.
+Staged leak scan is required immediately before the commit. No push, merge or
+GCP operation was performed.
+
+The final JDBC counter repeat retains **3,142 sendto calls** for a million rows
+and records 8,514 futex calls (kernel wake counts vary with scheduling). Its
+10,000-row heap probe has zero Valgrind errors. The output/terminal flush policy
+has not changed; the CPU reduction removes the byte-at-a-time accounting, not
+the fetch exchanges. All closing PG17 browse/helper/binary and **40/40 COPY-byte
+oracles** were rerun against the final release binary and pass.
+
+Final checked commands remain `cargo test --locked -p nata-pgwire -j 4 --
+--test-threads=1`, workspace/all-target clippy with warnings denied, fmt, the
+matrix/deviation wrapper, PG17 oracles, both harness gate mutants and all eleven
+focused Rust mutations (wrong-integer rerun after switching to itoa). **108**
+registered anchors still apply once. No required focused mutant is missed or
+INVALID; the full sweep and both-CPU deep campaigns are not claimed.

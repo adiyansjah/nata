@@ -1,0 +1,25 @@
+Final code including locked itoa. 100000 rows per type/format, 2 non-NULL + 1 NULL repeated. Diagnostic only.
+test row::tests::profile_typed_rows ... Boolean [] legacy=13.825356ms typed=3.763542ms
+Boolean [1] legacy=22.720306ms typed=4.103524ms
+TinyInt [] legacy=12.024739ms typed=4.353628ms
+TinyInt [1] legacy=22.874165ms typed=7.290585ms
+SmallInt [] legacy=12.040827ms typed=4.341621ms
+SmallInt [1] legacy=22.201985ms typed=3.778813ms
+Integer [] legacy=11.780949ms typed=4.235551ms
+Integer [1] legacy=23.534445ms typed=4.008393ms
+BigInt [] legacy=14.835028ms typed=4.461664ms
+BigInt [1] legacy=27.851913ms typed=3.80396ms
+Float [] legacy=12.595281ms typed=7.78268ms
+Float [1] legacy=24.684036ms typed=9.362046ms
+Double [] legacy=12.722502ms typed=8.187557ms
+Double [1] legacy=25.206362ms typed=9.183532ms
+Decimal { precision: 38, scale: 3 } [] legacy=19.726435ms typed=12.437158ms
+Decimal { precision: 38, scale: 3 } [1] legacy=62.633743ms typed=36.698628ms
+Decimal { precision: 3, scale: 3 } [] legacy=23.973068ms typed=18.468936ms
+Decimal { precision: 3, scale: 3 } [1] legacy=62.728147ms typed=34.015428ms
+Varchar [] legacy=10.711935ms typed=4.123213ms
+Varchar [1] legacy=20.21753ms typed=4.222186ms
+Varchar [] legacy=11.147854ms typed=4.988836ms
+Varchar [1] legacy=21.495085ms typed=5.135354ms
+Date [] legacy=16.744814ms typed=11.623298ms
+Date [1] legacy=31.639291ms typed=3.746862ms

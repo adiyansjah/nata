@@ -1,0 +1,150 @@
+{
+  "header": [
+    "#",
+    "# Samples: 1K of event 'cpu-clock'",
+    "# Event count (approx.): 1354354353",
+    "#"
+  ],
+  "top": [
+    {
+      "self_pct": 22.39,
+      "symbol": "_RNvMs6_NtCsdtFBbi7whSN_11nata_pgwire6serverNtB5_13FrameBoundary7consume"
+    },
+    {
+      "self_pct": 8.5,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_pct": 7.02,
+      "symbol": "_RNCNvNtCsdtFBbi7whSN_11nata_pgwire6server12session_loop0Cs1MY33sDcyrL_4nata"
+    },
+    {
+      "self_pct": 5.4,
+      "symbol": "_RNvNtCsdtFBbi7whSN_11nata_pgwire3row6encode"
+    },
+    {
+      "self_pct": 4.29,
+      "symbol": "finish_task_switch.isra.0"
+    },
+    {
+      "self_pct": 3.84,
+      "symbol": "_RNvNtCsdtFBbi7whSN_11nata_pgwire3row6append"
+    },
+    {
+      "self_pct": 3.33,
+      "symbol": "_RNvXse_NtNtNtCskADBYZwJmSU_4core3fmt3num3impxNtB9_7Display3fmt"
+    },
+    {
+      "self_pct": 2.66,
+      "symbol": "_raw_spin_unlock_irqrestore"
+    },
+    {
+      "self_pct": 2.59,
+      "symbol": "_RNvMNtCsbeHGKYn9rKv_4snap10decompressNtB2_7Decoder10decompress"
+    },
+    {
+      "self_pct": 2.29,
+      "symbol": "_RNCNvNtCsdtFBbi7whSN_11nata_pgwire6server7producesb_0B5_.llvm.16158023857612872018"
+    },
+    {
+      "self_pct": 2.22,
+      "symbol": "_raw_spin_unlock_irq"
+    },
+    {
+      "self_pct": 1.63,
+      "symbol": "_RNvNtCskADBYZwJmSU_4core3fmt5write"
+    },
+    {
+      "self_pct": 1.18,
+      "symbol": "_RINvYINtNtCsgFX3jaOk65H_5alloc4sync3ArcDNtNtCsdDqXwgPRy3g_11arrow_array5array5ArrayEL_ENtNtBG_4cast7AsArray12as_primitiveNtNtBG_5types9Int64TypeECsdtFBbi7whSN_11nata_pgwire"
+    },
+    {
+      "self_pct": 1.11,
+      "symbol": "_RNvXNtCskADBYZwJmSU_4core3anyINtNtNtCsdDqXwgPRy3g_11arrow_array5array15primitive_array14PrimitiveArrayNtNtBy_5types9Int64TypeENtB2_3Any7type_idCsjBtYkQzQ9Zt_7parquet"
+    },
+    {
+      "self_pct": 0.81,
+      "symbol": "_RNvYINtNtNtCskADBYZwJmSU_4core2io6cursor6CursorQShENtNtB7_5write5Write9write_fmtCsdtFBbi7whSN_11nata_pgwire"
+    },
+    {
+      "self_pct": 0.81,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_pct": 0.74,
+      "symbol": "_RNvMsa_NtCskADBYZwJmSU_4core3fmtNtB5_9Formatter12pad_integral"
+    },
+    {
+      "self_pct": 0.74,
+      "symbol": "_RNvNtCsdtFBbi7whSN_11nata_pgwire3row7integer"
+    },
+    {
+      "self_pct": 0.74,
+      "symbol": "_RNvNvMsa_NtCskADBYZwJmSU_4core3fmtNtB7_9Formatter12pad_integral12write_prefix"
+    },
+    {
+      "self_pct": 0.74,
+      "symbol": "_RNvXNvNtNtCskADBYZwJmSU_4core2io5write17default_write_fmtINtB2_7AdapterINtNtB6_6cursor6CursorQShEENtNtB8_3fmt5Write9write_strCsdtFBbi7whSN_11nata_pgwire.llvm.6005312197256070609"
+    },
+    {
+      "self_pct": 0.67,
+      "symbol": "_RNvMs_NtNtNtNtCs37JPO8Y6Arp_5tokio7runtime9scheduler12multi_thread6workerNtB4_7Context3run"
+    },
+    {
+      "self_pct": 0.67,
+      "symbol": "_RNvYINtNtNtCsdDqXwgPRy3g_11arrow_array5array15primitive_array14PrimitiveArrayNtNtB9_5types24TimestampMicrosecondTypeENtB7_5Array7is_nullCsjBtYkQzQ9Zt_7parquet"
+    },
+    {
+      "self_pct": 0.67,
+      "symbol": "__syscall_cancel_arch"
+    },
+    {
+      "self_pct": 0.67,
+      "symbol": "do_syscall_64"
+    },
+    {
+      "self_pct": 0.59,
+      "symbol": "_RNvMs_NtNtCsdDqXwgPRy3g_11arrow_array5array15primitive_arrayINtB4_14PrimitiveArrayNtNtB8_5types9Int64TypeE5valueCsdtFBbi7whSN_11nata_pgwire"
+    },
+    {
+      "self_pct": 0.59,
+      "symbol": "nft_do_chain"
+    },
+    {
+      "self_pct": 0.52,
+      "symbol": "_RNvXs1_NtNtCsdDqXwgPRy3g_11arrow_array5array15primitive_arrayINtB5_14PrimitiveArrayNtNtB9_5types9Int64TypeENtB7_5Array6as_anyCsjBtYkQzQ9Zt_7parquet"
+    },
+    {
+      "self_pct": 0.44,
+      "symbol": "_RNvXNtCsdDqXwgPRy3g_11arrow_array5arrayINtNtCsgFX3jaOk65H_5alloc4sync3ArcDNtB2_5ArrayEL_EB1a_7is_null"
+    },
+    {
+      "self_pct": 0.44,
+      "symbol": "__internal_syscall_cancel"
+    },
+    {
+      "self_pct": 0.44,
+      "symbol": "__vdso_clock_gettime"
+    },
+    {
+      "self_pct": 0.37,
+      "symbol": "_RNvMsf_NtNtCs37JPO8Y6Arp_5tokio4sync6notifyNtB5_15NotifiedProject13poll_notified"
+    },
+    {
+      "self_pct": 0.37,
+      "symbol": "_RNvNtCsdtFBbi7whSN_11nata_pgwire3row9frame_len"
+    },
+    {
+      "self_pct": 0.37,
+      "symbol": "_copy_to_iter"
+    },
+    {
+      "self_pct": 0.37,
+      "symbol": "fdget"
+    },
+    {
+      "self_pct": 0.37,
+      "symbol": "syscall"
+    }
+  ]
+}

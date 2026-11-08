@@ -1,0 +1,300 @@
+{
+  "arm/raw-binary": [
+    {
+      "self_pct": 30.58,
+      "symbol": "0x0000000000137474"
+    },
+    {
+      "self_pct": 12.41,
+      "symbol": "realloc"
+    },
+    {
+      "self_pct": 7.97,
+      "symbol": "malloc"
+    },
+    {
+      "self_pct": 5.38,
+      "symbol": "nata_pgwire::binary::packet"
+    },
+    {
+      "self_pct": 4.0,
+      "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter"
+    },
+    {
+      "self_pct": 3.2,
+      "symbol": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>"
+    },
+    {
+      "self_pct": 2.78,
+      "symbol": "cfree"
+    },
+    {
+      "self_pct": 2.04,
+      "symbol": "nata_pgwire::server::produce::{closure}"
+    },
+    {
+      "self_pct": 1.8,
+      "symbol": "0x000000000008fb50"
+    },
+    {
+      "self_pct": 1.72,
+      "symbol": "<usize>::_fmt"
+    },
+    {
+      "self_pct": 1.63,
+      "symbol": "<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::ite"
+    },
+    {
+      "self_pct": 1.55,
+      "symbol": "nata_pgwire::codec::row"
+    },
+    {
+      "self_pct": 1.51,
+      "symbol": "0x000000000008ff24"
+    },
+    {
+      "self_pct": 1.38,
+      "symbol": "0x0000000000091b44"
+    },
+    {
+      "self_pct": 1.14,
+      "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+    }
+  ],
+  "arm/raw-text": [
+    {
+      "self_pct": 44.27,
+      "symbol": "<arrow_array::array::primitive_array::PrimitiveArray<arrow_array::types::TimestampMicrosecondType> as arrow_array::array::Array>::is_null"
+    },
+    {
+      "self_pct": 28.12,
+      "symbol": "0x0000000000137474"
+    },
+    {
+      "self_pct": 8.11,
+      "symbol": "0x000000000009d364"
+    },
+    {
+      "self_pct": 6.96,
+      "symbol": "nata_parquet::csv::cell"
+    },
+    {
+      "self_pct": 6.94,
+      "symbol": "realloc"
+    },
+    {
+      "self_pct": 1.2,
+      "symbol": "<nata_pgwire::server::FrameBoundary>::consume"
+    }
+  ],
+  "arm/adbc-copy": [
+    {
+      "self_pct": 34.09,
+      "symbol": "malloc"
+    },
+    {
+      "self_pct": 13.19,
+      "symbol": "realloc"
+    },
+    {
+      "self_pct": 10.76,
+      "symbol": "core::str::converts::from_utf8"
+    },
+    {
+      "self_pct": 9.8,
+      "symbol": "0x0000000000137474"
+    },
+    {
+      "self_pct": 7.25,
+      "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter"
+    },
+    {
+      "self_pct": 4.39,
+      "symbol": "nata_pgwire::binary::packet"
+    },
+    {
+      "self_pct": 3.4,
+      "symbol": "nata_pgwire::server::produce::{closure}"
+    },
+    {
+      "self_pct": 3.39,
+      "symbol": "0x000000000008fb04"
+    },
+    {
+      "self_pct": 3.39,
+      "symbol": "0x000000000008fac0"
+    },
+    {
+      "self_pct": 3.37,
+      "symbol": "cfree"
+    },
+    {
+      "self_pct": 3.33,
+      "symbol": "0x000000000008fac4"
+    }
+  ],
+  "x86/raw-binary": [
+    {
+      "self_pct": 7.54,
+      "symbol": "nata_pgwire::binary::packet"
+    },
+    {
+      "self_pct": 7.39,
+      "symbol": "realloc"
+    },
+    {
+      "self_pct": 6.18,
+      "symbol": "malloc"
+    },
+    {
+      "self_pct": 5.81,
+      "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter"
+    },
+    {
+      "self_pct": 5.66,
+      "symbol": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>"
+    },
+    {
+      "self_pct": 5.43,
+      "symbol": "cfree"
+    },
+    {
+      "self_pct": 5.05,
+      "symbol": "nata_pgwire::server::produce::{closure}"
+    },
+    {
+      "self_pct": 4.6,
+      "symbol": "core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::arra"
+    },
+    {
+      "self_pct": 3.24,
+      "symbol": "nata_pgwire::codec::row"
+    },
+    {
+      "self_pct": 2.94,
+      "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+    },
+    {
+      "self_pct": 2.56,
+      "symbol": "nata_pgwire::server::wire_text"
+    },
+    {
+      "self_pct": 2.34,
+      "symbol": "<nata_pgwire::server::FrameBoundary>::consume"
+    },
+    {
+      "self_pct": 2.34,
+      "symbol": "<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::ite"
+    },
+    {
+      "self_pct": 2.11,
+      "symbol": "0x00000000000961c3"
+    },
+    {
+      "self_pct": 2.04,
+      "symbol": "core::str::converts::from_utf8"
+    },
+    {
+      "self_pct": 1.73,
+      "symbol": "<snap::decompress::Decoder>::decompress"
+    },
+    {
+      "self_pct": 1.73,
+      "symbol": "__rustc::__rdl_realloc"
+    },
+    {
+      "self_pct": 1.58,
+      "symbol": "0x000000000016d835"
+    },
+    {
+      "self_pct": 1.36,
+      "symbol": "__rustc::__rust_alloc"
+    },
+    {
+      "self_pct": 1.28,
+      "symbol": "nata_parquet::csv::cell"
+    }
+  ],
+  "x86/adbc-copy": [
+    {
+      "self_pct": 8.23,
+      "symbol": "malloc"
+    },
+    {
+      "self_pct": 7.56,
+      "symbol": "nata_pgwire::binary::packet"
+    },
+    {
+      "self_pct": 7.56,
+      "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::array::Array>>, core::slice::iter::Iter"
+    },
+    {
+      "self_pct": 7.03,
+      "symbol": "realloc"
+    },
+    {
+      "self_pct": 6.5,
+      "symbol": "nata_pgwire::server::produce::{closure}"
+    },
+    {
+      "self_pct": 6.44,
+      "symbol": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>"
+    },
+    {
+      "self_pct": 4.91,
+      "symbol": "cfree"
+    },
+    {
+      "self_pct": 4.58,
+      "symbol": "core::iter::adapters::try_process::<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<alloc::sync::Arc<dyn arrow_array::arra"
+    },
+    {
+      "self_pct": 3.19,
+      "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+    },
+    {
+      "self_pct": 2.26,
+      "symbol": "nata_pgwire::codec::row"
+    },
+    {
+      "self_pct": 2.12,
+      "symbol": "<nata_pgwire::server::FrameBoundary>::consume"
+    },
+    {
+      "self_pct": 2.12,
+      "symbol": "<alloc::vec::Vec<core::option::Option<alloc::string::String>> as alloc::vec::spec_from_iter::SpecFromIter<core::option::Option<alloc::string::String>, core::ite"
+    },
+    {
+      "self_pct": 2.06,
+      "symbol": "nata_pgwire::server::wire_text"
+    },
+    {
+      "self_pct": 2.06,
+      "symbol": "0x00000000000965ce"
+    },
+    {
+      "self_pct": 1.66,
+      "symbol": "__rustc::__rdl_realloc"
+    },
+    {
+      "self_pct": 1.46,
+      "symbol": "<snap::decompress::Decoder>::decompress"
+    },
+    {
+      "self_pct": 1.13,
+      "symbol": "nata_parquet::csv::cell"
+    },
+    {
+      "self_pct": 1.13,
+      "symbol": "0x00000000000961c3"
+    },
+    {
+      "self_pct": 1.06,
+      "symbol": "core::str::converts::from_utf8"
+    },
+    {
+      "self_pct": 1.06,
+      "symbol": "__rustc::__rust_dealloc"
+    }
+  ]
+}

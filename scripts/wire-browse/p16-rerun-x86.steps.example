@@ -1,0 +1,16 @@
+# gate-exits
+# P16 only; LOCAL packaging is required before orchestrate.sh:
+# bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/p16-rerun-x86.steps.example
+# Includes .slice-close/baseline.{tar.gz,sha256,commit} in the source upload.
+# Intended machine c3d-highcpu-16; cap 1.5 VM-hours, parent cost approval required.
+# Serial steps; every exit is a gate. No matrix/deviation masking of P16 exits.
+package-inputs bash scripts/wire-browse/check-close-package.sh
+machine-context bash -euc 'test "$(uname -m)" = x86_64; uname -m; lscpu; rustc --version; cargo --version; ulimit -a'
+apt-index sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq
+p16-deps sudo DEBIAN_FRONTEND=noninteractive apt-get install -y time linux-perf default-jdk-headless postgresql-15 postgresql-client-15 libpq-dev python3-venv
+pg16-install bash scripts/wire-browse/install-pg16.sh
+psql-version bash scripts/wire-browse/install-matrix-client.sh
+p16-clients bash scripts/wire-skeleton/run.sh --prepare-only
+p16-harness-tests "$WORK/wire-skeleton-venv/bin/python" -m unittest discover -s scripts/wire-browse -p test_p16.py
+p16-builds bash scripts/wire-browse/prepare-p16.sh
+p16-streaming-and-regression ORACLE_EXTRA=p16 PG_MAJOR=16 bash scripts/wire-browse/run-oracle.sh

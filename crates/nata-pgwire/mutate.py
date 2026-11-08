@@ -157,7 +157,7 @@ MUTANTS.update({
 MUTANTS.update({
  'copy-wrong-signature': ('crates/nata-pgwire/src/copy.rs', 'PGCOPY', 'PGCOPX', 'protocol'),
  'copy-missing-trailer': (SERVER, 'tail.extend_from_slice(crate::copy::TRAILER);', 'tail.extend_from_slice(b"");', 'protocol'),
- 'copy-null-length-zero': (CODEC, 'None => b.extend((-1i32).to_be_bytes())', 'None => b.extend(0i32.to_be_bytes())', 'protocol'),
+ 'copy-null-length-zero': ('crates/nata-pgwire/src/row.rs', 'append(out, &(-1i32).to_be_bytes())?', 'append(out, &(0i32).to_be_bytes())?', 'protocol'),
  'numeric-weight-plus-one': ('crates/nata-pgwire/src/binary.rs', 'let mut weight = (whole.len().div_ceil(4) as i16) - 1;', 'let mut weight = whole.len().div_ceil(4) as i16;', 'protocol'),
  'copy-date-epoch-1970': ('crates/nata-pgwire/src/date.rs', 'const EPOCH: i64 = 10_957;', 'const EPOCH: i64 = 0;', 'protocol'),
  'copy-without-backpressure': (SERVER, 'mpsc::channel(BRIDGE_BUFFERS)', 'mpsc::channel(if copying { 1_100_000 } else { BRIDGE_BUFFERS })', 'protocol'),
@@ -206,6 +206,19 @@ MUTANTS.update({
  'portal-timeout-restarts': (LIFECYCLE, 'if self.deadline.is_none() {', 'if true {', 'portal_loom'),
  'portal-error-drain-lost': (LIFECYCLE, 'pub(super) fn ignoring(&self) -> bool {\n        self.failed', 'pub(super) fn ignoring(&self) -> bool {\n        false', 'portal_loom'),
  'portal-sync-keeps-error': (LIFECYCLE, 'self.failed = false;', '/* error not reset */', 'portal_loom'),
+})
+
+MUTANTS.update({
+ 'frame-count-split-header-missed': (SERVER, "rows += u64::from(self.header[0] == b'D');", "rows += u64::from(self.header[0] == b'D' && n == 5);", 'lib'),
+ 'frame-count-non-row-as-row': (SERVER, "rows += u64::from(self.header[0] == b'D');", "rows += 1;", 'lib'),
+ 'typed-text-wrong-integer': ('crates/nata-pgwire/src/row.rs', 'digits.format(value).as_bytes()', 'digits.format(value.wrapping_add(1)).as_bytes()', 'lib'),
+ 'typed-row-little-endian': ('crates/nata-pgwire/src/row.rs', '&array.as_primitive::<Int64Type>().value(row).to_be_bytes()', '&array.as_primitive::<Int64Type>().value(row).to_le_bytes()', 'lib'),
+ 'typed-row-null-as-empty': ('crates/nata-pgwire/src/row.rs', 'append(out, &(-1i32).to_be_bytes())?', 'append(out, &(0i32).to_be_bytes())?', 'lib'),
+ 'typed-row-ignore-format': ('crates/nata-pgwire/src/row.rs', 'formats[0] == 1', 'false', 'lib'),
+ 'typed-row-copy-header-every-row': ('crates/nata-pgwire/src/row.rs', 'if copy_first == Some(true) {', 'if copy_first.is_some() {', 'lib'),
+ 'typed-row-nul-unchecked': ('crates/nata-pgwire/src/row.rs', "if s.contains('\\0') {", 'if false {', 'lib'),
+ 'typed-row-length-wrap': ('crates/nata-pgwire/src/row.rs', 'i32::try_from(total.checked_sub(1).ok_or_else(limit)?).map_err(|_| limit())', 'Ok(total.wrapping_sub(1) as i32)', 'lib'),
+ 'typed-row-date-unchecked': ('crates/nata-pgwire/src/date.rs', 'Ok(check(i64::from(days) - EPOCH)?.to_be_bytes())', 'Ok(days.wrapping_sub(EPOCH as i32).to_be_bytes())', 'lib'),
 })
 
 def fingerprint():

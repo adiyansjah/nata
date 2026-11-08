@@ -2,6 +2,9 @@
 """Same-VM reference-first performance gate; smoke has no acceptance verdict."""
 import argparse
 import json
+import importlib.metadata as metadata
+import hashlib
+import platform
 import os
 from pathlib import Path
 import socket
@@ -11,6 +14,19 @@ import time
 import psycopg
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+def timed_command(command):
+    # With no captured pipes, Popen.wait(timeout) polls in up-to-50 ms steps.
+    # communicate uses pipe readiness/EOF instead; keep the deadline and measure
+    # process completion with the monotonic high-resolution clock.
+    start=time.perf_counter_ns()
+    try:
+        sp.run(command,check=True,timeout=180,stdout=sp.PIPE,stderr=sp.PIPE)
+    except sp.CalledProcessError as e:
+        os.sys.stderr.buffer.write(e.stdout or b'')
+        os.sys.stderr.buffer.write(e.stderr or b'')
+        raise
+    return (time.perf_counter_ns()-start)/1e9
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -53,7 +69,8 @@ def client(a):
 def main(a):
     a.work=a.work.resolve();a.work.mkdir(parents=True,exist_ok=True)
     if a.client:return client(a)
-    clients=['psql','raw-text','raw-binary','jdbc','psycopg','adbc-copy','pgcli']
+    assert a.local or a.smoke or not any([a.clients, a.kinds, a.workers, a.rounds]), 'acceptance requires the full frozen matrix and five rounds'
+    clients=a.clients.split(',') if a.clients else ['psql','raw-text','raw-binary','jdbc','psycopg','adbc-copy','pgcli']
     a.rows=100 if a.smoke else 1000000
     raw=(ROOT/'scripts/wirecapture/raw.rs').read_text().replace('127.0.0.1:55432','127.0.0.1:{}').replace('TcpStream::connect("127.0.0.1:{}")','TcpStream::connect(format!("127.0.0.1:{}",std::env::args().nth(2).unwrap()))').replace('assert_eq!(n,1000000)','assert_eq!(n,std::env::args().nth(3).unwrap().parse::<i64>().unwrap())')
     # Reader query is bounded identically for stream and small-query arms.
@@ -72,14 +89,21 @@ def main(a):
         c.execute('ALTER DATABASE nata SET synchronize_seqscans = off')
         c.execute('DROP TABLE IF EXISTS million');c.execute('CREATE TABLE million(v bigint)')
         c.execute(f'INSERT INTO million SELECT generate_series(0,{a.rows-1})::bigint')
-        context=dict(postgres=c.execute('SELECT version()').fetchone()[0],source=sp.check_output(['bash','scripts/code-tree.sh'],cwd=ROOT,text=True).strip(),rows=a.rows,smoke=a.smoke,limits='warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim')
+        context=dict(postgres=c.execute('SELECT version()').fetchone()[0],source=sp.check_output(['bash','scripts/code-tree.sh'],cwd=ROOT,text=True).strip(),rows=a.rows,smoke=a.smoke,local_unsettled=a.local,timer='perf_counter_ns + pipe EOF, timeout 180 s',limits='warm, loopback, client process startup and validation included; PostgreSQL heap vs Nata Parquet end-to-end, no pure codec claim')
+    context['clients']={name:metadata.version(name) for name in ['psycopg','pgcli','adbc-driver-postgresql','pyarrow']}
+    context['java']=sp.check_output(['java','-version'],stderr=sp.STDOUT,text=True).strip()
+    context['psql']=sp.check_output(['psql','--version'],text=True).strip()
+    context['python']=platform.python_version()
+    context['jar_sha256']=hashlib.sha256(a.jar.read_bytes()).hexdigest()
+    context['clock_resolution_seconds']=time.get_clock_info('perf_counter').resolution
+    context['binaries_sha256']={label:hashlib.sha256(binary.read_bytes()).hexdigest() for label,binary in [('nata',a.nata),('baseline',a.baseline)]}
     (a.work/'context.json').write_text(json.dumps(context,indent=2)+'\n')
-    samples={};rounds=1 if a.smoke else 5
+    samples={};rounds=a.rounds or (1 if a.smoke else 5)
     def measure(label,port,workers,peer_port=None,server_pid=None):
         dsn=a.postgres if label=='postgres' else f'host=127.0.0.1 port={port} user=nata dbname=nata'
         for name in clients:
-            for kind in ['stream','small']:
-                if not a.smoke:sp.run(['bash',str(ROOT/'scripts/gcp/settle.sh'),f'p16-{label}-{workers}-{name}-{kind}','0.5','600'],check=True)
+            for kind in (a.kinds.split(',') if a.kinds else ['stream','small']):
+                if not (a.smoke or a.local):sp.run(['bash',str(ROOT/'scripts/gcp/settle.sh'),f'p16-{label}-{workers}-{name}-{kind}','0.5','600'],check=True)
                 cmd=[os.sys.executable,__file__,'--client',name,'--kind',kind,'--dsn',dsn,'--port',str(port),'--rows',str(a.rows),'--work',str(a.work),'--jar',str(a.jar)]
                 sp.run(cmd,check=True,timeout=180) # correctness and warmup before timing
                 values={'primary':[],'twin':[]}
@@ -92,13 +116,13 @@ def main(a):
                             paired=[('current',cmd),('baseline',oldcmd)]
                             if rnd%2:paired.reverse()
                         for variant,command in paired:
-                            start=time.perf_counter();sp.run(command,check=True,timeout=180);elapsed=time.perf_counter()-start
+                            elapsed=timed_command(command)
                             if variant=='current':values[arm].append(elapsed)
                             else:baseline.append(elapsed)
                 samples[f'{label}/{workers}/{name}/{kind}']=dict(**summary(**values),samples=values)
                 if baseline:samples[f'baseline/{workers}/{name}/{kind}']=dict(**summary(baseline[::2],baseline[1::2]),samples=baseline)
                 (a.work/f'{label}-timings.json').write_text(json.dumps(samples,indent=2)+'\n')
-                if label=='nata' and not a.smoke:
+                if label=='nata' and not (a.smoke or a.local):
                     key=f'{workers}/{name}/{kind}'
                     state=verdict(samples['postgres/'+key],samples['nata/'+key],samples['baseline/'+key],kind)
                     if state=='NOT MET':
@@ -107,7 +131,7 @@ def main(a):
                         with (profile.with_suffix('.txt')).open('w') as output:
                             sp.run(['sudo','perf','report','--stdio','-i',str(profile)],stdout=output,check=True,timeout=60)
 
-    workers_list=[1] if a.smoke else [1,8]
+    workers_list=[int(w) for w in a.workers.split(',')] if a.workers else ([1] if a.smoke else [1,8])
     # Finish and persist ALL PostgreSQL reference arms before any Nata timing.
     pgport=int(psycopg.conninfo.conninfo_to_dict(a.postgres).get('port',5432))
     for workers in workers_list:
@@ -134,17 +158,19 @@ def main(a):
     report=[]
     for workers in workers_list:
         for name in clients:
-            for kind in ['stream','small']:
+            for kind in (a.kinds.split(',') if a.kinds else ['stream','small']):
                 key=f'{workers}/{name}/{kind}'
                 pg=samples['postgres/'+key];current=samples['nata/'+key];old=samples['baseline/'+key]
                 state=verdict(pg,current,old,kind)
-                report.append(dict(arm=key,postgres=pg,nata=current,baseline=old,ratio_pg=current['median']/pg['median'],ratio_baseline=current['median']/old['median'],verdict='SMOKE ONLY' if a.smoke else state))
+                report.append(dict(arm=key,postgres=pg,nata=current,baseline=old,ratio_pg=current['median']/pg['median'],ratio_baseline=current['median']/old['median'],verdict='LOCAL UNSETTLED: '+state if a.local else ('SMOKE ONLY' if a.smoke else state)))
     (a.work/'verdict.json').write_text(json.dumps(report,indent=2)+'\n')
-    if not a.smoke:assert all(r['verdict']=='MET' for r in report), 'P16 failed or unresolved; retain miss profiles'
+    if not (a.smoke or a.local):assert all(r['verdict']=='MET' for r in report), 'P16 failed or unresolved; retain miss profiles'
 
 if __name__=='__main__':
     ap=argparse.ArgumentParser(description=__doc__)
     for name in ['nata','baseline','work','jar']:ap.add_argument('--'+name,type=Path)
+    ap.add_argument('--local',action='store_true',help='skip settling and acceptance; alternating paired diagnostics only')
+    ap.add_argument('--kinds');ap.add_argument('--clients');ap.add_argument('--workers');ap.add_argument('--rounds',type=int)
     ap.add_argument('--postgres');ap.add_argument('--smoke',action='store_true')
     ap.add_argument('--client');ap.add_argument('--kind');ap.add_argument('--dsn');ap.add_argument('--port',type=int);ap.add_argument('--rows',type=int)
     main(ap.parse_args())
