@@ -2,7 +2,7 @@
 
 Status: draft
 Date: 2026-11-08
-ADRs: 0001–0003, 0006–0010 (relies on); dated amendments if measured decisions change
+ADRs: 0001–0003, 0006–0015 (relies on); 0016/0017 (proposed contracts); dated amendments if decisions change
 
 Rule: [way of working §2](../way-of-working.md#2-definition-of-done-every-slice). Card numbers are not feature-map slice numbers.
 
@@ -10,17 +10,27 @@ Rule: [way of working §2](../way-of-working.md#2-definition-of-done-every-slice
 
 Finish the engine performance work after feature-map slice 5 closes in Track A, before slice 6 (sort) starts. This is the owner's
 2026-11-07 decision. The detour unblocks sort, join and windows: they must inherit a measured engine and a speed budget, rather
-than compound unexplained scan, expression and aggregate costs. Track B/C work is not absorbed here.
+than compound unexplained scan, expression and aggregate costs. Track B/C certification stays on its own cards; shared seams are named below.
 
 Run scan, filter, project and aggregate queries through shared vectorized strict kernels, including the remaining text/date/float
 conversion adapters. Prove the production functions within stated bounds. Profile each query's whole path on x86-64 c3d and
 ARM64 n4a. Repair scaling and metadata overhead, resolve the historical scan flag, and install a repeatable regression gate.
 
-[Card 0005](0005-hash-aggregate.md) retains steps **2b** (whole-path/fusion, P4), **2c** (proved bounds/check elision, P5) and **2d**
-(spill volume). They are prerequisites, not work packages in this card. Import their final evidence and deviations at entry.
-This card's per-query profiles cover the broader slice 2/4/5 workload after those steps. It does not repeat them.
+[Card 0005](0005-hash-aggregate.md) closes its bounded steps **2b** (P4), **2c** (P5) and **2d** (spill volume)
+with evidence and explicit deviations. It does not have to reach every speed target before this card starts.
+Slice 5 closes with recorded performance deviations once its correctness, cleanup, resource/RSS and closing-commit deep-check
+gates pass, the authorized fan-out/merge-concurrency and bounded output work is settled, and the never-timed frozen cells are
+measured: full-output agg_orderkey/agg_partkey, four threads, SF10 and applicable ARM SF100 8→32 scaling and completion/resource
+cells. x86 SF100 scaling stays report-only. Optional validity/scratch work gets one small candidate or a disposition in W-C.
+Neither debate certifies these gates as passed. Before close, this draft's carryover scope must be accepted.
+
+Keep the frozen slice 5 targets as targets. Record every NOT MET, UNRESOLVED, NOT RUN and failed-reference/no-denominator cell;
+NOT RUN does not satisfy the required measurement. Import the final SHA, bounds and deviations into the packages below.
+Record P4 against its own ≥1.2x engine-only rule; a whole-CLI gain cannot settle it. Close rejected P5 experiments with retained
+checks; settle or remove provisional aligned add/sub. Record remaining R12/P11 adapters and the dated implementation departure
+from ADR 0010's typed arenas. No spill work is sent back to slice 5 solely for missing a speed target.
 The five owner decisions in card 0005 remain binding, including exact integer SUM/AVG, unordered grouped output, DISTINCT scope,
-the memory default and the spill-format decision.
+the memory default and the validated Arrow IPC spill contract. Sort still waits for this card to finish.
 
 | Existing evidence | What it establishes | What it does not establish |
 |---|---|---|
@@ -90,7 +100,36 @@ One complete retry of an unresolved cell is allowed after re-settling, only if t
 Keep both attempts; the retry is decisive only if settled and conclusive. A FAIL is not retried into a pass. Remaining uncertainty
 stops and reports. Store min, median, quartiles, all round/twin ratios, loads, exits and limits; never discard an inconvenient round.
 
-## 4. Baseline spike (required)
+## 4. Named work packages (proposed)
+
+Evidence below comes from the joint performance and architecture debates (2026-11-08):
+`/home/dev/perf-debate/{OPUS-r3,SOL-r3}.md` and `/home/dev/perf-debate/arch/{OPUS-r3,SOL-r3}.md`,
+including their final corrections. Citations retain the debates' source coordinates, not new measurements.
+PERF means `bench/results/20261107-hash-aggregate-perf.md`; SP means
+`bench/results/raw/20261108-hash-aggregate-spill-profile/`. Aggregate paths abbreviate `crates/nata-exec/src/aggregate*`.
+All expected gains are hypotheses. Each package needs its own accepted brief; this draft authorizes no implementation or spend.
+
+| Package | Problem and evidence | Rule | Check that can fail | Order and dependencies |
+|---|---|---|---|---|
+| **0 — Same-run stats and verdict engine** | Service durations are summed, not critical-path or CPU time (`aggregate/pipeline.rs:461–465,703–711`). EXPLAIN already appends stats (`crates/nata-exec/src/explain.rs:92–94`); ARM stacks are missing (PERF:1406–1414, R26); the heavy manifest covers only Q1/HC (`scripts/bench-aggregate-perf1-heavy.py:25–27`) | One versioned same-run stats record shared by EXPLAIN ANALYZE and benchmark scripts. Stable query/pipeline/task IDs; actual admission, copied/allocated/materialized bytes, spill level/frames/opens/tickets, queue/busy intervals, output/teardown, labelled service wall/process wall/CPU. Optional traces disclose dropped events. One manifest verdict engine implements T6/T7 and all frozen rules; extend existing runners. External profiler pre-check on both CPUs before expensive runs; no new in-process signal sampler | Fake-log reconciliation and missing/dropped-counter controls; serial-work and known >10% slowdown FAIL, noisy twins UNRESOLVED, missing cells NOT RUN. Instrumentation on/off twins. ARM symbol-known smoke must show useful user stacks and loss/unwind plus wall/CPU collection | First; no package dependency. All later verdicts consume this record. R26 tooling choice must be resolved before reference timing |
+| **W-A — Typed key/state storage** | Nested key/state vectors and rehashing (`aggregate.rs:217–350`) depart from ADR 0010:16; SP/x86-hc-1t-8192MiB-counters.txt:1 charges about 1,041 B/group | Typed key arenas, cached hashes, checked u32 IDs, flat narrow state lanes with a wide side, columnar finalize/output. Keep hashbrown. Share canonical hashing/equality and one PartitionSpec: normalization/hash version, seed/depth, fanout, membership. Co-partitioned sides/replay use compatible parameters; fanout remains budget-sized, not global. Consumer multiplicity/NULL policies remain explicit. Dated ADR 0010 amendment | Forced collisions and both-CPU hash vectors, mixed scales/dictionaries, exact independent sums, hostile membership/replay, rehash old+new capacity and RSS. No charge cut without capacity/RSS evidence; no promised bytes/group | After 0 and the W-C view/state contract; aggregate first, later join/DISTINCT/windows reuse key services. Layout choice uses same-run post-fanout attribution; W-B typed records depend on this schema |
+| **W-B — Reusable spill code** | SP 1t/8t 64-MiB counter rows show 272/4,368 partitions and 143,628/299,388 opens; row blobs/reopens (`aggregate/storage.rs:52–129,203–260`), single service worker CPU (`spill/io.rs:61–119`), per-frame round trips (`pipeline.rs:853–866`) | Operator-neutral modules first: grants, registry, quotas, byte credits, bounded handles, framing and completion. Optional crate only after sort uses it. Hash partitions and sort runs have separate policies. First batch existing frames per ticket under all current caps (including array memory ≤MAX_PAYLOAD/2, `spill/ipc.rs:89–104`). Then typed columnar records/vector replay under an explicit ADR 0010 schema/format amendment. Bounded header read on disk worker; encode/preflight/decode on admitted CPU workers in finite steps. Keep per-message validation and one disk worker until queue/device evidence justifies more | Replay identical frames before changing format; two-inflight-block reclaim/cancel model; damage/fuzz, hostile schema/membership, no-progress/skew, FD/quota/parent-child overlap, grant and RSS controls. Larger caps require explicit grants/version change. No presumed 2x gain from raising a flush threshold | After 0 and ADR 0016 contract; mechanics can precede W-A, typed records follow W-A/W-C schema. Conditional wave repair only under the experiment and scoped brief in ADR 0016/R28. Preferred spill route with W-A and faster memory/output paths, not a mathematical prerequisite |
+| **W-C — Arrow views and shared kernels** | Copy/widen and validity loops (`crates/nata-exec/src/value.rs:60–80,128–155`), filtered copies (`exec.rs:229–242`), byte hashing (`aggregate/hashing.rs:49–72`), separate SUM/AVG states (`aggregate.rs:118–121`); PERF:1377–1402 still misses Q1 | Arrow views with selection and typed borrowed views; Decimal64 stays narrow. Native 64-bit decimal input lanes do not imply unchecked narrow accumulators. Dispatch type/encoding once per batch/program. Share SUM/AVG exact sum/count state while checking final SUM overflow independently. Dictionary-code keys need canonical cross-batch translation, NULL semantics, cap and general fallback. One shared arithmetic/cast/comparison/hash/update/merge/finalize kernel set with structured errors; preserve evaluation priority. Dated ADR 0003 clarification and ADR 0010 amendment. Move Kani ownership out of throwaway spikes into supported checks with per-commit source/reachability inventory and a nightly bounded Kani/covers/mutant job on an approved runner, owned by the kernel check maintainer. Until that runner is available the scheduled job reports NOT RUN; no implied spend. Retain the source/domain inventory; retain R10/R27 trust gaps | One complete SQL vertical path first. Slice offsets, constants, sorted-unique selection versus duplicate gather, masked junk indexes, changed/NULL dictionaries, retained parents and grants. Actual caller→reference→bounded Kani/covers→mutants→benchmark inventory; durable harness trial retains Arrow stub isolation. i64-input SUM bound needs provenance at update/merge/replay/fallback, real-function proof and mutants; not a revived rejected P5 lane | After 0; co-design with W-A before storage APIs harden. Semantic consolidation is unconditional T6; faster variants need paired both-CPU verdicts. Takes optional slice 5 scratch/validity work if not small. W-D waits for its measured gap |
+| **W-D — Conditional fused update path** | Partition→entry→state-vector→enum per slot (`aggregate.rs:438–563`); reduced spike 151/129 ms omits aggregates/NULL/fallback coverage (PERF:1439–1442) | Only propose typed fused updates if W-C's settled full-query profile leaves a material update gap. Compare Nata running the same reduced SQL beside the spike, then full SQL; no extrapolated endpoint | Exact selected-valid/error-priority and full aggregate-set differential, matched reduced control, component and whole-query twins. Reject if noise/regression rule fails | Conditional after measured W-C and W-A state interface; uses 0. Record not needed if the gap disappears; fusion is not a proven necessity |
+| **W-E — Decode-grant accounting experiment** | Compressed + 8×uncompressed grant (`crates/nata-parquet/src/reader.rs:1424–1452`), task admission (`aggregate/pipeline.rs:247–265`); eight-thread Q1 small-budget penalty (PERF:1379–1380,1387–1388) | Observe actual task admission and allocation-site decode peak before changing factors. Account for sliced/shared parents, dictionaries/offsets, library overlap and allocator retention; capacity×width alone covers only simple owned buffers. Preserve R16's independent RSS bound | Relevant-file/width/compression/NULL matrix under low budgets, capacity and live-grant logs with RSS, oversize rejection and uncharged-allocation control. A favorable single file is insufficient; unsafe reduction fails | After 0; observe baseline first, then retest W-C ownership changes. Coordinate with W-A/W-B progress reserves and ADR 0017; no silent budget/default increase |
+| **Batch sink follow-up (architecture 3)** | ≤32-group construction then one-row sink calls (`aggregate.rs:795–865`); CSV allocates per call (`crates/nata-parquet/src/csv.rs:327–348`), though stdout is buffered | Carry slice 5's bounded repair into a common selection/range or compact-batch sink, including pgwire. Reuse buffers/typed column access only where CSV/DataRow/COPY contracts agree. No forced row-at-a-time API; one-row/final short batches remain valid, with no delay to fill a batch. PG encoding targets stay Track C | Complete unchanged CSV and independent PG byte oracles, selected-error/OFFSET/LIMIT, slow-client/backpressure/portal cancel and retained-buffer bounds. Output time stays in whole-query ratios | After 0, early beside W-C; uses charged view lifetime contract, not blocked on W-A. Coordinate Track C/ADR 0015 |
+| **Minimal typed lazy scan descriptor (architecture 8, P12)** | Duplicate metadata handoff and fixed scan plan (`crates/nata-sql/src/plan.rs:42–50`); card 0009:13,21–24,36,43 needs pinned lazy work | Minimal schema/field identities, snapshot/object pins when present, residuals, bounded lazy file/task stream and charge owner. Bind/execute share validated immutable metadata; prepare still revalidates. Full provider/snapshot version belongs to card 0009, feature-map slice 12, with ADR 0012/0014 amendments | Changed object/schema/auth scope/generation and field-ID rename/drop-add, cache-off and disable-reuse, sound prune/full-read equivalence, eager-million-task mutant and retained-memory checks. T3 remains ≤1.2x | After 0 and view/query-owner contracts; P12 local handoff here, full remote/provider certification later. No eager task vector or new Iceberg feature here |
+
+Write the [pipeline step protocol](../decisions/0016-pipeline-step-protocol.md) and
+[query owner](../decisions/0017-query-owner.md) contracts before W-A/W-B interfaces harden.
+Build the general physical graph with feature-map slice 6. Integrate parked remote reads with Track B and certify combined
+ownership in slices 11/12. Preserve push/morsels/exchange, dedicated CPU plus Tokio I/O, ordered scan/lowest-error/LIMIT rules,
+exact selected-valid semantics, reserve-before-allocation, partition-owned exact merges and hostile-message validation.
+No custom decoder/table, float shortcut, JIT, hand SIMD or runtime rewrite follows from these debates. Follow each component's
+accepted reuse rule; ≥1.5x both-CPU bake-off is not a universal rule for every dependency. Shared spill is not durable exchange,
+retry, write idempotence or a write/commit protocol. New open choices are R28–R33; R26 remains open until pre-check evidence.
+
+### Baseline spike (required)
 
 | Step | Work and control | Exit check |
 |---|---|---|
@@ -117,10 +156,11 @@ at entry. A scope conflict returns to the orchestrator. Register entries can lag
 | Register item | Taken in or deferred | Decision rule / reason | Check |
 |---|---|---|---|
 | R12 / P11 shared strict kernels and vectorization | **taken in, blocker** | T6, including remaining text/date/float conversion and comparator adapters; keep semantic consolidation even if a faster loop loses | Production call-path inventory, bounded Kani/covers with mutants, independent scalar/SQL differential and paired T1/T2/T4 |
-| P12 binder footer handoff | **taken in** | T3, unchanged 1.2x SQL/scan target; no skipped schema/fault checks | Footer read counters, paired disable-reuse control, mismatch/I/O mutants and retained-memory bound |
+| P12 typed lazy scan descriptor and footer handoff | **taken in, minimal form** | T3; schema/field identities, immutable pins, residuals, lazy task stream and charge owner; full version in card 0009 | Footer counters, changed-object/schema/auth/generation and cache-off controls, prune/full-read equivalence, eager-task and retained-parent mutants |
+| R26 ARM64 profiling | **taken in, pre-check** | Package 0; useful stacks and wall/CPU capture before an expensive approved run; counters alone do not satisfy T6 | Symbol-known smoke capture, sample loss/unwind report; failed pre-check stops the matrix |
 | P13 historical ARM64 scan flag | **taken in** | T4 paired attribution; preserve the historical 20% flag, no cross-session code claim | Historical/current binaries in one session, same bytes/cache/threads, twins and whole-path profile; unexplained stays open |
 | W7 nightly performance trend | **taken in** | T7; shared CI trends, settled both-CPU verdicts | Planted slowdown FAIL, noisy twin UNRESOLVED, saved per-commit samples and baseline identity |
-| P4 / P5 / spill-volume finding | **prerequisite in card 0005, not duplicated** | Steps 2b/2c/2d close there; import evidence or explicit deviations. Do not reopen check elision or spill-format tuning as an unnamed child task | Read final result and reproduce only through this card's broader regression matrix; unresolved blocking work returns to slice 5 |
+| P4 / P5 / spill-volume finding | **bounded experiments close in 0005; misses taken in here** | Import final evidence and deviations into W-A–W-E. W-B explicitly owns spill mechanics and typed records; changes need the stated format amendment | Full frozen matrix; retain rejected experiments and proof gaps; correctness/resource failures still block slice 5 close |
 | P9 Q18 serial step | **aggregate-only prerequisite in 0005; full query deferred to slice 7** | Preserve slice 5 aggregate diagnosis; Q18 joins/sort do not exist in this scope | Profile aggregate fixture here; full Q18 control and attribution in slice 7 |
 | R1 memory manager | **slice 5 prerequisite; preserve here** | No second memory design; inherited bounds are blockers for performance changes | Real RSS/grants/FD/disk checks and cancellation models on changed paths |
 | R10 division proofs | **deferred to next kernel-proof slice with a suitable solver** | Accepted trust point, not a claim of proof; no unbounded solver project here | Retain guards, exact independent division/rounding tests and listed proof domains |

@@ -19,6 +19,8 @@ One file per architecture decision, `NNNN-title.md`, copied from `0000-template.
 | [0013](0013-server-security-boundary.md) | Server security boundary for read-only client compatibility | accepted 2026-11-07 |
 | [0014](0014-read-only-catalog-views.md) | Stable read-only information_schema and pg_catalog subset | accepted 2026-11-07 |
 | [0015](0015-bounded-portals-and-session-settings.md) | Bounded fetch portals and truthful session settings | accepted 2026-11-07 |
+| [0016](0016-pipeline-step-protocol.md) | Pipeline step protocol | proposed |
+| [0017](0017-query-owner.md) | Query owner | proposed |
 
 
 0001-0003 and 0006 were accepted on 2026-11-05 with checks still open, and 0005 in part (rules 1-7); each ADR's revision note of that date lists them. 0004 was accepted on 2026-11-06 by the assistant under the owner's delegation, when stage B of plan item 28 passed (its acceptance condition). The table below is kept as it stood at acceptance.
