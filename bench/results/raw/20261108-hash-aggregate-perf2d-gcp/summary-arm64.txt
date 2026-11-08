@@ -1,0 +1,8 @@
+high  1t 64M  baseline=10.215 addsub=10.057 nosmall=10.243 fanout=4.781 replay-ipc=4.384 duckdb=1.114 | final/base=0.43 final/duck=3.9x
+high  1t mem  baseline=2.777 addsub=2.788 nosmall=2.746 fanout=2.726 replay-ipc=2.719 duckdb=0.925 | final/base=0.98 final/duck=2.9x
+high  8t 64M  baseline=12.375 addsub=12.367 nosmall=12.434 fanout=5.695 replay-ipc=5.503 duckdb=0.937 | final/base=0.44 final/duck=5.9x
+high  8t mem  baseline=1.999 addsub=1.992 nosmall=2.008 fanout=1.964 replay-ipc=1.994 duckdb=0.713 | final/base=1.00 final/duck=2.8x
+q1    1t 64M  baseline=0.994 addsub=0.996 nosmall=0.976 fanout=0.983 replay-ipc=0.985 duckdb=0.226 | final/base=0.99 final/duck=4.4x
+q1    1t mem  baseline=0.994 addsub=0.993 nosmall=0.978 fanout=0.980 replay-ipc=0.981 duckdb=0.218 | final/base=0.99 final/duck=4.5x
+q1    8t 64M  baseline=0.364 addsub=0.364 nosmall=0.358 fanout=0.362 replay-ipc=0.362 duckdb=0.071 | final/base=0.99 final/duck=5.1x
+q1    8t mem  baseline=0.166 addsub=0.158 nosmall=0.157 fanout=0.170 replay-ipc=0.158 duckdb=0.071 | final/base=0.95 final/duck=2.2x

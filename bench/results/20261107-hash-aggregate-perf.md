@@ -2543,3 +2543,41 @@ identical to the immutable IPC binary that passed all value gates and timings.
 [Build/digest log](raw/20261108-hash-aggregate-perf2d/fanout-final-build.txt).
 The three implementation steps are complete locally; settled performance and
 all frozen target decisions remain with the parent, not certified by this run.
+
+## Step 2d timing on settled machines (runs `perf2d-c3d`, `perf2d-n4a`, added by the parent, 2026-11-08)
+
+Baseline `c9cc13c` and four cumulative candidates from committed archives on the same VM: `addsub` = `10acff0` (step 2c's
+provisional aligned add/sub), `nosmall` = small-group removal, `fanout` = `6a9dc6e` (budget-sized fan-out, ADR 0010 amendment of
+2026-11-08), `replay-ipc` = `cce85b3` (batch state replay plus bounded larger IPC messages). SF1, value-gated against DuckDB 2.0.0, five
+alternating rounds with twins, settled load per cell. c3d-highcpu-8 and n4a-highcpu-8, Spot, 3 h cap, approved $0.26 + $0.37.
+Raw: `raw/20261108-hash-aggregate-perf2d-gcp/`. Medians of the primary arm, seconds.
+
+| CPU | Query | Threads | Budget | baseline | addsub | nosmall | fanout | replay-ipc | DuckDB | final / baseline | **final / DuckDB** |
+|---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| x86-64 | high_cardinality_tpch | 1 | 64 MiB | 12.263 | 12.187 | 12.068 | 5.048 | 4.335 | 1.251 | **0.35** | **3.5x** |
+| x86-64 | high_cardinality_tpch | 8 | 64 MiB | 15.277 | 15.259 | 15.196 | 5.394 | 5.121 | 1.122 | **0.34** | **4.6x** |
+| x86-64 | high_cardinality_tpch | 1 | in memory | 3.167 | 3.148 | 3.135 | 3.144 | 3.130 | 1.049 | 0.99 | 3.0x |
+| x86-64 | high_cardinality_tpch | 8 | in memory | 2.243 | 2.228 | 2.220 | 2.221 | 2.214 | 0.832 | 0.99 | 2.7x |
+| x86-64 | q1 | 1 | in memory | 1.224 | 1.187 | 1.169 | 1.177 | 1.171 | 0.226 | 0.96 | 5.2x |
+| x86-64 | q1 | 1 | 64 MiB | 1.234 | 1.201 | 1.172 | 1.188 | 1.192 | 0.229 | 0.97 | 5.2x |
+| x86-64 | q1 | 8 | in memory | 0.292 | 0.282 | 0.279 | 0.275 | 0.276 | 0.099 | 0.94 | 2.8x |
+| x86-64 | q1 | 8 | 64 MiB | 0.443 | 0.428 | 0.421 | 0.430 | 0.430 | 0.099 | 0.97 | 4.3x |
+| ARM64 | high_cardinality_tpch | 1 | 64 MiB | 10.215 | 10.057 | 10.243 | 4.781 | 4.384 | 1.114 | **0.43** | **3.9x** |
+| ARM64 | high_cardinality_tpch | 8 | 64 MiB | 12.375 | 12.367 | 12.434 | 5.695 | 5.503 | 0.937 | **0.44** | **5.9x** |
+| ARM64 | high_cardinality_tpch | 1 | in memory | 2.777 | 2.788 | 2.746 | 2.726 | 2.719 | 0.925 | 0.98 | 2.9x |
+| ARM64 | high_cardinality_tpch | 8 | in memory | 1.999 | 1.992 | 2.008 | 1.964 | 1.994 | 0.713 | 1.00 | 2.8x |
+| ARM64 | q1 | 1 | in memory | 0.994 | 0.993 | 0.978 | 0.980 | 0.981 | 0.218 | 0.99 | 4.5x |
+| ARM64 | q1 | 1 | 64 MiB | 0.994 | 0.996 | 0.976 | 0.983 | 0.985 | 0.226 | 0.99 | 4.4x |
+| ARM64 | q1 | 8 | in memory | 0.166 | 0.158 | 0.157 | 0.170 | 0.158 | 0.071 | 0.95 | 2.2x |
+| ARM64 | q1 | 8 | 64 MiB | 0.364 | 0.364 | 0.358 | 0.362 | 0.362 | 0.071 | 0.99 | 5.1x |
+
+**Verdicts.**
+- `fanout`: **kept, settled win on both CPUs**: spill 0.33-0.47x of `nosmall` (x86-64 12.07 → 5.05 s and 15.20 → 5.39 s; ARM64
+  10.24 → 4.78 s and 12.43 → 5.70 s). Spill moves from 9.4-13.7x DuckDB to **3.5-5.9x**. In-memory cells unchanged, as expected.
+- `replay-ipc`: **kept, settled win on spill**: a further 0.86x (x86-64, 1 thread) to 0.97x; neutral in memory.
+- `addsub` (step 2c): **kept on a small settled gain on x86-64 only**: Q1 0.97x at both thread counts; ARM64 neutral (0.99-1.00x).
+  No cell regresses.
+- `nosmall`: neutral, as the step 2b verdict predicted.
+- Frozen targets: **NOT MET.** Spill 3.5-5.9x (target 2x); eight threads still spill slower than one on both CPUs, consistent with the
+  single serial I/O service (card 0008, W-B). High cardinality in memory 2.7-3.0x (target 2x); Q1 4.4-5.2x at one thread and 2.2-2.8x
+  at eight in memory (target 1.5x). Output batching (step 2e) is in progress.
