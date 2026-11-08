@@ -27,6 +27,17 @@ A slice is not done until all of these hold:
 7. **Clean.** `cargo fmt`, `cargo clippy -- -D warnings` and all tests pass in CI.
 8. **Verified against its card.** The slice has a verification card (next subsection), every row of it is checked or justified, and the ADR it relies on is current.
 
+**Amendment 2026-11-08 (owner): local-first development until the batched performance phase.** From slice 6 on (and for the
+storage and protocol slices), a slice ends as **functionally complete** when items 1-2 and 4-8 hold on small data checked locally:
+SF0.01 to SF1, forced spill with tiny budgets so the spill paths still run, the DuckDB differential, unit and property tests, the loom
+and Kani models it touches, and focused mutants; plus the free GitHub Actions nightly on both CPU types for portability. Item 3 is met by
+a fixed **local performance smoke** that only catches gross regressions (a cell 2x or more slower than the previous slice's smoke, on
+the same dev VM); it gives no verdict. The card's frozen performance and scalability targets, the clean-VM checks on both CPU types and
+the large-data cells (SF10/SF100) are recorded as **deferred**, never as passed, and are run together in one batched performance and
+certification phase with card 0008. Paid GCP runs are used only for multi-node or distributed tests, or to reproduce a bug that needs
+scale. A slice moves from functionally complete to closed only after that phase. Slices 5, 10 and 11, already in their GCP closeout on
+this date, finish under the earlier rule.
+
 ### The slice verification card
 
 Every development point has a short card, written **before** the implementation, in `docs/slices/NNNN-name.md` (template: `docs/slices/0000-template.md`). The card is how we decide and how we know we are done. It is accepted by the owner, like an ADR: an agent or a human drafts it, the owner accepts it, and the work starts from the accepted card.
