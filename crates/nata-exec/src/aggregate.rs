@@ -4,7 +4,8 @@ use crate::error::{EvalError, R};
 use crate::eval::Evaluator;
 use crate::exec::{AggregateStats, ExecConfig, ExecReport, Observed, OperatorStats};
 use crate::value::{Col, Data, StrData};
-use arrow_array::RecordBatch;
+use arrow_array::{RecordBatch, UInt32Array};
+use arrow_select::take::take_record_batch;
 use hashbrown::HashTable;
 use nata_kernels::aggregate::{ExactSum, add_count};
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
@@ -659,6 +660,48 @@ fn batch(rows: &[(Vec<Atom>, Vec<State>)], a: &Aggregate) -> R<RecordBatch> {
     }
     RecordBatch::try_from_iter(columns).map_err(|_| EvalError::internal("aggregate output"))
 }
+// Projection evaluates at the original batch positions: gathering beforehand
+// would change selected-error behavior. Compact only after every expression
+// has succeeded. A contiguous survivor range shares the original Arrow buffers.
+fn gather_output(batch: &RecordBatch, selected: &[usize]) -> Result<RecordBatch, ScanError> {
+    let first = selected[0];
+    if selected.iter().enumerate().all(|(j, i)| *i == first + j) {
+        return Ok(batch.slice(first, selected.len()));
+    }
+    let indices = selected
+        .iter()
+        .map(|i| u32::try_from(*i).map_err(|_| ScanError::new(resource().into_kind())))
+        .collect::<Result<Vec<_>, _>>()?;
+    take_record_batch(batch, &UInt32Array::from(indices))
+        .map_err(|_| ScanError::new(ErrorKind::Internal("aggregate output selection".into())))
+}
+// Fixed-width gathers fit the existing 128 bytes/expression/row allowance.
+// Variable-width survivor runs share buffers instead: even a very large string
+// must not add an uncharged gathered copy. An isolated survivor is a whole run.
+fn deliver_output(
+    batch: &RecordBatch,
+    selected: &[usize],
+    mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
+) -> Result<u64, ScanError> {
+    if batch.columns().iter().all(|c| {
+        c.data_type().is_primitive() || matches!(c.data_type(), arrow_schema::DataType::Boolean)
+    }) {
+        sink(&gather_output(batch, selected)?)?;
+        return Ok(1);
+    }
+    let mut calls = 0;
+    let mut start = 0;
+    while start < selected.len() {
+        let mut end = start + 1;
+        while end < selected.len() && selected[end] == selected[end - 1] + 1 {
+            end += 1;
+        }
+        sink(&batch.slice(selected[start], end - start))?;
+        calls += 1;
+        start = end;
+    }
+    Ok(calls)
+}
 fn expression_slots(plan: &LogicalPlan) -> usize {
     let mut nodes = Vec::new();
     if let Some(filter) = &plan.filter {
@@ -787,6 +830,8 @@ pub(crate) fn execute(
         .collect();
     let mut seen = 0u64;
     let mut output = 0u64;
+    let mut sink_calls = 0u64;
+    let mut output_nanos = 0u64;
     let limit = plan.limit.map_or(u64::MAX, |l| {
         if l.n == 0 {
             0
@@ -795,6 +840,11 @@ pub(crate) fn execute(
         }
     });
     pipeline::finalize(partitions, &shared, cfg, cancel, &storage, &io, |table| {
+        // This coordinator interval includes result construction, HAVING,
+        // projection, delivery and table teardown, but excludes waiting for
+        // final-merge tasks. The existing charged runtime/output workspace
+        // covers the unchanged <=32-row batches and fixed-width gathers.
+        let output_started = Instant::now();
         let mut iter = table.groups.into_iter();
         loop {
             let rows: Vec<_> = iter
@@ -862,13 +912,15 @@ pub(crate) fn execute(
             let Some((projected, select)) = evaluated else {
                 continue;
             };
-            for i in select {
-                sink(&projected.slice(i, 1))?;
-                output += 1;
+            if !select.is_empty() {
+                sink_calls += deliver_output(&projected, &select, &mut sink)?;
+                output += select.len() as u64;
             }
         }
         drop(iter);
         drop(table.grants);
+        output_nanos = output_nanos
+            .saturating_add(u64::try_from(output_started.elapsed().as_nanos()).unwrap_or(u64::MAX));
         Ok(())
     })?;
     if cancel.is_some_and(ScanCancel::is_cancelled) {
@@ -897,6 +949,8 @@ pub(crate) fn execute(
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
         .clone();
+    metrics.sink_calls = sink_calls;
+    metrics.output_nanos = output_nanos;
     metrics.spill_bytes_written = spill.bytes_written;
     metrics.spill_bytes_read = spill.bytes_read;
     metrics.spill_files_opened = spill.opened;
@@ -926,6 +980,48 @@ pub(crate) fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn output_delivery_gathers_fixed_width_and_borrows_string_runs() {
+        use arrow_array::{ArrayRef, Int32Array, StringArray, cast::AsArray};
+        let ints = RecordBatch::try_from_iter([(
+            "v",
+            Arc::new(Int32Array::from(vec![0, 1, 2, 3, 4, 5])) as ArrayRef,
+        )])
+        .expect("ints");
+        let mut values = Vec::new();
+        let calls = deliver_output(&ints, &[1, 3, 4], |b| {
+            values.extend(
+                b.column(0)
+                    .as_primitive::<arrow_array::types::Int32Type>()
+                    .values()
+                    .iter()
+                    .copied(),
+            );
+            Ok(())
+        })
+        .expect("gather");
+        assert_eq!(values, [1, 3, 4]);
+        assert_eq!(calls, 1);
+        let strings = RecordBatch::try_from_iter([(
+            "v",
+            Arc::new(StringArray::from(vec!["0", "1", "2", "3", "4", "5"])) as ArrayRef,
+        )])
+        .expect("strings");
+        let mut values = Vec::new();
+        let mut lengths = Vec::new();
+        let original = strings.column(0).as_string::<i32>().value_data().as_ptr();
+        let calls = deliver_output(&strings, &[1, 3, 4], |b| {
+            let array = b.column(0).as_string::<i32>();
+            assert_eq!(array.value_data().as_ptr(), original, "share string data");
+            values.extend(array.iter().map(|v| v.expect("value").to_owned()));
+            lengths.push(b.num_rows());
+            Ok(())
+        })
+        .expect("ranges");
+        assert_eq!(values, ["1", "3", "4"]);
+        assert_eq!(lengths, [1, 2]);
+        assert_eq!(calls, 2);
+    }
     fn counting_partial() -> Partial {
         use nata_sql::plan::{Project, Scan};
         Partial {

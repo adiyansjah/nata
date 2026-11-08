@@ -127,10 +127,13 @@ pub struct ExecReport {
     pub elapsed: Duration,
 }
 
-/// Native diagnostics; phase times are summed worker time, not elapsed time.
+/// Native diagnostics; partial/merge times are summed worker durations.
+/// Output is the sum of exclusive coordinator callback intervals (not CPU time).
 #[derive(Clone, Debug, Default)]
 pub struct AggregateStats {
     pub partial_nanos: u64,
+    pub output_nanos: u64,
+    pub sink_calls: u64,
     pub merge_nanos: u64,
     pub partial_groups: usize,
     pub largest_partial: usize,
@@ -148,7 +151,7 @@ pub struct AggregateStats {
 impl AggregateStats {
     pub fn line(&self) -> String {
         format!(
-            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={} spill_bytes_written={} spill_bytes_read={} partitions_spilled={} recursion_depth={} spill_files_opened={}",
+            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={} spill_bytes_written={} spill_bytes_read={} partitions_spilled={} recursion_depth={} spill_files_opened={} sink_calls={} output_ns={}",
             self.partial_nanos,
             self.merge_nanos,
             self.partial_groups,
@@ -162,7 +165,9 @@ impl AggregateStats {
             self.spill_bytes_read,
             self.partitions_spilled,
             self.recursion_depth,
-            self.spill_files_opened
+            self.spill_files_opened,
+            self.sink_calls,
+            self.output_nanos
         )
     }
 }

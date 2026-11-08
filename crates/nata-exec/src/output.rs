@@ -30,6 +30,7 @@ pub struct ResultWriter<W: Write> {
     names: Vec<String>,
     numeric: Vec<bool>,
     header_done: bool,
+    csv: csv::BatchWriter,
     page: Vec<Vec<String>>,
     widths: Option<Vec<usize>>,
     pub rows: u64,
@@ -47,6 +48,7 @@ impl<W: Write> ResultWriter<W> {
             names,
             numeric,
             header_done: false,
+            csv: csv::BatchWriter::default(),
             page: Vec::new(),
             widths: None,
             rows: 0,
@@ -65,7 +67,7 @@ impl<W: Write> ResultWriter<W> {
                     csv::write_header(&mut self.out, &self.names).map_err(|e| io(&e))?;
                     self.header_done = true;
                 }
-                csv::write_batch(&mut self.out, batch)?;
+                self.csv.write_batch(&mut self.out, batch)?;
             }
             Format::Table => {
                 for row in 0..batch.num_rows() {

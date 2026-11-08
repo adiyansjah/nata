@@ -260,3 +260,60 @@ fn deep_aggregate_having_and_projection_use_sized_stacks() {
         "n\n20\n"
     );
 }
+
+#[test]
+fn output_batches_gather_having_survivors_and_apply_offset_limit() {
+    use arrow_array::cast::AsArray;
+    let d = dir("aggregate-output-batches");
+    let p = d.join("t.parquet");
+    write_batch(
+        &p,
+        &RecordBatch::try_from_iter([(
+            "id",
+            Arc::new(Int32Array::from_iter_values(0..1024)) as ArrayRef,
+        )])
+        .expect("batch"),
+        128,
+    );
+    for force in [false, true] {
+        for limited in [false, true] {
+            let suffix = if limited { " LIMIT 91 OFFSET 37" } else { "" };
+            let q = format!(
+                "SELECT id, 1024 // (id + 1) AS v FROM '{}' GROUP BY id HAVING id % 3 = 0{suffix}",
+                p.display()
+            );
+            let planned = plan_sql(&q, &FsSource).expect("plan");
+            let mut cfg = ExecConfig::new(4);
+            cfg.aggregate_force_spill = force;
+            cfg.aggregate_memory_bytes = Some(64 << 20);
+            let mut rows = Vec::new();
+            let mut calls = 0;
+            let report = nata_exec::execute(Arc::new(planned.plan), &cfg, None, |b| {
+                calls += 1;
+                assert!((1..=32).contains(&b.num_rows()), "bounded construction");
+                let keys = b.column(0).as_primitive::<arrow_array::types::Int32Type>();
+                let values = b.column(1).as_primitive::<arrow_array::types::Int32Type>();
+                for i in 0..b.num_rows() {
+                    let key = keys.value(i);
+                    assert_eq!(key % 3, 0);
+                    assert_eq!(values.value(i), 1024 / (key + 1));
+                    rows.push(key);
+                }
+                Ok(())
+            })
+            .expect("execute");
+            let expected = if limited { 91 } else { 342 };
+            assert_eq!(rows.len(), expected);
+            assert!(calls < expected / 2, "sink must receive batches: {calls}");
+            rows.sort_unstable();
+            rows.dedup();
+            assert_eq!(rows.len(), expected, "each group once");
+            if !limited {
+                assert_eq!(rows, (0..1024).step_by(3).collect::<Vec<_>>());
+            }
+            let stats = report.aggregate.expect("stats");
+            assert_eq!(stats.sink_calls, calls as u64);
+            assert!(stats.output_nanos > 0);
+        }
+    }
+}

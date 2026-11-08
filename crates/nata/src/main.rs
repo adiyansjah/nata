@@ -291,7 +291,8 @@ fn scan(a: ScanArgs) -> ExitCode {
             report
         } else {
             csv::write_header(&mut out, &names).map_err(io_error)?;
-            run_parallel(plan, cfg, limit, |batch| csv::write_batch(&mut out, batch))?
+            let mut csv = csv::BatchWriter::default();
+            run_parallel(plan, cfg, limit, |batch| csv.write_batch(&mut out, batch))?
         };
         out.flush().map_err(io_error)?;
         Ok::<_, ScanError>(report)

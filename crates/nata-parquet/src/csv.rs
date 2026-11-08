@@ -13,6 +13,7 @@
 //! read back to the same number. Measured on 120,000 random values: see `bench/results/20261105-scan-reader.md`. `nata-check` queries over float
 //! columns therefore need `-- tolerance:`.
 
+use std::fmt::Write as _;
 use std::io::Write;
 
 use arrow_array::cast::AsArray;
@@ -324,28 +325,165 @@ fn cell(col: &dyn Array, i: usize) -> Result<Option<String>, ScanError> {
     Ok(Some(text))
 }
 
-/// The rows of a batch.
-pub fn write_batch(out: &mut impl Write, batch: &RecordBatch) -> Result<(), ScanError> {
-    let mut buf: Vec<u8> = Vec::with_capacity(64 * 1024);
-    for row in 0..batch.num_rows() {
-        for (c, col) in batch.columns().iter().enumerate() {
-            if c > 0 {
-                buf.push(b',');
+/// Reusable CSV output workspace. Each call flushes its bytes before returning;
+/// retaining the allocation does not delay output or change partial-error flushes.
+#[derive(Default)]
+pub struct BatchWriter {
+    buf: Vec<u8>,
+    text: String,
+}
+impl BatchWriter {
+    /// The rows of a batch, using the same formatting and flush boundaries as
+    /// `write_batch`, with byte and numeric scratch retained between calls.
+    pub fn write_batch(
+        &mut self,
+        out: &mut impl Write,
+        batch: &RecordBatch,
+    ) -> Result<(), ScanError> {
+        self.buf.clear();
+        self.buf.reserve(64 * 1024);
+        for row in 0..batch.num_rows() {
+            for (c, col) in batch.columns().iter().enumerate() {
+                if c > 0 {
+                    self.buf.push(b',');
+                }
+                self.field(col.as_ref(), row)?;
             }
-            match cell(col.as_ref(), row)? {
-                None => buf.extend_from_slice(b"NULL"),
-                Some(text) => push_field(&mut buf, &text),
+            self.buf.push(b'\n');
+            if self.buf.len() >= 60 * 1024 {
+                self.flush(out)?;
             }
         }
-        buf.push(b'\n');
-        if buf.len() >= 60 * 1024 {
-            out.write_all(&buf)
-                .map_err(|e| ScanError::new(ErrorKind::Io(crate::error::redact(&e.to_string()))))?;
-            buf.clear();
+        self.flush(out)
+    }
+
+    fn flush(&mut self, out: &mut impl Write) -> Result<(), ScanError> {
+        out.write_all(&self.buf)
+            .map_err(|e| ScanError::new(ErrorKind::Io(crate::error::redact(&e.to_string()))))?;
+        // Keep only the original bounded workspace between batches. A single
+        // wide row can grow it transiently, but must not pin that allocation
+        // after the table's grants have been released.
+        if self.buf.capacity() > 64 * 1024 {
+            self.buf = Vec::new();
+        } else {
+            self.buf.clear();
+        }
+        Ok(())
+    }
+
+    fn field(&mut self, col: &dyn Array, row: usize) -> Result<(), ScanError> {
+        if col.is_null(row) {
+            self.buf.extend_from_slice(b"NULL");
+            return Ok(());
+        }
+        let bad = || {
+            ScanError::new(ErrorKind::Internal(
+                "an array does not match its type".into(),
+            ))
+        };
+        self.text.clear();
+        macro_rules! number {
+            ($ty:ty) => {
+                write!(
+                    &mut self.text,
+                    "{}",
+                    col.as_primitive_opt::<$ty>().ok_or_else(bad)?.value(row)
+                )
+                .expect("format into String")
+            };
+        }
+        match col.data_type() {
+            DataType::Boolean => {
+                self.text
+                    .push_str(if col.as_boolean_opt().ok_or_else(bad)?.value(row) {
+                        "true"
+                    } else {
+                        "false"
+                    })
+            }
+            DataType::Int8 => number!(Int8Type),
+            DataType::Int16 => number!(Int16Type),
+            DataType::Int32 => number!(Int32Type),
+            DataType::Int64 => number!(Int64Type),
+            DataType::UInt8 => number!(UInt8Type),
+            DataType::UInt16 => number!(UInt16Type),
+            DataType::UInt32 => number!(UInt32Type),
+            DataType::UInt64 => number!(UInt64Type),
+            DataType::Decimal64(p, s) => {
+                let scale = u8::try_from(*s).map_err(|_| bad())?;
+                decimal_into(
+                    &mut self.text,
+                    i128::from(
+                        col.as_primitive_opt::<Decimal64Type>()
+                            .ok_or_else(bad)?
+                            .value(row),
+                    ),
+                    *p,
+                    scale,
+                );
+            }
+            DataType::Decimal128(p, s) => {
+                let scale = u8::try_from(*s).map_err(|_| bad())?;
+                decimal_into(
+                    &mut self.text,
+                    col.as_primitive_opt::<Decimal128Type>()
+                        .ok_or_else(bad)?
+                        .value(row),
+                    *p,
+                    scale,
+                );
+            }
+            DataType::Utf8 => {
+                push_field(
+                    &mut self.buf,
+                    col.as_string_opt::<i32>().ok_or_else(bad)?.value(row),
+                );
+                return Ok(());
+            }
+            DataType::Dictionary(k, v) if **k == DataType::Int32 && **v == DataType::Utf8 => {
+                let d = col.as_dictionary_opt::<Int32Type>().ok_or_else(bad)?;
+                let values = d.values().as_string_opt::<i32>().ok_or_else(bad)?;
+                let key = usize::try_from(d.keys().value(row)).map_err(|_| bad())?;
+                if key >= values.len() || values.is_null(key) {
+                    return Err(bad());
+                }
+                push_field(&mut self.buf, values.value(key));
+                return Ok(());
+            }
+            // Preserve the established float/date/timestamp/blob formatters.
+            // Pgwire continues to use cell_text and its own encoding contract.
+            _ => match cell(col, row)? {
+                None => self.buf.extend_from_slice(b"NULL"),
+                Some(text) => push_field(&mut self.buf, &text),
+            },
+        }
+        push_field(&mut self.buf, &self.text);
+        Ok(())
+    }
+}
+
+// Same fixed-scale spelling as format_decimal_typed, written into retained
+// scratch. Keep the owned formatter as an independent byte oracle and wire API.
+fn decimal_into(text: &mut String, value: i128, precision: u8, scale: u8) {
+    write!(text, "{}", value.unsigned_abs()).expect("format into String");
+    let scale = usize::from(scale);
+    if scale > 0 {
+        while text.len() <= scale {
+            text.insert(0, '0');
+        }
+        text.insert(text.len() - scale, '.');
+        if usize::from(precision) == scale && text.starts_with("0.") {
+            text.remove(0);
         }
     }
-    out.write_all(&buf)
-        .map_err(|e| ScanError::new(ErrorKind::Io(crate::error::redact(&e.to_string()))))
+    if value < 0 {
+        text.insert(0, '-');
+    }
+}
+
+/// The rows of a batch. Streaming callers should retain a `BatchWriter`.
+pub fn write_batch(out: &mut impl Write, batch: &RecordBatch) -> Result<(), ScanError> {
+    BatchWriter::default().write_batch(out, batch)
 }
 
 #[cfg(test)]
@@ -424,5 +562,170 @@ mod tests {
         assert_eq!(q("a\nb"), "\"a\nb\"");
         assert_eq!(q("a\tb"), "\"a\tb\"");
         assert_eq!(q("a\u{7f}b"), "\"a\u{7f}b\"");
+    }
+
+    #[test]
+    fn reusable_batches_match_owned_cells_and_keep_workspace() {
+        use arrow_array::{
+            ArrayRef, BinaryArray, BooleanArray, Decimal128Array, Int64Array, StringArray,
+            UInt64Array,
+        };
+        use std::sync::Arc;
+        let b = RecordBatch::try_from_iter([
+            (
+                "i",
+                Arc::new(Int64Array::from(vec![
+                    Some(i64::MIN),
+                    Some(0),
+                    Some(i64::MAX),
+                    None,
+                ])) as ArrayRef,
+            ),
+            (
+                "u",
+                Arc::new(UInt64Array::from(vec![
+                    Some(u64::MAX),
+                    None,
+                    Some(0),
+                    Some(42),
+                ])) as ArrayRef,
+            ),
+            (
+                "b",
+                Arc::new(BooleanArray::from(vec![
+                    Some(true),
+                    Some(false),
+                    None,
+                    Some(true),
+                ])) as ArrayRef,
+            ),
+            (
+                "d",
+                Arc::new(
+                    Decimal128Array::from(vec![Some(-5), Some(0), None, Some(999)])
+                        .with_precision_and_scale(3, 3)
+                        .expect("decimal"),
+                ) as ArrayRef,
+            ),
+            (
+                "s",
+                Arc::new(StringArray::from(vec![
+                    Some("é,\"x\"\n"),
+                    Some(""),
+                    None,
+                    Some("it's"),
+                ])) as ArrayRef,
+            ),
+            (
+                "blob",
+                Arc::new(BinaryArray::from(vec![
+                    Some(b"a\x00".as_slice()),
+                    None,
+                    Some(b"".as_slice()),
+                    Some(b"'\\".as_slice()),
+                ])) as ArrayRef,
+            ),
+        ])
+        .expect("batch");
+        let mut writer = BatchWriter::default();
+        let mut actual = Vec::new();
+        let mut expected = Vec::new();
+        for batch in [b.clone(), b.slice(1, 2), b.slice(0, 0), b.slice(3, 1)] {
+            writer.write_batch(&mut actual, &batch).expect("write");
+            for row in 0..batch.num_rows() {
+                for (j, col) in batch.columns().iter().enumerate() {
+                    if j > 0 {
+                        expected.push(b',');
+                    }
+                    match cell(col.as_ref(), row).expect("owned oracle") {
+                        None => expected.extend_from_slice(b"NULL"),
+                        Some(text) => push_field(&mut expected, &text),
+                    }
+                }
+                expected.push(b'\n');
+            }
+        }
+        assert_eq!(actual, expected);
+        assert_eq!(writer.buf.capacity(), 64 * 1024, "retain bounded workspace");
+        let allocation = writer.buf.as_ptr();
+        let scratch = writer.text.as_ptr();
+        writer.write_batch(&mut actual, &b).expect("reuse");
+        assert_eq!(writer.buf.as_ptr(), allocation);
+        assert_eq!(writer.text.as_ptr(), scratch);
+    }
+
+    #[test]
+    fn retained_decimal_scratch_matches_owned_spelling() {
+        let mut text = String::new();
+        for precision in [1, 3, 18, 38] {
+            for scale in [0, 1, 3, 18, 38] {
+                for value in [i128::MIN, -1000, -5, -1, 0, 1, 5, 1000, i128::MAX] {
+                    text.clear();
+                    decimal_into(&mut text, value, precision, scale);
+                    assert_eq!(text, format_decimal_typed(value, precision, scale));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn reusable_dictionary_fields_preserve_null_and_invalid_value_errors() {
+        use arrow_array::{ArrayRef, DictionaryArray, Int32Array, StringArray};
+        use std::sync::Arc;
+        let values = Arc::new(StringArray::from(vec![Some("é,\"x"), None])) as ArrayRef;
+        let valid = DictionaryArray::<Int32Type>::try_new(
+            Int32Array::from(vec![Some(0), None]),
+            values.clone(),
+        )
+        .expect("dictionary");
+        let b = RecordBatch::try_from_iter([("d", Arc::new(valid) as ArrayRef)]).expect("batch");
+        let mut writer = BatchWriter::default();
+        let mut out = Vec::new();
+        writer
+            .write_batch(&mut out, &b)
+            .expect("valid and NULL keys");
+        assert_eq!(out, "\"é,\"\"x\"\nNULL\n".as_bytes());
+        let invalid = DictionaryArray::<Int32Type>::try_new(Int32Array::from(vec![1]), values)
+            .expect("dictionary");
+        let b = RecordBatch::try_from_iter([("d", Arc::new(invalid) as ArrayRef)]).expect("batch");
+        assert_eq!(
+            writer
+                .write_batch(&mut out, &b)
+                .expect_err("NULL dictionary value")
+                .to_string(),
+            cell(b.column(0).as_ref(), 0)
+                .expect_err("owned error")
+                .to_string()
+        );
+        assert_eq!(
+            out,
+            "\"é,\"\"x\"\nNULL\n".as_bytes(),
+            "no partial invalid row"
+        );
+    }
+    #[test]
+    fn wide_csv_rows_do_not_retain_oversized_workspace() {
+        use arrow_array::{ArrayRef, StringArray};
+        use std::sync::Arc;
+        let value = "a,\"é".repeat(20_000);
+        let batch = RecordBatch::try_from_iter([(
+            "s",
+            Arc::new(StringArray::from(vec![value.as_str()])) as ArrayRef,
+        )])
+        .expect("batch");
+        let mut writer = BatchWriter::default();
+        let mut out = Vec::new();
+        writer.write_batch(&mut out, &batch).expect("wide row");
+        let mut expected = Vec::new();
+        push_field(&mut expected, &value);
+        expected.push(b'\n');
+        assert_eq!(out, expected);
+        assert!(writer.buf.capacity() <= 64 * 1024);
+        writer
+            .write_batch(&mut out, &batch)
+            .expect("reuse after wide row");
+        expected.extend_from_within(..);
+        assert_eq!(out, expected);
+        assert!(writer.buf.capacity() <= 64 * 1024);
     }
 }
