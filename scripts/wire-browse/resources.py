@@ -43,6 +43,13 @@ def wait(fn, seconds=10):
         time.sleep(.02)
     raise AssertionError('cleanup/start deadline exceeded')
 
+def setup_postgres(pg, count, width):
+    pg.execute('DROP SCHEMA IF EXISTS resource_scale CASCADE')
+    pg.execute('CREATE SCHEMA resource_scale')
+    for j in range(count):
+        columns=width if width==1 or j%16==0 else 1
+        pg.execute(f'CREATE TABLE resource_scale.t{j} ('+','.join(f'c{k} bigint' for k in range(columns))+')')
+
 def run(a, count, width, workers, fd_limit):
     work=a.work/f'{count}-{width}-{workers}-{fd_limit}'
     work.mkdir(parents=True,exist_ok=True)
@@ -50,11 +57,7 @@ def run(a, count, width, workers, fd_limit):
     pg_context=None
     if a.postgres:
         with psycopg.connect(a.postgres,autocommit=True) as pg:
-            pg.execute('DROP SCHEMA IF EXISTS resource_scale CASCADE')
-            pg.execute('CREATE SCHEMA resource_scale')
-            for j in range(count):
-                columns=width if width==1 or j%16==0 else 1
-                pg.execute(f'CREATE TABLE resource_scale.t{j} ('+','.join(f'c{k} bigint' for k in range(columns))+')')
+            setup_postgres(pg, count, width)
             pid=pg.execute('SELECT pg_backend_pid()').fetchone()[0]
             pg_context=dict(version=pg.execute('SELECT version()').fetchone()[0],backend_RSS=proc(pid)[0],backend_peak=proc(pid)[1],scope='backend only; shared PostgreSQL memory not aggregated; catalog metadata context')
     registry=work/'catalog.tsv'

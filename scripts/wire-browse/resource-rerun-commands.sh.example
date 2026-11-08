@@ -1,0 +1,19 @@
+# Run separately from this committed checkout, with PROJECT set externally.
+# No cloud actions performed during preparation. Use new run IDs if already used.
+# Two VM-hours per CPU allows fresh debug/release builds plus the resource grid;
+# all scheduler, mutant, DBeaver and P16 steps from the prior retry are excluded.
+# 60 GiB holds builds and fixtures: the largest Parquet fixture is 64M int64
+# values (512 MB uncompressed), and reference tables are empty.
+# Local plan bounds at checked-in prices: ARM $0.449, x86 $0.306.
+# Rounded caps: $0.50 / $0.35. Recheck prices and plan before execution.
+# A timeout remains incomplete, never a pass.
+
+# ARM (package immediately before its run):
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/resource-rerun-arm.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id s10resource-arm
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id s10resource-arm --approved-usd 0.50
+
+# x86 (separate checkout if running concurrently with ARM):
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/resource-rerun-x86.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id s10resource-x86
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 60 --max-vm-hours 2 --run-id s10resource-x86 --approved-usd 0.35
