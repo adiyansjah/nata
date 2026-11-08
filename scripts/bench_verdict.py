@@ -28,17 +28,27 @@ def distribution(values):
                 median=statistics.median(values), q3=q3, max=max(values))
 
 
-def parse_stats(stderr):
-    records = [json.loads(line[len('query_stats: '):]) for line in stderr.splitlines()
-               if line.startswith('query_stats: ')]
-    if len(records) > 1:
-        raise ValueError('multiple same-run stats records')
-    return records[0] if records else None
+def read_stats(path):
+    """One invocation owns one sidecar. Missing/malformed files fail closed."""
+    if not path.exists():
+        return None
+    record = json.loads(path.read_text())
+    if not isinstance(record, dict) or record.get('version') != 1:
+        raise ValueError('invalid same-run stats record')
+    return record
 
 
 def invoke(argv, env, output, log, timeout, *, capture_usage=True):
     """b383422 pipe-EOF boundary, including startup, full output and teardown."""
     rss = log.with_suffix('.usage')
+    stats_path = log.with_suffix('.stats.json').resolve()
+    # Never inherit a shared destination, including in a DuckDB arm. A fresh
+    # per-call path prevents a failed invocation consuming another cell's stats.
+    env = dict(env)
+    env.pop('NATA_STATS_JSON', None)
+    if env.get('NATA_QUERY_STATS') == '1' and any(str(v) == 'sql' for v in argv):
+        stats_path.unlink(missing_ok=True)
+        env['NATA_STATS_JSON'] = str(stats_path)
     load = os.getloadavg()
     start = time.perf_counter_ns()
     with output.open('w') as sink:
@@ -65,7 +75,8 @@ def invoke(argv, env, output, log, timeout, *, capture_usage=True):
                 user_seconds=float(usage[1]) if len(usage) == 3 else None,
                 system_seconds=float(usage[2]) if len(usage) == 3 else None,
                 output_bytes=output.stat().st_size, counters=counters,
-                stats=parse_stats(text))
+                stats=read_stats(stats_path) if 'NATA_STATS_JSON' in env else None,
+                stats_file=str(stats_path) if 'NATA_STATS_JSON' in env else None)
 
 
 def paired(samples, labels, rounds=5):

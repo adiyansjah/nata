@@ -150,6 +150,7 @@ def run(a):
     if metadata['policy'] == '0008-v1':
         metadata['diagnostic'] = 'Native attribution is partial: complete=false blocks T6; record.missing lists remaining coverage. External per-query symbol profiles are still required.'
     metadata['native_stats_enabled'] = env.get('NATA_QUERY_STATS') == '1'
+    metadata['stats_destination'] = 'per-invocation .stats.json sidecar; query stdout/stderr contain no stats records'
     metadata['trace_enabled'] = env.get('NATA_QUERY_TRACE') == '1'
     metadata['affinity'] = getattr(a, 'affinity', 'unpinned')
     metadata['cpu_core_socket'] = sp.check_output(['lscpu', '-p=CPU,CORE,SOCKET'], text=True)

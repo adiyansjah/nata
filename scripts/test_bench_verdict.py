@@ -2,7 +2,7 @@
 import copy
 from fractions import Fraction
 import unittest
-from bench_verdict import assess, paired, parse_stats, assess_off_cost, reconcile_stats, REQUIRED_STAGES, REQUIRED_COUNTERS, aggregate_limit
+from bench_verdict import assess, paired, read_stats, assess_off_cost, reconcile_stats, REQUIRED_STAGES, REQUIRED_COUNTERS, aggregate_limit
 
 
 def stats_record():
@@ -96,12 +96,33 @@ class Verdict(unittest.TestCase):
                 row['seconds'] = row['elapsed_ns']/1e9
         self.assertEqual(self.judge(rows), 'NOT MET')
 
-    def test_one_record_only(self):
-        line = 'query_stats: {"version":1}\n'
-        self.assertEqual(parse_stats(line), {'version': 1})
-        self.assertIsNone(parse_stats('aggregate: n=1'))
-        with self.assertRaises(ValueError):
-            parse_stats(line+line)
+    def test_file_record_only_and_stale_removal(self):
+        import os
+        import sys
+        import tempfile
+        from pathlib import Path
+        from bench_verdict import invoke
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root/'run.stats.json'
+            self.assertIsNone(read_stats(path))
+            path.write_text('{"version":1}')
+            self.assertEqual(read_stats(path), {'version':1})
+            path.write_text('{}\n{}')
+            with self.assertRaises(ValueError):
+                read_stats(path)
+            # A previous valid record must not satisfy a new failed process.
+            path.write_text('{"version":1}')
+            env = dict(os.environ, NATA_QUERY_STATS='1')
+            row = invoke([sys.executable, '-c', 'import sys; sys.exit(7)', 'sql'], env,
+                         root/'out', root/'run.log', 5)
+            self.assertEqual(row['exit'], 7)
+            self.assertIsNone(row['stats'])
+            script = """import os; from pathlib import Path; Path(os.environ["NATA_STATS_JSON"]).write_text('{"version":1}'); print("diagnostic", file=__import__("sys").stderr)"""
+            row = invoke([sys.executable, '-c', script, 'sql'], env,
+                         root/'out', root/'run.log', 5)
+            self.assertEqual(row['stats'], {'version':1})
+            self.assertEqual((root/'run.log').read_bytes(), b'diagnostic\n')
 
 
 class OffCost(unittest.TestCase):
