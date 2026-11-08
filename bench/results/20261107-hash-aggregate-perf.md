@@ -2920,3 +2920,34 @@ spill admission (insufficient scan/socket headroom); the planned low-limit test
 uses 32, below the measured 256 spill partitions, without changing admission.
 Stale build caches were removed when free disk fell below 20 GB. Neither failed
 trial is a performance pass. No new Cargo.lock entry; no push or merge.
+
+## Step 2e timing on settled machines (runs `perf2e-c3d`, `perf2e-n4a`, added by the parent, 2026-11-08)
+
+Baseline `4e59549` against `output` = `f1063a1` (batched result delivery and reusable CSV workspace), SF1, value-gated against
+DuckDB 2.0.0, five alternating rounds with twins, settled load. c3d-highcpu-8 and n4a-highcpu-8, Spot, 2 h cap, approved $0.18 +
+$0.26. Raw: `raw/20261108-hash-aggregate-perf2e-gcp/`. Medians of the primary arm, seconds.
+
+| CPU | Query | Threads | Budget | baseline | output | DuckDB | output / baseline | **output / DuckDB** |
+|---|---|---:|---|---:|---:|---:|---:|---:|
+| x86-64 | high_cardinality_tpch | 1 | in memory | 3.110 | 2.742 | 1.043 | 0.88 | 2.6x |
+| x86-64 | high_cardinality_tpch | 8 | in memory | 2.213 | 1.855 | 0.837 | 0.84 | **2.2x** |
+| x86-64 | high_cardinality_tpch | 1 | 64 MiB | 4.402 | 4.165 | 1.245 | 0.95 | 3.3x |
+| x86-64 | high_cardinality_tpch | 8 | 64 MiB | 5.073 | 4.862 | 1.124 | 0.96 | 4.3x |
+| x86-64 | q1 | 1 | in memory | 1.182 | 1.140 | 0.226 | 0.96 | 5.0x |
+| x86-64 | q1 | 1 | 64 MiB | 1.188 | 1.140 | 0.229 | 0.96 | 5.0x |
+| x86-64 | q1 | 8 | in memory | 0.281 | 0.277 | 0.098 | 0.99 | 2.8x |
+| x86-64 | q1 | 8 | 64 MiB | 0.432 | 0.418 | 0.101 | 0.97 | 4.1x |
+| ARM64 | high_cardinality_tpch | 1 | in memory | 3.059 | 2.549 | 1.024 | 0.83 | 2.5x |
+| ARM64 | high_cardinality_tpch | 8 | in memory | 2.152 | 1.599 | 0.722 | 0.74 | **2.2x** |
+| ARM64 | high_cardinality_tpch | 1 | 64 MiB | 4.945 | 4.410 | 1.199 | 0.89 | 3.7x |
+| ARM64 | high_cardinality_tpch | 8 | 64 MiB | 5.736 | 5.235 | 0.980 | 0.91 | 5.3x |
+| ARM64 | q1 | 1 | in memory | 0.992 | 0.992 | 0.232 | 1.00 | 4.3x |
+| ARM64 | q1 | 1 | 64 MiB | 0.998 | 0.996 | 0.240 | 1.00 | 4.2x |
+| ARM64 | q1 | 8 | in memory | 0.161 | 0.170 | 0.079 | 1.05 | 2.1x |
+| ARM64 | q1 | 8 | 64 MiB | 0.366 | 0.365 | 0.077 | 1.00 | 4.7x |
+
+**Verdict: kept, settled win on both CPUs** for the many-group query (0.74-0.88x in memory, 0.89-0.96x with spill). Q1 returns four
+rows, so output batching cannot move it; its cells are 0.96-1.00x except ARM64 eight threads in memory at 1.05x, where x86-64 shows
+0.99x and twin arms differ by 3-5%, so it is read as noise, not a regression. The in-memory baselines differ from step 2d's run
+(ARM64 2.72 → 3.06 s at one thread): verdicts use paired ratios within one run. Frozen targets: **NOT MET**; many groups in memory now
+2.2-2.6x (target 2x), spill 3.3-5.3x, Q1 2.1-5.0x.
