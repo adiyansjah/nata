@@ -13,7 +13,7 @@ lo=math.floor(min(c['control_ratio']['min'] for c in summary['cells'])*10)/10
 hi=math.ceil(max(c['control_ratio']['max'] for c in summary['cells'])*10)/10
 lo=min(lo,.8); hi=max(hi,1.2)
 def x(v): return 190+(v-lo)/(hi-lo)*420
-svg=['<svg viewBox="0 0 700 290" role="img" aria-label="Unsettled paired ratios; candidate IQR and identical-baseline control range">']
+svg=['<svg height="290" viewBox="0 0 700 290" role="img" aria-label="Unsettled paired ratios; candidate IQR and identical-baseline control range">']
 for i in range(round((hi-lo)*10)+1):
  v=round(lo+i/10,1);px=x(v)
  svg.append(f'<line class="grid" x1="{px}" x2="{px}" y1="15" y2="245"/><text x="{px}" y="268" text-anchor="middle">{v:.1f}×</text>')
@@ -27,7 +27,7 @@ svg.append('</svg>')
 q1=next(s for s in stats if s['query']=='q1' and s['threads']==1)
 stages=['scan_decode','filter','expression','group_id','state_update']
 maximum=max(q1['stage_service_wall_ms'][a][s] for a in ('before','after') for s in stages)
-bars=['<svg viewBox="0 0 700 340" role="img" aria-label="Q1 one-thread stage service wall milliseconds, same timed runs">']
+bars=['<svg height="340" viewBox="0 0 700 340" role="img" aria-label="Q1 one-thread stage service wall milliseconds, same timed runs">']
 for i,s in enumerate(stages):
  y=26+i*61;bars.append(f'<text x="0" y="{y+14}">{s.replace("_"," ")}</text>')
  for arm,dy,klass in [('before',0,'before'),('after',22,'after')]:

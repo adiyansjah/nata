@@ -1,0 +1,366 @@
+[
+  {
+    "query": "q1",
+    "threads": 1,
+    "budget": 8589934592,
+    "stage_service_wall_ms": {
+      "before": {
+        "scan_decode": 209.16037,
+        "filter": 81.689765,
+        "expression": 253.151568,
+        "group_id": 226.432472,
+        "state_update": 212.402969,
+        "merge": 0.007897,
+        "finalize": 0.03762,
+        "output_sink": 0.07806,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.206973,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.643031
+      },
+      "after": {
+        "scan_decode": 203.806102,
+        "filter": 80.660776,
+        "expression": 147.532774,
+        "group_id": 226.155092,
+        "state_update": 194.127638,
+        "merge": 0.007043,
+        "finalize": 0.038385,
+        "output_sink": 0.075476,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.192021,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.372709
+      },
+      "control": {
+        "scan_decode": 204.408135,
+        "filter": 80.704878,
+        "expression": 245.847953,
+        "group_id": 220.538863,
+        "state_update": 213.037718,
+        "merge": 0.007371,
+        "finalize": 0.037401,
+        "output_sink": 0.066043,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.245238,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.764007
+      }
+    },
+    "counters": {
+      "before": {
+        "copied_bytes": 520660560,
+        "materialized_bytes": 520660560,
+        "col_materializations": 187598,
+        "allocation_capacity_bytes": 118332436,
+        "allocation_sites": 187628,
+        "grants": 76,
+        "grant_bytes": 34989914,
+        "releases": 76
+      },
+      "after": {
+        "copied_bytes": 118332372,
+        "materialized_bytes": 357996716,
+        "col_materializations": 211044,
+        "allocation_capacity_bytes": 357996780,
+        "allocation_sites": 398642,
+        "grants": 76,
+        "grant_bytes": 34989914,
+        "releases": 76
+      },
+      "control": {
+        "copied_bytes": 520660560,
+        "materialized_bytes": 520660560,
+        "col_materializations": 187598,
+        "allocation_capacity_bytes": 118332436,
+        "allocation_sites": 187628,
+        "grants": 76,
+        "grant_bytes": 34989914,
+        "releases": 76
+      }
+    },
+    "stats_complete": false,
+    "missing": [
+      "complete_allocation_inventory",
+      "all_worker_cpu_scopes",
+      "ready_wake_edges",
+      "native_sink_finish"
+    ]
+  },
+  {
+    "query": "q1",
+    "threads": 8,
+    "budget": 8589934592,
+    "stage_service_wall_ms": {
+      "before": {
+        "scan_decode": 449.792045,
+        "filter": 174.480241,
+        "expression": 467.730305,
+        "group_id": 489.471768,
+        "state_update": 457.391832,
+        "merge": 0.130985,
+        "finalize": 0.04581,
+        "output_sink": 0.104956,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.154999,
+        "admission_wait": 0.0,
+        "bind_metadata": 2.104291
+      },
+      "after": {
+        "scan_decode": 433.356688,
+        "filter": 173.648892,
+        "expression": 285.509347,
+        "group_id": 479.950566,
+        "state_update": 424.319858,
+        "merge": 0.042035,
+        "finalize": 0.048355,
+        "output_sink": 0.086882,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.287716,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.825774
+      },
+      "control": {
+        "scan_decode": 440.618125,
+        "filter": 171.219489,
+        "expression": 459.330917,
+        "group_id": 479.388494,
+        "state_update": 447.602051,
+        "merge": 0.047822,
+        "finalize": 0.047151,
+        "output_sink": 0.091746,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 0.247906,
+        "admission_wait": 0.0,
+        "bind_metadata": 2.103826
+      }
+    },
+    "counters": {
+      "before": {
+        "copied_bytes": 520660560,
+        "materialized_bytes": 520660560,
+        "col_materializations": 187598,
+        "allocation_capacity_bytes": 118332436,
+        "allocation_sites": 187628,
+        "grants": 111,
+        "grant_bytes": 155695317,
+        "releases": 111
+      },
+      "after": {
+        "copied_bytes": 118332372,
+        "materialized_bytes": 357996716,
+        "col_materializations": 211044,
+        "allocation_capacity_bytes": 357996780,
+        "allocation_sites": 398642,
+        "grants": 111,
+        "grant_bytes": 155695317,
+        "releases": 111
+      },
+      "control": {
+        "copied_bytes": 520660560,
+        "materialized_bytes": 520660560,
+        "col_materializations": 187598,
+        "allocation_capacity_bytes": 118332436,
+        "allocation_sites": 187628,
+        "grants": 111,
+        "grant_bytes": 155695317,
+        "releases": 111
+      }
+    },
+    "stats_complete": false,
+    "missing": [
+      "complete_allocation_inventory",
+      "all_worker_cpu_scopes",
+      "ready_wake_edges",
+      "native_sink_finish"
+    ]
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 1,
+    "budget": 8589934592,
+    "stage_service_wall_ms": {
+      "before": {
+        "scan_decode": 264.409556,
+        "filter": 132.078171,
+        "expression": 318.786314,
+        "group_id": 750.819348,
+        "state_update": 105.964305,
+        "merge": 0.043668,
+        "finalize": 390.090125,
+        "output_sink": 714.453317,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 16.459055,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.647518
+      },
+      "after": {
+        "scan_decode": 212.302209,
+        "filter": 109.487208,
+        "expression": 287.196908,
+        "group_id": 816.443964,
+        "state_update": 98.396036,
+        "merge": 0.045352,
+        "finalize": 373.87766,
+        "output_sink": 701.727126,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 17.4541,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.835896
+      },
+      "control": {
+        "scan_decode": 260.862906,
+        "filter": 132.419377,
+        "expression": 317.906351,
+        "group_id": 740.053293,
+        "state_update": 105.009018,
+        "merge": 0.042885,
+        "finalize": 382.907424,
+        "output_sink": 705.131705,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 16.648981,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.766359
+      }
+    },
+    "counters": {
+      "before": {
+        "copied_bytes": 345511118,
+        "materialized_bytes": 345511118,
+        "col_materializations": 303728,
+        "allocation_capacity_bytes": 91097705,
+        "allocation_sites": 466780,
+        "grants": 1394,
+        "grant_bytes": 1557925078,
+        "releases": 1394
+      },
+      "after": {
+        "copied_bytes": 144347024,
+        "materialized_bytes": 287845560,
+        "col_materializations": 327174,
+        "allocation_capacity_bytes": 234596241,
+        "allocation_sites": 584010,
+        "grants": 1394,
+        "grant_bytes": 1557925078,
+        "releases": 1394
+      },
+      "control": {
+        "copied_bytes": 345511118,
+        "materialized_bytes": 345511118,
+        "col_materializations": 303728,
+        "allocation_capacity_bytes": 91097705,
+        "allocation_sites": 466780,
+        "grants": 1394,
+        "grant_bytes": 1557925078,
+        "releases": 1394
+      }
+    },
+    "stats_complete": false,
+    "missing": [
+      "complete_allocation_inventory",
+      "all_worker_cpu_scopes",
+      "ready_wake_edges",
+      "native_sink_finish"
+    ]
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "budget": 8589934592,
+    "stage_service_wall_ms": {
+      "before": {
+        "scan_decode": 626.503226,
+        "filter": 340.273011,
+        "expression": 472.285131,
+        "group_id": 1479.008888,
+        "state_update": 212.468176,
+        "merge": 919.98651,
+        "finalize": 532.22178,
+        "output_sink": 812.5163,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 30.286419,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.706425
+      },
+      "after": {
+        "scan_decode": 468.701746,
+        "filter": 267.477259,
+        "expression": 418.257248,
+        "group_id": 1635.410502,
+        "state_update": 205.318165,
+        "merge": 901.099775,
+        "finalize": 521.23514,
+        "output_sink": 811.019761,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 28.354475,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.751479
+      },
+      "control": {
+        "scan_decode": 587.721017,
+        "filter": 328.502998,
+        "expression": 466.919664,
+        "group_id": 1432.874978,
+        "state_update": 207.156669,
+        "merge": 883.761053,
+        "finalize": 538.15542,
+        "output_sink": 819.467156,
+        "spill_write": 0.0,
+        "spill_read": 0.0,
+        "teardown": 32.937546,
+        "admission_wait": 0.0,
+        "bind_metadata": 1.817564
+      }
+    },
+    "counters": {
+      "before": {
+        "copied_bytes": 345511118,
+        "materialized_bytes": 345511118,
+        "col_materializations": 303728,
+        "allocation_capacity_bytes": 91097705,
+        "allocation_sites": 466780,
+        "grants": 2641,
+        "grant_bytes": 3009457589,
+        "releases": 2641
+      },
+      "after": {
+        "copied_bytes": 144347024,
+        "materialized_bytes": 287845560,
+        "col_materializations": 327174,
+        "allocation_capacity_bytes": 234596241,
+        "allocation_sites": 584010,
+        "grants": 2640,
+        "grant_bytes": 3009455221,
+        "releases": 2640
+      },
+      "control": {
+        "copied_bytes": 345511118,
+        "materialized_bytes": 345511118,
+        "col_materializations": 303728,
+        "allocation_capacity_bytes": 91097705,
+        "allocation_sites": 466780,
+        "grants": 2640,
+        "grant_bytes": 3009442613,
+        "releases": 2640
+      }
+    },
+    "stats_complete": false,
+    "missing": [
+      "complete_allocation_inventory",
+      "all_worker_cpu_scopes",
+      "ready_wake_edges",
+      "native_sink_finish"
+    ]
+  }
+]
