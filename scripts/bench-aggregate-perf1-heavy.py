@@ -225,7 +225,7 @@ def run(args):
     builds = []
     for revision in revisions:
         source, target = layout(work, revision)
-        builds.append(dict(variant=revision['label'], commit=revision['commit'], source=str(source), target=str(target), command=['cargo', 'build', '--locked', '--release', '-p', 'nata']))
+        builds.append(dict(variant=revision['label'], commit=revision['commit'], source=str(source), target=str(target), command=['cargo', 'build', '--locked', '--release', '-j', '4', '-p', 'nata']))
     plan = dict(builds=builds, queries=list(QUERIES), threads=[1,8], budgets=list(BUDGETS), rounds=ROUNDS, roles=['primary','twin'], timed_processes=len(QUERIES)*2*2*ROUNDS*len(arms(revisions,0)), order=[arms(revisions,i) for i in range(ROUNDS)])
     if args.plan:
         print(json.dumps(plan, indent=2))
@@ -240,7 +240,7 @@ def run(args):
     temporary.mkdir(parents=True, exist_ok=True)
     spill = work / 'spill'
     spill.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, TMPDIR=str(temporary), CARGO_BUILD_JOBS='8', CARGO_INCREMENTAL='0', RUSTFLAGS='', CARGO_ENCODED_RUSTFLAGS='')
+    env = dict(os.environ, TMPDIR=str(temporary), CARGO_BUILD_JOBS='4', CARGO_INCREMENTAL='0', RUSTFLAGS='', CARGO_ENCODED_RUSTFLAGS='')
     for key in list(env):
         if key.startswith('CARGO_PROFILE_') or key in ('AI_AGENT', 'CODEX_CI'):
             env.pop(key)
