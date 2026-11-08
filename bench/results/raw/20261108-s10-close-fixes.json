@@ -1,0 +1,1410 @@
+{
+  "scope": "UNSETTLED local x86-64, shared 8 logical CPU Intel i3-1220P; release, warm loopback, concurrent checks/load; no portability or settled performance acceptance",
+  "source_base": "e4d7a5f",
+  "closing_runs": {
+    "n4a": {
+      "step_exits": {
+        "machine-type": 0,
+        "machine-context": 0,
+        "apt-index": 0,
+        "timing-tools": 0,
+        "matrix-deps": 0,
+        "pg16-install": 0,
+        "matrix-psql-version": 0,
+        "matrix-and-deviations": 0,
+        "browse-pg15": 0,
+        "protocol": 0,
+        "metadata-scratch": 0,
+        "loaded-native": 0,
+        "metadata-fuzz": 0,
+        "wire-mutants": 0,
+        "portal-loom-bound-3": 0,
+        "scheduler-loom-bound-3": 1,
+        "memory-loom-bound-3": 0,
+        "bridge-loom-bound-3": 124,
+        "resource-gate-mutants": 0,
+        "p16-gate-controls": 0,
+        "admission-yield-mutants": 1,
+        "loaded-fairness": 0,
+        "resource-gates": 1,
+        "snapshot-cap-mutant": 0,
+        "pg16-parity": 0,
+        "dbeaver-r24": 1,
+        "p16-builds": 1,
+        "p16-streaming-and-regression": 1
+      },
+      "resource_miss_ms": {
+        "postgres": 2.392409999629308,
+        "nata": 3.293510999355931
+      },
+      "resource_ratio": 1.3766499052696837,
+      "scheduler_timeouts": [
+        "m09_external_cancel_reaches_blocked_tasks_and_the_blocked_consumer",
+        "m21_an_external_cancel_with_files_pending_reaches_everyone"
+      ]
+    },
+    "c3d": {
+      "step_exits": {
+        "machine-type": 0,
+        "machine-context": 0,
+        "apt-index": 0,
+        "timing-tools": 0,
+        "matrix-deps": 0,
+        "pg16-install": 0,
+        "matrix-psql-version": 0,
+        "matrix-and-deviations": 0,
+        "browse-pg15": 0,
+        "protocol": 0,
+        "metadata-scratch": 0,
+        "loaded-native": 0,
+        "metadata-fuzz": 0,
+        "wire-mutants": 0,
+        "portal-loom-bound-3": 0,
+        "scheduler-loom-bound-3": 1,
+        "memory-loom-bound-3": 0,
+        "bridge-loom-bound-3": 124,
+        "resource-gate-mutants": 0,
+        "p16-gate-controls": 0,
+        "admission-yield-mutants": 0,
+        "loaded-fairness": 0,
+        "resource-gates": 1,
+        "snapshot-cap-mutant": "NO VERDICT",
+        "pg16-parity": "NO VERDICT",
+        "dbeaver-r24": "NO VERDICT",
+        "p16-builds": "NO VERDICT",
+        "p16-streaming-and-regression": "NO VERDICT"
+      },
+      "resource_miss_ms": {
+        "postgres": 7.1594870005355915,
+        "nata": 9.430273999896599
+      },
+      "resource_ratio": 1.3171717469689006,
+      "scheduler_timeouts": [
+        "m09_external_cancel_reaches_blocked_tasks_and_the_blocked_consumer",
+        "m14_an_error_cancels_a_higher_blocked_task_and_a_lower_task_still_finishes",
+        "m21_an_external_cancel_with_files_pending_reaches_everyone"
+      ]
+    }
+  },
+  "paired_release_before_after_ms": [
+    {
+      "tables": 64,
+      "width": 64,
+      "round": 1,
+      "ms": [
+        {
+          "min": 0.8385949768126011,
+          "median": 1.0805829952005297,
+          "max": 1.8619450274854898
+        },
+        {
+          "min": 0.7303340244106948,
+          "median": 1.0859864996746182,
+          "max": 2.24474398419261
+        }
+      ]
+    },
+    {
+      "tables": 64,
+      "width": 64,
+      "round": 2,
+      "ms": [
+        {
+          "min": 0.8746810490265489,
+          "median": 1.4732005074620247,
+          "max": 2.066241984721273
+        },
+        {
+          "min": 0.7500570500269532,
+          "median": 1.1352619912941009,
+          "max": 1.6484719817526639
+        }
+      ]
+    },
+    {
+      "tables": 64,
+      "width": 64,
+      "round": 3,
+      "ms": [
+        {
+          "min": 0.9129370446316898,
+          "median": 1.6747440095059574,
+          "max": 2.413589973002672
+        },
+        {
+          "min": 0.9438120177946985,
+          "median": 1.346511475276202,
+          "max": 1.7757819732651114
+        }
+      ]
+    },
+    {
+      "tables": 1024,
+      "width": 1,
+      "round": 1,
+      "ms": [
+        {
+          "min": 2.9810950509272516,
+          "median": 4.9477205029688776,
+          "max": 10.699656035285443
+        },
+        {
+          "min": 2.6006450061686337,
+          "median": 4.1274745017290115,
+          "max": 9.6354850102216
+        }
+      ]
+    },
+    {
+      "tables": 1024,
+      "width": 1,
+      "round": 2,
+      "ms": [
+        {
+          "min": 4.250312980730087,
+          "median": 5.157422507181764,
+          "max": 6.433337985072285
+        },
+        {
+          "min": 2.9712539981119335,
+          "median": 4.103849991224706,
+          "max": 5.367772013414651
+        }
+      ]
+    },
+    {
+      "tables": 1024,
+      "width": 1,
+      "round": 3,
+      "ms": [
+        {
+          "min": 3.9018350071273744,
+          "median": 5.663183517754078,
+          "max": 6.8776559783145785
+        },
+        {
+          "min": 3.309778985567391,
+          "median": 4.221027513267472,
+          "max": 5.9256620006635785
+        }
+      ]
+    },
+    {
+      "tables": 10000,
+      "width": 1,
+      "round": 1,
+      "ms": [
+        {
+          "min": 23.984250030480325,
+          "median": 49.370393506251276,
+          "max": 73.20569199509919
+        },
+        {
+          "min": 29.555417015217245,
+          "median": 41.56554851215333,
+          "max": 63.76922101480886
+        }
+      ]
+    },
+    {
+      "tables": 10000,
+      "width": 1,
+      "round": 2,
+      "ms": [
+        {
+          "min": 37.69261302659288,
+          "median": 44.415812502847984,
+          "max": 75.71803400060162
+        },
+        {
+          "min": 30.55411804234609,
+          "median": 35.74169799685478,
+          "max": 69.88618697505444
+        }
+      ]
+    },
+    {
+      "tables": 10000,
+      "width": 1,
+      "round": 3,
+      "ms": [
+        {
+          "min": 33.01184205338359,
+          "median": 39.01455903542228,
+          "max": 50.118972023483366
+        },
+        {
+          "min": 28.011657996103168,
+          "median": 33.95028100931086,
+          "max": 44.452116009779274
+        }
+      ]
+    }
+  ],
+  "resources": {
+    "before": [
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 28573696,
+        "budget": 1252200448,
+        "idle": 10686464,
+        "final": [
+          19914752,
+          28573696,
+          7
+        ],
+        "admission_seconds": 1.1244736819644459,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.0040974480216391385,
+              0.003854972019325942,
+              0.003744597954209894,
+              0.003843187994789332,
+              0.004254391009453684
+            ],
+            "nata": [
+              0.0013837890001013875,
+              0.0011315070441924036,
+              0.0013307040208019316,
+              0.0012302700197324157,
+              0.0027161809848621488
+            ]
+          },
+          "ratio": 0.3451916159522763,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 28594176,
+        "budget": 1252159488,
+        "idle": 10645504,
+        "final": [
+          20033536,
+          28594176,
+          7
+        ],
+        "admission_seconds": 1.1075426760362461,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.004571450990624726,
+              0.004311302967835218,
+              0.004196352034341544,
+              0.00446895498316735,
+              0.005029621010180563
+            ],
+            "nata": [
+              0.001226751017384231,
+              0.0011544880107976496,
+              0.0012017249828204513,
+              0.0011895609786733985,
+              0.0030689789564348757
+            ]
+          },
+          "ratio": 0.2689051438975862,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 32301056,
+        "budget": 1252093952,
+        "idle": 10579968,
+        "final": [
+          22884352,
+          32301056,
+          7
+        ],
+        "admission_seconds": 1.9819640650530346,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.003860441967844963,
+              0.003782094980124384,
+              0.003724384994711727,
+              0.0059740019496530294,
+              0.00703274505212903
+            ],
+            "nata": [
+              0.0010677110403776169,
+              0.0011245359783060849,
+              0.001244003011379391,
+              0.0011250089737586677,
+              0.003978569991886616
+            ]
+          },
+          "ratio": 0.2914197346131039,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 28168192,
+        "budget": 1252081664,
+        "idle": 10567680,
+        "final": [
+          19619840,
+          28168192,
+          7
+        ],
+        "admission_seconds": 1.3278124710195698,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.005279671051539481,
+              0.005142482987139374,
+              0.005030161002650857,
+              0.005283578997477889,
+              0.004131783964112401
+            ],
+            "nata": [
+              0.0008638259605504572,
+              0.0006866399780847132,
+              0.0008436060161329806,
+              0.0007013700087554753,
+              0.0036088800407014787
+            ]
+          },
+          "ratio": 0.16404643792555473,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 27975680,
+        "budget": 1252069376,
+        "idle": 10555392,
+        "final": [
+          19820544,
+          27975680,
+          7
+        ],
+        "admission_seconds": 1.6731597579782829,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.008418065961450338,
+              0.008095847035292536,
+              0.008470793021842837,
+              0.007822704967111349,
+              0.010051227000076324
+            ],
+            "nata": [
+              0.0018888000049628317,
+              0.0015603640349581838,
+              0.0018084009643644094,
+              0.0019102800288237631,
+              0.005010652006603777
+            ]
+          },
+          "ratio": 0.2243745788655489,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 27414528,
+        "budget": 1251913728,
+        "idle": 10399744,
+        "final": [
+          19087360,
+          27414528,
+          7
+        ],
+        "admission_seconds": 1.5431262029451318,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.007046336017083377,
+              0.006699640012811869,
+              0.006204545032233,
+              0.00649351702304557,
+              0.007158920983783901
+            ],
+            "nata": [
+              0.0017671050154604018,
+              0.0017631889786571264,
+              0.0016634819912724197,
+              0.0017398159834556282,
+              0.004305016016587615
+            ]
+          },
+          "ratio": 0.26317667446091747,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      }
+    ],
+    "after": [
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 29036544,
+        "budget": 1251311616,
+        "idle": 9797632,
+        "final": [
+          21311488,
+          29036544,
+          7
+        ],
+        "admission_seconds": 1.231683695979882,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.00953883701004088,
+              0.007257867022417486,
+              0.00723325100261718,
+              0.007272404036484659,
+              0.007373469998128712
+            ],
+            "nata": [
+              0.004449163971003145,
+              0.0032774959690868855,
+              0.003745411988347769,
+              0.00381346297217533,
+              0.00801907799905166
+            ]
+          },
+          "ratio": 0.5243744644884561,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 28893184,
+        "budget": 1251196928,
+        "idle": 9682944,
+        "final": [
+          20299776,
+          28893184,
+          7
+        ],
+        "admission_seconds": 1.447329604998231,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.011448418023064733,
+              0.008935260004363954,
+              0.009651286993175745,
+              0.0076015740050934255,
+              0.01236223999876529
+            ],
+            "nata": [
+              0.0032393719884566963,
+              0.0024189319810830057,
+              0.0037020230083726346,
+              0.0036370360176078975,
+              0.009567084955051541
+            ]
+          },
+          "ratio": 0.3768446653984677,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 34164736,
+        "budget": 1251758080,
+        "idle": 10244096,
+        "final": [
+          25952256,
+          34164736,
+          7
+        ],
+        "admission_seconds": 1.2499914710060693,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.025511647982057184,
+              0.01678041700506583,
+              0.017537200008518994,
+              0.028792147990316153,
+              0.022849540982861072
+            ],
+            "nata": [
+              0.008172659028787166,
+              0.006876369996462017,
+              0.01027576596243307,
+              0.007701611029915512,
+              0.027784849982708693
+            ]
+          },
+          "ratio": 0.3576727880405691,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 34873344,
+        "budget": 1251987456,
+        "idle": 10473472,
+        "final": [
+          26435584,
+          34873344,
+          7
+        ],
+        "admission_seconds": 1.5522264150204137,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.03096843301318586,
+              0.03241716301999986,
+              0.019960773002821952,
+              0.02744540199637413,
+              0.03124886896694079
+            ],
+            "nata": [
+              0.008805684046819806,
+              0.007775506004691124,
+              0.00891898397821933,
+              0.009225742018315941,
+              0.024747363990172744
+            ]
+          },
+          "ratio": 0.28800243055313035,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24186880,
+        "budget": 1250041856,
+        "idle": 8527872,
+        "final": [
+          16629760,
+          24186880,
+          7
+        ],
+        "admission_seconds": 1.8199560490320437,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.005932070023845881,
+              0.005614513007458299,
+              0.00547445600386709,
+              0.005254364979919046,
+              0.006190711981616914
+            ],
+            "nata": [
+              0.0008480100077576935,
+              0.0005861729732714593,
+              0.0008458949741907418,
+              0.0005202830070629716,
+              0.0019155550398863852
+            ]
+          },
+          "ratio": 0.15066221648557193,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 27910144,
+        "budget": 1250574336,
+        "idle": 9060352,
+        "final": [
+          18444288,
+          27910144,
+          7
+        ],
+        "admission_seconds": 2.064516370999627,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.007002631027717143,
+              0.0067034559906460345,
+              0.006554705963935703,
+              0.006426259991712868,
+              0.00731076899683103
+            ],
+            "nata": [
+              0.0011870639864355326,
+              0.0013192880433052778,
+              0.001063335977960378,
+              0.0007849709945730865,
+              0.00239838904235512
+            ]
+          },
+          "ratio": 0.17708238677063817,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24805376,
+        "budget": 1250754560,
+        "idle": 9240576,
+        "final": [
+          16183296,
+          24805376,
+          7
+        ],
+        "admission_seconds": 1.434449732012581,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.006279841996729374,
+              0.0060621899901889265,
+              0.005797509045805782,
+              0.005678221001289785,
+              0.0037511829868890345
+            ],
+            "nata": [
+              0.0014959980035200715,
+              0.001102807989809662,
+              0.0010799599695019424,
+              0.0009055290138348937,
+              0.0029274520347826183
+            ]
+          },
+          "ratio": 0.19022100372702141,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24743936,
+        "budget": 1250369536,
+        "idle": 8855552,
+        "final": [
+          16224256,
+          24743936,
+          7
+        ],
+        "admission_seconds": 1.3139479859964922,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.006032468983903527,
+              0.0056330930092372,
+              0.00573755701771006,
+              0.005613471032120287,
+              0.006425064988434315
+            ],
+            "nata": [
+              0.0011607519700191915,
+              0.0006658550119027495,
+              0.0008986800094135106,
+              0.0008208290091715753,
+              0.0027385999565012753
+            ]
+          },
+          "ratio": 0.15663112482186478,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 29282304,
+        "budget": 1251348480,
+        "idle": 9834496,
+        "final": [
+          21630976,
+          29282304,
+          7
+        ],
+        "admission_seconds": 1.6527392080170102,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.021565218979958445,
+              0.020935865002684295,
+              0.02177130099153146,
+              0.014596479013562202,
+              0.013284904998727143
+            ],
+            "nata": [
+              0.006526621989905834,
+              0.005811770039144903,
+              0.006283107039052993,
+              0.005610239983070642,
+              0.015617577999364585
+            ]
+          },
+          "ratio": 0.30011212998590714,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 29159424,
+        "budget": 1251213312,
+        "idle": 9699328,
+        "final": [
+          21643264,
+          29159424,
+          7
+        ],
+        "admission_seconds": 1.7578911390155554,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.016836374008562416,
+              0.015121487027499825,
+              0.01227417099289596,
+              0.013279091042932123,
+              0.009500031010247767
+            ],
+            "nata": [
+              0.00511501298751682,
+              0.004156560986302793,
+              0.004510778002440929,
+              0.004155501024797559,
+              0.010171316971536726
+            ]
+          },
+          "ratio": 0.3396902685475463,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 34299904,
+        "budget": 1251938304,
+        "idle": 10424320,
+        "final": [
+          26853376,
+          34299904,
+          7
+        ],
+        "admission_seconds": 1.6362292809644714,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.03264802502235398,
+              0.035585973993875086,
+              0.03421331598656252,
+              0.033340213005430996,
+              0.034882158041000366
+            ],
+            "nata": [
+              0.017714229004923254,
+              0.014124057022854686,
+              0.015199337038211524,
+              0.014884534000884742,
+              0.04508732497924939
+            ]
+          },
+          "ratio": 0.44425208723355414,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 34902016,
+        "budget": 1251893248,
+        "idle": 10379264,
+        "final": [
+          26198016,
+          34902016,
+          7
+        ],
+        "admission_seconds": 1.5080356239923276,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.036588251998182386,
+              0.037140020984224975,
+              0.03770627698395401,
+              0.0381807399680838,
+              0.036922155995853245
+            ],
+            "nata": [
+              0.015292240015696734,
+              0.013257355021778494,
+              0.013308566005434841,
+              0.015073932998348027,
+              0.02749359398148954
+            ]
+          },
+          "ratio": 0.4058676489372636,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24514560,
+        "budget": 1250439168,
+        "idle": 8925184,
+        "final": [
+          16908288,
+          24514560,
+          7
+        ],
+        "admission_seconds": 1.4218778649810702,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.00599699595477432,
+              0.005680392030626535,
+              0.005424860981293023,
+              0.005254959978628904,
+              0.006093067000620067
+            ],
+            "nata": [
+              0.0010978449718095362,
+              0.0007017300231382251,
+              0.0008945249719545245,
+              0.0005282299825921655,
+              0.001871066982857883
+            ]
+          },
+          "ratio": 0.1574759219313707,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24313856,
+        "budget": 1250414592,
+        "idle": 8900608,
+        "final": [
+          16752640,
+          24313856,
+          7
+        ],
+        "admission_seconds": 1.5803680950193666,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.0062792510143481195,
+              0.005769950046669692,
+              0.005788728012703359,
+              0.005896631977520883,
+              0.004856512998230755
+            ],
+            "nata": [
+              0.0008273920393548906,
+              0.0007311159861274064,
+              0.0007390420068986714,
+              0.0007018999895080924,
+              0.0019024889916181564
+            ]
+          },
+          "ratio": 0.12766915378937208,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 25980928,
+        "budget": 1250713600,
+        "idle": 9199616,
+        "final": [
+          18415616,
+          25980928,
+          7
+        ],
+        "admission_seconds": 1.9069019139860757,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.007579814991913736,
+              0.007160139037296176,
+              0.00696958095068112,
+              0.007233160024043173,
+              0.00830485502956435
+            ],
+            "nata": [
+              0.001624041993636638,
+              0.00121620501158759,
+              0.00122483802260831,
+              0.0008518749964423478,
+              0.0037239520461298525
+            ]
+          },
+          "ratio": 0.16933650279226828,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24776704,
+        "budget": 1250418688,
+        "idle": 8904704,
+        "final": [
+          16510976,
+          24776704,
+          7
+        ],
+        "admission_seconds": 1.7133088379632682,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.006047671020496637,
+              0.005991913960315287,
+              0.005205690977163613,
+              0.005649115017149597,
+              0.0049315610085614026
+            ],
+            "nata": [
+              0.0013514980091713369,
+              0.000851296994369477,
+              0.0010263490257784724,
+              0.0013140669907443225,
+              0.0029977759695611894
+            ]
+          },
+          "ratio": 0.23261466384647414,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 29388800,
+        "budget": 1251672064,
+        "idle": 10158080,
+        "final": [
+          21692416,
+          29388800,
+          7
+        ],
+        "admission_seconds": 1.520096165011637,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.015559485007543117,
+              0.014773542003240436,
+              0.010088254988659173,
+              0.010412639006972313,
+              0.014288334990851581
+            ],
+            "nata": [
+              0.004668081004638225,
+              0.0038213570369407535,
+              0.003587024984881282,
+              0.004020413965918124,
+              0.010718315024860203
+            ]
+          },
+          "ratio": 0.28137735911792955,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 28938240,
+        "budget": 1251635200,
+        "idle": 10121216,
+        "final": [
+          21483520,
+          28938240,
+          7
+        ],
+        "admission_seconds": 1.467362387047615,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.016531069995835423,
+              0.016231702989898622,
+              0.016406903974711895,
+              0.016369200020562857,
+              0.016966091003268957
+            ],
+            "nata": [
+              0.005778057966381311,
+              0.004381224047392607,
+              0.004467663005925715,
+              0.004332426993642002,
+              0.01030415901914239
+            ]
+          },
+          "ratio": 0.27230384311456707,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 38297600,
+        "budget": 1251844096,
+        "idle": 10330112,
+        "final": [
+          30814208,
+          38297600,
+          7
+        ],
+        "admission_seconds": 2.5506616979837418,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.048187243985012174,
+              0.0519368689856492,
+              0.05031870800303295,
+              0.050620566005818546,
+              0.056946574011817575
+            ],
+            "nata": [
+              0.022036841022782028,
+              0.018977997999172658,
+              0.01991151401307434,
+              0.013814059959258884,
+              0.06012566899880767
+            ]
+          },
+          "ratio": 0.393348308487614,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 1024,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 36470784,
+        "budget": 1251889152,
+        "idle": 10375168,
+        "final": [
+          28291072,
+          36470784,
+          7
+        ],
+        "admission_seconds": 2.237760783988051,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.04511876398464665,
+              0.046658590028528124,
+              0.045426209981087595,
+              0.05705661600222811,
+              0.0528364849742502
+            ],
+            "nata": [
+              0.02105018199654296,
+              0.01822614698903635,
+              0.018093030026648194,
+              0.01880544499726966,
+              0.05404604400973767
+            ]
+          },
+          "ratio": 0.40304357645122973,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24715264,
+        "budget": 1250410496,
+        "idle": 8896512,
+        "final": [
+          16846848,
+          24715264,
+          7
+        ],
+        "admission_seconds": 1.7414494520053267,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.007655552995856851,
+              0.005453885009046644,
+              0.005972135986667126,
+              0.007640279014594853,
+              0.006146472005639225
+            ],
+            "nata": [
+              0.0006413279916159809,
+              0.00032751698745414615,
+              0.000962416990660131,
+              0.0006832610233686864,
+              0.003832318994682282
+            ]
+          },
+          "ratio": 0.11116312296579445,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 1,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 25350144,
+        "budget": 1250533376,
+        "idle": 9019392,
+        "final": [
+          17620992,
+          25350144,
+          7
+        ],
+        "admission_seconds": 1.7686086099711247,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.006543003022670746,
+              0.004955520038492978,
+              0.005046956997830421,
+              0.005010482971556485,
+              0.0062397109577432275
+            ],
+            "nata": [
+              0.001012496999464929,
+              0.0008713100105524063,
+              0.0010823400225490332,
+              0.0007998429937288165,
+              0.0021344380220398307
+            ]
+          },
+          "ratio": 0.20061534106594925,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24670208,
+        "budget": 1250537472,
+        "idle": 9023488,
+        "final": [
+          16363520,
+          24670208,
+          7
+        ],
+        "admission_seconds": 1.5309682850493118,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.007798856007866561,
+              0.005997036001645029,
+              0.00611935299821198,
+              0.006088141992222518,
+              0.006909487012308091
+            ],
+            "nata": [
+              0.0015635580057278275,
+              0.001305928046349436,
+              0.0015340670361183584,
+              0.0013084349920973182,
+              0.0038805059739388525
+            ]
+          },
+          "ratio": 0.25069105125437263,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      },
+      {
+        "tables": 64,
+        "width": 64,
+        "workers": 1,
+        "sessions": 64,
+        "peak": 24915968,
+        "budget": 1250664448,
+        "idle": 9150464,
+        "final": [
+          16461824,
+          24915968,
+          7
+        ],
+        "admission_seconds": 1.7044814270338975,
+        "yielded_portals": 1,
+        "browse_gate": {
+          "samples": {
+            "postgres": [
+              0.006424082966987044,
+              0.00532663898775354,
+              0.005265134037472308,
+              0.0054965949966572225,
+              0.006113287003245205
+            ],
+            "nata": [
+              0.0008590029901824892,
+              0.0006720180390402675,
+              0.0008394679753109813,
+              0.0006725940038450062,
+              0.0032257369603030384
+            ]
+          },
+          "ratio": 0.15272509177436344,
+          "budget": 1.2,
+          "verdict": "PASS"
+        }
+      }
+    ]
+  },
+  "yield_mutants": {
+    "skip-yield": "CAUGHT",
+    "yield-young": "CAUGHT",
+    "yield-two": "CAUGHT",
+    "yield-executing": "CAUGHT"
+  },
+  "checks": {
+    "pgwire": "73 passed, 1 opt-in profile ignored",
+    "fmt": "PASS",
+    "clippy": "PASS",
+    "matrix": "raw exit 1, nine accepted API deviations; deviation check PASS",
+    "pg17_oracle": "154 PASS lines (56 shape replays plus binary/helpers)",
+    "gate_mutants": "8 CAUGHT, 0 MISSED/INVALID",
+    "projection_mutant": "CAUGHT: dropping repeated projected cells fails exact row assertion",
+    "p16_smoke": "14 stream/small verdict arms, SMOKE ONLY, all seven clients",
+    "p16_raw_full": "12 million-value ordered PG17 text/binary scans, 1/8 worker settings, PASS",
+    "bridge_combined_local": "INCONCLUSIVE: release bound 2 stopped at 180 seconds; closing gets 3600 seconds, bound 3 nightly 19800 seconds (pending on closing commit)",
+    "bridge_timeout_control": "PASS: known-too-short 0.001-second exploration exits 124, never a pass",
+    "p16_builds": "PASS: archived a3e8e3b baseline release cold build 6m09s; current release 21.59s with seeded existing release cache; serial -j4, --locked",
+    "bridge_io_bound2": "PASS: release 7.59 seconds",
+    "bridge_io_bound3": "PASS: release 192.30 seconds, above old 180-second limit",
+    "p16_packaged_pair_smoke": "PASS: 14 arms/all seven clients, actual packaged a3e8e3b baseline and current release, SMOKE ONLY"
+  },
+  "profiles_before": [
+    "snapshot_us=1638",
+    "rows=64 shape_us=16 generate_sort_project_us=15 encode_us=7 encode_reused_description_us=4",
+    "rows=316 shape_us=2 generate_sort_project_us=188 encode_us=117 encode_reused_description_us=49"
+  ],
+  "profiles_after": [
+    "snapshot_us=2402",
+    "rows=64 shape_us=28 relation_us=22 generate_sort_project_us=34 encode_us=14 encode_reused_description_us=5",
+    "rows=316 shape_us=5 relation_us=175 generate_sort_project_us=270 encode_us=173 encode_reused_description_us=68"
+  ],
+  "profile_large": [
+    "snapshot_us=512765",
+    "rows=10000 shape_us=60 relation_us=10130 generate_sort_project_us=16798 encode_us=4036 encode_reused_description_us=1808",
+    "rows=49375 shape_us=23 relation_us=65049 generate_sort_project_us=83294 encode_us=60426 encode_reused_description_us=24257"
+  ],
+  "implementation_commit": "fa988c9ba33224998b26f4b28367b2c9fdd88c4b",
+  "profiles_after_repetitions": [
+    "snapshot_us=2023",
+    "rows=64 shape_us=30 relation_us=25 generate_sort_project_us=37 encode_us=15 encode_reused_description_us=6",
+    "rows=316 shape_us=6 relation_us=204 generate_sort_project_us=326 encode_us=213 encode_reused_description_us=92",
+    "snapshot_us=2360",
+    "rows=64 shape_us=37 relation_us=29 generate_sort_project_us=46 encode_us=18 encode_reused_description_us=8",
+    "rows=316 shape_us=7 relation_us=455 generate_sort_project_us=776 encode_us=366 encode_reused_description_us=153",
+    "snapshot_us=2244",
+    "rows=64 shape_us=38 relation_us=28 generate_sort_project_us=42 encode_us=17 encode_reused_description_us=7",
+    "rows=316 shape_us=7 relation_us=241 generate_sort_project_us=393 encode_us=234 encode_reused_description_us=89"
+  ]
+}

@@ -1037,3 +1037,144 @@ and R25's timeout fixture decision, remain open. This implementation resolves th
 admission fairness failure only. The evidence commit SHA is provided in the
 handoff to avoid a self-referential commit hash. Staged leak scans pass before
 both commits.
+
+## 2026-11-08 closing-run repairs from e4d7a5f (implementation handoff)
+
+**Verdict: local repairs pass their focused checks; slice 10 remains OPEN.** No GCP run, push or merge in this task. The 1.20× browse target, 16 MiB snapshot cap and frozen RSS formula are unchanged. Clean-VM both-CPU reruns and nightly evidence on the closing commit remain required. R24 stays open.
+
+### Original closing run: every step
+
+Read directly from the gitignored `bench/gcp-runs/s10close3-n4a/results/` and `bench/gcp-runs/s10close3-c3d/results/` in the primary checkout. ARM64 completed all 28 steps; x86 completed 23 and was cut off by parent tooling during the next step. “Not reached” is never a pass. Compact, non-identifying evidence: [closing repairs JSON](raw/20261108-s10-close-fixes.json).
+
+| Step | ARM64, n4a-highcpu-16 | x86-64, c3d-highcpu-16 |
+|---|---|---|
+| machine-type | PASS (0) | PASS (0) |
+| machine-context | PASS (0) | PASS (0) |
+| apt-index | PASS (0) | PASS (0) |
+| timing-tools | PASS (0) | PASS (0) |
+| matrix-deps | PASS (0) | PASS (0) |
+| pg16-install | PASS (0) | PASS (0) |
+| matrix-psql-version | PASS (0) | PASS (0) |
+| matrix-and-deviations | PASS (0) | PASS (0) |
+| browse-pg15 | PASS (0) | PASS (0) |
+| protocol | PASS (0) | PASS (0) |
+| metadata-scratch | PASS (0) | PASS (0) |
+| loaded-native | PASS (0) | PASS (0) |
+| metadata-fuzz | PASS (0) | PASS (0) |
+| wire-mutants | PASS (0) | PASS (0) |
+| portal-loom-bound-3 | PASS (0) | PASS (0) |
+| scheduler-loom-bound-3 | FAIL: model timeouts (1) | FAIL: model timeouts (1) |
+| memory-loom-bound-3 | PASS (0) | PASS (0) |
+| bridge-loom-bound-3 | TIMEOUT (124) | TIMEOUT (124) |
+| resource-gate-mutants | PASS (0) | PASS (0) |
+| p16-gate-controls | PASS (0) | PASS (0) |
+| admission-yield-mutants | FAIL: executing INVALID (1) | PASS (0) |
+| loaded-fairness | PASS (0) | PASS (0) |
+| resource-gates | FAIL: 1.37665× (1) | FAIL: 1.31717× (1) |
+| snapshot-cap-mutant | PASS (0) | Interrupted; no exit/verdict |
+| pg16-parity | PASS (0) | Not reached |
+| dbeaver-r24 | Known replay failures (1), R24 open | Not reached |
+| p16-builds | FAIL: package missing (1) | Not reached |
+| p16-streaming-and-regression | FAIL: PG raw order (1) | Not reached |
+
+### 1. Browse performance: local encoding/projection fix; heavy verdict pending
+
+**Cause, measured:** the resource wrapper selected `debug/nata` for timing. This is still a real miss of the frozen gate: ARM median Nata/PostgreSQL **3.2935/2.3924 ms = 1.37665×** at 64 tables / width 64; x86 **9.4303/7.1595 ms = 1.31717×** at 1,024 tables / width 1. Earlier cells passed, then each resource process stopped on this miss; later sizes and memory checks were not certified.
+
+Release stage profiling on the shared local x86 host (Intel i3-1220P, 8 logical CPUs; warm filesystem; no network/disk transmission in the stage probe): snapshot load **1,638 µs once at startup**, not per query (sessions share the immutable Arc). Tables/columns shape matching **16/2 µs**; generation + sorting + projection **15/188 µs**; encoding **7/117 µs**. Reusing the response description in the same probe reduced encoding to **4/49 µs**. The description and result formats had been rebuilt/cloned for every row. The generic adapter also cloned every selected String while discarding the original relation.
+
+**Fix:** retain one bounded row description and borrow formats per response; move a cell on its last projection use (clone only repeated columns). No snapshot/cache expansion, result spooling, dependency or SQL-surface change. The release profile test is opt-in; it adds no serving-path clocks. Retry and full closeout now explicitly build/select release for the resource gate; client correctness still runs before timing. The generic adapter still materializes the bounded relation; no broader executor change is proposed.
+
+The expanded stage probe separately measures relation construction. Under concurrent checks it gave tables/columns **22/175 µs** relation, **34/270 µs** whole adapter, **28/5 µs** shape, and **14/173 → 5/68 µs** original/reused-description encoding. A 10,000-table mixed-width snapshot (49,375 columns) also loaded within the unchanged cap; full stage results are in JSON. These probes have different host load and are **not paired speed claims**.
+
+**Local end-to-end check, UNSETTLED:** release old/new binaries, alternating A/B then B/A in the same session, exact rows first and during timing, three rounds of 40 pairs; includes planning, row generation, encoding and loopback psycopg materialization; excludes startup/snapshot load. Old/new medians (ms):
+
+| Tables / width | Round 1 | Round 2 | Round 3 |
+|---|---|---|---|
+| 64 / 64 | 1.081 / 1.086 | 1.473 / 1.135 | 1.675 / 1.347 |
+| 1024 / 1 | 4.948 / 4.127 | 5.157 / 4.104 | 5.663 / 4.221 |
+| 10000 / 1 | 49.370 / 41.566 | 44.416 / 35.742 | 39.015 / 33.950 |
+
+All min/median/max values are in JSON. Large ranges overlap; other local checks and loaded actors ran concurrently. Do not infer settled gains or ARM portability from these samples. Release resource gates ran **24 arms**: 64/1,024 tables × width 1/64 × one worker × default/256 FD limit × three repetitions, **64 sessions**, million-row fixture, five alternating PG/Nata browse pairs per arm. Every typed-value, browse, peak-RSS, FD and 10-second cleanup check passed: ratio **0.1277–0.5244×**, peak RSS **≤36.53 MiB**, frozen per-arm ceilings about **1.25 GB**. Original release also passed six 64-table/width-64 arms locally (**0.1640–0.3452×**), so both the unoptimized build selection and local per-row work matter. PG17 locally is not the PG15 clean-VM closing oracle. Eight-worker/full-10,000-table resource grids remain for GCP.
+
+**Check can fail:** browse boundary 1.20 passes, 1.201 fails; bypass mutant CAUGHT. Repeated-projection cell-loss mutant fails the exact snapshot row assertion (CAUGHT); the unchanged cap test passes and the inherited actual cap-removal mutant remains in the x86 retry. Original cap-removal passed ARM. No budget was re-derived.
+
+### 2. Executing-yield mutant: valid assertion failure
+
+**Cause, reproduced:** the old mutation suspended the real Run lease before execution finished. A later normal `suspend`/`complete` asserts that the phase is Running; depending on the race, cleanup poisons the lease and aborts in a destructor before libtest emits `test result: FAILED`. Locally the intended portal-survival assertion fired, then SIGABRT made the result **INVALID** under the strict classifier. The ARM retained log has only INVALID, not its underlying stderr, so the precise historical signal is unavailable; this is a reproduced architecture-independent invalidity, not an ARM compile failure.
+
+**Fix:** publish an old/idle candidate with an independent valid lease but the executing producer’s cancellation/join handles. This tests wrongful executing cancellation without corrupting the real phase transitions. Preserve INVALID for build errors, timeouts and aborts; print return code and invalid log tail. Touch copied sources before a control build: otherwise copy2’s old mtimes can reuse a newer mutant artifact from a shared Cargo target (also reproduced). Restored protocol and fairness controls now both run.
+
+**Verdict:** skip-yield **CAUGHT (rc 1)**; yield-young, yield-two, yield-executing **CAUGHT (rc 101)**; unmutated/restored protocol and fairness controls PASS; **0 MISSED / 0 INVALID** in the corrected sweep. ARM validity is explicitly rerun; x86 already caught the original but also needs future closing-commit deep evidence.
+
+### 3. Loom budgets: no timeout relabelled as success
+
+**Cause:** scheduler default is 600 s/model. ARM timed out m09/m21; x86 m09/m14/m21. The nightly allows **3,000 s/model**, except **19,800 s for m21** (the prior bound-3 nightly on 84e9c83 is historical evidence, not evidence for this commit). Full steps now use those exact boxes, with m21 selected separately. Retry filters select only the timed-out scheduler models.
+
+Bridge default was **180 s**, not 600 s: x86 timed out in `io_completion_before_or_after_park_is_not_lost`; ARM passed that in **153.91 s** then timed out in `two_workers_two_waiters_keep_the_window_bound`. Full/retry steps use release bridge exploration, **bound 3 / 1,200 s per ordinary model** (nightly box). The combined five-thread model runs **bound 2 / 3,600 s here**. A local release bound-2 probe was deliberately stopped after **180 s**, INCONCLUSIVE, not passed.
+
+**Bound-3 obligation:** the previous nightly explicitly excluded the combined model. A separate nightly job now selects it at **bound 3 / 19,800 s**, inside a 350-minute job. That job, plus the scheduler nightly, **must pass on the final closing commit**; neither was triggered here. If the combined model also exceeds that box, record a deviation for parent resolution; do not silently lower its nightly bound. The ordinary IO bridge model passed locally in release at **bound 2 / 7.59 s** and **bound 3 / 192.30 s**, exceeding its old 180-second box. A deliberately too-short **0.001 s** model control exited **124** as required. Nightly YAML bound/profile/time-box assertions and shell checks pass; scheduler and combined explorations remain PENDING.
+
+### 4. Packaging: checked before any expensive step
+
+**Cause:** steps were copied without the ignored `.slice-close` baseline archive/checksum/commit. `p16-builds` therefore failed at cd. The first full/retry step now calls `check-close-package.sh`, which names the missing file and exact packaging command, validates checksums and commit syntax. `prepare-p16.sh` checks it again. `package-close.sh --steps FILE` packages the same immutable **a3e8e3b** P16 baseline and selects the CPU retry file. This baseline is unchanged; e4d7a5f is this repair’s implementation base. Missing-input and corrupted-checksum controls exit 1; valid package and byte-for-byte selected steps checks pass. Actual two-release-build preparation **PASS**: archived a3e8e3b baseline cold build **6m09s**, current build **21.59s** with a copy of the existing release cache, serial `--locked -j 4`.
+
+### 5. Five unreached x86 steps: readiness and limits
+
+- **snapshot-cap-mutant:** unchanged actual cap-removal check; passed ARM in the closing run, x86 interrupted before an exit. Fresh private target, 16 MiB bounded refusal versus frozen RSS breach required; selected for x86 retry. Not rerun locally (large clean build/RSS probe).
+- **pg16-parity:** version-selected installer and oracle commands parse; original ARM PG16 replay passed. Local PG17 replay passed again, **not PG16 certification**. Selected for x86 retry.
+- **dbeaver-r24:** step unchanged, selected on both CPUs (ARM failed; x86 never reached). Five known replay failures remain R24; no acceptance claim.
+- **p16-builds:** missing/corrupt/valid package controls and real paired release builds checked; selected on both CPUs.
+- **p16-streaming-and-regression:** ARM exposed an additional reference failure independent of the missing builds: raw text expected 0 but got **998016**. PostgreSQL synchronized scans may join the heap mid-scan; the fixture’s value oracle requires physical insertion order. Disable `synchronize_seqscans` for fresh connections to the isolated fixture database before any reference client. A **14-arm / seven-client** reference-first smoke passed, plus **12 million-value ordered PG17 raw scans** (text/binary × 1/8 worker settings × three rounds). Smoke remains SMOKE ONLY; P16 targets/noise limits and all-reference-before-Nata ordering are unchanged. Full PG16 timing, long-stream first-row and wide/NULL/decimal acceptance remain open; this repair does not certify those missing closeout controls.
+
+### Local checks and reproduce commands
+
+All Cargo builds/tests were serial with **-j 4** (including the mutant harness). No new lockfile dependencies. Inactive old test/binary artifacts were reclaimed for disk headroom; no active cache was deleted. One initial local resource attempt hit a full **tmpfs** while writing its fixture; discarded it and reran on disk before accepting samples. One development profile compile needed non-Debug WireError handling; final checks below pass. A later paired-build smoke attempt found its private PostgreSQL shared-memory segment had disappeared; that attempt failed before any reference timing. Restarted that private cluster with file-backed dynamic shared memory and reran the smoke; no product fix was inferred from this local environment failure.
+
+- `cargo test --locked -p nata-pgwire -j 4`: **73 passed**, one opt-in profile ignored.
+- `cargo fmt --all -- --check`; `cargo clippy --locked -p nata-pgwire -j 4 --all-targets -- -D warnings`: **PASS**.
+- Local matrix: raw exit **1**, deviation validator **PASS**, same nine accepted API deviations; no DBeaver acceptance implied. JDK17 / pinned existing Python client environment.
+- PG17.11 browse oracle: **PASS**, 56 frozen shape replays, three binary and 95 helper cases (154 PASS lines).
+- Focused gates: **eight bypass/threshold/noise mutants CAUGHT**; four yield mutants CAUGHT; repeated-projection loss CAUGHT. No misses in accepted corrected checks.
+- Python compilation; all full/retry step command syntax; packaging missing/corrupt/valid controls: **PASS**.
+
+Use a writable scratch disk, a fresh WORK/RESULTS per oracle, the existing pinned matrix venv, JDK17 on PATH, and a shared CARGO_TARGET_DIR only while no other Cargo build/test is running. PROFILE_REGISTRY is a resource fixture catalog.tsv; PGDSN names a private local oracle cluster. Commands actually exercised (paths parameterized to avoid committing machine-specific data):
+
+```sh
+cargo test --locked -p nata-pgwire -j 4
+cargo fmt --all -- --check
+cargo clippy --locked -p nata-pgwire -j 4 --all-targets -- -D warnings
+cargo build --locked --release -p nata -j 4
+NATA_CATALOG_PROFILE="$PROFILE_REGISTRY" cargo test --locked --release -p nata-pgwire -j 4 --lib catalog_profile -- --ignored --nocapture
+"$PY" scripts/wire-browse/resources.py --nata "$RELEASE_NATA" --work "$SCRATCH/resources" --postgres "$PGDSN" --tables 64 1024 --widths 1 64 --workers 1 --repeat 3
+"$PY" scripts/wire-browse/yield-mutants.py --target "$CARGO_TARGET_DIR" --work "$SCRATCH/yield"
+"$PY" scripts/wire-browse/check-gate-mutants.py
+"$PY" scripts/wire-skeleton/matrix.py --nata "$RELEASE_NATA" --work "$SCRATCH/matrix" --jar "$JAR"
+python3 scripts/wire-skeleton/check-deviations.py "$SCRATCH/matrix/matrix.json"
+PG_MAJOR=17 NATA_BROWSE_BIN="$RELEASE_NATA" bash scripts/wire-browse/run-oracle.sh
+"$PY" scripts/wire-browse/p16.py --nata "$RELEASE_NATA" --baseline "$BEFORE_NATA" --jar "$JAR" --work "$SCRATCH/p16-smoke" --postgres "$PGDSN" --smoke
+bash scripts/wire-browse/package-close.sh
+WORK="$PREPARE_WORK" bash scripts/wire-browse/prepare-p16.sh
+```
+
+### Prepared retry: CPU-specific failed/unreached gates only
+
+The two `slice-close-rerun-{arm,x86}.steps.example` files include prerequisite installation/builds for a **fresh VM**, without rerunning previously accepted matrix/fuzz/full-mutant gates. ARM retries its invalid admission sweep; x86 retries snapshot cap and PG16 parity. Both retry failed resources, scheduler/bridge, DBeaver and P16. The resource gate runs first after setup, so its result is captured before lengthy model exploration.
+
+**Reasoned sizing, not measured duration:** **n4a-highcpu-16 / c3d-highcpu-16**, **150 GB** scratch, **20 VM-hours per CPU ceiling**. Sixteen vCPUs support the full eight-worker + eight-load-actor grid; 32 GiB-class memory is sufficient for the existing bounded workload. Serial four-job builds and separate native/loom/mutant/baseline targets need disk headroom. The larger cap replaces the disproven four-hour allowance: scheduler ceilings alone total about **6.34 h ARM / 7.17 h x86**, bridge permits another **1 h combined** plus ordinary models, and P16 has up to **56 × 600 s** settle boxes plus client/validation/profile work and paired clean builds. Twenty hours is a conservative maximum, **not expected runtime or spending approval**. Parent obtains each current plan cost and starts long runs detached; no split at two hours is needed. Package immediately before each matching upload (the second command overwrites heavy.steps):
+
+```sh
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/slice-close-rerun-arm.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-16 --data-gb 150 --max-vm-hours 20
+bash scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-16 --data-gb 150 --max-vm-hours 20 --run-id "$S10_RETRY_ARM_RUN" --approved-usd "$S10_RETRY_ARM_BUDGET"
+
+bash scripts/wire-browse/package-close.sh --steps scripts/wire-browse/slice-close-rerun-x86.steps.example
+bash scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-16 --data-gb 150 --max-vm-hours 20
+bash scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-16 --data-gb 150 --max-vm-hours 20 --run-id "$S10_RETRY_X86_RUN" --approved-usd "$S10_RETRY_X86_BUDGET"
+```
+
+Implementation commit: **fa988c9ba33224998b26f4b28367b2c9fdd88c4b**. Its staged leak scan passed. The evidence-only commit is reported in the handoff to avoid a self-referential hash.
+
+After the private projection-mutant check, touched the root metadata source to force fresh Cargo validation of the shared target, then reran the complete pgwire suite, clippy and fmt: **PASS again** (73 tests, one opt-in profile ignored).
+
+The fresh **actual packaged-baseline/current-release P16 smoke also PASS** (14 arms, all seven clients; still SMOKE ONLY). The earlier smoke used the repair’s pre-change release control; this second smoke checks the intended a3e8e3b paired binary. Final disk headroom was **21.46 GiB**, above the 20 GiB cleanup floor. Both staged leak scans pass; no Cargo.lock change.
