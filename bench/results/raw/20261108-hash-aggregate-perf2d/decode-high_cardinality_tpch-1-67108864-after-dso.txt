@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 2K of event 'cpu-clock'
+# Event count (approx.): 4466933832
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 59.40% decode
+ 27.28% libc.so.6
+ 13.23% [kernel.kallsyms]
+
+
+#
+# (Tip: If you prefer Intel style assembly, try: perf annotate -M intel)
+#

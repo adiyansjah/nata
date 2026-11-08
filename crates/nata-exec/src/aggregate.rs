@@ -242,9 +242,11 @@ impl Groups {
     fn contains_key(&self, key: &[Atom]) -> bool {
         self.get(key).is_some()
     }
+    #[cfg(test)]
     fn get(&self, key: &[Atom]) -> Option<&[State]> {
         self.get_hashed(key, (self.hash)(key))
     }
+    #[cfg(test)]
     fn get_hashed(&self, key: &[Atom], hash: u64) -> Option<&[State]> {
         let i = *self.index.find(hash, |&i| self.entries[i].0 == key)?;
         Some(&self.entries[i].1)

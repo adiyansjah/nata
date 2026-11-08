@@ -226,13 +226,9 @@ impl<'a> Reader<'a> {
         }
     }
 }
-/// Replay only after reserving key/state capacity in the destination table.
-/// Counts and exact wide states are validated independently of the IPC CRC.
-pub(super) fn decode(
-    keys: &[u8],
-    values: &[u8],
-    a: &Aggregate,
-) -> io::Result<(Vec<Atom>, Vec<State>)> {
+/// Bound key/state framing before copying typed key bytes. State cursors are
+/// consumed separately into the destination table under its own grants.
+pub(super) fn key(keys: &[u8], values: &[u8], a: &Aggregate) -> io::Result<Vec<Atom>> {
     if keys
         .len()
         .checked_add(values.len())
@@ -253,37 +249,60 @@ pub(super) fn decode(
         .map(|e| r.atom(e.ty))
         .collect::<io::Result<Vec<_>>>()?;
     r.end()?;
-    let mut r = Reader(values);
-    r.header(a.aggregates.len())?;
-    let states = a
+    Ok(key)
+}
+#[cfg(test)]
+pub(super) fn decode(
+    keys: &[u8],
+    values: &[u8],
+    a: &Aggregate,
+) -> io::Result<(Vec<Atom>, Vec<State>)> {
+    let key = key(keys, values, a)?;
+    let mut states = States::new(values, a)?;
+    let out = a
         .aggregates
         .iter()
-        .map(|e| {
-            if r.byte()? != kind(&e.name)?
-                || r.fixed::<3>()? != type_tag(e.arg.as_ref().map_or(SqlType::Null, |a| a.ty))
-                || r.fixed::<3>()? != type_tag(e.ty)
-            {
-                return Err(invalid());
-            }
-            Ok(match e.name.as_str() {
-                "count" => {
-                    let n = u64::from_le_bytes(r.fixed()?);
-                    if n > i64::MAX as u64 {
-                        return Err(invalid());
-                    }
-                    State::Count(n)
-                }
-                "sum" | "avg" => State::Sum(
-                    ExactSum::from_spill(r.fixed()?, u64::from_le_bytes(r.fixed()?))
-                        .map_err(|_| invalid())?,
-                ),
-                "min" | "max" => State::Extreme(r.atom(e.ty)?),
-                _ => return Err(invalid()),
-            })
-        })
+        .map(|e| states.next(e))
         .collect::<io::Result<Vec<_>>>()?;
-    r.end()?;
-    Ok((key, states))
+    states.end()?;
+    Ok((key, out))
+}
+/// Borrowed cursor over a row's encoded states. The batch replay path sends
+/// each decoded state directly to its charged group, without a temporary Vec.
+pub(super) struct States<'a>(Reader<'a>);
+impl<'a> States<'a> {
+    pub fn new(values: &'a [u8], a: &Aggregate) -> io::Result<Self> {
+        let mut r = Reader(values);
+        r.header(a.aggregates.len())?;
+        Ok(Self(r))
+    }
+    pub fn next(&mut self, e: &nata_sql::bind::AggregateExpr) -> io::Result<State> {
+        let r = &mut self.0;
+        if r.byte()? != kind(&e.name)?
+            || r.fixed::<3>()? != type_tag(e.arg.as_ref().map_or(SqlType::Null, |a| a.ty))
+            || r.fixed::<3>()? != type_tag(e.ty)
+        {
+            return Err(invalid());
+        }
+        Ok(match e.name.as_str() {
+            "count" => {
+                let n = u64::from_le_bytes(r.fixed()?);
+                if n > i64::MAX as u64 {
+                    return Err(invalid());
+                }
+                State::Count(n)
+            }
+            "sum" | "avg" => State::Sum(
+                ExactSum::from_spill(r.fixed()?, u64::from_le_bytes(r.fixed()?))
+                    .map_err(|_| invalid())?,
+            ),
+            "min" | "max" => State::Extreme(r.atom(e.ty)?),
+            _ => return Err(invalid()),
+        })
+    }
+    pub fn end(&self) -> io::Result<()> {
+        self.0.end()
+    }
 }
 
 #[cfg(test)]

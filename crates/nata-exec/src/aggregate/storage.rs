@@ -1,6 +1,8 @@
 //! Disk jobs own the tables/buffers they consume. Only the bounded I/O worker
 //! executes these methods; CPU continuations poll their tickets and requeue.
-use super::{Atom, CANCEL_ROWS, State, Table, replay};
+#[cfg(test)]
+use super::State;
+use super::{Atom, CANCEL_ROWS, Table, replay};
 use crate::spill::{Registry, SpillBatch, SpillFile, Workspace, schema};
 use arrow_array::{Array, ArrayRef, BinaryArray, RecordBatch, UInt64Array};
 use nata_sql::bind::Aggregate;
@@ -157,6 +159,7 @@ fn flush(
         depth,
     )
 }
+#[cfg(test)]
 pub(super) fn record(
     frame: &SpillBatch,
     row: usize,
@@ -166,32 +169,61 @@ pub(super) fn record(
     hash: fn(&[Atom], u8) -> u64,
     initial_fanout: usize,
 ) -> io::Result<(Vec<Atom>, Vec<State>)> {
-    let b = frame.batch();
-    let hashes = b
-        .column(0)
-        .as_any()
-        .downcast_ref::<UInt64Array>()
-        .ok_or_else(invalid)?;
-    let keys = b
-        .column(1)
-        .as_any()
-        .downcast_ref::<BinaryArray>()
-        .ok_or_else(invalid)?;
-    let states = b
-        .column(2)
-        .as_any()
-        .downcast_ref::<BinaryArray>()
-        .ok_or_else(invalid)?;
-    if row >= b.num_rows() || keys.is_null(row) || states.is_null(row) || hashes.is_null(row) {
-        return Err(invalid());
-    }
-    let (key, state) = replay::decode(keys.value(row), states.value(row), a)?;
-    let hash = hash(&key, depth);
-    if hashes.value(row) != hash || !member(hash, partition, depth, initial_fanout) {
-        return Err(invalid());
-    }
-    Ok((key, state))
+    let records = Records::new(frame)?;
+    let key = records.key(row, a, partition, depth, hash, initial_fanout)?;
+    let mut cursor = records.states(row, a)?;
+    let states = a
+        .aggregates
+        .iter()
+        .map(|e| cursor.next(e))
+        .collect::<io::Result<Vec<_>>>()?;
+    cursor.end()?;
+    Ok((key, states))
 }
+/// Downcast the validated Arrow columns once per batch, borrowing its charged
+/// buffers throughout replay. No decoded state column is collected per row.
+pub(super) struct Records<'a> {
+    hashes: &'a UInt64Array,
+    keys: &'a BinaryArray,
+    values: &'a BinaryArray,
+}
+impl<'a> Records<'a> {
+    pub fn new(frame: &'a SpillBatch) -> io::Result<Self> {
+        let b = frame.batch();
+        Ok(Self {
+            hashes: b.column(0).as_any().downcast_ref().ok_or_else(invalid)?,
+            keys: b.column(1).as_any().downcast_ref().ok_or_else(invalid)?,
+            values: b.column(2).as_any().downcast_ref().ok_or_else(invalid)?,
+        })
+    }
+    pub fn key(
+        &self,
+        row: usize,
+        a: &Aggregate,
+        partition: usize,
+        depth: u8,
+        hash: fn(&[Atom], u8) -> u64,
+        initial_fanout: usize,
+    ) -> io::Result<Vec<Atom>> {
+        if row >= self.keys.len()
+            || self.keys.is_null(row)
+            || self.values.is_null(row)
+            || self.hashes.is_null(row)
+        {
+            return Err(invalid());
+        }
+        let key = replay::key(self.keys.value(row), self.values.value(row), a)?;
+        let hash = hash(&key, depth);
+        if self.hashes.value(row) != hash || !member(hash, partition, depth, initial_fanout) {
+            return Err(invalid());
+        }
+        Ok(key)
+    }
+    pub fn states(&self, row: usize, a: &Aggregate) -> io::Result<replay::States<'a>> {
+        replay::States::new(self.values.value(row), a)
+    }
+}
+
 fn invalid() -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, "typed spill partition mismatch")
 }
@@ -214,6 +246,7 @@ impl Storage {
         let mut states: Vec<Vec<Vec<u8>>> = (0..16).map(|_| Vec::new()).collect();
         let mut hashes: Vec<Vec<u64>> = (0..16).map(|_| Vec::new()).collect();
         let mut bytes = 0;
+        let mut decoded = Vec::new();
         while let Some(frame) = w.read(
             &mut input,
             u32::try_from(partition).map_err(|_| invalid())?,
@@ -229,17 +262,17 @@ impl Storage {
                     "aggregate repartition cancelled",
                 ));
             }
+            let records = Records::new(&frame)?;
             for row in 0..frame.batch().num_rows() {
-                let (key, state) = record(
-                    &frame,
-                    row,
-                    a,
-                    partition,
-                    depth,
-                    self.hash,
-                    self.initial_fanout,
-                )?;
-                let size = replay::size(&key, &state)?;
+                let key = records.key(row, a, partition, depth, self.hash, self.initial_fanout)?;
+                decoded.clear();
+                let mut cursor = records.states(row, a)?;
+                for expr in &a.aggregates {
+                    decoded.push(cursor.next(expr)?);
+                }
+                cursor.end()?;
+                let state = &decoded;
+                let size = replay::size(&key, state)?;
                 if bytes + size > 24 << 10 {
                     for p in 0..16 {
                         if !keys[p].is_empty() {
@@ -282,7 +315,7 @@ impl Storage {
                     states[p].clear();
                     hashes[p].clear();
                 }
-                let (k, s) = replay::encode(&key, &state, a)?;
+                let (k, s) = replay::encode(&key, state, a)?;
                 keys[p].push(k);
                 states[p].push(s);
                 hashes[p].push(h);

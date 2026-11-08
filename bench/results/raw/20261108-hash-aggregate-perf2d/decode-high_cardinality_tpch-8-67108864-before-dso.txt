@@ -1,0 +1,20 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 3K of event 'cpu-clock'
+# Event count (approx.): 7547094128
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 52.63% fanout
+ 23.90% libc.so.6
+ 23.31% [kernel.kallsyms]
+ 0.13% [vdso]
+
+
+#
+# (Tip: Add -I to perf record to sample register values, which will be visible in perf report sample context.)
+#

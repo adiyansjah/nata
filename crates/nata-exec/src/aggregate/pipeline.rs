@@ -847,52 +847,36 @@ fn merge_step(
         }
     }
     if let Some(frame) = &task.frame {
-        while task.row < frame.batch().num_rows() {
-            let (key, state) = storage::record(
-                frame,
-                task.row,
-                a,
-                task.partition,
-                task.depth,
-                shared.hash,
-                task.storage.initial_fanout,
-            )
-            .map_err(scan_error)?;
-            let previous = task.table.groups.get(&key);
-            let string_bytes = state
-                .iter()
-                .enumerate()
-                .map(|(slot, s)| {
-                    if let State::Extreme(Atom::Str(s)) = s {
-                        let old = previous.and_then(|p| p.get(slot)).map_or(0, |s| {
-                            if let State::Extreme(Atom::Str(s)) = s {
-                                s.len()
-                            } else {
-                                0
-                            }
-                        });
-                        s.len().saturating_sub(old)
-                    } else {
-                        0
-                    }
-                })
-                .sum();
-            if task
-                .table
-                .reserve_bytes(&shared.manager, string_bytes)
-                .is_err()
-            {
-                return Ok(Step::Done(Ok(Merged::Repartition {
-                    file: Arc::clone(&task.file),
-                    partition: task.partition,
-                    depth: task.depth,
-                })));
-            }
-            if let Some(dest) = task.table.groups.get_mut(&key) {
-                for ((dest, source), a) in dest.iter_mut().zip(state).zip(&a.aggregates) {
-                    dest.merge(source, a)
-                        .map_err(|e| ScanError::new(e.into_kind()))?;
-                }
+        let records = storage::Records::new(frame).map_err(scan_error)?;
+        let rows = frame.batch().num_rows();
+        if rows > crate::spill::MAX_ROWS {
+            return Err(scan_error("spill replay row bound"));
+        }
+        // Fixed stack scratch belongs to the admitted replay workspace. Bind
+        // groups/cursors for the batch, then decode one state column at a time
+        // directly into retained group slots. No per-row state Vec is built.
+        let mut ids = [0; crate::spill::MAX_ROWS];
+        let mut cursors: [Option<replay::States<'_>>; crate::spill::MAX_ROWS] =
+            [const { None }; crate::spill::MAX_ROWS];
+        for row in task.row..rows {
+            let key = records
+                .key(
+                    row,
+                    a,
+                    task.partition,
+                    task.depth,
+                    shared.hash,
+                    task.storage.initial_fanout,
+                )
+                .map_err(scan_error)?;
+            cursors[row] = Some(records.states(row, a).map_err(scan_error)?);
+            let groups = &mut task.table.groups;
+            let existing = groups
+                .index
+                .find((groups.hash)(&key), |&id| groups.entries[id].0 == key)
+                .copied();
+            let id = if let Some(id) = existing {
+                id
             } else {
                 if (!task.table.groups.is_empty() && task.table.grants.reserved() >= task.limit)
                     || task.table.reserve(&shared.manager, &key, a).is_err()
@@ -903,10 +887,65 @@ fn merge_step(
                         depth: task.depth,
                     })));
                 }
-                task.table.groups.insert(key, state);
-            }
-            task.row += 1;
+                // This Vec is retained group storage, allocated once per distinct
+                // key. Repeated partial rows never allocate a Vec<State>.
+                let id = task.table.groups.len();
+                task.table
+                    .groups
+                    .insert(key, Vec::with_capacity(a.aggregates.len()));
+                id
+            };
+            ids[row] = id;
         }
+        for (slot, expr) in a.aggregates.iter().enumerate() {
+            for row in task.row..rows {
+                let states = &mut task.table.groups.entries[ids[row]].1;
+                let cursor = cursors[row]
+                    .as_mut()
+                    .ok_or_else(|| scan_error("spill state cursor"))?;
+                let source = cursor.next(expr).map_err(scan_error)?;
+                let extra = match (&source, states.get(slot)) {
+                    (State::Extreme(Atom::Str(text)), Some(State::Extreme(Atom::Str(old)))) => {
+                        text.len().saturating_sub(old.len())
+                    }
+                    (State::Extreme(Atom::Str(text)), _) => text.len(),
+                    _ => 0,
+                };
+                if extra > 0 {
+                    // Reserve before retaining decoded text. A pressure return
+                    // discards this table and replays the whole parent, so a
+                    // partially merged record can never be counted twice.
+                    let chunk = task.table.chunk_bytes;
+                    if !matches!(
+                        task.table.grants.reserve(&shared.manager, 0, extra, chunk),
+                        Ok(true)
+                    ) {
+                        return Ok(Step::Done(Ok(Merged::Repartition {
+                            file: Arc::clone(&task.file),
+                            partition: task.partition,
+                            depth: task.depth,
+                        })));
+                    }
+                }
+                if states.len() == slot {
+                    states.push(source);
+                } else {
+                    states
+                        .get_mut(slot)
+                        .ok_or_else(|| scan_error("spill state slot"))?
+                        .merge(source, expr)
+                        .map_err(|e| ScanError::new(e.into_kind()))?;
+                }
+            }
+        }
+        for cursor in &cursors[task.row..rows] {
+            cursor
+                .as_ref()
+                .ok_or_else(|| scan_error("spill state cursor"))?
+                .end()
+                .map_err(scan_error)?;
+        }
+        task.row = rows;
         task.frame = None;
     }
     let file = Arc::clone(&task.file);

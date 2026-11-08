@@ -2278,3 +2278,90 @@ changes `4 << 20` to `4 >> 20`, producing a compile-time divide by zero.
 Profile reports retain the first 90 symbol lines, with padding collapsed;
 full perf recordings are discarded. All local cargo jobs are serial at `-j 4`.
 Disk headroom remained 25 GiB; no stale-output removal was needed.
+
+### 2. Decode state columns into retained group slots
+
+Fan-out commit: `6a9dc6eb6008aef90e00f3ed00641e274edbd96b`.
+
+**Rule:** bind the validated Arrow columns once per replay batch, map rows to
+charged table group IDs, then decode aggregate state columns directly into
+those groups. Remove the temporary `Vec<State>` collected per replay row.
+Do not remove type/version/arity, length, UTF-8, canonical-value, count, exact
+wide-state, trailing-byte, checksum, schema or partition-membership checks.
+
+`Records` borrows the charged batch; fixed arrays for at most the existing
+256 rows hold group IDs and borrowed state cursors. Each column consumes one
+validated state from each cursor. New groups reserve their persistent vector's
+capacity before allocation and push the first contribution directly; existing
+groups merge it. Vectors retained per distinct group and owned canonical keys
+remain necessary. No transient state vector is allocated per replay row. The
+recursive repartitioner reuses one state scratch vector rather than collecting
+a new one per row. No IPC schema or envelope changes.
+
+Reasoned invariant: after column k, each newly inserted group has exactly k+1
+initialized slots, and each prior group retains its full arity. No table is
+published until all columns and cursor ends validate. String growth is charged
+before retention; pressure discards the entire tentative table and replays the
+parent, preventing partial-column double counting. Every grant and existing
+cleanup path remains active. The 256-row replay bound is checked before stack
+indexing; query scan/evaluation batches stay unchanged.
+
+**Verdict: kept for settled validation.** Spill work stays effectively constant,
+state replay no longer collects a temporary vector per partial row, and no
+cell regresses beyond the identical-control spread (observed paired twins
+0.886–1.124). The local spill gains are small relative to that spread; a net
+speed/allocation benefit is **not established** here.
+
+| Threads | Arm | Bytes written | Bytes read | Partitions | Depth |
+|---|---|---:|---:|---:|---:|
+| 1 | before | 253743048 | 253743048 | 256 | 0 |
+| 1 | after | 253743048 | 253743048 | 256 | 0 |
+| 1 | control | 253743048 | 253743048 | 256 | 0 |
+| 8 | before | 281104728–286389576 | 281104728–286389576 | 256 | 0 |
+| 8 | after | 280236640–288062248 | 280236640–288062248 | 256 | 0 |
+| 8 | control | 281887224–285085520 | 281887224–285085520 | 256 | 0 |
+
+Unsettled seconds, medians; paired after/before and identical-control/before ratios:
+
+| Query | Threads | MiB | Before | After | Control | A/B | C/B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| q1 | 1 | 8192 | 1.176 | 1.198 | 1.166 | 1.011 | 0.991 |
+| q1 | 8 | 8192 | 0.360 | 0.363 | 0.365 | 1.012 | 0.997 |
+| q1 | 1 | 64 | 1.212 | 1.247 | 1.198 | 0.986 | 0.985 |
+| q1 | 8 | 64 | 0.647 | 0.663 | 0.686 | 1.024 | 1.055 |
+| high_cardinality_tpch | 1 | 8192 | 2.812 | 2.866 | 2.824 | 0.990 | 0.995 |
+| high_cardinality_tpch | 8 | 8192 | 2.135 | 2.072 | 2.043 | 1.011 | 0.978 |
+| high_cardinality_tpch | 1 | 64 | 5.307 | 5.193 | 5.287 | 0.977 | 0.998 |
+| high_cardinality_tpch | 8 | 64 | 7.243 | 6.911 | 6.986 | 0.954 | 0.965 |
+
+Whole-system self-sample shares (Nata/kernel/libc), high cardinality at 64 MiB:
+
+1 thread(s): 59.99/12.69/27.29% → 59.40/13.23/27.28%.
+8 thread(s): 52.63/23.31/23.90% → 52.33/21.12/26.29%.
+
+In the retained first-90-symbol reports, state decoder iterator/collect symbols
+(`replay::decode` with AggregateExpr) account for 2.91% → absent (one thread),
+2.42% → absent (eight). The old production decoder is gone; absence is not an
+allocation-count measurement. Global `malloc` self shares rise 5.56% → 5.79%
+and 4.20% → 4.99%, respectively. No global malloc reduction is claimed.
+
+[Samples/counters/load](raw/20261108-hash-aggregate-perf2d/decode-samples.json),
+[summary/hashes](raw/20261108-hash-aggregate-perf2d/decode-summary.json),
+[24 value gates](raw/20261108-hash-aggregate-perf2d/decode-gates.json),
+[checks](raw/20261108-hash-aggregate-perf2d/decode-checks.txt).
+Checks: serial `cargo test --locked --release -j 4 -p nata-exec`, including
+unchanged typed/truncated/invalid-wide-state, spill/cleanup/fault/damage and
+recursive-pressure tests; fmt, clippy/all targets, locked release CLI/check
+build, fresh fixtures, aggregate **65/65**, forced aggregate **65/65**, SQL
+**252/252**: **PASS**. No fault/damage test is edited or weakened.
+
+```sh
+python3 scripts/bench-aggregate-perf2d-local.py decode --before /home/dev/perf2d-fanout/fanout --after /home/dev/perf2d-fanout/decode --data /home/dev/src/nata/data/tpch-sf1 --out bench/results/raw/20261108-hash-aggregate-perf2d --profile
+CARGO_TARGET_DIR=/home/dev/perf2b/target TMPDIR=/home/dev/perf2d/tmp RUST_TEST_THREADS=1 /home/dev/perf2b/cargo-mutants mutants --no-config --in-place --jobserver false --cargo-arg=-j4 --cargo-arg=--lib --cargo-arg=--locked --profile release --output /home/dev/perf2d-fanout/mutants-decode -p nata-exec -f crates/nata-exec/src/aggregate/pipeline.rs -f crates/nata-exec/src/aggregate/storage.rs -F 'estimate_resident|initial_fanout|merge_concurrency|member' --timeout 180
+```
+
+Repeated focused estimator/fan-out/concurrency/membership mutants: **41 caught,
+1 missed (the same equivalent membership boundary), 1 unviable (the same
+constant divide by zero), 0 timeout**; unmutated baseline PASS.
+[Outcomes](raw/20261108-hash-aggregate-perf2d/decode-mutants-outcomes.json),
+[deciding log](raw/20261108-hash-aggregate-perf2d/decode-mutants.txt).

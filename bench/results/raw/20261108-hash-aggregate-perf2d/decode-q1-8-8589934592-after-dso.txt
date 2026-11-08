@@ -1,0 +1,19 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cpu-clock'
+# Event count (approx.): 2194388760
+#
+# Overhead Shared Object
+# ........ .................
+#
+ 87.58% decode
+ 10.41% libc.so.6
+ 2.01% [kernel.kallsyms]
+
+
+#
+# (Tip: To filter subset of samples with report or script add --time X-Y or --cpu A,B,C or --socket-filter ...)
+#
