@@ -1,0 +1,31 @@
+{
+  "base": "c90a4341e85d1d95b6118c42d9ce475cfca02e51",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "release": "cargo build --release --locked -j 4 -p nata",
+  "local_data": {
+    "scale": 1,
+    "rows": 6001215,
+    "bytes": 205482956,
+    "sha256": "c87ad8d103896e33436e3430058dc8503900e828f37dc1ce3393d964a1a99f5e"
+  },
+  "timing_status": "unsettled development VM; correctness and compatibility controls may overlap a serial compiler; no GCP execution",
+  "spill_disk_bytes": 4294967296,
+  "stats": "NATA_STATS_JSON enabled where supported; older revisions have report counters only",
+  "implementation_commit": "02d3faef8a6252888f3c084a71d70146c929c873",
+  "checks": {
+    "cargo_test": "110 top-level tests passed",
+    "fmt": "pass",
+    "clippy": "pass (-D warnings)",
+    "aggregate": "65/65",
+    "forced_spill": "65/65",
+    "sql": "252/252",
+    "scan": "5/5",
+    "mutants": {
+      "caught": 12,
+      "missed": 0,
+      "unviable": 0,
+      "timeout": 0
+    },
+    "production_negative_control": "old policy fails 3 != 2, restored policy passes"
+  }
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "rev": "bb946ab",
+    "commit": "bb946ab7b4de53d0f9b06296a8db0d1323e1cc38",
+    "binary_sha256": "e52a35fb43e3d8ed3baf8b3cc2eb22cfcc99eace8d37294d102b136bdf62a314",
+    "threads": 8,
+    "seconds": 19.87560224900153,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=3 order=unordered window=3 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=3 peak_footers=1 late=0 peak_rss_kib=34296\naggregate: partial_ns=1562824226 merge_ns=2616357002 partial_groups=1493700 largest_partial=2672 rehashes=132135 reservation_calls=97025 reservation_releases=77325 memory_lock_wait_ns=12775743 peak_reservation=67108864 spill_bytes_written=476042720 spill_bytes_read=476042720 partitions_spilled=256 recursion_depth=0 spill_files_opened=279916 sink_calls=46788 output_ns=1064248062 spill_peak_bytes=476042720 spill_peak_open=1\n"
+  },
+  {
+    "rev": "304bd70",
+    "commit": "304bd7029116da01d3e2a7023c2439d9b1a3af01",
+    "binary_sha256": "43c717752aa9c55cfde3debf2afbac318dd1f2dcad38c1111b53fa64feee9193",
+    "threads": 8,
+    "seconds": 20.40507479900043,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=3 order=unordered window=3 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=3 peak_footers=1 late=0 peak_rss_kib=30540\naggregate: partial_ns=1631619147 merge_ns=2698071472 partial_groups=1493701 largest_partial=12788 rehashes=133285 reservation_calls=97545 reservation_releases=77586 memory_lock_wait_ns=12691461 peak_reservation=67108864 spill_bytes_written=479878896 spill_bytes_read=479878896 partitions_spilled=256 recursion_depth=0 spill_files_opened=284302 sink_calls=46788 output_ns=1139214300 spill_peak_bytes=479878896 spill_peak_open=1\n"
+  },
+  {
+    "rev": "304bd70",
+    "commit": "304bd7029116da01d3e2a7023c2439d9b1a3af01",
+    "binary_sha256": "43c717752aa9c55cfde3debf2afbac318dd1f2dcad38c1111b53fa64feee9193",
+    "threads": 1,
+    "seconds": 4.938595739000448,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=1 order=unordered window=1 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=1 peak_footers=1 late=0 peak_rss_kib=36544\naggregate: partial_ns=1110554413 merge_ns=989592837 partial_groups=1493405 largest_partial=40453 rehashes=6656 reservation_calls=12684 reservation_releases=12647 memory_lock_wait_ns=1444002 peak_reservation=67108864 spill_bytes_written=250784112 spill_bytes_read=250784112 partitions_spilled=256 recursion_depth=0 spill_files_opened=10240 sink_calls=46788 output_ns=956989863 spill_peak_bytes=250784112 spill_peak_open=1\n"
+  },
+  {
+    "rev": "304bd70^",
+    "commit": "506c9ff941286ce6af912fb8fd06773d4cd4aafc",
+    "binary_sha256": "16bd7d56959d7bb695a7470fd972c0409a7a59bbcd11782ab143bf6e60c32489",
+    "threads": 8,
+    "seconds": 6.986646490997373,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=2 order=unordered window=2 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=2 peak_footers=1 late=0 peak_rss_kib=34868\naggregate: partial_ns=1264133419 merge_ns=1306955505 partial_groups=1493488 largest_partial=12538 rehashes=28132 reservation_calls=14138 reservation_releases=13914 memory_lock_wait_ns=1759474 peak_reservation=67108864 spill_bytes_written=285793064 spill_bytes_read=285793064 partitions_spilled=256 recursion_depth=0 spill_files_opened=56569 sink_calls=46786 output_ns=1043693572 spill_peak_bytes=285793064 spill_peak_open=1\n"
+  },
+  {
+    "rev": "304bd70^",
+    "commit": "506c9ff941286ce6af912fb8fd06773d4cd4aafc",
+    "binary_sha256": "16bd7d56959d7bb695a7470fd972c0409a7a59bbcd11782ab143bf6e60c32489",
+    "threads": 1,
+    "seconds": 4.89274779400148,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=1 order=unordered window=1 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=1 peak_footers=1 late=0 peak_rss_kib=31884\naggregate: partial_ns=1086277484 merge_ns=990602998 partial_groups=1493405 largest_partial=31791 rehashes=7689 reservation_calls=12515 reservation_releases=12468 memory_lock_wait_ns=1552255 peak_reservation=67108864 spill_bytes_written=251361216 spill_bytes_read=251361216 partitions_spilled=256 recursion_depth=0 spill_files_opened=12800 sink_calls=46790 output_ns=929210796 spill_peak_bytes=251361216 spill_peak_open=1\n"
+  },
+  {
+    "rev": "9d59dde",
+    "commit": "9d59dde67acc689f13068633cca4db21a7f2409c",
+    "binary_sha256": "89521e672c54ea3102d8710d7a5b022180fec24991015168abadb24b3477d045",
+    "threads": 8,
+    "seconds": 6.829852169001242,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=2 order=unordered window=2 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=2 peak_footers=1 late=0 peak_rss_kib=36012\naggregate: partial_ns=1534082949 merge_ns=1221809245 partial_groups=1493470 largest_partial=12558 rehashes=24513 reservation_calls=13720 reservation_releases=13500 memory_lock_wait_ns=1982115 peak_reservation=67108864 spill_bytes_written=279167728 spill_bytes_read=279167728 partitions_spilled=256 recursion_depth=0 spill_files_opened=48374 sink_calls=46789 output_ns=1063449684\n"
+  }
+]

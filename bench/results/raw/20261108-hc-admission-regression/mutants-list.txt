@@ -1,0 +1,12 @@
+crates/nata-exec/src/aggregate.rs:312:9: replace Table::chunk_size -> usize with 0
+crates/nata-exec/src/aggregate.rs:312:9: replace Table::chunk_size -> usize with 1
+crates/nata-exec/src/aggregate.rs:312:17: replace / with % in Table::chunk_size
+crates/nata-exec/src/aggregate.rs:312:17: replace / with * in Table::chunk_size
+crates/nata-exec/src/aggregate.rs:312:38: replace << with >> in Table::chunk_size
+crates/nata-exec/src/aggregate/pipeline.rs:685:5: replace scan_concurrency -> usize with 0
+crates/nata-exec/src/aggregate/pipeline.rs:685:5: replace scan_concurrency -> usize with 1
+crates/nata-exec/src/aggregate/pipeline.rs:685:34: replace * with + in scan_concurrency
+crates/nata-exec/src/aggregate/pipeline.rs:685:34: replace * with / in scan_concurrency
+crates/nata-exec/src/aggregate/pipeline.rs:691:44: replace / with % in scan_concurrency
+crates/nata-exec/src/aggregate/pipeline.rs:691:44: replace / with * in scan_concurrency
+crates/nata-exec/src/aggregate/pipeline.rs:691:37: replace << with >> in scan_concurrency

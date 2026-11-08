@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "revisions": [
+    {
+      "label": "baseline",
+      "commit": "2b7a415a183c3e06caa379c8c627abc4a43b89fe",
+      "archive": "baseline-2b7a415a183c3e06caa379c8c627abc4a43b89fe.tar.gz",
+      "archive_sha256": "debfdc3fdae921097302abc29035d477abb805507d00d772b6d0800a9dc2396e"
+    },
+    {
+      "label": "admission",
+      "commit": "02d3faef8a6252888f3c084a71d70146c929c873",
+      "archive": "admission-02d3faef8a6252888f3c084a71d70146c929c873.tar.gz",
+      "archive_sha256": "1d841ca2aec28182d26084e6acd4e3f61476b46a21744f42a98d1dbb03c9a902"
+    }
+  ],
+  "queries": {
+    "q1": "-- tolerance: 1e-8\nSELECT l_returnflag, l_linestatus,\n sum(l_quantity) AS sum_qty, sum(l_extendedprice) AS sum_base_price,\n sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,\n sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,\n avg(l_quantity) AS avg_qty, avg(l_extendedprice) AS avg_price,\n avg(l_discount) AS avg_disc, count(*) AS count_order\nFROM '{data}/lineitem.parquet'\nWHERE l_shipdate <= DATE '1998-09-02'\nGROUP BY l_returnflag, l_linestatus;\n",
+    "high_cardinality_tpch": "SELECT l_orderkey, count(*) AS n, sum(l_extendedprice) AS price, sum(l_extendedprice * (1 - l_discount)) AS net FROM '{data}/lineitem.parquet' WHERE l_shipdate <= DATE '1998-09-02' GROUP BY l_orderkey HAVING count(*) > 1;\n"
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "builds": [
+    {
+      "variant": "baseline",
+      "commit": "2b7a415a183c3e06caa379c8c627abc4a43b89fe",
+      "source": "/tmp/nata-spill-regression/cloud-plan-work/source/baseline-2b7a415a183c3e06caa379c8c627abc4a43b89fe",
+      "target": "/tmp/nata-spill-regression/cloud-plan-work/target/baseline-2b7a415a183c3e06caa379c8c627abc4a43b89fe",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-j",
+        "4",
+        "-p",
+        "nata"
+      ]
+    },
+    {
+      "variant": "admission",
+      "commit": "02d3faef8a6252888f3c084a71d70146c929c873",
+      "source": "/tmp/nata-spill-regression/cloud-plan-work/source/admission-02d3faef8a6252888f3c084a71d70146c929c873",
+      "target": "/tmp/nata-spill-regression/cloud-plan-work/target/admission-02d3faef8a6252888f3c084a71d70146c929c873",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-j",
+        "4",
+        "-p",
+        "nata"
+      ]
+    }
+  ],
+  "queries": [
+    "q1",
+    "high_cardinality_tpch"
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "budgets": [
+    8589934592,
+    67108864
+  ],
+  "rounds": 5,
+  "roles": [
+    "primary",
+    "twin"
+  ],
+  "timed_processes": 240,
+  "order": [
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "admission",
+        "primary"
+      ],
+      [
+        "admission",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "admission",
+        "twin"
+      ],
+      [
+        "admission",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "admission",
+        "primary"
+      ],
+      [
+        "admission",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ],
+    [
+      [
+        "duckdb",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "admission",
+        "twin"
+      ],
+      [
+        "admission",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "baseline",
+        "primary"
+      ]
+    ],
+    [
+      [
+        "baseline",
+        "primary"
+      ],
+      [
+        "baseline",
+        "twin"
+      ],
+      [
+        "admission",
+        "primary"
+      ],
+      [
+        "admission",
+        "twin"
+      ],
+      [
+        "duckdb",
+        "primary"
+      ],
+      [
+        "duckdb",
+        "twin"
+      ]
+    ]
+  ]
+}

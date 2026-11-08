@@ -1,0 +1,32 @@
+[
+  {
+    "query": "q1",
+    "data_scale": 10,
+    "budget": 67108864,
+    "threads": 1,
+    "seconds_under_build_load": 32.55391540799974,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=488 skipped=0 read=488 not_read=0 rows_read=59986052 rows_returned=0 bytes_read=532774218 columns_read=7 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=1 order=unordered window=1 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=1 peak_footers=1 late=0 peak_rss_kib=28872\naggregate: partial_ns=30804955359 merge_ns=26221 partial_groups=4 largest_partial=4 rehashes=3 reservation_calls=755 reservation_releases=755 memory_lock_wait_ns=118794 peak_reservation=32033215 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=256 sink_calls=3 output_ns=253424 spill_peak_bytes=0 spill_peak_open=1\n",
+    "values": "DuckDB Q1 multiset with existing tolerance"
+  },
+  {
+    "query": "q1",
+    "data_scale": 10,
+    "budget": 67108864,
+    "threads": 8,
+    "seconds_under_build_load": 18.820928742999968,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=488 skipped=0 read=488 not_read=0 rows_read=59986052 rows_returned=0 bytes_read=532774218 columns_read=7 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=2 order=unordered window=2 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=2 peak_footers=1 late=0 peak_rss_kib=31008\naggregate: partial_ns=31084762295 merge_ns=34849 partial_groups=8 largest_partial=4 rehashes=6 reservation_calls=760 reservation_releases=760 memory_lock_wait_ns=129096 peak_reservation=47124658 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=256 sink_calls=3 output_ns=260407 spill_peak_bytes=0 spill_peak_open=1\n",
+    "values": "DuckDB Q1 multiset with existing tolerance"
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "data_scale": 1,
+    "budget": 4294967296,
+    "threads": 1,
+    "seconds_under_build_load": 7.000146200000017,
+    "exit": 0,
+    "stderr": "scan: files=1 row_groups=49 skipped=0 read=49 not_read=0 rows_read=6001215 rows_returned=0 bytes_read=52870771 columns_read=4 morsel=row-group pruning=applied(1 of 1 terms) files_opened=1 abandoned=0 threads=1 order=unordered window=1 peak_inflight_bytes=0 largest_task_bytes=0 peak_open_files=1 peak_footers=1 late=0 peak_rss_kib=593400\naggregate: partial_ns=4263283958 merge_ns=405580559 partial_groups=1493405 largest_partial=1493405 rehashes=256 reservation_calls=1394 reservation_releases=1394 memory_lock_wait_ns=302095 peak_reservation=1544266435 spill_bytes_written=0 spill_bytes_read=0 partitions_spilled=0 recursion_depth=0 spill_files_opened=16 sink_calls=46678 output_ns=2445038622 spill_peak_bytes=0 spill_peak_open=1\n",
+    "values": "1273748 HC rows and zero spill"
+  }
+]

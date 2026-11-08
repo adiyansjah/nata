@@ -1,0 +1,6092 @@
+[
+  {
+    "cpu": "x86",
+    "samples": [
+      {
+        "seconds": 46.275671771,
+        "role": "primary",
+        "round": 0,
+        "counters": {
+          "partial_ns": 1363005495,
+          "merge_ns": 2443372148,
+          "partial_groups": 1494090,
+          "largest_partial": 2629,
+          "rehashes": 189772,
+          "reservation_calls": 165614,
+          "reservation_releases": 135980,
+          "memory_lock_wait_ns": 11589739,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 571901584,
+          "spill_bytes_read": 571901584,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 384618,
+          "sink_calls": 46788,
+          "output_ns": 833437028,
+          "spill_peak_bytes": 571901584,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 46271676161,
+          "process_cpu": {
+            "user_ticks": 1649,
+            "system_ticks": 2158,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            409158,
+            435413,
+            403470,
+            31636,
+            307,
+            294420342
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              19104,
+              6183155776,
+              8463873476
+            ],
+            [
+              384362,
+              3297295154,
+              5136589334
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              571901584,
+              571901584,
+              384106,
+              384106,
+              384618,
+              403466,
+              4539407006,
+              4997467460
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511014,
+            345511014,
+            304280,
+            91097601,
+            467884,
+            135980,
+            34454917189,
+            135980
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 265437881,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 105616590,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 338040243,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 489783066,
+              "calls": 76526
+            },
+            "state_update": {
+              "service_wall_ns": 133326656,
+              "calls": 53080
+            },
+            "merge": {
+              "service_wall_ns": 2401961476,
+              "calls": 384905
+            },
+            "finalize": {
+              "service_wall_ns": 196372318,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 512803185,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8430482026,
+              "calls": 38160
+            },
+            "spill_read": {
+              "service_wall_ns": 5078282831,
+              "calls": 384362
+            },
+            "teardown": {
+              "service_wall_ns": 2011140,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 38575520737,
+              "calls": 1040
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1559980,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1363005495,
+            "merge_ns": 2443372148,
+            "partial_groups": 1494090,
+            "largest_partial": 2629,
+            "rehashes": 189772,
+            "reservation_calls": 165614,
+            "reservation_releases": 135980,
+            "memory_lock_wait_ns": 11589739,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 571901584,
+            "spill_bytes_read": 571901584,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 384618,
+            "sink_calls": 46788,
+            "output_ns": 833437028,
+            "spill_peak_bytes": 571901584,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 44.297938966,
+        "role": "twin",
+        "round": 0,
+        "counters": {
+          "partial_ns": 1463774762,
+          "merge_ns": 2317199761,
+          "partial_groups": 1494013,
+          "largest_partial": 2631,
+          "rehashes": 187499,
+          "reservation_calls": 162649,
+          "reservation_releases": 133425,
+          "memory_lock_wait_ns": 11994820,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 566713720,
+          "spill_bytes_read": 566713720,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 378923,
+          "sink_calls": 46789,
+          "output_ns": 817356414,
+          "spill_peak_bytes": 566713720,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 44293581376,
+          "process_cpu": {
+            "user_ticks": 1586,
+            "system_ticks": 2144,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            403007,
+            428750,
+            397396,
+            31047,
+            307,
+            344636838
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              18725,
+              6514074041,
+              8851910096
+            ],
+            [
+              378667,
+              3075217504,
+              4698915973
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              566713720,
+              566713720,
+              378411,
+              378411,
+              378923,
+              397392,
+              4678387791,
+              4567792211
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            133425,
+            33805902564,
+            133425
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 290882427,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 112301637,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 345292601,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 525425713,
+              "calls": 76116
+            },
+            "state_update": {
+              "service_wall_ns": 142608939,
+              "calls": 52670
+            },
+            "merge": {
+              "service_wall_ns": 2277082648,
+              "calls": 379106
+            },
+            "finalize": {
+              "service_wall_ns": 184062424,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 509870358,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8818902354,
+              "calls": 37402
+            },
+            "spill_read": {
+              "service_wall_ns": 4645126895,
+              "calls": 378667
+            },
+            "teardown": {
+              "service_wall_ns": 2395220,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 37062099046,
+              "calls": 938
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1862180,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1463774762,
+            "merge_ns": 2317199761,
+            "partial_groups": 1494013,
+            "largest_partial": 2631,
+            "rehashes": 187499,
+            "reservation_calls": 162649,
+            "reservation_releases": 133425,
+            "memory_lock_wait_ns": 11994820,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 566713720,
+            "spill_bytes_read": 566713720,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 378923,
+            "sink_calls": 46789,
+            "output_ns": 817356414,
+            "spill_peak_bytes": 566713720,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 46.9137011,
+        "role": "twin",
+        "round": 1,
+        "counters": {
+          "partial_ns": 1467444799,
+          "merge_ns": 2425872547,
+          "partial_groups": 1494085,
+          "largest_partial": 2716,
+          "rehashes": 194843,
+          "reservation_calls": 171619,
+          "reservation_releases": 141124,
+          "memory_lock_wait_ns": 12595854,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 578398728,
+          "spill_bytes_read": 578398728,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 391725,
+          "sink_calls": 46788,
+          "output_ns": 866943006,
+          "spill_peak_bytes": 578398728,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 46908837609,
+          "process_cpu": {
+            "user_ticks": 1690,
+            "system_ticks": 2269,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            416879,
+            444230,
+            411330,
+            32593,
+            307,
+            337152852
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              19857,
+              6603631303,
+              9180181786
+            ],
+            [
+              391469,
+              3355695312,
+              5200287514
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              578398728,
+              578398728,
+              391213,
+              391213,
+              391725,
+              411326,
+              4877023587,
+              5055292241
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345510962,
+            345510962,
+            304280,
+            91097549,
+            467884,
+            141124,
+            35760660965,
+            141124
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 278160453,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 114305961,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 350696377,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 527751092,
+              "calls": 77387
+            },
+            "state_update": {
+              "service_wall_ns": 144780464,
+              "calls": 53941
+            },
+            "merge": {
+              "service_wall_ns": 2385507997,
+              "calls": 391928
+            },
+            "finalize": {
+              "service_wall_ns": 191008700,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 549961644,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 9144389092,
+              "calls": 39666
+            },
+            "spill_read": {
+              "service_wall_ns": 5136316172,
+              "calls": 391469
+            },
+            "teardown": {
+              "service_wall_ns": 2108000,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 39378951745,
+              "calls": 1065
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1868721,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1467444799,
+            "merge_ns": 2425872547,
+            "partial_groups": 1494085,
+            "largest_partial": 2716,
+            "rehashes": 194843,
+            "reservation_calls": 171619,
+            "reservation_releases": 141124,
+            "memory_lock_wait_ns": 12595854,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 578398728,
+            "spill_bytes_read": 578398728,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 391725,
+            "sink_calls": 46788,
+            "output_ns": 866943006,
+            "spill_peak_bytes": 578398728,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 38.360297792,
+        "role": "primary",
+        "round": 1,
+        "counters": {
+          "partial_ns": 1425558190,
+          "merge_ns": 2041653308,
+          "partial_groups": 1493990,
+          "largest_partial": 8201,
+          "rehashes": 172454,
+          "reservation_calls": 145461,
+          "reservation_releases": 118686,
+          "memory_lock_wait_ns": 10632938,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 543606352,
+          "spill_bytes_read": 543606352,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 353618,
+          "sink_calls": 46789,
+          "output_ns": 745007322,
+          "spill_peak_bytes": 543606352,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 38356015239,
+          "process_cpu": {
+            "user_ticks": 1492,
+            "system_ticks": 1870,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            375398,
+            398556,
+            369913,
+            28350,
+            293,
+            327451930
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              16533,
+              6202988932,
+              8446393055
+            ],
+            [
+              353362,
+              2741565753,
+              4303895070
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              543606352,
+              543606352,
+              353106,
+              353106,
+              353618,
+              369895,
+              4482459500,
+              4189238300
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            118686,
+            30099406648,
+            118686
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 288817530,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 110036559,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 327942156,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 514306791,
+              "calls": 73667
+            },
+            "state_update": {
+              "service_wall_ns": 141625115,
+              "calls": 50221
+            },
+            "merge": {
+              "service_wall_ns": 2005832224,
+              "calls": 353781
+            },
+            "finalize": {
+              "service_wall_ns": 166678579,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 464792490,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8413938251,
+              "calls": 33032
+            },
+            "spill_read": {
+              "service_wall_ns": 4256559929,
+              "calls": 353362
+            },
+            "teardown": {
+              "service_wall_ns": 1370381,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 32760529794,
+              "calls": 886
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1803841,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1425558190,
+            "merge_ns": 2041653308,
+            "partial_groups": 1493990,
+            "largest_partial": 8201,
+            "rehashes": 172454,
+            "reservation_calls": 145461,
+            "reservation_releases": 118686,
+            "memory_lock_wait_ns": 10632938,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 543606352,
+            "spill_bytes_read": 543606352,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 353618,
+            "sink_calls": 46789,
+            "output_ns": 745007322,
+            "spill_peak_bytes": 543606352,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 41.949371593,
+        "role": "primary",
+        "round": 2,
+        "counters": {
+          "partial_ns": 1260001437,
+          "merge_ns": 2079662859,
+          "partial_groups": 1494050,
+          "largest_partial": 8422,
+          "rehashes": 184407,
+          "reservation_calls": 159218,
+          "reservation_releases": 130408,
+          "memory_lock_wait_ns": 10034338,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 562853344,
+          "spill_bytes_read": 562853344,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 374716,
+          "sink_calls": 46789,
+          "output_ns": 729984688,
+          "spill_peak_bytes": 562853344,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 41945476071,
+          "process_cpu": {
+            "user_ticks": 1410,
+            "system_ticks": 1820,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            398212,
+            423338,
+            392770,
+            30261,
+            307,
+            282703010
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              18306,
+              5508386813,
+              7454330403
+            ],
+            [
+              374460,
+              2666418978,
+              4116908195
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              562853344,
+              562853344,
+              374204,
+              374204,
+              374716,
+              392766,
+              3953190633,
+              4001988558
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            130408,
+            33035554741,
+            130408
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 252202734,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 97032549,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 302211403,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 448617455,
+              "calls": 75702
+            },
+            "state_update": {
+              "service_wall_ns": 123252891,
+              "calls": 52256
+            },
+            "merge": {
+              "service_wall_ns": 2042169638,
+              "calls": 374906
+            },
+            "finalize": {
+              "service_wall_ns": 171815558,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 451027212,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 7425759879,
+              "calls": 36564
+            },
+            "spill_read": {
+              "service_wall_ns": 4070309686,
+              "calls": 374460
+            },
+            "teardown": {
+              "service_wall_ns": 1774701,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 35662548932,
+              "calls": 952
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1590051,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1260001437,
+            "merge_ns": 2079662859,
+            "partial_groups": 1494050,
+            "largest_partial": 8422,
+            "rehashes": 184407,
+            "reservation_calls": 159218,
+            "reservation_releases": 130408,
+            "memory_lock_wait_ns": 10034338,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 562853344,
+            "spill_bytes_read": 562853344,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 374716,
+            "sink_calls": 46789,
+            "output_ns": 729984688,
+            "spill_peak_bytes": 562853344,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 40.658603902,
+        "role": "twin",
+        "round": 2,
+        "counters": {
+          "partial_ns": 1385660612,
+          "merge_ns": 2226286752,
+          "partial_groups": 1494020,
+          "largest_partial": 8260,
+          "rehashes": 182458,
+          "reservation_calls": 157378,
+          "reservation_releases": 129228,
+          "memory_lock_wait_ns": 11091316,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 557820440,
+          "spill_bytes_read": 557820440,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 369071,
+          "sink_calls": 46788,
+          "output_ns": 792559932,
+          "spill_peak_bytes": 557820440,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 40654379160,
+          "process_cpu": {
+            "user_ticks": 1509,
+            "system_ticks": 2035,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            392374,
+            417282,
+            386992,
+            29983,
+            307,
+            320750061
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              18173,
+              5898160014,
+              8102006311
+            ],
+            [
+              368815,
+              2983124963,
+              4639766824
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              557820440,
+              557820440,
+              368559,
+              368559,
+              369071,
+              386988,
+              4278747040,
+              4516722246
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345510962,
+            345510962,
+            304280,
+            91097549,
+            467884,
+            129228,
+            32745060235,
+            129228
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 283294488,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 107049073,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 332320613,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 493509558,
+              "calls": 75042
+            },
+            "state_update": {
+              "service_wall_ns": 135598329,
+              "calls": 51596
+            },
+            "merge": {
+              "service_wall_ns": 2185765145,
+              "calls": 369264
+            },
+            "finalize": {
+              "service_wall_ns": 179332979,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 492885284,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8070717499,
+              "calls": 36298
+            },
+            "spill_read": {
+              "service_wall_ns": 4591033513,
+              "calls": 368815
+            },
+            "teardown": {
+              "service_wall_ns": 1724471,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 33652429322,
+              "calls": 975
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1621441,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1385660612,
+            "merge_ns": 2226286752,
+            "partial_groups": 1494020,
+            "largest_partial": 8260,
+            "rehashes": 182458,
+            "reservation_calls": 157378,
+            "reservation_releases": 129228,
+            "memory_lock_wait_ns": 11091316,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 557820440,
+            "spill_bytes_read": 557820440,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 369071,
+            "sink_calls": 46788,
+            "output_ns": 792559932,
+            "spill_peak_bytes": 557820440,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 45.989762769,
+        "role": "twin",
+        "round": 3,
+        "counters": {
+          "partial_ns": 1505927944,
+          "merge_ns": 2362304042,
+          "partial_groups": 1494044,
+          "largest_partial": 8232,
+          "rehashes": 189552,
+          "reservation_calls": 166665,
+          "reservation_releases": 136766,
+          "memory_lock_wait_ns": 12378335,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 569198064,
+          "spill_bytes_read": 569198064,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 381390,
+          "sink_calls": 46788,
+          "output_ns": 820938812,
+          "spill_peak_bytes": 569198064,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 45985187967,
+          "process_cpu": {
+            "user_ticks": 1716,
+            "system_ticks": 2139,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            406062,
+            432405,
+            400350,
+            31748,
+            307,
+            338755224
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              19212,
+              6729741826,
+              9095676913
+            ],
+            [
+              381134,
+              3202788482,
+              5011029310
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              569198064,
+              569198064,
+              380878,
+              380878,
+              381390,
+              400346,
+              4777770427,
+              4876544794
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511014,
+            345511014,
+            304280,
+            91097601,
+            467884,
+            136766,
+            34656969327,
+            136766
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 294517209,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 115655456,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 350170906,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 539521228,
+              "calls": 76791
+            },
+            "state_update": {
+              "service_wall_ns": 147524858,
+              "calls": 53345
+            },
+            "merge": {
+              "service_wall_ns": 2321651934,
+              "calls": 381596
+            },
+            "finalize": {
+              "service_wall_ns": 189932393,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 508465330,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 9060619695,
+              "calls": 38376
+            },
+            "spill_read": {
+              "service_wall_ns": 4953918945,
+              "calls": 381134
+            },
+            "teardown": {
+              "service_wall_ns": 1590641,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 38734858777,
+              "calls": 1002
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1681651,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1505927944,
+            "merge_ns": 2362304042,
+            "partial_groups": 1494044,
+            "largest_partial": 8232,
+            "rehashes": 189552,
+            "reservation_calls": 166665,
+            "reservation_releases": 136766,
+            "memory_lock_wait_ns": 12378335,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 569198064,
+            "spill_bytes_read": 569198064,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 381390,
+            "sink_calls": 46788,
+            "output_ns": 820938812,
+            "spill_peak_bytes": 569198064,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 39.803979448,
+        "role": "primary",
+        "round": 3,
+        "counters": {
+          "partial_ns": 1404428757,
+          "merge_ns": 2233096754,
+          "partial_groups": 1493980,
+          "largest_partial": 8127,
+          "rehashes": 176863,
+          "reservation_calls": 149732,
+          "reservation_releases": 122498,
+          "memory_lock_wait_ns": 10836457,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 549771944,
+          "spill_bytes_read": 549771944,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 360601,
+          "sink_calls": 46790,
+          "output_ns": 801403758,
+          "spill_peak_bytes": 549771944,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 39799608318,
+          "process_cpu": {
+            "user_ticks": 1527,
+            "system_ticks": 2044,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            383164,
+            406808,
+            377526,
+            28975,
+            307,
+            302022075
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              17177,
+              6225412726,
+              8354575838
+            ],
+            [
+              360345,
+              2985355531,
+              4685886662
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              549771944,
+              549771944,
+              360089,
+              360089,
+              360601,
+              377522,
+              4391761445,
+              4559146669
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            122498,
+            31046260733,
+            122498
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 271366398,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 108948685,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 338791832,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 507644742,
+              "calls": 74126
+            },
+            "state_update": {
+              "service_wall_ns": 139678211,
+              "calls": 50680
+            },
+            "merge": {
+              "service_wall_ns": 2192002477,
+              "calls": 360822
+            },
+            "finalize": {
+              "service_wall_ns": 185338786,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 496699807,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8322802012,
+              "calls": 34306
+            },
+            "spill_read": {
+              "service_wall_ns": 4632884824,
+              "calls": 360345
+            },
+            "teardown": {
+              "service_wall_ns": 2232199,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 32980084164,
+              "calls": 919
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1914211,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1404428757,
+            "merge_ns": 2233096754,
+            "partial_groups": 1493980,
+            "largest_partial": 8127,
+            "rehashes": 176863,
+            "reservation_calls": 149732,
+            "reservation_releases": 122498,
+            "memory_lock_wait_ns": 10836457,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 549771944,
+            "spill_bytes_read": 549771944,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 360601,
+            "sink_calls": 46790,
+            "output_ns": 801403758,
+            "spill_peak_bytes": 549771944,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 37.270487559,
+        "role": "primary",
+        "round": 4,
+        "counters": {
+          "partial_ns": 1391633359,
+          "merge_ns": 2194858205,
+          "partial_groups": 1493988,
+          "largest_partial": 8318,
+          "rehashes": 165382,
+          "reservation_calls": 135589,
+          "reservation_releases": 110747,
+          "memory_lock_wait_ns": 10020863,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 533331632,
+          "spill_bytes_read": 533331632,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 342446,
+          "sink_calls": 46790,
+          "output_ns": 827642879,
+          "spill_peak_bytes": 533331632,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 37266050484,
+          "process_cpu": {
+            "user_ticks": 1500,
+            "system_ticks": 1934,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            362923,
+            384223,
+            357607,
+            26309,
+            307,
+            338443778
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              15413,
+              5810480782,
+              7988664739
+            ],
+            [
+              342190,
+              2848163863,
+              4422776153
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              533331632,
+              533331632,
+              341934,
+              341934,
+              342446,
+              357603,
+              4203761309,
+              4303553873
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            110747,
+            28070941271,
+            110747
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 286716665,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 108734395,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 343370936,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 497819902,
+              "calls": 71734
+            },
+            "state_update": {
+              "service_wall_ns": 140188447,
+              "calls": 48288
+            },
+            "merge": {
+              "service_wall_ns": 2151616571,
+              "calls": 342669
+            },
+            "finalize": {
+              "service_wall_ns": 184003488,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 519582733,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 7960140564,
+              "calls": 30778
+            },
+            "spill_read": {
+              "service_wall_ns": 4374744633,
+              "calls": 342190
+            },
+            "teardown": {
+              "service_wall_ns": 1594279,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 30580359258,
+              "calls": 858
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1834768,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1391633359,
+            "merge_ns": 2194858205,
+            "partial_groups": 1493988,
+            "largest_partial": 8318,
+            "rehashes": 165382,
+            "reservation_calls": 135589,
+            "reservation_releases": 110747,
+            "memory_lock_wait_ns": 10020863,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 533331632,
+            "spill_bytes_read": 533331632,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 342446,
+            "sink_calls": 46790,
+            "output_ns": 827642879,
+            "spill_peak_bytes": 533331632,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 38.882007932,
+        "role": "twin",
+        "round": 4,
+        "counters": {
+          "partial_ns": 1358665396,
+          "merge_ns": 2012965145,
+          "partial_groups": 1494005,
+          "largest_partial": 9659,
+          "rehashes": 186154,
+          "reservation_calls": 162169,
+          "reservation_releases": 132762,
+          "memory_lock_wait_ns": 11335553,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 564645752,
+          "spill_bytes_read": 564645752,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 376595,
+          "sink_calls": 46788,
+          "output_ns": 710044448,
+          "spill_peak_bytes": 564645752,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 38877844956,
+          "process_cpu": {
+            "user_ticks": 1433,
+            "system_ticks": 1937,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            400633,
+            426568,
+            395014,
+            31260,
+            294,
+            290178039
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              18658,
+              6088312072,
+              8247932823
+            ],
+            [
+              376339,
+              2761640266,
+              4378541591
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              564645752,
+              564645752,
+              376083,
+              376083,
+              376595,
+              394997,
+              4348075698,
+              4263301476
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511014,
+            345511014,
+            304280,
+            91097601,
+            467884,
+            132762,
+            33652789478,
+            132762
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 263902574,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 105293671,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 312011449,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 491251415,
+              "calls": 76299
+            },
+            "state_update": {
+              "service_wall_ns": 133872331,
+              "calls": 52853
+            },
+            "merge": {
+              "service_wall_ns": 1977709204,
+              "calls": 376801
+            },
+            "finalize": {
+              "service_wall_ns": 158988676,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 443484055,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8215361697,
+              "calls": 37281
+            },
+            "spill_read": {
+              "service_wall_ns": 4330043966,
+              "calls": 376339
+            },
+            "teardown": {
+              "service_wall_ns": 1855888,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 32906528261,
+              "calls": 947
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1844948,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607401,
+            "task_bytes": 19607401
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52870771,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1358665396,
+            "merge_ns": 2012965145,
+            "partial_groups": 1494005,
+            "largest_partial": 9659,
+            "rehashes": 186154,
+            "reservation_calls": 162169,
+            "reservation_releases": 132762,
+            "memory_lock_wait_ns": 11335553,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 564645752,
+            "spill_bytes_read": 564645752,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 376595,
+            "sink_calls": 46788,
+            "output_ns": 710044448,
+            "spill_peak_bytes": 564645752,
+            "spill_peak_open": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "cpu": "arm",
+    "samples": [
+      {
+        "seconds": 28.022040366,
+        "role": "primary",
+        "round": 0,
+        "counters": {
+          "partial_ns": 1375296205,
+          "merge_ns": 3269106878,
+          "partial_groups": 1494080,
+          "largest_partial": 8389,
+          "rehashes": 259598,
+          "reservation_calls": 263598,
+          "reservation_releases": 211788,
+          "memory_lock_wait_ns": 28875622,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 651966528,
+          "spill_bytes_read": 651966528,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 472056,
+          "sink_calls": 46788,
+          "output_ns": 825825742,
+          "spill_peak_bytes": 651966528,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 28019640108,
+          "process_cpu": {
+            "user_ticks": 1506,
+            "system_ticks": 1357,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            521841,
+            565885,
+            504424,
+            61154,
+            307,
+            254815140
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              32620,
+              7517511318,
+              8355621008
+            ],
+            [
+              471800,
+              3357168556,
+              4414218658
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              651966528,
+              651966528,
+              471544,
+              471544,
+              472056,
+              504420,
+              4931686178,
+              4226694673
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511014,
+            345511014,
+            304280,
+            91097601,
+            467884,
+            211788,
+            53814966461,
+            211788
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 195401224,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 93034461,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 256133057,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 556273422,
+              "calls": 98702
+            },
+            "state_update": {
+              "service_wall_ns": 97608219,
+              "calls": 75256
+            },
+            "merge": {
+              "service_wall_ns": 3249501298,
+              "calls": 472987
+            },
+            "finalize": {
+              "service_wall_ns": 164348458,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 562529161,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 8291609649,
+              "calls": 65192
+            },
+            "spill_read": {
+              "service_wall_ns": 4334587605,
+              "calls": 471800
+            },
+            "teardown": {
+              "service_wall_ns": 1648490,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 20287085008,
+              "calls": 1329
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1085613,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1375296205,
+            "merge_ns": 3269106878,
+            "partial_groups": 1494080,
+            "largest_partial": 8389,
+            "rehashes": 259598,
+            "reservation_calls": 263598,
+            "reservation_releases": 211788,
+            "memory_lock_wait_ns": 28875622,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 651966528,
+            "spill_bytes_read": 651966528,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 472056,
+            "sink_calls": 46788,
+            "output_ns": 825825742,
+            "spill_peak_bytes": 651966528,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 25.900891366,
+        "role": "twin",
+        "round": 0,
+        "counters": {
+          "partial_ns": 1352330499,
+          "merge_ns": 3137525396,
+          "partial_groups": 1494007,
+          "largest_partial": 2637,
+          "rehashes": 249188,
+          "reservation_calls": 239427,
+          "reservation_releases": 201342,
+          "memory_lock_wait_ns": 26532413,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 635234256,
+          "spill_bytes_read": 635234256,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 453682,
+          "sink_calls": 46790,
+          "output_ns": 822639076,
+          "spill_peak_bytes": 635234256,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 25897914383,
+          "process_cpu": {
+            "user_ticks": 1451,
+            "system_ticks": 1292,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            489740,
+            531420,
+            484564,
+            46549,
+            307,
+            275036940
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              31134,
+              4767596723,
+              6636086368
+            ],
+            [
+              453426,
+              3209141605,
+              4221100159
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              635234256,
+              635234256,
+              453170,
+              453170,
+              453682,
+              484560,
+              3320647873,
+              4023517597
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            201342,
+            51173401351,
+            201342
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 200422268,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 95930878,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 257232841,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 546273580,
+              "calls": 84977
+            },
+            "state_update": {
+              "service_wall_ns": 97450650,
+              "calls": 61531
+            },
+            "merge": {
+              "service_wall_ns": 3115105387,
+              "calls": 454288
+            },
+            "finalize": {
+              "service_wall_ns": 163477150,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 558298947,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6574904376,
+              "calls": 62220
+            },
+            "spill_read": {
+              "service_wall_ns": 4123179177,
+              "calls": 453426
+            },
+            "teardown": {
+              "service_wall_ns": 1513081,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 18545458001,
+              "calls": 1322
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1215467,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1352330499,
+            "merge_ns": 3137525396,
+            "partial_groups": 1494007,
+            "largest_partial": 2637,
+            "rehashes": 249188,
+            "reservation_calls": 239427,
+            "reservation_releases": 201342,
+            "memory_lock_wait_ns": 26532413,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 635234256,
+            "spill_bytes_read": 635234256,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 453682,
+            "sink_calls": 46790,
+            "output_ns": 822639076,
+            "spill_peak_bytes": 635234256,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 26.441914932,
+        "role": "twin",
+        "round": 1,
+        "counters": {
+          "partial_ns": 1330376266,
+          "merge_ns": 3215646474,
+          "partial_groups": 1494008,
+          "largest_partial": 16852,
+          "rehashes": 245875,
+          "reservation_calls": 235839,
+          "reservation_releases": 198171,
+          "memory_lock_wait_ns": 27345194,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 631939856,
+          "spill_bytes_read": 631939856,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 449970,
+          "sink_calls": 46790,
+          "output_ns": 819303823,
+          "spill_peak_bytes": 631939856,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 26439065366,
+          "process_cpu": {
+            "user_ticks": 1450,
+            "system_ticks": 1286,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            485399,
+            526397,
+            480178,
+            45928,
+            291,
+            279210410
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              30444,
+              4788416165,
+              6753713982
+            ],
+            [
+              449714,
+              3184430636,
+              4169505199
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              631939856,
+              631939856,
+              449458,
+              449458,
+              449970,
+              480158,
+              3400472390,
+              3990544601
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            198171,
+            50377552625,
+            198171
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 192498375,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 95429747,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 253924455,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 543920028,
+              "calls": 84560
+            },
+            "state_update": {
+              "service_wall_ns": 97051306,
+              "calls": 61114
+            },
+            "merge": {
+              "service_wall_ns": 3187979908,
+              "calls": 450682
+            },
+            "finalize": {
+              "service_wall_ns": 166926500,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 555378226,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6691410689,
+              "calls": 60856
+            },
+            "spill_read": {
+              "service_wall_ns": 4094231598,
+              "calls": 449714
+            },
+            "teardown": {
+              "service_wall_ns": 1775388,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 19304277121,
+              "calls": 1302
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1149296,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1330376266,
+            "merge_ns": 3215646474,
+            "partial_groups": 1494008,
+            "largest_partial": 16852,
+            "rehashes": 245875,
+            "reservation_calls": 235839,
+            "reservation_releases": 198171,
+            "memory_lock_wait_ns": 27345194,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 631939856,
+            "spill_bytes_read": 631939856,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 449970,
+            "sink_calls": 46790,
+            "output_ns": 819303823,
+            "spill_peak_bytes": 631939856,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 23.483162806,
+        "role": "primary",
+        "round": 1,
+        "counters": {
+          "partial_ns": 1278224809,
+          "merge_ns": 3032273163,
+          "partial_groups": 1493961,
+          "largest_partial": 8136,
+          "rehashes": 223824,
+          "reservation_calls": 207952,
+          "reservation_releases": 174842,
+          "memory_lock_wait_ns": 23329266,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 600271376,
+          "spill_bytes_read": 600271376,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 415554,
+          "sink_calls": 46790,
+          "output_ns": 820522730,
+          "spill_peak_bytes": 600271376,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 23480320454,
+          "process_cpu": {
+            "user_ticks": 1357,
+            "system_ticks": 1172,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            446687,
+            482770,
+            442034,
+            40429,
+            307,
+            280766510
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              26732,
+              4163006507,
+              6174231979
+            ],
+            [
+              415298,
+              2995231175,
+              3863368729
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              600271376,
+              600271376,
+              415042,
+              415042,
+              415554,
+              442030,
+              3070451847,
+              3696357610
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            174842,
+            44451488921,
+            174842
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 193296016,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 95663313,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 253929759,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 522611319,
+              "calls": 80002
+            },
+            "state_update": {
+              "service_wall_ns": 96524605,
+              "calls": 56556
+            },
+            "merge": {
+              "service_wall_ns": 3001214206,
+              "calls": 416177
+            },
+            "finalize": {
+              "service_wall_ns": 170060150,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 553622704,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6119837360,
+              "calls": 53416
+            },
+            "spill_read": {
+              "service_wall_ns": 3793299580,
+              "calls": 415298
+            },
+            "teardown": {
+              "service_wall_ns": 2195177,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 16997522044,
+              "calls": 1164
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1067858,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1278224809,
+            "merge_ns": 3032273163,
+            "partial_groups": 1493961,
+            "largest_partial": 8136,
+            "rehashes": 223824,
+            "reservation_calls": 207952,
+            "reservation_releases": 174842,
+            "memory_lock_wait_ns": 23329266,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 600271376,
+            "spill_bytes_read": 600271376,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 415554,
+            "sink_calls": 46790,
+            "output_ns": 820522730,
+            "spill_peak_bytes": 600271376,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 25.422613296,
+        "role": "primary",
+        "round": 2,
+        "counters": {
+          "partial_ns": 1292307705,
+          "merge_ns": 3093842718,
+          "partial_groups": 1494040,
+          "largest_partial": 8015,
+          "rehashes": 237432,
+          "reservation_calls": 225367,
+          "reservation_releases": 189645,
+          "memory_lock_wait_ns": 26219759,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 618853096,
+          "spill_bytes_read": 618853096,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 435625,
+          "sink_calls": 46789,
+          "output_ns": 818545245,
+          "spill_peak_bytes": 618853096,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 25419600277,
+          "process_cpu": {
+            "user_ticks": 1375,
+            "system_ticks": 1268,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            469424,
+            508678,
+            464397,
+            43974,
+            307,
+            247272530
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              29024,
+              4459376356,
+              6524809577
+            ],
+            [
+              435369,
+              3071951782,
+              4016707399
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              618853096,
+              618853096,
+              435113,
+              435113,
+              435625,
+              464393,
+              3250472157,
+              3847708384
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            189645,
+            48215233027,
+            189645
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 185714369,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 94013360,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 254314905,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 535517101,
+              "calls": 82614
+            },
+            "state_update": {
+              "service_wall_ns": 96188762,
+              "calls": 59168
+            },
+            "merge": {
+              "service_wall_ns": 3067586451,
+              "calls": 436342
+            },
+            "finalize": {
+              "service_wall_ns": 171794365,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 549819100,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6467558593,
+              "calls": 58000
+            },
+            "spill_read": {
+              "service_wall_ns": 3944840583,
+              "calls": 435369
+            },
+            "teardown": {
+              "service_wall_ns": 1583765,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 18345523527,
+              "calls": 1238
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1098280,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1292307705,
+            "merge_ns": 3093842718,
+            "partial_groups": 1494040,
+            "largest_partial": 8015,
+            "rehashes": 237432,
+            "reservation_calls": 225367,
+            "reservation_releases": 189645,
+            "memory_lock_wait_ns": 26219759,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 618853096,
+            "spill_bytes_read": 618853096,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 435625,
+            "sink_calls": 46789,
+            "output_ns": 818545245,
+            "spill_peak_bytes": 618853096,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 26.677466623,
+        "role": "twin",
+        "round": 2,
+        "counters": {
+          "partial_ns": 1368934104,
+          "merge_ns": 3265823406,
+          "partial_groups": 1494047,
+          "largest_partial": 8156,
+          "rehashes": 258063,
+          "reservation_calls": 250175,
+          "reservation_releases": 210352,
+          "memory_lock_wait_ns": 27851940,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 648416992,
+          "spill_bytes_read": 648416992,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 468220,
+          "sink_calls": 46790,
+          "output_ns": 816068218,
+          "spill_peak_bytes": 648416992,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 26674528621,
+          "process_cpu": {
+            "user_ticks": 1510,
+            "system_ticks": 1313,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            505670,
+            549268,
+            500426,
+            48535,
+            307,
+            281677240
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              32458,
+              4894466037,
+              6876846867
+            ],
+            [
+              467964,
+              3294645852,
+              4327149361
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              648416992,
+              648416992,
+              467708,
+              467708,
+              468220,
+              500422,
+              3426157889,
+              4143262928
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511118,
+            345511118,
+            304288,
+            91097705,
+            467900,
+            210352,
+            53468537635,
+            210352
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 197077138,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 97005496,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 255036228,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 554167004,
+              "calls": 86715
+            },
+            "state_update": {
+              "service_wall_ns": 97416129,
+              "calls": 63269
+            },
+            "merge": {
+              "service_wall_ns": 3243733448,
+              "calls": 468939
+            },
+            "finalize": {
+              "service_wall_ns": 169237052,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 550485203,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6813136762,
+              "calls": 64868
+            },
+            "spill_read": {
+              "service_wall_ns": 4249458191,
+              "calls": 467964
+            },
+            "teardown": {
+              "service_wall_ns": 1908151,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 19086750206,
+              "calls": 1375
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1126281,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1368934104,
+            "merge_ns": 3265823406,
+            "partial_groups": 1494047,
+            "largest_partial": 8156,
+            "rehashes": 258063,
+            "reservation_calls": 250175,
+            "reservation_releases": 210352,
+            "memory_lock_wait_ns": 27851940,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 648416992,
+            "spill_bytes_read": 648416992,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 468220,
+            "sink_calls": 46790,
+            "output_ns": 816068218,
+            "spill_peak_bytes": 648416992,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 25.165311536,
+        "role": "twin",
+        "round": 3,
+        "counters": {
+          "partial_ns": 1313786312,
+          "merge_ns": 3136160493,
+          "partial_groups": 1494031,
+          "largest_partial": 8125,
+          "rehashes": 253228,
+          "reservation_calls": 244899,
+          "reservation_releases": 206005,
+          "memory_lock_wait_ns": 27017183,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 640719464,
+          "spill_bytes_read": 640719464,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 459473,
+          "sink_calls": 46788,
+          "output_ns": 827287750,
+          "spill_peak_bytes": 640719464,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 25163143438,
+          "process_cpu": {
+            "user_ticks": 1449,
+            "system_ticks": 1284,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            496410,
+            539210,
+            491351,
+            47552,
+            307,
+            245751310
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              32130,
+              4795546807,
+              6585446940
+            ],
+            [
+              459217,
+              3195053419,
+              4210502413
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              640719464,
+              640719464,
+              458961,
+              458961,
+              459473,
+              491347,
+              3323459354,
+              4035417158
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511014,
+            345511014,
+            304280,
+            91097601,
+            467884,
+            206005,
+            52363331545,
+            206005
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 191106819,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 92967108,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 253556782,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 537763599,
+              "calls": 85786
+            },
+            "state_update": {
+              "service_wall_ns": 96111337,
+              "calls": 62340
+            },
+            "merge": {
+              "service_wall_ns": 3118353249,
+              "calls": 460052
+            },
+            "finalize": {
+              "service_wall_ns": 164457936,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 563996011,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6524456797,
+              "calls": 64212
+            },
+            "spill_read": {
+              "service_wall_ns": 4136545660,
+              "calls": 459217
+            },
+            "teardown": {
+              "service_wall_ns": 1587889,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 17305860145,
+              "calls": 1304
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1102219,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1313786312,
+            "merge_ns": 3136160493,
+            "partial_groups": 1494031,
+            "largest_partial": 8125,
+            "rehashes": 253228,
+            "reservation_calls": 244899,
+            "reservation_releases": 206005,
+            "memory_lock_wait_ns": 27017183,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 640719464,
+            "spill_bytes_read": 640719464,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 459473,
+            "sink_calls": 46788,
+            "output_ns": 827287750,
+            "spill_peak_bytes": 640719464,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 25.76150616,
+        "role": "primary",
+        "round": 3,
+        "counters": {
+          "partial_ns": 1322350725,
+          "merge_ns": 3204463106,
+          "partial_groups": 1494005,
+          "largest_partial": 12952,
+          "rehashes": 258517,
+          "reservation_calls": 250710,
+          "reservation_releases": 210965,
+          "memory_lock_wait_ns": 28821905,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 649255256,
+          "spill_bytes_read": 649255256,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 469127,
+          "sink_calls": 46789,
+          "output_ns": 817270762,
+          "spill_peak_bytes": 649255256,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 25758704027,
+          "process_cpu": {
+            "user_ticks": 1503,
+            "system_ticks": 1279,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            506886,
+            550925,
+            501678,
+            48940,
+            307,
+            242848970
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              32803,
+              4935891017,
+              6826474692
+            ],
+            [
+              468871,
+              3272930260,
+              4299371740
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              649255256,
+              649255256,
+              468615,
+              468615,
+              469127,
+              501674,
+              3429394019,
+              4110725626
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            210965,
+            53623768041,
+            210965
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 187510323,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 91412178,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 253350307,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 543757436,
+              "calls": 86637
+            },
+            "state_update": {
+              "service_wall_ns": 96418613,
+              "calls": 63191
+            },
+            "merge": {
+              "service_wall_ns": 3177141834,
+              "calls": 469722
+            },
+            "finalize": {
+              "service_wall_ns": 168343491,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 554560636,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 6761153325,
+              "calls": 65558
+            },
+            "spill_read": {
+              "service_wall_ns": 4217885676,
+              "calls": 468871
+            },
+            "teardown": {
+              "service_wall_ns": 3012889,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 17119421240,
+              "calls": 1254
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1110340,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1322350725,
+            "merge_ns": 3204463106,
+            "partial_groups": 1494005,
+            "largest_partial": 12952,
+            "rehashes": 258517,
+            "reservation_calls": 250710,
+            "reservation_releases": 210965,
+            "memory_lock_wait_ns": 28821905,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 649255256,
+            "spill_bytes_read": 649255256,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 469127,
+            "sink_calls": 46789,
+            "output_ns": 817270762,
+            "spill_peak_bytes": 649255256,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 27.471556994,
+        "role": "primary",
+        "round": 4,
+        "counters": {
+          "partial_ns": 1366091141,
+          "merge_ns": 3313171198,
+          "partial_groups": 1494128,
+          "largest_partial": 16663,
+          "rehashes": 276783,
+          "reservation_calls": 273675,
+          "reservation_releases": 230351,
+          "memory_lock_wait_ns": 31029508,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 674412392,
+          "spill_bytes_read": 674412392,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 496553,
+          "sink_calls": 46788,
+          "output_ns": 821209840,
+          "spill_peak_bytes": 674412392,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 27468632636,
+          "process_cpu": {
+            "user_ticks": 1541,
+            "system_ticks": 1381,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            537320,
+            585221,
+            531991,
+            52938,
+            292,
+            256116200
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              35675,
+              5170558199,
+              7132119469
+            ],
+            [
+              496297,
+              3459788233,
+              4521282821
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              674412392,
+              674412392,
+              496041,
+              496041,
+              496553,
+              531972,
+              3616375129,
+              4330283019
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345510962,
+            345510962,
+            304280,
+            91097549,
+            467884,
+            230351,
+            58541236079,
+            230351
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 192715930,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 91695251,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 253984996,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 556321386,
+              "calls": 90216
+            },
+            "state_update": {
+              "service_wall_ns": 96847041,
+              "calls": 66770
+            },
+            "merge": {
+              "service_wall_ns": 3290629366,
+              "calls": 497280
+            },
+            "finalize": {
+              "service_wall_ns": 164433564,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 558418199,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 7064172962,
+              "calls": 71317
+            },
+            "spill_read": {
+              "service_wall_ns": 4441129220,
+              "calls": 496297
+            },
+            "teardown": {
+              "service_wall_ns": 1555620,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 18608955233,
+              "calls": 1365
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1158002,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1366091141,
+            "merge_ns": 3313171198,
+            "partial_groups": 1494128,
+            "largest_partial": 16663,
+            "rehashes": 276783,
+            "reservation_calls": 273675,
+            "reservation_releases": 230351,
+            "memory_lock_wait_ns": 31029508,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 674412392,
+            "spill_bytes_read": 674412392,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 496553,
+            "sink_calls": 46788,
+            "output_ns": 821209840,
+            "spill_peak_bytes": 674412392,
+            "spill_peak_open": 1
+          }
+        }
+      },
+      {
+        "seconds": 27.251454226,
+        "role": "twin",
+        "round": 4,
+        "counters": {
+          "partial_ns": 1360013658,
+          "merge_ns": 3290507923,
+          "partial_groups": 1494113,
+          "largest_partial": 8359,
+          "rehashes": 270284,
+          "reservation_calls": 265203,
+          "reservation_releases": 223224,
+          "memory_lock_wait_ns": 30130396,
+          "peak_reservation": 67108864,
+          "spill_bytes_written": 666663512,
+          "spill_bytes_read": 666663512,
+          "partitions_spilled": 256,
+          "recursion_depth": 0,
+          "spill_files_opened": 488087,
+          "sink_calls": 46789,
+          "output_ns": 826396514,
+          "spill_peak_bytes": 666663512,
+          "spill_peak_open": 1
+        },
+        "stats": {
+          "version": 1,
+          "query_id": 1,
+          "execution_wall_ns": 27248792633,
+          "process_cpu": {
+            "user_ticks": 1559,
+            "system_ticks": 1340,
+            "scope": "process_delta"
+          },
+          "complete": false,
+          "dropped_events": 0,
+          "trace_enabled": false,
+          "events": [],
+          "event_fields": [
+            "kind",
+            "ns",
+            "pipeline",
+            "task",
+            "wave_or_level",
+            "value"
+          ],
+          "scheduler_fields": [
+            "waves",
+            "steps",
+            "yields",
+            "blocked",
+            "done",
+            "worker_cpu_ns"
+          ],
+          "scheduler": [
+            527780,
+            574170,
+            522301,
+            51562,
+            307,
+            249437940
+          ],
+          "io_kinds": [
+            "write",
+            "read",
+            "repartition"
+          ],
+          "io_fields": [
+            "jobs",
+            "queue_wall_ns",
+            "busy_wall_ns"
+          ],
+          "io": [
+            [
+              34466,
+              5139142097,
+              7073572987
+            ],
+            [
+              487831,
+              3453600658,
+              4538334178
+            ],
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_levels": [
+            [
+              666663512,
+              666663512,
+              487575,
+              487575,
+              488087,
+              522297,
+              3572787271,
+              4319352771
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "spill_level_fields": [
+            "write_bytes",
+            "read_bytes",
+            "write_frames",
+            "read_frames",
+            "opens",
+            "tickets",
+            "write_service_ns",
+            "read_service_ns"
+          ],
+          "counter_values": [
+            345511066,
+            345511066,
+            304284,
+            91097653,
+            467892,
+            223224,
+            56730310087,
+            223224
+          ],
+          "counter_names": [
+            "copied_bytes",
+            "materialized_bytes",
+            "col_materializations",
+            "allocation_capacity_bytes",
+            "allocation_sites",
+            "grants",
+            "grant_bytes",
+            "releases"
+          ],
+          "stages": {
+            "scan_decode": {
+              "service_wall_ns": 194441393,
+              "calls": 23544
+            },
+            "filter": {
+              "service_wall_ns": 92754851,
+              "calls": 46892
+            },
+            "expression": {
+              "service_wall_ns": 254064617,
+              "calls": 70236
+            },
+            "group_id": {
+              "service_wall_ns": 554341714,
+              "calls": 88871
+            },
+            "state_update": {
+              "service_wall_ns": 97592833,
+              "calls": 65425
+            },
+            "merge": {
+              "service_wall_ns": 3267192655,
+              "calls": 488706
+            },
+            "finalize": {
+              "service_wall_ns": 161596820,
+              "calls": 47046
+            },
+            "output_sink": {
+              "service_wall_ns": 565729923,
+              "calls": 257
+            },
+            "spill_write": {
+              "service_wall_ns": 7005873320,
+              "calls": 68884
+            },
+            "spill_read": {
+              "service_wall_ns": 4425814358,
+              "calls": 487831
+            },
+            "teardown": {
+              "service_wall_ns": 1734219,
+              "calls": 257
+            },
+            "admission_wait": {
+              "service_wall_ns": 18788002739,
+              "calls": 1366
+            },
+            "bind_metadata": {
+              "service_wall_ns": 1118733,
+              "calls": 1
+            }
+          },
+          "admission": {
+            "tasks": 3,
+            "free_bytes": 62887682,
+            "decode_bytes": 19607376,
+            "task_bytes": 19607376
+          },
+          "missing": [
+            "complete_allocation_inventory",
+            "all_worker_cpu_scopes",
+            "ready_wake_edges",
+            "native_sink_finish"
+          ],
+          "scan": {
+            "rows": 6001215,
+            "bytes": 52867317,
+            "batches": 49
+          },
+          "rows_out": 1273748,
+          "aggregate": {
+            "partial_ns": 1360013658,
+            "merge_ns": 3290507923,
+            "partial_groups": 1494113,
+            "largest_partial": 8359,
+            "rehashes": 270284,
+            "reservation_calls": 265203,
+            "reservation_releases": 223224,
+            "memory_lock_wait_ns": 30130396,
+            "peak_reservation": 67108864,
+            "spill_bytes_written": 666663512,
+            "spill_bytes_read": 666663512,
+            "partitions_spilled": 256,
+            "recursion_depth": 0,
+            "spill_files_opened": 488087,
+            "sink_calls": 46789,
+            "output_ns": 826396514,
+            "spill_peak_bytes": 666663512,
+            "spill_peak_open": 1
+          }
+        }
+      }
+    ]
+  }
+]

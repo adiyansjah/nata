@@ -3369,3 +3369,165 @@ used `-j 4` and disk-backed temporary storage throughout; disk stayed above
 profiles are unchanged. No GCP, push or merge was run. Both-CPU settled reruns
 and slice-wide closing/nightly certification remain outstanding; this repair
 does not close slice 5 or promote historical marginal verdicts.
+
+## HC 64 MiB admission regression repair (2026-11-08)
+
+**`bb946ab` is affected. The slice 5 closeout matrix pinned by
+`close5-harness` therefore measures an engine containing this regression.**
+It predates the adopted-table finalize fast path, package 0 and W-C.
+
+### First bad revision and mechanism
+
+The first bad revision is `304bd7029116da01d3e2a7023c2439d9b1a3af01`
+("Keep SF10 footer decoding within the query budget"); its parent `506c9ff`
+is good. Local release comparisons bracket the transition with the step 2e
+main equivalent `9d59dde`, the adjacent parent/fix, `bb946ab`, and the W-C
+baseline `2b7a415`. These are development-VM observations, not settled CPU
+certification. Historical workspace packages are explicitly cleaned between
+archive builds, keeping registry dependency artifacts, to prevent Cargo from
+reusing older source artifacts when archive mtimes move backwards.
+
+The refreshed eight-thread history bracket is below. All rows have peak
+67,108,864 bytes, 256 spilled partitions and recursion depth zero; bytes read
+equal bytes written. One-thread controls across the introducing change remain
+4.893 s (parent) and 4.939 s (`304bd70`). Older revisions have native report
+counters but predate package 0's JSON sidecars.
+
+| Revision | Admitted tasks | Seconds | Bytes written = read | Spill-file opens |
+|---|---:|---:|---:|---:|
+| `9d59dde (step 2e main equivalent)` | 2 | 6.830 | 279,167,728 | 48,374 |
+| `506c9ff (immediate parent)` | 2 | 6.987 | 285,793,064 | 56,569 |
+| `304bd70 (first bad)` | 3 | 20.405 | 479,878,896 | 284,302 |
+| `bb946ab (close5-harness engine)` | 3 | 19.876 | 476,042,720 | 279,916 |
+
+The bounded piecewise decoder correctly replaces SF1's old 11,656,192-byte
+footer charge (91,032 encoded bytes × 128 + 4,096) with measured retained
+capacities. This frees enough B to cross a pre-existing admission threshold:
+three rather than two approximately 19.6 MB non-revocable scan cursors fit.
+Cursor-only admission leaves about 4 MB for **all** partial tables. Each task
+has 16 partial tables, whose first chunks at B = 64 MiB are 256 KiB each:
+three complete sets would need 12 MiB. Tiny partials repeatedly spill through
+256 logical spill partitions, multiplying IPC frames, file opens and disk
+continuations. The partition count and recursion depth stay 256 and zero;
+this is not lost merge adoption or repeated recursive repartitioning.
+Memory-manager lock wait is milliseconds, not the missing tens of seconds; the slow
+`bb946ab` build also predates package 0.
+
+Existing W-C baseline sidecars corroborate the mechanism: all admit three
+scan tasks; ten baseline primary/twin samples open 342,446–391,725 spill
+files on c3d and 415,554–496,553 on n4a, with 533,331,632–578,398,728 and
+600,271,376–674,412,392 bytes respectively written **and** read. All have
+256 spilled partitions and depth zero. No GCP job was launched for this repair.
+
+### Bounded repair and deterministic checks
+
+Admission now includes one first table chunk for each of a task's 16 local
+partitions, in addition to cursor/evaluation/string workspace and the existing
+shared 1 MiB allowance. The chunk-size helper is shared with actual table
+grant requests, keeping the policy aligned with their 4 KiB/1 MiB clamps.
+This headroom only limits task count; it is neither an extra allocation nor a
+per-task table cap. Tables continue borrowing through the query manager.
+A single task is still admitted when full chunks do not fit, after the
+unchanged checked minimum working set; `Chunks` can request smaller grants.
+
+No footer bound, grant, progress reserve, spill quota, FD limit, partition
+membership check, fan-out/depth limit, or output bound is relaxed. The SF10
+piecewise decoder and the fixed-width adopted-table finalize path stay intact.
+Stats do not participate in the admission decision. This is an implementation
+of ADR 0009's operator-local subdivision/admission policy; no ADR amendment is
+needed.
+
+The scheduling regression fixture writes four large row groups with a tiny
+footer, requests eight threads at 64 MiB, and asserts **two admitted tasks**
+with stats both off and on. It also checks all 216,000 groups, real spill,
+zero recursion, peak ≤ B, zero retained grants and an empty spill directory.
+The former cursor-only policy admits three and fails this assertion. A unit
+control uses the measured SF1 admission numbers and covers the one-task
+fallback, task/worker limits, ample-memory concurrency and the exact admission
+boundary. Neither assertion depends on elapsed time.
+
+### Local before/after (SF1 HC, 64 MiB)
+
+Two eight-thread observations per revision (baseline/fix/fix/baseline) were
+taken with no compiler from this task running; they remain **unsettled development-VM measurements**.
+The one-thread baseline is the initial exact `2b7a415` build/run. Full reports,
+stats, binary hashes and loads are retained in the
+[raw evidence](raw/20261108-hc-admission-regression/README.md).
+
+| Revision | Requested / admitted | Seconds | Bytes written = bytes read | Spill-file opens |
+|---|---:|---:|---:|---:|
+| `2b7a415` | 8 / 3 | 21.597 / 22.285 | 475,437,992 / 471,844,080 | 279,393 / 275,166 |
+| `02d3fae` | 8 / 2 | 5.760 / 5.494 | 261,862,304 / 262,121,952 | 25,932 / 26,332 |
+| `2b7a415` | 1 / 1 | 4.934 | 250,784,112 | 10,240 |
+| `02d3fae` | 1 / 1 | 4.638 | 250,784,112 | 10,240 |
+
+Every row peaks at **67,108,864 charged bytes**, with **256 partitions and
+recursion depth 0**. The eight-thread median is 3.90× faster locally; no
+both-CPU settled speedup is inferred. Package 0's aggregate admission-wait
+service wall falls from 12.986–13.028 s to 0.439–0.451 s. At the scan boundary
+both variants have 62,885,622 free bytes and a 19,607,401-byte cursor grant:
+only the task count changes. The new footer accounting is retained, so the
+fixed two-task scan has more table space than the pre-footer two-task scan.
+
+Compatibility controls on the fixed release binary (completion/value checks,
+not timing claims, as a compiler was active): SF10 Q1 reads 59,986,052 rows at
+64 MiB with requested 1/8 threads, matches DuckDB with the existing Q1 tolerance,
+and peaks at 32,033,215 / 47,124,658 charged bytes. SF1 HC at 4 GiB and one
+thread emits 1,273,748 rows with zero spill and peak charge 1,544,266,435 bytes.
+The existing multi-table pressure and fixed-width/string adoption tests pass.
+A separate one-thread HC/64 MiB stats-off/on control produces byte-identical
+CSV and identical peak reservation, spill bytes, partition count and depth.
+
+Implementation commit: `02d3faef8a6252888f3c084a71d70146c929c873`.
+Validation used one local Cargo build/test at a time, always `-j 4`; no dependencies were added. Checks passed:
+
+- `cargo test --release --locked -j 4 -p nata-exec`: 110 top-level tests,
+  including spill fault/damage/cancel/restart, plus its child-process controls.
+- `cargo fmt --all --check` and
+  `cargo clippy --release --locked -j 4 -p nata-exec --all-targets -- -D warnings`.
+- Aggregate 65/65, forced-spill aggregate 65/65, SQL 252/252 and scan 5/5.
+- Focused cargo-mutants on `scan_concurrency` and `Table::chunk_size`:
+  **12 caught, zero missed, zero unviable, zero timeouts**.
+- Production-call-site negative control: replace admission with the original
+  cursor-only expression; the end-to-end fixture fails with `left: 3`,
+  `right: 2`. Restore the fixed expression and the same fixture passes.
+- The heavy runner's full inert self-test (including the ARM simulation) and
+  shell syntax checks for every prepared heavy step.
+
+### Prepared settled rerun — not executed
+
+[Heavy steps](../aggregate-spill-regression.steps) extend the existing paired
+runner and retain `# gate-exits`, the 65/65 aggregate and forced-spill gates,
+252/252 SQL and 5/5 scan gates. The immutable bad baseline is `2b7a415`; the
+candidate is the committed repair on this branch (which also contains the
+already-landed W-C kernels). The original SF1 matrix is retained: HC and Q1,
+1/8 threads, 64 MiB/8 GiB, five alternating primary/twin rounds and matched
+DuckDB. Thus the requested HC/64 MiB/1- and 8-thread cells have paired noise
+controls, and one-thread/in-memory/Q1 controls remain inspectable. The runner
+settles after all builds and value gates, preserves complete CSV output,
+records all spill counters and keeps fresh per-invocation package 0 sidecars.
+
+Prepare an external, git-free shipment **after committing** the repair. Do not
+reuse the pinned closeout shipment or mix the repair into its frozen evidence.
+The commands below are preparation and owner-run instructions only; neither
+`plan` nor `run` was executed here. The safety cap is **2 VM-hours and 150 GB
+per CPU**, with no automatic extension or spending approval implied.
+
+```sh
+REGRESSION_FIX=02d3faef8a6252888f3c084a71d70146c929c873
+REGRESSION_SHIP=$(mktemp -d /tmp/nata-spill-regression-ship.XXXXXX)
+git archive "$REGRESSION_FIX" | tar -xf - -C "$REGRESSION_SHIP"
+python3 scripts/bench-aggregate-perf1-heavy.py prepare \
+  --baseline 2b7a415a183c3e06caa379c8c627abc4a43b89fe \
+  --fix admission="$REGRESSION_FIX" \
+  --bundle "$REGRESSION_SHIP/.aggregate-spill-regression-inputs"
+cp "$REGRESSION_SHIP/bench/aggregate-spill-regression.steps" "$REGRESSION_SHIP/heavy.steps"
+cmp "$REGRESSION_SHIP/bench/aggregate-spill-regression.steps" "$REGRESSION_SHIP/heavy.steps"
+cd "$REGRESSION_SHIP"
+: "${REGRESSION_RUN_SUFFIX:?set a fresh run suffix}"
+: "${REGRESSION_APPROVED_USD:?set this plan's owner-approved bound}"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "hc-admission-${REGRESSION_RUN_SUFFIX}-x86" --machines c3d-highcpu-8 --max-vm-hours 2 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "hc-admission-${REGRESSION_RUN_SUFFIX}-x86" --machines c3d-highcpu-8 --max-vm-hours 2 --data-gb 150 --approved-usd "$REGRESSION_APPROVED_USD"
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id "hc-admission-${REGRESSION_RUN_SUFFIX}-arm" --machines n4a-highcpu-8 --max-vm-hours 2 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id "hc-admission-${REGRESSION_RUN_SUFFIX}-arm" --machines n4a-highcpu-8 --max-vm-hours 2 --data-gb 150 --approved-usd "$REGRESSION_APPROVED_USD"
+```
