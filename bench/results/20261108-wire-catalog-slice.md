@@ -1605,3 +1605,45 @@ The P16 repair's record cites **76 PASS / 0 FAIL / 9 not run** (85 rows), but it
 `scripts/wire-skeleton/matrix.py` on main, so the 85-row file is stale evidence, not a lost check. The next clean-VM matrix run must
 show 90 rows, or this note becomes a finding. `scripts/wire-skeleton/run.sh` now installs only missing tools, choosing
 `postgresql-15` on Debian 12 and the distribution default elsewhere (the previous fix wrongly forced `postgresql-15` on Debian 13).
+
+## P16 rerun on settled machines (runs `p16rerun-arm`, `p16rerun-x86`, added by the parent, 2026-11-08)
+
+Commit `a710ae7` (typed pgwire encoding `6e1da78`, pipe-EOF nanosecond timer), packaged with `package-close.sh`, n4a-highcpu-16 and
+c3d-highcpu-16, Spot, 2 h cap, owner-approved. PostgreSQL arms first on the same VM, then Nata; every step exited 0 on both CPUs, including
+`p16-streaming-and-regression` and the client matrix with its **90-row** check (81 PASS / 0 FAIL / 9 accepted deviations). Raw verdicts:
+`raw/20261108-wire-catalog-close/p16-rerun/`.
+
+**Verdict: P16 MET, 28/28 arms on each CPU.** Worst streaming ratio 1.049x PostgreSQL (ARM64) and 1.086x (x86-64) against the frozen
+1.10x; every small-query arm within the paired 1.20x gate. Earlier misses (raw binary 1.76-1.95x, JDBC 1.36-1.43x) were the text-then-
+reparse encoder and the 50 ms timer.
+
+| Arm | ARM64 vs PostgreSQL | ARM64 verdict | x86-64 vs PostgreSQL | x86-64 verdict |
+|---|---:|---|---:|---|
+| 1/psql/stream | 0.895 | MET | 0.904 | MET |
+| 1/psql/small | 1.045 | MET | 1.072 | MET |
+| 1/raw-text/stream | 0.816 | MET | 0.816 | MET |
+| 1/raw-text/small | 1.048 | MET | 1.069 | MET |
+| 1/raw-binary/stream | 0.794 | MET | 0.815 | MET |
+| 1/raw-binary/small | 1.060 | MET | 1.069 | MET |
+| 1/jdbc/stream | 1.049 | MET | 1.086 | MET |
+| 1/jdbc/small | 1.231 | MET | 1.296 | MET |
+| 1/psycopg/stream | 0.897 | MET | 0.898 | MET |
+| 1/psycopg/small | 1.551 | MET | 1.690 | MET |
+| 1/adbc-copy/stream | 0.969 | MET | 0.962 | MET |
+| 1/adbc-copy/small | 0.907 | MET | 0.914 | MET |
+| 1/pgcli/stream | 0.928 | MET | 0.936 | MET |
+| 1/pgcli/small | 0.986 | MET | 1.068 | MET |
+| 8/psql/stream | 0.876 | MET | 0.904 | MET |
+| 8/psql/small | 0.985 | MET | 1.057 | MET |
+| 8/raw-text/stream | 0.771 | MET | 0.811 | MET |
+| 8/raw-text/small | 0.981 | MET | 1.061 | MET |
+| 8/raw-binary/stream | 0.757 | MET | 0.799 | MET |
+| 8/raw-binary/small | 1.018 | MET | 1.075 | MET |
+| 8/jdbc/stream | 1.027 | MET | 1.033 | MET |
+| 8/jdbc/small | 1.192 | MET | 1.294 | MET |
+| 8/psycopg/stream | 0.873 | MET | 0.898 | MET |
+| 8/psycopg/small | 1.430 | MET | 1.683 | MET |
+| 8/adbc-copy/stream | 0.908 | MET | 0.960 | MET |
+| 8/adbc-copy/small | 0.843 | MET | 0.899 | MET |
+| 8/pgcli/stream | 0.919 | MET | 0.935 | MET |
+| 8/pgcli/small | 0.965 | MET | 1.063 | MET |
