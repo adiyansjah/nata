@@ -77,3 +77,15 @@ The baseline rejects bounded IPC or reuse tables, exact-wide helpers fail their 
 
 - 2026-11-07, at acceptance (owner): SUM of TINYINT/SMALLINT/INTEGER is `BIGINT` and SUM of BIGINT is `DECIMAL(38,0)`, as in PostgreSQL, instead of the proposed `DECIMAL(38,0)` for every integer. AVG of integers stays an exact DECIMAL. Grouped output is unordered without ORDER BY. DISTINCT aggregates wait for slice 9. Card 0005 part 3 records the decisions.
 - 2026-11-07, after the card 0005 baseline spike: spill stays **Arrow IPC** (136 exact round trips; 352 damaged files rejected with at most 18,448 bytes allocated). A spilled file is read back as untrusted bytes, so the reader validates its **inside**, not only an envelope checksum: a fixed trusted schema, caps on metadata, body, rows and messages, node and buffer layout, range and size checks, dictionary index and string offset checks, and no compression or deltas. Byte caps alone do not justify handing arbitrary IPC to Arrow.
+- 2026-11-08, decided by the parent under the owner's delegation, after the clean-VM spill profile (`bench/results/20261107-hash-aggregate-perf.md`,
+  "Spill path profile on clean VMs") and step 2d's stop: **the initial spill fan-out is sized from the budget.** A power-of-two
+  logical fan-out from 16 through 256: estimate resident state bytes from expected partial rows and the charged key, state and table
+  capacity (serialized spill bytes are supporting evidence only, since they underestimate hash-table memory); choose the smallest
+  fan-out whose estimated resident partition fits half the available merge-table budget; clamp at 256 and reduce simultaneous merge
+  partitions when the estimate exceeds their grants. Recursive fan-out stays 16, depth at most 8, for estimation error and skew;
+  exhausted depth, no progress and oversize records still fail cleanly. FD and disk quotas, parent/child overlap accounting, the
+  64 KiB scratch floor, canonical XXH3 hashing and validated Arrow IPC stay mandatory; reader partition-membership checks use the
+  fan-out the query chose, never an unchecked value from disk. No grant is bypassed. Why: at 64 MiB the high-cardinality query made
+  272 partitions at one thread and 4,368 with recursion depth 2 at eight, writing 6.7-10.7x its ~90 MB result. Checks that can fail:
+  estimator overflow, the 16/256 clamps, partition membership under hostile input, skew/collision/no-progress, FD and quota bounds,
+  merge-concurrency reduction, and the spill counters (bytes, partitions, depth) in settled timing.
