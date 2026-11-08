@@ -132,3 +132,87 @@ Nightly-size fuzz, bound 3 and real-store commands were prepared, not run locall
 The revised `cells.py` has a local orchestration smoke: SF0.01 lineitem copied under each of the four SF1 layout names, one round/one worker, `--queries proj,sel,meta`, against the fake endpoint and DuckDB httpfs. All 12 cells returned matching answers and `INDICATIVE` (exit 0). These are deliberately identical small files, not the frozen layout shapes; their timings are not retained as performance evidence. A second run with `--queries full` gave four `NOT-MEASURED` results and exit 1; standalone CLI probes also refused `strlen` and `date_diff`. The spike subprocess arm was not included in this smoke.
 
 Remaining slice 11: real S3/MinIO/GCS auth/refresh/TLS/version-race checks; both CPU frozen performance and 0.9x spike-scaling gates; fresh-VM RSS/FD/concurrent-query admission checks; runtime comparison; adaptive footer prefetch; aliases/replay and per-query/useful-byte telemetry; complete shared-fill/prepared-plan/credential-scope stress; closing-commit deep checks, dependency audit/unsafe inventory and closeout/register reconciliation. No timing target is changed and no real-store result is inferred from the fake.
+
+## Real-bucket failure investigation and rerun preparation (2026-11-08)
+
+Read every saved `*.txt` recursively from the parent's ARM64 run, including the
+spike's nested results, with runtime identifiers redacted before inspection.
+`smoke-example` failed on `gs://<bucket>/<prefix>/sf1/mid1/part-0000.parquet`.
+The GCS differential results were scan 0/5, SQL 30/252, SQL-differences 3/55,
+and aggregate 3/65; **65/65 was the local aggregate arm**, not a passing GCS
+object set. Constant/no-file SQL explains why some queries can pass without
+establishing any working Nata object reads. Both production cell sets reported
+NOT-MEASURED, and the client server exited before its checks. The spike passed
+64 preflight runs, 24 scaling runs at each worker setting, and its RSS cells.
+Cleanup deleted all 131 uploaded objects. There is no saved HTTP trace and no
+per-object byte-size inventory; no exact failing-object size or encoding is
+inferred from these logs.
+
+Both layout upload and check upload call the same `osb upload` implementation:
+`put_multipart`, 32 MiB upload parts, 8 MiB local read chunks, up to four parts
+in flight and four files at once; neither sets Content-Encoding/gzip. The layout
+upload was 114 files / 5,119,746,129 bytes, the check upload 17 files / 5,221,509
+bytes, and the spike's passing tiny preflight file 98,798 bytes (later deleted).
+The failing mid1 has 49 row groups; the spike also reads the much larger SF10
+layouts successfully. These facts do not establish an object-size threshold.
+
+The source exposes an earlier failure: `BoundedConnector::connect` ignores the
+per-client `ClientOptions` and copies the store's HTTPS-only setting into its
+metadata clients. `object_store` 0.14.2 deliberately passes `metadata_options()`
+with HTTP enabled for the GCE token service; the bounded connector rejects that
+HTTP request before a HEAD or range response exists. The spike's connector uses
+the supplied options. Static/anonymous fake GCS credentials bypass this path.
+The focused reproduction and fix are recorded below when verified. Object
+header hypotheses remain subject to the diagnostic trace, not assumptions used
+to relax range validation.
+
+`gcs-diagnose.sh` uses the VM's link-local metadata token in memory, never keys
+or token files. It prints JSON lines for HEAD, full GET, first-eight-byte GET,
+suffix GET, full-object bounded range, past-EOF range, and a restricted JSON
+metadata request for five fixture/layout objects. It records statuses, header
+**names**, allowlisted length/range/encoding/Accept-Ranges values, body counts,
+and validator equality flags (never validator values). Bodies are streamed and
+discarded with a 2 GiB/180 s per-object-response bound; metadata has an 8 MiB
+bound. Errors print only their class. Bucket/prefix are redacted on every output
+line. Initial 404s after the prior cleanup are evidence, not a diagnostic failure;
+a second diagnostic runs after layout and check uploads and before any Nata
+smoke. The selected layout objects passed spike reads, not necessarily Nata reads.
+
+Every real-bucket step now runs through `real-step.sh`. Console stdout/stderr is
+filtered before the heavy runner writes it. Programs' own text/CSV outputs go
+to a private mode-0700 working directory under `$WORK`; only redacted copies
+are exported to `$RESULTS`. This includes nested spike artifacts and preserves
+the actual command exit code and error wording. Private copies remain for
+cross-step inputs such as `expected.txt`; do not publish that working directory.
+`rr-leakscan` scans the exported results, not those private originals. This is an
+evidence-boundary repair; the engine's URL-bearing error messages remain a
+separate stable-alias closeout item.
+
+Local checks for this preparation: shell/Python syntax, three offline canary
+tests (`python3 -I scripts/object-store/test-real-step.py`) and
+`scripts/gcp/test/test-job-chains.sh` PASS. Canaries preserve exit 37 and the
+malformed-response wording, redact stdout/stderr/nested files and URL-encoded
+identifiers, check the diagnostic header allowlist, and prove an injected public
+leak fails the actual reference leak scan while sanitized results pass it.
+No GCP command was run. No dependency or ADR amendment is needed for these scripts.
+
+Parent rerun commands, separately approved/costed for each CPU (the variables
+below must be supplied privately; no literal service-account/project identifiers):
+
+```sh
+# Ship the ignored env file at spikes/object-store-baseline/gcs.env.
+# The example already prefixes EVERY step with:
+# NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env"
+cp scripts/object-store/real-bucket.steps.example heavy.steps
+scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --max-vm-hours 4 --vm-service-account "$VM_SERVICE_ACCOUNT" --vm-storage-scope read-write
+scripts/gcp/orchestrate.sh plan --job heavy --machines c3d-highcpu-8 --max-vm-hours 4 --vm-service-account "$VM_SERVICE_ACCOUNT" --vm-storage-scope read-write
+# After the parent approves each printed cost bound:
+scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --max-vm-hours 4 --vm-service-account "$VM_SERVICE_ACCOUNT" --vm-storage-scope read-write --approved-usd "$APPROVED_ARM_USD" --out bench/gcp-runs/s11real-arm-rerun
+scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --max-vm-hours 4 --vm-service-account "$VM_SERVICE_ACCOUNT" --vm-storage-scope read-write --approved-usd "$APPROVED_X86_USD" --out bench/gcp-runs/s11real-x86-rerun
+```
+
+Use fresh output directories and fresh independent prefixes for the two jobs;
+run sequentially if reusing the one env file. Inspect every `.exit`, both
+diagnostic traces, cleanup and leak scan even when cells miss. The real-bucket
+example intentionally keeps running later steps after a failure to retain
+cleanup and evidence. No real-store performance verdict is changed here.

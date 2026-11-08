@@ -1,27 +1,31 @@
 # Parent only: same file for n4a-highcpu-8 and c3d-highcpu-8.
-# Supply NATA_OBJ_ENV_FILE as a private absolute path at runtime. No identifiers
-# or credentials belong here. run-reference reads that file only when run.
+# The ignored runtime env file is shipped at spikes/object-store-baseline/gcs.env.
+# Each step sets its absolute VM path; no identifiers or credentials belong here.
+# real-step redacts console output and exports sanitized copies of file artifacts.
+# Private working evidence stays under $WORK, outside $RESULTS.
 # Build/test small locally and run scripts/gcp/test/test-job-chains.sh first.
 # Every exit code is a gate; keep cleanup/leakscan even if a cell misses.
-machine bash -c 'machine_type=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s|.*/||"); printf "%s\n" "$machine_type"'
-build cargo build --locked --release -p nata -p nata-objfake
-rr-build bash spikes/object-store-baseline/run-reference.sh build
-rr-data bash spikes/object-store-baseline/run-reference.sh data
-rr-preflight bash spikes/object-store-baseline/run-reference.sh preflight
-rr-upload bash spikes/object-store-baseline/run-reference.sh upload
-smoke-example bash scripts/object-store/gcs.sh smoke
-check-upload bash scripts/object-store/gcs.sh upload-check
-check-gcs bash scripts/object-store/gcs.sh check
+diagnose-before NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs-diagnose.sh
+machine NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash -c 'machine_type=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/machine-type | sed "s|.*/||"); printf "%s\n" "$machine_type"'
+build NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh cargo build --locked -j 4 --release -p nata -p nata-objfake
+rr-build NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh build
+rr-data NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh data
+rr-preflight NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh preflight
+rr-upload NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh upload
+check-upload NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs.sh upload-check
+diagnose-uploaded NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs-diagnose.sh
+smoke-example NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs.sh smoke
+check-gcs NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs.sh check
 # Per cell/round: Nata, spike wrapper control, DuckDB, Nata twin, spike twin,
 # DuckDB twin. Control validates against local DuckDB answers on every run;
 # all timed Nata/DuckDB answers are checked. Both ceilings include twin noise.
 # Full uses the frozen all-16-column reductions: unsupported SQL must fail,
 # never silently substitute an easier query or retune a frozen ceiling.
-cells-sf1 bash scripts/object-store/gcs.sh cells sf1
-cells-sf10 bash scripts/object-store/gcs.sh cells sf10
-rr-scale bash spikes/object-store-baseline/run-reference.sh bench-scale
-rr-rss bash spikes/object-store-baseline/run-reference.sh bench-rss
-client-setup bash scripts/aggregate-client-setup.sh
-client-smoke bash -c 'set -a; . "${NATA_OBJ_ENV_FILE:?}"; set +a; "$WORK/aggregate-client/bin/python" scripts/object-store/client-smoke.py --nata target/release/nata --parquet "$WORK/osb-data/src-A/lineitem.parquet" --work "$WORK/objstore-smoke" --store "gs://$NATA_OBJ_BUCKET/$NATA_OBJ_PREFIX/sf1/mid1/part-0000.parquet" --jar "$WORK/aggregate-pgjdbc.jar"'
-rr-cleanup bash spikes/object-store-baseline/run-reference.sh cleanup
-rr-leakscan bash spikes/object-store-baseline/run-reference.sh leakscan
+cells-sf1 NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs.sh cells sf1
+cells-sf10 NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/object-store/gcs.sh cells sf10
+rr-scale NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh bench-scale
+rr-rss NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh bench-rss
+client-setup NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash scripts/aggregate-client-setup.sh
+client-smoke NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash -c 'set -a; . "${NATA_OBJ_ENV_FILE:?}"; set +a; "$WORK/aggregate-client/bin/python" scripts/object-store/client-smoke.py --nata target/release/nata --parquet "$WORK/osb-data/src-A/lineitem.parquet" --work "$WORK/objstore-smoke" --store "gs://$NATA_OBJ_BUCKET/$NATA_OBJ_PREFIX/sf1/mid1/part-0000.parquet" --jar "$WORK/aggregate-pgjdbc.jar"'
+rr-cleanup NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh cleanup
+rr-leakscan NATA_OBJ_ENV_FILE="$SRC/spikes/object-store-baseline/gcs.env" bash scripts/object-store/real-step.sh bash spikes/object-store-baseline/run-reference.sh leakscan

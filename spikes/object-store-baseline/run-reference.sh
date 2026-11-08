@@ -150,7 +150,7 @@ case "$step" in
     bad=0
     for v in "${NATA_OBJ_BUCKET:-}" "${NATA_OBJ_PREFIX:-}" homelab- .iam.gserviceaccount.com; do
       [ -n "$v" ] || continue
-      if grep -rIlF -- "$v" "${RESULTS:-$OUT}" 2>/dev/null | grep -q .; then echo "LEAK: a configured value appears in the results"; bad=1; fi
+      if grep -rIlF -- "$v" "${NATA_OBJ_PUBLIC_RESULTS:-${RESULTS:-$OUT}}" 2>/dev/null | grep -q .; then echo "LEAK: a configured value appears in the results"; bad=1; fi
     done
     [ "$bad" = 0 ] && echo "leak scan clean"; exit "$bad" ;;
   *) echo "unknown step $step"; exit 2 ;;
