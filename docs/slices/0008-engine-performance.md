@@ -1,6 +1,6 @@
 # 0008: Engine performance before sort
 
-Status: draft
+Status: accepted 2026-11-08 (owner; package 0 and the reference run may start before slice 5 closes; W-A..W-E after slice 5 closes)
 Date: 2026-11-08
 ADRs: 0001–0003, 0006–0015 (relies on); 0016/0017 (proposed contracts); dated amendments if decisions change
 
@@ -145,6 +145,21 @@ Planned result: `bench/results/YYYYMMDD-engine-performance.md`, with redacted ra
 created by this draft. Cloud estimate is pending the manifest and machine plan; §8 requires a separately costed owner approval.
 Future sort/join/window cards inherit T8 after this reference freeze and add their own correctness/resource/scaling checks. If their
 later matching reference shows a problem, stop for an explicit card decision before Nata timing; do not silently relax the budget.
+
+### Ordering from the Q1 debate (2026-11-08, accepted with the card)
+
+`/home/dev/perf-debate/q1/OPUS-r3.md` (with the SOL-A and SOL-B files) is the evidence; its summary, binding on this card's order:
+
+1. Package 0 first (same-run stats, verdict engine, profiler pre-check, R26 ARM64 profiling path).
+2. An early settled SF10 run at 1/8 threads and the frozen budgets: DuckDB amortises its fixed cost at SF10, so SF10 may be harder than SF1.
+3. A ThinLTO / codegen-units screen (cheap, single build change, both CPUs).
+4. W-C and W-A: Arrow views, native 64-bit decimal input lanes, dictionary-value group IDs, 7 to 5 shared sums, typed state; slot
+   prebinding belongs here (parent decision).
+5. W-E: decode-grant admission at small budgets (Q1 at 64 MiB / 8 threads admits about 3 tasks at about 17.2 MB charged each).
+6. W-D and R28 (wave barrier) only if the measurements after the first W-C path call for them.
+
+x86-64 8-thread runs use 4 cores with SMT (about 1.65x CPU-seconds of 1 thread, against 1.02-1.05x on ARM64's 8 cores): every scaling
+verdict records the topology and an affinity control, so SMT is not mistaken for an engine effect.
 
 ## 5. Carried-in improvements (from [the register](../improvements.md))
 
