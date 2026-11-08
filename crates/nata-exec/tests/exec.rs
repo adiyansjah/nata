@@ -852,3 +852,58 @@ fn between_in_a_case_condition_evaluates_upper_bounds_for_null_but_not_false_low
         ["0", "2", "0"]
     );
 }
+
+#[test]
+fn query_stats_preserve_results_and_belong_to_each_execution() {
+    let path = fixture("same-run-stats");
+    for sql in [
+        format!("SELECT id+1 AS n FROM '{path}' WHERE a > 0 LIMIT 4"),
+        format!("SELECT a, count(*) AS n FROM '{path}' GROUP BY a"),
+    ] {
+        for forced in [false, true] {
+            let mut cfg = ExecConfig::new(2);
+            cfg.aggregate_force_spill = forced;
+            cfg.aggregate_memory_bytes = Some(16 << 20);
+            let plain = run_with(&sql, &cfg);
+            assert!(plain.report.as_ref().expect("plain").query_stats.is_none());
+            cfg.collect_stats = true;
+            let first = run_with(&sql, &cfg);
+            let second = run_with(&sql, &cfg);
+            let canonical = |out: &Outcome| {
+                let mut rows: Vec<_> = out
+                    .csv
+                    .as_ref()
+                    .expect("runs")
+                    .lines()
+                    .map(str::to_string)
+                    .collect();
+                rows.sort_unstable();
+                rows
+            };
+            assert_eq!(canonical(&plain), canonical(&first));
+            assert_eq!(canonical(&first), canonical(&second));
+            let id = |out: &Outcome| {
+                let record = out.report.as_ref().expect("report").stats_json();
+                if !nata_exec::query_stats::QueryStats::available() {
+                    assert!(record.is_none());
+                    return String::new();
+                }
+                let record = record.expect("one record");
+                assert!(record.contains("\"version\":1"));
+                assert!(record.contains("\"scan\":"));
+                assert!(record.contains("\"spill_levels\":"));
+                record
+                    .split("\"query_id\":")
+                    .nth(1)
+                    .expect("identity")
+                    .split(',')
+                    .next()
+                    .expect("id")
+                    .to_string()
+            };
+            if nata_exec::query_stats::QueryStats::available() {
+                assert_ne!(id(&first), id(&second));
+            }
+        }
+    }
+}

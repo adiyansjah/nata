@@ -357,6 +357,7 @@ impl Table {
     }
 }
 struct Shared {
+    stats: Option<Arc<crate::query_stats::QueryStats>>,
     plan: Arc<LogicalPlan>,
     manager: Arc<MemoryManager>,
     metrics: Mutex<AggregateStats>,
@@ -389,6 +390,10 @@ impl Partial {
             let ev = Evaluator::new(batch, &types);
             let mut rows = std::mem::take(&mut self.rows);
             rows.clear();
+            let filter_stats = crate::query_stats::Timer::new(
+                &self.shared.stats,
+                crate::query_stats::Stage::Filter,
+            );
             if let Some(f) = &plan.filter {
                 rows.extend(
                     ev.keep_mask(&f.predicate)?
@@ -401,8 +406,18 @@ impl Partial {
             } else {
                 rows.extend(ev.all_rows());
             }
+            drop(filter_stats);
+            let expression_stats = crate::query_stats::Timer::new(
+                &self.shared.stats,
+                crate::query_stats::Stage::Expression,
+            );
             let program = self.program.get_or_insert_with(|| fusion::Program::new(a));
             let (keys, args) = program.evaluate(batch, &ev, a, &rows)?;
+            drop(expression_stats);
+            let _hash_stats = crate::query_stats::Timer::new(
+                &self.shared.stats,
+                crate::query_stats::Stage::GroupId,
+            );
             let mut hashes = std::mem::take(&mut self.hashes);
             hashing::columns_into(&keys, &rows, &mut hashes);
             Ok(Evaluated {
@@ -441,6 +456,10 @@ impl Partial {
             let mut groups = [(0usize, 0usize); CANCEL_ROWS];
             let begin = evaluated.next;
             let stop = evaluated.rows.len().min(begin + CANCEL_ROWS);
+            let group_stats = crate::query_stats::Timer::new(
+                &self.shared.stats,
+                crate::query_stats::Stage::GroupId,
+            );
             while evaluated.next < stop {
                 let r = evaluated.rows[evaluated.next];
                 let i = r as usize;
@@ -514,6 +533,11 @@ impl Partial {
                 groups[evaluated.next - begin] = (p, id);
                 evaluated.next += 1;
             }
+            drop(group_stats);
+            let update_stats = crate::query_stats::Timer::new(
+                &self.shared.stats,
+                crate::query_stats::Stage::StateUpdate,
+            );
             let rows = &evaluated.rows[begin..evaluated.next];
             let ids = &groups[..rows.len()];
             // Dispatch argument representation and aggregate once per column,
@@ -565,6 +589,7 @@ impl Partial {
                     }
                 }
             }
+            drop(update_stats);
             // Commit every admitted prefix before spilling; the first row
             // denied a grant stays unconsumed for replay against new tables.
             if evaluated.next < stop {
@@ -622,6 +647,8 @@ fn merge(
         }
         out.grants.append(&mut table.grants);
     }
+    let owner = crate::query_stats::owner();
+    let _stats = crate::query_stats::Timer::new(&owner, crate::query_stats::Stage::Finalize);
     for (row, states) in out.groups.values_mut().enumerate() {
         if row.is_multiple_of(CANCEL_ROWS) && cancelled() {
             return Err(EvalError::at(nata_sql::Pos::NONE, "cancelled"));
@@ -807,6 +834,7 @@ pub(crate) fn execute(
     observed.aggregate_memory = Some(Arc::clone(&manager));
     let _finished = FinishMemory(Arc::clone(&manager), cancel.cloned());
     let shared = Arc::new(Shared {
+        stats: cfg.query_stats.clone(),
         plan: Arc::clone(&plan),
         manager: Arc::clone(&manager),
         metrics: Mutex::new(AggregateStats::default()),
@@ -844,6 +872,9 @@ pub(crate) fn execute(
         // projection, delivery and table teardown, but excludes waiting for
         // final-merge tasks. The existing charged runtime/output workspace
         // covers the unchanged <=32-row batches and fixed-width gathers.
+        let _output_stats =
+            crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::OutputSink);
+        let _scope = crate::query_stats::Scope::new(&shared.stats);
         let output_started = Instant::now();
         let mut iter = table.groups.into_iter();
         loop {
@@ -862,7 +893,14 @@ pub(crate) fn execute(
                     "aggregate cancelled".into(),
                 )));
             }
+            let finalize_stats =
+                crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::Finalize);
             let b = batch(&rows, a).map_err(|e| ScanError::new(e.into_kind()))?;
+            drop(finalize_stats);
+            let expression_stats = crate::query_stats::Timer::new(
+                &shared.stats,
+                crate::query_stats::Stage::Expression,
+            );
             let evaluated = eval_on_stack(crate::exec::max_depth(&plan), || {
                 let ev = Evaluator::new(&b, &types);
                 let keep = if let Some(h) = &a.having {
@@ -909,6 +947,7 @@ pub(crate) fn execute(
                 Ok(Some((projected, select)))
             })
             .map_err(|e| ScanError::new(e.into_kind()))?;
+            drop(expression_stats);
             let Some((projected, select)) = evaluated else {
                 continue;
             };
@@ -917,8 +956,11 @@ pub(crate) fn execute(
                 output += select.len() as u64;
             }
         }
+        let teardown_stats =
+            crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::Teardown);
         drop(iter);
         drop(table.grants);
+        drop(teardown_stats);
         output_nanos = output_nanos
             .saturating_add(u64::try_from(output_started.elapsed().as_nanos()).unwrap_or(u64::MAX));
         Ok(())
@@ -942,8 +984,11 @@ pub(crate) fn execute(
             .load(std::sync::atomic::Ordering::SeqCst);
         m.rehashes = storage.rehashes.load(std::sync::atomic::Ordering::SeqCst);
     }
+    let teardown_stats =
+        crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::Teardown);
     drop(io);
     drop(storage);
+    drop(teardown_stats);
     let mut metrics = shared
         .metrics
         .lock()
@@ -963,6 +1008,7 @@ pub(crate) fn execute(
     metrics.memory_lock_wait_nanos = memory.lock_wait_nanos;
     metrics.peak_reservation = memory.peak;
     Ok(ExecReport {
+        query_stats: cfg.query_stats.as_ref().map(|stats| stats.json()),
         aggregate: Some(metrics),
         ops: OperatorStats {
             batches: report.row_groups_read,
@@ -1050,6 +1096,7 @@ mod tests {
                     limit: None,
                 }),
                 manager: MemoryManager::new(1 << 20, 4096, 1).expect("manager"),
+                stats: None,
                 metrics: Mutex::new(AggregateStats::default()),
                 hash: partition_hash,
                 force_collisions: false,

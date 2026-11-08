@@ -15,7 +15,7 @@ use nata_exec::explain::analyze_text;
 use nata_exec::output::{
     Format, ResultWriter, exit_code_scan, exit_code_sql, render_scan_error, render_sql_error,
 };
-use nata_exec::{ExecConfig, execute};
+use nata_exec::{ExecConfig, Observed, execute_observed};
 use nata_parquet::schema::Leaf;
 use nata_parquet::{ErrorKind, ScanCancel, ScanError};
 use nata_sql::ast::ExplainMode;
@@ -149,13 +149,36 @@ pub fn run(a: SqlArgs) -> ExitCode {
         }
         Err(_) => (None, None),
     };
-    let code = run_query(&a, &sql, &interrupted, &cancel);
+    // A destination, rather than a logging flag, opts into query attribution.
+    // Keep the owner through sink flush, execution teardown and signal join.
+    let destination = std::env::var_os("NATA_STATS_JSON").map(PathBuf::from);
+    let stats = (destination.is_some() && nata_exec::query_stats::QueryStats::available())
+        .then(nata_exec::query_stats::QueryStats::new);
+    let mut report = None;
+    let code = run_query(&a, &sql, &interrupted, &cancel, &stats, &mut report);
     // every thread is joined before the process ends
     if let Some(h) = signals_handle {
         h.close();
     }
     if let Some(t) = watcher {
         let _ = t.join();
+    }
+    if let (Some(path), Some(stats)) = (destination, stats) {
+        let record = if let Some(mut report) = report {
+            report.query_stats = Some(stats.json());
+            report.stats_json().expect("stats owner")
+        } else {
+            let raw = stats.json();
+            format!(
+                "{},\"scan\":null,\"aggregate\":null}}",
+                raw.trim_end_matches('}')
+            )
+        };
+        // A failed sidecar is observable by exit status and a missing record;
+        // never insert instrumentation diagnostics into query stderr.
+        if nata_exec::query_stats::write_json(&path, &record).is_err() {
+            return ExitCode::from(1);
+        }
     }
     code
 }
@@ -165,7 +188,13 @@ fn run_query(
     sql: &str,
     interrupted: &Arc<AtomicBool>,
     cancel: &ScanCancel,
+    query_stats: &Option<Arc<nata_exec::query_stats::QueryStats>>,
+    final_report: &mut Option<nata_exec::ExecReport>,
 ) -> ExitCode {
+    let bind_stats = nata_exec::query_stats::Timer::new(
+        query_stats,
+        nata_exec::query_stats::Stage::BindMetadata,
+    );
     let source = InterruptibleSource {
         interrupted: Arc::clone(interrupted),
     };
@@ -198,6 +227,7 @@ fn run_query(
             return ExitCode::from(exit_code_sql(&e));
         }
     };
+    drop(bind_stats);
     if interrupted.load(Ordering::SeqCst) {
         say("interrupted\n");
         return ExitCode::from(130);
@@ -213,6 +243,7 @@ fn run_query(
         .threads
         .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, std::num::NonZero::get));
     let mut cfg = ExecConfig::new(threads);
+    cfg.query_stats = query_stats.clone();
     if let Some(w) = a.window {
         cfg.window = w;
     }
@@ -255,11 +286,15 @@ fn run_query(
 
     if planned.mode == ExplainMode::Analyze {
         // run it, count what each operator did, print the plan with the numbers; the rows themselves are not printed
-        return match execute(Arc::clone(&plan), &cfg, Some(cancel), |_| Ok(())) {
+        let mut observed = Observed::default();
+        return match execute_observed(Arc::clone(&plan), &cfg, Some(cancel), &mut observed, |_| {
+            Ok(())
+        }) {
             Ok(report) => {
                 let text = analyze_text(&plan, &report);
                 let mut out = stdout.lock();
                 let _ = out.write_all(text.as_bytes()).and_then(|()| out.flush());
+                *final_report = Some(report);
                 ExitCode::SUCCESS
             }
             Err(e) => finish_error(sql, &e, 0, interrupted, &closed),
@@ -275,22 +310,35 @@ fn run_query(
         names,
         &types,
     );
-    let result = execute(plan, &cfg, Some(cancel), |batch| writer.write_batch(batch));
+    let mut observed = Observed::default();
+    let result = execute_observed(plan, &cfg, Some(cancel), &mut observed, |batch| {
+        writer.write_batch(batch)
+    });
     match result {
-        Ok(report) => match writer.finish() {
-            Ok(()) => {
-                if a.report {
-                    let rss = crate::peak_rss_kib()
-                        .map_or(String::new(), |k| format!(" peak_rss_kib={k}"));
-                    say(&format!("{}{rss}\n", report.scan.line()));
-                    if let Some(a) = &report.aggregate {
-                        say(&format!("{}\n", a.line()));
+        Ok(report) => {
+            let finish = {
+                let _finish = nata_exec::query_stats::Timer::new(
+                    query_stats,
+                    nata_exec::query_stats::Stage::OutputSink,
+                );
+                writer.finish()
+            };
+            match finish {
+                Ok(()) => {
+                    if a.report {
+                        let rss = crate::peak_rss_kib()
+                            .map_or(String::new(), |k| format!(" peak_rss_kib={k}"));
+                        say(&format!("{}{rss}\n", report.scan.line()));
+                        if let Some(a) = &report.aggregate {
+                            say(&format!("{}\n", a.line()));
+                        }
                     }
+                    *final_report = Some(report);
+                    ExitCode::SUCCESS
                 }
-                ExitCode::SUCCESS
+                Err(e) => finish_error(sql, &e, writer.rows_written(), interrupted, &closed),
             }
-            Err(e) => finish_error(sql, &e, writer.rows_written(), interrupted, &closed),
-        },
+        }
         Err(e) => {
             // what was printed so far goes out before the message, so that the two are in the order they happened
             let printed = writer.rows_written();

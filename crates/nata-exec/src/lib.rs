@@ -12,6 +12,7 @@ pub mod exec;
 pub mod explain;
 pub mod num;
 pub mod output;
+pub mod query_stats;
 pub mod spill;
 pub mod value;
 

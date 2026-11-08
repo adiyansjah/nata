@@ -132,6 +132,9 @@ impl Registry {
         self.lock().fail_after = Some(after);
     }
     pub fn create(self: &Arc<Self>) -> io::Result<Arc<SpillFile>> {
+        self.create_at_level(0)
+    }
+    pub fn create_at_level(self: &Arc<Self>, depth: u8) -> io::Result<Arc<SpillFile>> {
         let bytes = FILE_CHARGE
             .checked_add(self.directory.as_os_str().len())
             .ok_or_else(invalid)?;
@@ -152,6 +155,7 @@ impl Registry {
             options.mode(0o600);
         }
         let file = options.open(&path)?;
+        crate::query_stats::current(|s| s.level(depth, 4, 1));
         // Only count files whose exclusive creation actually succeeded.
         self.lock().stats.files += 1;
         let spill = Arc::new(SpillFile {
@@ -202,6 +206,9 @@ impl SpillFile {
         &self.path
     }
     pub fn open(self: &Arc<Self>) -> io::Result<SpillHandle> {
+        self.open_at_level(0)
+    }
+    pub fn open_at_level(self: &Arc<Self>, depth: u8) -> io::Result<SpillHandle> {
         let slot = self.registry.acquire()?;
         // Within a private directory, and only our exclusive-created files.
         // Reject a replacement link before opening as a defence in depth.
@@ -217,6 +224,7 @@ impl SpillFile {
             options.custom_flags(libc::O_NOFOLLOW);
         }
         let file = options.open(&self.path)?;
+        crate::query_stats::current(|s| s.level(depth, 4, 1));
         Ok(SpillHandle {
             file,
             owner: Arc::clone(self),

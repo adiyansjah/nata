@@ -76,6 +76,7 @@ impl Workspace {
         partition: u32,
         depth: u8,
     ) -> io::Result<()> {
+        let _stats = crate::query_stats::LevelTimer::new(depth, true);
         self.write_inner(file, batch, partition, depth)
             .map_err(|e| named(file, e))
     }
@@ -118,7 +119,12 @@ impl Workspace {
         );
         frame.extend_from_slice(&payload);
         seal(&mut frame);
-        file.append(&frame)
+        file.append(&frame)?;
+        crate::query_stats::current(|s| {
+            s.level(depth, 0, frame.len() as u64);
+            s.level(depth, 2, 1);
+        });
+        Ok(())
     }
     /// A file may contain multiple independently bounded frames. EOF is valid
     /// only between frames; every other short read is a named bounded error.
@@ -134,6 +140,7 @@ impl Workspace {
                 io::Error::other("spill workspace still borrowed"),
             ));
         }
+        let _stats = crate::query_stats::LevelTimer::new(depth, false);
         self.read_inner(file, partition, depth)
             .map(|b| {
                 b.map(|batch| SpillBatch {
@@ -189,6 +196,10 @@ impl Workspace {
         if b.schema().as_ref() != &schema() || b.num_rows() != rows || reader.next().is_some() {
             return Err(invalid());
         }
+        crate::query_stats::current(|s| {
+            s.level(depth, 1, n + HEADER as u64);
+            s.level(depth, 3, 1);
+        });
         Ok(Some(b))
     }
     fn preflight(&self, payload: &[u8], rows: usize) -> io::Result<()> {

@@ -33,6 +33,10 @@ use crate::eval::Evaluator;
 /// How to run a plan.
 #[derive(Clone, Debug)]
 pub struct ExecConfig {
+    /// Collect one fresh same-execution stats record.
+    pub collect_stats: bool,
+    /// Opt-in query attribution; None keeps the existing execution path.
+    pub query_stats: Option<Arc<crate::query_stats::QueryStats>>,
     /// Query-wide aggregate execution cap; None uses half the physical/cgroup limit.
     /// Includes decode, evaluation, state, merge, spill and output reservations.
     pub aggregate_memory_bytes: Option<usize>,
@@ -68,6 +72,8 @@ impl ExecConfig {
     pub fn new(threads: usize) -> ExecConfig {
         let threads = threads.max(1);
         ExecConfig {
+            collect_stats: false,
+            query_stats: None,
             aggregate_memory_bytes: None,
             aggregate_spill_disk_bytes: None,
             aggregate_spill_directory: None,
@@ -86,7 +92,7 @@ impl ExecConfig {
     }
 }
 
-/// What the operators counted while running (summed over the worker threads; times are CPU time of the operator, not wall time).
+/// What the operators counted while running (summed over the worker threads; times are summed service wall durations, not CPU time).
 #[derive(Debug, Default)]
 struct Counters {
     batches: AtomicU64,
@@ -120,11 +126,40 @@ pub struct OperatorStats {
 /// What a run did.
 #[derive(Clone, Debug)]
 pub struct ExecReport {
+    pub query_stats: Option<String>,
     pub aggregate: Option<AggregateStats>,
     pub scan: ScanReport,
     pub ops: OperatorStats,
     /// Wall time from the open of the scan to the join of its last worker.
     pub elapsed: Duration,
+}
+
+impl ExecReport {
+    /// One frozen record plus counters from exactly this execution report.
+    pub fn stats_json(&self) -> Option<String> {
+        let raw = self.query_stats.as_ref()?;
+        let aggregate = self.aggregate.as_ref().map_or("null".into(), |a| {
+            let fields = a
+                .line()
+                .split_whitespace()
+                .skip(1)
+                .map(|s| {
+                    let (key, value) = s.split_once('=').expect("native counter");
+                    format!("\"{key}\":{value}")
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            format!("{{{fields}}}")
+        });
+        Some(format!(
+            "{},\"scan\":{{\"rows\":{},\"bytes\":{},\"batches\":{}}},\"rows_out\":{},\"aggregate\":{aggregate}}}",
+            raw.strip_suffix('}')?,
+            self.scan.rows_read,
+            self.scan.bytes_read,
+            self.ops.batches,
+            self.ops.rows_out
+        ))
+    }
 }
 
 /// Native diagnostics; partial/merge times are summed worker durations.
@@ -217,6 +252,7 @@ pub fn max_depth(plan: &LogicalPlan) -> usize {
 const DEEP: usize = 64;
 
 struct Run {
+    query_stats: Option<Arc<crate::query_stats::QueryStats>>,
     plan: Arc<LogicalPlan>,
     types: Vec<SqlType>,
     counters: Counters,
@@ -236,6 +272,10 @@ impl Run {
             .fetch_add(u64::try_from(rows).unwrap_or(u64::MAX), Ordering::Relaxed);
         let mut batch = batch;
         if let Some(f) = &self.plan.filter {
+            let _stats = crate::query_stats::Timer::new(
+                &self.query_stats,
+                crate::query_stats::Stage::Filter,
+            );
             let t = Instant::now();
             let keep = Evaluator::new(&batch, &self.types).keep_mask(&f.predicate)?;
             let kept = keep.iter().filter(|k| **k).count();
@@ -263,6 +303,10 @@ impl Run {
     }
 
     fn timed_project(&self, batch: &RecordBatch) -> R<RecordBatch> {
+        let _stats = crate::query_stats::Timer::new(
+            &self.query_stats,
+            crate::query_stats::Stage::Expression,
+        );
         let t = Instant::now();
         let out = self.project(batch)?;
         self.counters
@@ -356,6 +400,7 @@ impl Run {
 /// reliability tests read after the run.
 #[derive(Debug, Default)]
 pub struct Observed {
+    pub query_stats: Option<String>,
     pub aggregate_memory: Option<Arc<nata_sched::memory::MemoryManager>>,
     pub stats: Option<Arc<nata_parquet::ScanStats>>,
 }
@@ -378,6 +423,17 @@ pub fn execute_observed(
     observed: &mut Observed,
     mut sink: impl FnMut(&RecordBatch) -> Result<(), ScanError>,
 ) -> Result<ExecReport, ScanError> {
+    if cfg.collect_stats && cfg.query_stats.is_none() && crate::query_stats::QueryStats::available()
+    {
+        let mut cfg = cfg.clone();
+        cfg.query_stats = Some(crate::query_stats::QueryStats::new());
+        let result = execute_observed(plan, &cfg, cancel, observed, sink);
+        if result.is_err() {
+            observed.query_stats = cfg.query_stats.as_ref().map(|s| s.json());
+        }
+        return result;
+    }
+    let _scope = crate::query_stats::Scope::new(&cfg.query_stats);
     if plan.aggregate.is_some() {
         return crate::aggregate::execute(plan, cfg, cancel, observed, sink);
     }
@@ -391,6 +447,7 @@ pub fn execute_observed(
     let depth = max_depth(&plan);
     let big_stack = (depth > DEEP).then(|| depth.saturating_mul(32 * 1024).saturating_add(8 << 20));
     let run = Arc::new(Run {
+        query_stats: cfg.query_stats.clone(),
         types: plan.scan.columns.iter().map(|c| c.ty).collect(),
         plan: Arc::clone(&plan),
         counters: Counters::default(),
@@ -414,6 +471,9 @@ pub fn execute_observed(
         None,
         cfg.remote.as_ref(),
     )?);
+    if let Some(stats) = &cfg.query_stats {
+        let _ = scan.stats().query_stats.set(Arc::clone(stats));
+    }
     observed.stats = Some(Arc::clone(scan.stats()));
     let (offset, limit) = match plan.limit {
         // the scan counts rows delivered: skip `offset` of them here and stop at offset + n
@@ -454,6 +514,8 @@ pub fn execute_observed(
             batch.clone()
         };
         rows_out = rows_out.saturating_add(u64::try_from(part.num_rows()).unwrap_or(u64::MAX));
+        let _stats =
+            crate::query_stats::Timer::new(&cfg.query_stats, crate::query_stats::Stage::OutputSink);
         sink(&part)
     })?;
     let c = &run.counters;
@@ -468,6 +530,7 @@ pub fn execute_observed(
         rows_out,
     };
     Ok(ExecReport {
+        query_stats: cfg.query_stats.as_ref().map(|stats| stats.json()),
         aggregate: None,
         scan: scan_report,
         ops,
@@ -532,6 +595,7 @@ mod projection_memory_tests {
             .expect("plan")
             .plan;
         let run = super::Run {
+            query_stats: None,
             plan: Arc::new(plan),
             types: vec![nata_sql::types::SqlType::BigInt],
             counters: super::Counters::default(),

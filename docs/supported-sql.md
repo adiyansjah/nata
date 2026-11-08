@@ -13,6 +13,16 @@ nata sql < query.sql         ... or stdin (at most 1 MiB)
   --report                   developer option: after a successful run, the scan's one-line report and the peak resident memory on stderr
 ```
 
+For query attribution, set `NATA_STATS_JSON=/absolute/path/record.json`.
+After execution and sink flush (also after a query error), `nata sql` atomically
+replaces that file with one versioned JSON record. Use a distinct path per
+concurrent invocation. Query stdout and stderr keep their existing bytes;
+`--report` never prints this JSON. A sidecar write failure returns exit 1 without
+adding query diagnostics; benchmark callers reject a missing record. Optional
+`NATA_QUERY_TRACE=1` adds bounded events and reports drops. `EXPLAIN ANALYZE`
+also displays the execution's stats when a destination is set. `complete:false`
+and `missing` explicitly identify broader T6 coverage that is not certified.
+
 `EXPLAIN` and `EXPLAIN ANALYZE` print their plan as text, with or `--csv` or without it.
 
 Exit codes: `0` success (also when the reader of stdout went away: `nata sql ... | head` is quiet); `1` a data or I/O error (a missing, truncated or damaged

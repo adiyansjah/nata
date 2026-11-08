@@ -37,6 +37,8 @@ impl Storage {
         a: &Aggregate,
         depth: u8,
     ) -> io::Result<()> {
+        let owner = crate::query_stats::owner();
+        let _stats = crate::query_stats::Timer::new(&owner, crate::query_stats::Stage::SpillWrite);
         self.largest_partial.fetch_max(
             tables.iter().map(|t| t.groups.len()).sum(),
             Ordering::SeqCst,
@@ -72,7 +74,7 @@ impl Storage {
                     .map_or(resident_partition as u64, |(key, _)| bucket(key)),
             )
             .map_err(|_| invalid())?;
-            let mut handle = files[partition].open()?;
+            let mut handle = files[partition].open_at_level(depth)?;
             let mut keys: Vec<Vec<u8>> = Vec::new();
             let mut states: Vec<Vec<u8>> = Vec::new();
             let mut hashes = Vec::new();
@@ -113,7 +115,7 @@ impl Storage {
                 if target != partition {
                     drop(handle);
                     partition = target;
-                    handle = files[partition].open()?;
+                    handle = files[partition].open_at_level(depth)?;
                 }
                 let (k, s) = replay::encode(&key, &state, a)?;
                 hashes.push((self.hash)(&key, depth));
@@ -253,7 +255,7 @@ impl Storage {
             .workspace
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let mut input = parent.open()?;
+        let mut input = parent.open_at_level(depth)?;
         let mut keys: Vec<Vec<Vec<u8>>> = (0..16).map(|_| Vec::new()).collect();
         let mut states: Vec<Vec<Vec<u8>>> = (0..16).map(|_| Vec::new()).collect();
         let mut hashes: Vec<Vec<u64>> = (0..16).map(|_| Vec::new()).collect();
@@ -290,7 +292,7 @@ impl Storage {
                         if !keys[p].is_empty() {
                             flush(
                                 &mut output,
-                                &mut children[p].open()?,
+                                &mut children[p].open_at_level(depth + 1)?,
                                 &keys[p],
                                 &states[p],
                                 &hashes[p],
@@ -309,7 +311,7 @@ impl Storage {
                 if keys[p].len() == crate::spill::MAX_ROWS {
                     flush(
                         &mut output,
-                        &mut children[p].open()?,
+                        &mut children[p].open_at_level(depth + 1)?,
                         &keys[p],
                         &states[p],
                         &hashes[p],
@@ -338,7 +340,7 @@ impl Storage {
             if !keys[p].is_empty() {
                 flush(
                     &mut output,
-                    &mut children[p].open()?,
+                    &mut children[p].open_at_level(depth + 1)?,
                     &keys[p],
                     &states[p],
                     &hashes[p],

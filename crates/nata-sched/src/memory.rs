@@ -186,6 +186,10 @@ impl MemoryManager {
             let wake = manager.notify_front(&mut s);
             drop(s);
             wake_all(wake);
+            crate::query_stats::current(|s| {
+                s.count(crate::query_stats::Counter::Grants, 1);
+                s.count(crate::query_stats::Counter::GrantBytes, bytes as u64);
+            });
             return Ok(Reservation::Granted(grant));
         }
         let share = available / s.operators.len();
@@ -330,6 +334,7 @@ impl MemoryManager {
         let wake = self.notify_front(&mut s);
         drop(s);
         wake_all(wake);
+        crate::query_stats::current(|s| s.count(crate::query_stats::Counter::Releases, 1));
     }
 
     fn shrink_grant(&self, id: u64, bytes: usize) {

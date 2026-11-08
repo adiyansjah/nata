@@ -103,6 +103,7 @@ impl Drop for Counted {
 /// The counters of one scan, shared by the plan, the tasks and the report.
 #[derive(Debug, Default)]
 pub struct ScanStats {
+    pub query_stats: std::sync::OnceLock<std::sync::Arc<nata_sched::query_stats::QueryStats>>,
     pub files_opened: AtomicU64,
     pub row_groups_total: AtomicU64,
     pub row_groups_skipped: AtomicU64,

@@ -33,7 +33,7 @@ parquet = "60"
 [lints.rust]
 # Only spill/admission.rs permits the two audited statvfs ABI operations.
 unsafe_code = "deny"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)'] }
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(nata_loom)', 'cfg(nata_stats_disabled)'] }
 
 [lints.clippy]
 todo = "deny"

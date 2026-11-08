@@ -103,9 +103,9 @@ struct ScanState {
 fn empty_tables(fanout: usize) -> Vec<Table> {
     (0..fanout).map(|_| Table::new()).collect()
 }
-fn files(registry: &Arc<Registry>, fanout: usize) -> Result<Files, ScanError> {
+fn files(registry: &Arc<Registry>, fanout: usize, depth: u8) -> Result<Files, ScanError> {
     (0..fanout)
-        .map(|_| registry.create().map_err(scan_error))
+        .map(|_| registry.create_at_level(depth).map_err(scan_error))
         .collect()
 }
 fn submit_write(
@@ -120,6 +120,8 @@ fn submit_write(
     let files = files.clone();
     let shared = Arc::clone(&state.partial.shared);
     let job = Box::new(move || {
+        let _stats =
+            crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::SpillWrite);
         storage.write(
             tables,
             &files,
@@ -132,7 +134,7 @@ fn submit_write(
         )?;
         Ok(Completion::Written)
     });
-    match io.submit(job) {
+    match io.submit_observed(state.partial.shared.stats.as_ref(), "io_write_end", 0, job) {
         Submit::Queued(ticket) => {
             wake.wake();
             state.ticket = Some(ticket);
@@ -173,6 +175,9 @@ pub(super) fn accumulate(
         Some(Arc::clone(&shared.manager)),
         cfg.remote.as_ref(),
     )?);
+    if let Some(stats) = &cfg.query_stats {
+        let _ = scan.stats().query_stats.set(Arc::clone(stats));
+    }
     observed.stats = Some(Arc::clone(scan.stats()));
     // a cancel also wakes a worker that is waiting for a store (a no-op for local files)
     let _remote_cancel = scan.cancel_hook(cancel);
@@ -253,7 +258,7 @@ pub(super) fn accumulate(
         rehashes: Arc::default(),
         workspace: Mutex::new(workspace),
     });
-    let targets = files(&storage.registry, storage.initial_fanout)?;
+    let targets = files(&storage.registry, storage.initial_fanout, 0)?;
     let before_decode = shared.manager.snapshot();
     let free = before_decode
         .budget
@@ -284,6 +289,9 @@ pub(super) fn accumulate(
         .min(32)
         .min((free.saturating_sub(1 << 20) / task_bytes.max(1)).max(1))
         .max(1);
+    if let Some(stats) = &shared.stats {
+        stats.admission(n, free, decode_bytes, task_bytes);
+    }
     let tasks = Mutex::new(tasks);
     let mut states = Vec::new();
     for _ in 0..n {
@@ -309,7 +317,8 @@ pub(super) fn accumulate(
         });
     }
     let results: Mutex<Vec<Vec<Table>>> = Mutex::new(Vec::new());
-    cooperative::run(
+    cooperative::run_observed(
+        shared.stats.as_ref(),
         states,
         n,
         |state, wake| {
@@ -391,6 +400,15 @@ pub(super) fn accumulate(
                                     .manager
                                     .finish(0)
                                     .map_err(|_| scan_error("memory pressure cleanup"))?;
+                                if let Some(stats) = &shared.stats {
+                                    stats.event(
+                                        "admission_wait_start",
+                                        0,
+                                        state.source.as_ref().map_or(0, |s| s.0 as u64),
+                                        0,
+                                        0,
+                                    );
+                                }
                                 shared
                                     .manager
                                     .park(0, wake.clone())
@@ -400,7 +418,21 @@ pub(super) fn accumulate(
                             submit_write(state, &storage, &targets, &io, wake.clone())?;
                             return Ok(Step::Yield);
                         }
-                        state.pressure_since = None;
+                        if let Some(start) = state.pressure_since.take()
+                            && let Some(stats) = &shared.stats
+                        {
+                            stats.add(
+                                crate::query_stats::Stage::AdmissionWait,
+                                u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX),
+                            );
+                            stats.event(
+                                "admission_wait_end",
+                                0,
+                                state.source.as_ref().map_or(0, |s| s.0 as u64),
+                                0,
+                                0,
+                            );
+                        }
                         if let Some(evaluated) = state.evaluated.take() {
                             state.partial.recycle(evaluated);
                         }
@@ -463,13 +495,35 @@ pub(super) fn accumulate(
                         {
                             return Ok(Step::Done(Ok(empty_tables(PARTITIONS))));
                         }
+                        if let Some(stats) = &shared.stats {
+                            stats.event(
+                                "row_group_start",
+                                0,
+                                index as u64,
+                                0,
+                                task.row_group() as u64,
+                            );
+                        }
                         state.source = Some((index, task.path().to_path_buf(), task.row_group()));
+                        let _stats = crate::query_stats::Timer::new(
+                            &shared.stats,
+                            crate::query_stats::Stage::ScanDecode,
+                        );
                         state.cursor = Some(task.cursor(256)?);
                     }
                     if let Some(cursor) = &mut state.cursor {
+                        let _stats = crate::query_stats::Timer::new(
+                            &shared.stats,
+                            crate::query_stats::Stage::ScanDecode,
+                        );
                         if let Some(batch) = cursor.next_batch()? {
                             state.input = Some(batch);
                         } else {
+                            if let (Some(stats), Some((index, _, _))) =
+                                (&shared.stats, &state.source)
+                            {
+                                stats.event("row_group_end", 0, *index as u64, 0, 0);
+                            }
                             state.cursor = None;
                             // A morsel is the scheduling quantum. Decode, evaluate
                             // and accumulate its batches on this worker; only spill
@@ -575,20 +629,27 @@ pub(super) fn accumulate(
             tables[p] = t;
             let storage = Arc::clone(&storage);
             let files = targets.clone();
+            let stats = shared.stats.clone();
             let shared = Arc::clone(shared);
-            let ticket = match io.submit(Box::new(move || {
-                storage.write(
-                    tables,
-                    &files,
-                    shared.plan.aggregate.as_ref().expect("aggregate"),
-                    0,
-                )?;
-                Ok(Completion::Written)
-            })) {
+            let ticket = match io.submit_observed(
+                stats.as_ref(),
+                "io_write_end",
+                0,
+                Box::new(move || {
+                    storage.write(
+                        tables,
+                        &files,
+                        shared.plan.aggregate.as_ref().expect("aggregate"),
+                        0,
+                    )?;
+                    Ok(Completion::Written)
+                }),
+            ) {
                 Submit::Queued(t) => t,
                 _ => return Err(scan_error("final spill queue admission")),
             };
-            cooperative::run(
+            cooperative::run_observed(
+                stats.as_ref(),
                 vec![ticket],
                 1,
                 |ticket, wake| {
@@ -726,6 +787,11 @@ pub(super) fn finalize(
                 || stopped(cancel),
                 |tables, cancelled| {
                     let start = Instant::now();
+                    let _scope = crate::query_stats::Scope::new(&shared.stats);
+                    let _stats = crate::query_stats::Timer::new(
+                        &shared.stats,
+                        crate::query_stats::Stage::Merge,
+                    );
                     let result = merge(tables, a, &shared.manager, cancelled)
                         .map_err(|e| ScanError::new(e.into_kind()));
                     shared
@@ -789,7 +855,8 @@ pub(super) fn finalize(
                     .unwrap_or(merge_budget / concurrency / 2),
             });
         }
-        cooperative::run(
+        cooperative::run_observed(
+            shared.stats.as_ref(),
             tasks,
             concurrency,
             |task, wake| {
@@ -798,6 +865,8 @@ pub(super) fn finalize(
                     return Step::Done(Err(cancel_error()));
                 }
                 let start = Instant::now();
+                let _stats =
+                    crate::query_stats::Timer::new(&shared.stats, crate::query_stats::Stage::Merge);
                 let step =
                     merge_step(task, shared, io, wake).unwrap_or_else(|e| Step::Done(Err(e)));
                 let elapsed = u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX);
@@ -863,6 +932,10 @@ fn merge_step(
                 task.row = 0;
                 task.ticket = None;
                 if task.frame.is_none() {
+                    let _stats = crate::query_stats::Timer::new(
+                        &shared.stats,
+                        crate::query_stats::Stage::Finalize,
+                    );
                     for (row, states) in task.table.groups.values_mut().enumerate() {
                         if row.is_multiple_of(CANCEL_ROWS)
                             && task
@@ -993,18 +1066,27 @@ fn merge_step(
     let storage = Arc::clone(&task.storage);
     let partition = u32::try_from(task.partition).map_err(|_| scan_error("spill partition"))?;
     let depth = task.depth;
-    match io.submit(Box::new(move || {
-        let mut h = match handle.take() {
-            Some(h) => h,
-            None => file.open()?,
-        };
-        let frame = storage
-            .workspace
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .read(&mut h, partition, depth)?;
-        Ok(Completion::Read { frame, handle: h })
-    })) {
+    let stats = shared.stats.clone();
+    let job_stats = stats.clone();
+    match io.submit_observed(
+        stats.as_ref(),
+        "io_read_end",
+        depth,
+        Box::new(move || {
+            let _stats =
+                crate::query_stats::Timer::new(&job_stats, crate::query_stats::Stage::SpillRead);
+            let mut h = match handle.take() {
+                Some(h) => h,
+                None => file.open_at_level(depth)?,
+            };
+            let frame = storage
+                .workspace
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .read(&mut h, partition, depth)?;
+            Ok(Completion::Read { frame, handle: h })
+        }),
+    ) {
         Submit::Queued(ticket) => {
             task.ticket = Some(ticket);
             Ok(Step::Yield)
@@ -1026,23 +1108,30 @@ fn files_for_repartition(
         .finish(0)
         .map_err(|_| scan_error("repartition pressure cleanup"))?;
     let output = Workspace::new(&shared.manager).map_err(scan_error)?;
-    let children = files(&storage.registry, PARTITIONS)?;
+    let children = files(&storage.registry, PARTITIONS, depth + 1)?;
     let storage = Arc::clone(storage);
     let child_files = children.clone();
+    let stats = shared.stats.clone();
     let shared = Arc::clone(shared);
-    let ticket = match io.submit(Box::new(move || {
-        let a = shared
-            .plan
-            .aggregate
-            .as_ref()
-            .ok_or_else(|| std::io::Error::other("missing aggregate"))?;
-        storage.repartition(parent, &child_files, a, partition, depth, output)?;
-        Ok(Completion::Written)
-    })) {
+    let ticket = match io.submit_observed(
+        stats.as_ref(),
+        "io_repartition_end",
+        depth,
+        Box::new(move || {
+            let a = shared
+                .plan
+                .aggregate
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("missing aggregate"))?;
+            storage.repartition(parent, &child_files, a, partition, depth, output)?;
+            Ok(Completion::Written)
+        }),
+    ) {
         Submit::Queued(t) => t,
         _ => return Err(scan_error("repartition queue admission")),
     };
-    cooperative::run(
+    cooperative::run_observed(
+        stats.as_ref(),
         vec![ticket],
         1,
         |ticket, wake| {

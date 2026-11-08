@@ -1,6 +1,6 @@
 //! The text of `EXPLAIN ANALYZE`: the plan of `EXPLAIN` with the rows and the time of every operator, then what the scan reports.
 //!
-//! Times: an operator's time is CPU time summed over the worker threads that ran it (it can exceed the wall time); the scan line carries the wall time of
+//! Times: an operator's time is service wall time summed over the worker threads that ran it (it can exceed the wall time); the scan line carries the wall time of
 //! the whole run, which includes the operators below the consumer. Every time is printed as `time=<n.nn>ms`, which is what the golden tests mask.
 
 use nata_sql::plan::LogicalPlan;
@@ -91,6 +91,9 @@ pub fn analyze_text(plan: &LogicalPlan, r: &ExecReport) -> String {
     }
     if let Some(a) = &r.aggregate {
         out.push_str(&format!("{}\n", a.line()));
+    }
+    if let Some(stats) = r.stats_json() {
+        out.push_str(&format!("query_stats: {}\n", stats));
     }
     out.push_str(&format!(
         "total: rows returned={}, time={} wall\n",

@@ -1317,6 +1317,14 @@ impl RowGroupTask {
         cancel: &dyn Fn() -> bool,
         prepared: Option<OpenedSource>,
     ) -> Result<TaskResult, ScanError> {
+        let owner = if nata_sched::query_stats::QueryStats::available() {
+            self.file.ctx.stats.query_stats.get().cloned()
+        } else {
+            None
+        };
+        let _scope = nata_sched::query_stats::Scope::new(&owner);
+        let _stats =
+            nata_sched::query_stats::Timer::new(&owner, nata_sched::query_stats::Stage::ScanDecode);
         let f = &*self.file;
         let stats = &*f.ctx.stats;
         let abandoned = || {
@@ -1507,6 +1515,11 @@ impl RowGroupCursor {
             let batch = if f.terms.is_empty() {
                 batch
             } else {
+                let owner = nata_sched::query_stats::owner();
+                let _stats = nata_sched::query_stats::Timer::new(
+                    &owner,
+                    nata_sched::query_stats::Stage::Filter,
+                );
                 let mask = filter::evaluate(&f.terms, &batch)
                     .map_err(|m| ScanError::new(ErrorKind::Internal(redact(&m))))?;
                 filter_record_batch(&batch, &BooleanArray::from(mask)).map_err(|e| {
@@ -1615,6 +1628,11 @@ impl TaskRun<'_> {
             let kept = if f.terms.is_empty() {
                 Some(batch)
             } else {
+                let owner = nata_sched::query_stats::owner();
+                let _stats = nata_sched::query_stats::Timer::new(
+                    &owner,
+                    nata_sched::query_stats::Stage::Filter,
+                );
                 let mask = filter::evaluate(&f.terms, &batch)
                     .map_err(|m| self.at(ErrorKind::Internal(redact(&m))))?;
                 let selected = mask.iter().filter(|b| **b).count();

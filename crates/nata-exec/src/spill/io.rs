@@ -128,6 +128,49 @@ impl<T: Send + 'static> IoService<T> {
             }),
         })
     }
+    /// Observation wraps the existing admitted job; queue caps and metadata
+    /// charge remain exactly those of the unobserved service.
+    pub fn submit_observed(
+        &self,
+        stats: Option<&Arc<crate::query_stats::QueryStats>>,
+        kind: &'static str,
+        depth: u8,
+        job: DiskJob<T>,
+    ) -> Submit<T> {
+        let Some(stats) = stats.filter(|_| crate::query_stats::QueryStats::available()) else {
+            return self.submit(job);
+        };
+        let stats = Arc::clone(stats);
+        let id = stats.pipeline();
+        stats.event("io_queued", id, 0, depth as u64, 0);
+        let observed = Arc::clone(&stats);
+        let queued = std::time::Instant::now();
+        let job = Box::new(move || {
+            let owner = Some(Arc::clone(&observed));
+            let _scope = crate::query_stats::Scope::new(&owner);
+            observed.event("io_start", id, 0, depth as u64, 0);
+            let queue_ns = u64::try_from(queued.elapsed().as_nanos()).unwrap_or(u64::MAX);
+            let busy = std::time::Instant::now();
+            let result = job();
+            let busy_ns = u64::try_from(busy.elapsed().as_nanos()).unwrap_or(u64::MAX);
+            let index = match kind {
+                "io_write_end" => 0,
+                "io_read_end" => 1,
+                _ => 2,
+            };
+            observed.io(index, queue_ns, busy_ns);
+            observed.event(kind, id, 0, depth as u64, u64::from(result.is_ok()));
+            result
+        });
+        let result = self.submit(job);
+        if matches!(result, Submit::Queued(_)) {
+            stats.level(depth, 5, 1);
+        }
+        if !matches!(result, Submit::Queued(_)) {
+            stats.event("io_rejected", id, 0, depth as u64, 0);
+        }
+        result
+    }
     pub fn submit(&self, job: DiskJob<T>) -> Submit<T> {
         let Some(sender) = &self.sender else {
             return Submit::Closed(job);

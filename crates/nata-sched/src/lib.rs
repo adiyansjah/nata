@@ -952,3 +952,6 @@ impl<W: Work> Scheduler<W> {
 
 #[cfg(test)]
 mod parked_core;
+
+/// Opt-in same-execution counters and bounded diagnostic events.
+pub mod query_stats;

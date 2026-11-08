@@ -80,6 +80,41 @@ pub struct Col {
 }
 
 impl Col {
+    /// Owned vector capacities at this site; shared dictionary parents are
+    /// deliberately excluded, not charged a second time as copied bytes.
+    fn record_materialization(&self, copied: bool, allocated: bool) {
+        crate::query_stats::current(|stats| {
+            use crate::query_stats::Counter;
+            let (bytes, capacity, allocations) = match &self.data {
+                Data::Bool(v) => (v.len(), v.capacity(), 1),
+                Data::Int(v) => (v.len() * 8, v.capacity() * 8, 1),
+                Data::F32(v) => (v.len() * 4, v.capacity() * 4, 1),
+                Data::F64(v) => (v.len() * 8, v.capacity() * 8, 1),
+                Data::Dec(v) => (v.len() * 16, v.capacity() * 16, 1),
+                Data::Date(v) => (v.len() * 4, v.capacity() * 4, 1),
+                Data::Str(StrData::Dict { keys, .. }) => (keys.len() * 4, keys.capacity() * 4, 1),
+                Data::Str(StrData::Owned(v)) => (
+                    v.iter().map(String::len).sum(),
+                    v.capacity() * std::mem::size_of::<String>()
+                        + v.iter().map(String::capacity).sum::<usize>(),
+                    1 + v.iter().filter(|s| s.capacity() > 0).count(),
+                ),
+            };
+            let bytes = bytes + self.valid.len();
+            stats.count(Counter::ColMaterializations, 1);
+            stats.count(Counter::MaterializedBytes, bytes as u64);
+            if copied {
+                stats.count(Counter::CopiedBytes, bytes as u64);
+            }
+            if allocated {
+                stats.count(
+                    Counter::AllocationCapacityBytes,
+                    (capacity + self.valid.capacity()) as u64,
+                );
+                stats.count(Counter::AllocationSites, (allocations + 1) as u64);
+            }
+        });
+    }
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -153,6 +188,7 @@ impl Col {
         self.valid.clear();
         self.valid
             .extend((0..array.len()).map(|i| array.is_valid(i)));
+        self.record_materialization(true, false);
         Ok(())
     }
 
@@ -325,6 +361,7 @@ impl Col {
                 }
             }
         }
+        col.record_materialization(true, true);
         Ok(col)
     }
 
