@@ -1,0 +1,94 @@
+   Compiling nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-parquet)
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-kernels)
+   Compiling nata-objfake v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-objfake)
+   Compiling nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-exec)
+   Compiling nata-objstore v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-objstore)
+   Compiling nata-pgwire v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-pgwire)
+   Compiling nata v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.78s
+     Running unittests src/main.rs (/home/dev/src/nata/target/debug/deps/nata-d511aa069379b1ad)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cli.rs (/home/dev/src/nata/target/debug/deps/cli-cfb3483c1066d8d7)
+
+running 2 tests
+test run_is_not_supported_yet ... ok
+test sql_outside_the_subset_is_not_supported_yet ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/object_store.rs (/home/dev/src/nata/target/debug/deps/object_store-10250ba1e4133b03)
+
+running 5 tests
+test a_path_with_an_unsupported_scheme_is_not_supported_yet ... ok
+test the_example_query_returns_the_rows_of_the_identical_local_file ... ok
+test remote_workers_stay_at_the_requested_cpu_budget_and_report_io ... ok
+test globs_scan_and_aggregates_equal_the_local_files ... ok
+test a_refused_failing_or_missing_object_is_an_error_that_names_no_secret ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+     Running tests/resource_bounds.rs (/home/dev/src/nata/target/debug/deps/resource_bounds-6d5731a5b508225f)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_and_an_unbounded_window_is_not ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.78s
+
+     Running tests/scan_cli.rs (/home/dev/src/nata/target/debug/deps/scan_cli-d540ffade06c60a3)
+
+running 6 tests
+test page_checksums_of_the_binary_are_opt_in ... ok
+test scan_prints_csv_on_stdout_and_the_report_on_stderr ... ok
+test limit_columns_and_default_columns ... ok
+test errors_name_the_file_print_nothing_on_stdout_for_the_first_file_and_exit_non_zero ... ok
+test a_damaged_page_of_a_file_with_checksums_is_an_error_naming_the_file_and_the_row_group ... ok
+test count_equals_the_number_of_csv_rows ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests/serve_cli.rs (/home/dev/src/nata/target/debug/deps/serve_cli-2aede39f0c449dad)
+
+running 1 test
+test serve_help_and_limits ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/sql_cli.rs (/home/dev/src/nata/target/debug/deps/sql_cli-4796957f71d34129)
+
+running 12 tests
+test a_later_file_with_another_schema_is_an_error_naming_the_file_found_when_the_scan_reaches_it ... ok
+test csv_and_the_aligned_table ... ok
+test exit_codes_and_the_rendering_of_errors ... ok
+test errors_never_carry_a_cell_value ... ok
+test the_query_can_come_from_stdin ... ok
+test explain_and_explain_analyze_have_golden_output ... ok
+test rows_printed_before_an_error_make_the_exit_code_nonzero_and_the_error_says_so ... ok
+test every_construct_of_the_not_supported_yet_table_of_supported_sql_answers_not_supported_yet ... ok
+test a_closed_stdout_ends_the_query_quietly_with_exit_code_zero ... ok
+test missing_truncated_and_damaged_files_are_errors_naming_the_file ... ok
+test the_deepest_queries_the_parser_allows_run_in_the_process ... ok
+test ctrl_c_while_the_footers_of_a_glob_are_still_being_read_stops_the_query_with_exit_code_130 ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.38s
+
+     Running tests/sql_reliability.rs (/home/dev/src/nata/target/debug/deps/sql_reliability-44d3e28824732d34)
+
+running 1 test
+test random_sigint_closed_stdout_error_and_limit_scenarios_of_the_process ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.52s
+
+     Running tests/sql_resource_bounds.rs (/home/dev/src/nata/target/debug/deps/sql_resource_bounds-a8586cdb3ad722de)
+
+running 2 tests
+test ten_thousand_small_files_under_ulimit_256_hold_at_most_one_handle_per_worker ... ok
+test peak_memory_is_bounded_by_the_window_times_the_largest_row_group_with_operators_above_the_scan ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.79s
+

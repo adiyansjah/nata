@@ -9,7 +9,7 @@ cp "$HERE/job.sh" "$T/job.sh"
 cat > "$T/lib.sh" <<'LIB'
 : "${WORK:?}"; RESULTS="$WORK/results"; mkdir -p "$RESULTS"
 now() { date -u +%H:%M:%S; }; boot_id() { echo stubboot0; }
-step() { echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; case "$1" in ic-all|ic-model|ic-spikes) echo "ICMODE[$1]=${IC_MODE:-<full>}";; esac; return 0; }
+step() { if [ "${STRICT_TEST:-0}" = 1 ] && [[ "$1" == h-* ]]; then shift; "$@"; return $?; fi; echo "STEP $1"; [ "$1" = ac-all ] && echo "ARMTASKS=${ARMCHECK_TASKS:-<all>}"; [ "$1" = ip-all ] && echo "IPONLY=${IP_ONLY:-<all phases>}"; case "$1" in ic-all|ic-model|ic-spikes) echo "ICMODE[$1]=${IC_MODE:-<full>}";; esac; return 0; }
 fail_job() { echo "FAILJOB $1"; }
 finish_job() { echo "FINISHED"; }
 LIB
@@ -32,6 +32,11 @@ for j in aggref aggref-scale; do
   [ "$ar" = "STEP ar-reference " ] && ok "$j runs only its reference script" || bad "$j: $ar"
 done
 hv=$(steps heavy); has h-fuzz-a "$hv" && has h-mut-b "$hv" && [ "$(echo "$hv" | grep -c '^STEP h-')" = 2 ] && ok "heavy runs one step per heavy.steps line, skipping comments and blanks" || bad "heavy: $(echo "$hv" | grep STEP | tr '\n' ' ')"
+cp "$T/w/src/heavy.steps" "$T/w/src/heavy.saved"
+printf '# gate-exits\nfails false; echo should-not-run\nafter touch "$RESULTS/after"\n' > "$T/w/src/heavy.steps"
+hv=$(STRICT_TEST=1 steps heavy)
+[ "$(cat "$T/w/results/fails.exit")" = 1 ] && ! [ -e "$T/w/results/after" ] && ! grep -q should-not-run "$T/w/results/fails.txt" && echo "$hv" | grep -q 'FAILJOB h-fails' && ok "strict heavy exits gate the job and later steps" || bad "strict heavy ignored failure"
+mv "$T/w/src/heavy.saved" "$T/w/src/heavy.steps"
 mv "$T/w/src/heavy.steps" "$T/w/src/heavy.off"; hv=$(steps heavy); echo "$hv" | grep -q 'FAILJOB heavy: no heavy.steps' && ok "heavy without heavy.steps fails" || bad "heavy without heavy.steps: $(echo "$hv" | tail -2 | tr '\n' ' ')"
 printf 'Bad_Name echo x\n' > "$T/w/src/heavy.steps"; hv=$(steps heavy); echo "$hv" | grep -q "FAILJOB heavy: bad step name" && ok "heavy refuses a bad step name" || bad "heavy bad name"
 mv "$T/w/src/heavy.off" "$T/w/src/heavy.steps"
@@ -74,7 +79,7 @@ extra=$(echo "$nx" | grep '^STEP' | grep -v -E '^STEP (setup-rust|setup-duckdb|m
 [ -z "$extra" ] && ok "netexchsim runs no step of any other job" || bad "netexchsim runs extra steps: $extra"
 # the VM must be prepared for it as root: the job runs as `nata`
 VS="$HERE/vm-startup.sh"
-grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'apt-get update -qq; apt-get install -y -qq iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"
+grep -q 'netexchsim) ;; \*) false ;; esac' "$VS" && grep -q 'nata ALL=(ALL) NOPASSWD:ALL' "$VS" && grep -q 'modprobe sch_netem' "$VS" && grep -q 'DEBIAN_FRONTEND=noninteractive apt-get update -qq; DEBIAN_FRONTEND=noninteractive apt-get install -y -qq iproute2 ethtool' "$VS" && ok "vm-startup.sh prepares the VM for netexchsim (iproute2, ethtool, sch_netem, sudo for nata)" || bad "vm-startup.sh does not prepare the VM for netexchsim"
 # icebergspikes: ONE step (ic-spikes) in IC_MODE=spikes (no model); it must not select the full or the model step, nor any step of another job.
 isp=$(steps icebergspikes)
 has ic-spikes "$isp" && echo "$isp" | grep -q '^ICMODE\[ic-spikes\]=spikes$' && ok "icebergspikes runs the one spikes-mode step" || bad "icebergspikes: $(echo "$isp" | grep -E 'STEP ic|ICMODE' | tr '\n' ' ')"

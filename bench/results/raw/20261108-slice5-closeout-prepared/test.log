@@ -1,0 +1,167 @@
+   Compiling nata-sched v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-sched)
+   Compiling nata-scan v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-scan)
+   Compiling nata-kernels v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-kernels)
+   Compiling nata-parquet v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-parquet)
+   Compiling nata-sql v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-sql)
+   Compiling nata-exec v0.0.0 (/home/dev/.t3/worktrees/nata/t3-8a0ebce6/crates/nata-exec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.05s
+     Running unittests src/lib.rs (/home/dev/src/nata/target/debug/deps/nata_exec-d339223497a7e636)
+
+running 39 tests
+test aggregate::pipeline::tests::competing_scratch_requests_remain_retriable_pressure ... ok
+test aggregate::fusion::tests::shared_eager_arguments_reuse_buffers_and_reset_selection_and_nulls ... ok
+test aggregate::pipeline::tests::dictionary_scratch_admission_precedes_revocable_tables ... ok
+test aggregate::fusion::tests::text_literals_do_not_add_owned_instruction_copies ... ok
+test aggregate::fusion::tests::first_positioned_error_and_conditional_phase_match_evaluator ... ok
+test aggregate::fusion::tests::decimal64_and_decimal128_share_checked_arithmetic_and_reused_output ... ok
+test aggregate::hashing::tests::columns_match_owned_keys_for_selected_null_dictionary_and_float_values ... ok
+test aggregate::fusion::tests::complete_conditional_roots_share_without_merging_different_values ... ok
+test aggregate::hashing::tests::canonical_hash_vectors_and_recursive_seeds ... ok
+test aggregate::pipeline::tests::fanout_estimator_overflow_clamps_and_merge_grants ... ok
+test aggregate::pipeline::tests::reusable_scratch_charges_capacity_once_and_releases_every_chunk ... ok
+test aggregate::storage::tests::membership_uses_query_fanout_and_recursive_sixteen ... ok
+test aggregate::replay::tests::replay_rejects_impossible_wide_states_and_wrong_aggregate_descriptor ... ok
+test aggregate::tests::borrowed_lookup_resolves_collisions_and_never_reads_null_junk ... ok
+test aggregate::tests::final_partition_merges_every_contribution_exactly_once ... ok
+test aggregate::tests::collision_equality_and_canonical_float_keys ... ok
+test aggregate::tests::group_vector_keeps_selected_null_arguments_and_distinct_groups ... ok
+test aggregate::tests::output_delivery_gathers_fixed_width_and_borrows_string_runs ... ok
+test cast::tests::decimals_round_half_away_and_report_what_does_not_fit ... ok
+test aggregate::tests::borrowed_lookup_keeps_groups_across_table_growth ... ok
+test eval::tests::decimal_arithmetic_follows_the_rules_page ... ok
+test eval::tests::decimal_overflow_is_checked_against_the_digits_of_the_result ... ok
+test aggregate::storage::tests::hostile_valid_ipc_cannot_change_query_partition_membership ... ok
+test cast::tests::integers_narrow_with_a_range_check_and_a_null_stays_null ... ok
+test eval::tests::three_valued_and_or ... ok
+test cast::tests::text_to_numbers_dates_and_booleans ... ok
+test num::tests::decimals_become_the_nearest_double ... ok
+test num::tests::division_rounds_half_away_from_zero ... ok
+test num::tests::rescale_both_ways ... ok
+test num::tests::integers_as_text ... ok
+test num::tests::floats_become_decimals_by_their_exact_binary_value ... ok
+test aggregate::replay::tests::typed_records_reject_truncation_trailing_bytes_wrong_tags_and_invalid_values ... ok
+test num::tests::text_becomes_a_decimal_rounded_half_away_from_zero ... ok
+test output::tests::the_caret_stands_under_the_column ... ok
+test output::tests::a_long_line_is_cut_around_the_column ... ok
+test aggregate::storage::tests::writer_fills_the_existing_ipc_row_cap_before_validating_a_message ... ok
+test aggregate::tests::partial_polls_at_batch_entry_and_bounded_intervals_in_large_batches ... ok
+test exec::projection_memory_tests::bare_projection_allocates_no_row_selection ... ok
+test aggregate::tests::resident_finalization_also_polls_at_bounded_intervals ... ok
+
+test result: ok. 39 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/aggregate.rs (/home/dev/src/nata/target/debug/deps/aggregate-87b1b23dcdb89dc9)
+
+running 7 tests
+test partials_merge_once_and_having_sees_the_whole_group ... ok
+test error_budget_cancel_and_sink_failure_release_all_state ... ok
+test wide_cancellation_final_overflow_and_average_without_narrowing_sum ... ok
+test nulls_empty_input_and_selected_arguments ... ok
+test deep_aggregate_having_and_projection_use_sized_stacks ... ok
+test output_batches_gather_having_survivors_and_apply_offset_limit ... ok
+test high_cardinality_limit_and_having_project_only_admitted_groups ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/aggregate_spill.rs (/home/dev/src/nata/target/debug/deps/aggregate_spill-acd5d11b2962789e)
+
+running 12 tests
+test disk_quota_error_is_clear_and_query_cleanup_is_complete ... ok
+test injected_write_failure_returns_error_and_removes_every_file ... ok
+
+running 1 test
+test an_earlier_argument_error_wins_over_a_later_file_schema_error ... ok
+test cancel_during_spill_joins_io_and_removes_every_file ... ok
+test wide_partial_sums_round_trip_without_narrowing_before_merge ... ok
+test forced_spill_flushes_each_decoded_batch_inside_a_morsel ... ok
+test real_smallint_and_float32_keys_and_null_extremes_use_the_typed_spill_path ... ok
+test recursion_bound_is_enforced_under_a_process_deadline ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.08s
+
+test recursion_bound_is_enforced_under_a_process_deadline ... ok
+test typed_sql_replay_matches_resident_for_every_key_and_state_type ... ok
+test pressure_releases_reservations_and_recursive_merge_reads_every_partition ... ok
+test a_hot_string_group_coalesces_without_recursive_repartition ... ok
+test dictionary_partials_fresh_fixture_shape_fits_forced_spill_budget ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.76s
+
+     Running tests/deep.rs (/home/dev/src/nata/target/debug/deps/deep-dbf574870a21b6b3)
+
+running 4 tests
+test a_chain_of_10001_terms_and_1001_levels_are_still_positioned_errors_not_crashes ... ok
+test explain_and_explain_analyze_of_the_deepest_queries_run_on_a_2_mb_thread ... ok
+test nesting_of_1000_levels_is_evaluated_on_a_2_mb_thread_for_each_construct ... ok
+test an_operator_chain_of_10000_terms_is_evaluated_on_a_2_mb_thread_for_each_operator ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.45s
+
+     Running tests/exec.rs (/home/dev/src/nata/target/debug/deps/exec-0d55cad8a8b7b30e)
+
+running 22 tests
+test an_empty_result_has_a_header_and_no_rows ... ok
+test a_query_without_a_column_to_read_still_counts_rows ... ok
+test a_limit_shields_the_rows_beyond_it_from_projection_errors_but_not_the_filter ... ok
+test bare_columns_preserve_values_order_duplicates_and_nulls ... ok
+test between_and_in_use_three_valued_logic ... ok
+test a_limit_stops_the_scan_and_the_report_says_how_far_it_got ... ok
+test a_projection_evaluates_the_operands_of_and_or_and_between_only_where_they_matter ... ok
+test between_in_a_case_condition_evaluates_upper_bounds_for_null_but_not_false_lower_bounds ... ok
+test case_evaluates_only_the_branch_a_row_takes ... ok
+test floats_compare_with_nan_above_everything_and_negative_zero_equal_to_zero ... ok
+test errors_quote_the_query_and_never_a_cell_value ... ok
+test errors_are_raised_only_for_selected_valid_rows ... ok
+test casts_between_text_and_numbers ... ok
+test integer_arithmetic_is_checked_against_the_type ... ok
+test the_files_of_a_glob_are_read_in_name_order ... ok
+test min_by_minus_one_is_an_error_for_a_remainder_and_an_integer_division ... ok
+test decimals_are_exact_and_follow_the_result_types_of_the_rules_page ... ok
+test rows_come_in_file_order_for_any_thread_count_and_window ... ok
+test strings_dates_and_booleans ... ok
+test three_valued_logic_keeps_a_row_only_when_the_condition_is_true ... ok
+test nested_negations_overflow_at_the_original_integer_width_only_for_reached_rows ... ok
+test a_chain_of_10000_terms_is_evaluated_on_a_big_stack ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+     Running tests/scenarios.rs (/home/dev/src/nata/target/debug/deps/scenarios-ad80bda82c39cb89)
+
+running 1 test
+test random_cancel_error_and_delay_scenarios_of_nata_sql_leave_nothing_behind ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.97s
+
+     Running tests/spill.rs (/home/dev/src/nata/target/debug/deps/spill-c302abb7bf4fbd0e)
+
+running 13 tests
+test descriptors_are_capped_and_release_on_drop ... ok
+test altered_inner_offsets_rejected_even_with_repaired_checksum ... ok
+test disk_queue_is_bounded_and_cancel_drops_queued_job_before_wake ... ok
+test decoded_buffers_retain_reservation_and_cannot_multiply_workspace ... ok
+test disk_service_wakes_before_or_after_park_and_survives_task_panic ... ok
+test private_exclusive_files_and_no_symlink_adoption ... ok
+test frames_round_trip_empty_full_and_multiple ... ok
+test restart_cleanup_rejects_unknown_files_and_symlinks ... ok
+test quota_short_write_error_cancel_and_panic_leave_no_files ... ok
+
+running 1 test
+
+running 1 test
+test owner_lock_creation_failure_leaves_no_directory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+test owner_lock_creation_failure_leaves_no_directory ... ok
+test logical_256_way_fanout_bounds_fds_and_charges_parent_child_overlap ... ok
+test seeded_corruption_rejected_before_arrow_allocation ... ok
+test restart_cleanup_skips_live_and_removes_killed_owner ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests nata_exec
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

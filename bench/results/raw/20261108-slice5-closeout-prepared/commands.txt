@@ -1,0 +1,10 @@
+cargo test --locked -j 4 -p nata-exec
+cargo test --locked -j 4 -p nata
+cargo build --locked --release -j 4 -p nata -p nata-check
+cargo fmt --all --check
+cargo clippy --locked -j 4 -p nata-exec -p nata --all-targets -- -D warnings
+python3 scripts/bench-aggregate-closeout.py --self-test
+python3 scripts/bench-aggregate-perf1-heavy.py self-test --work /home/dev/tmp-slice5-closeout/inert
+bash scripts/gcp/test/test-job-chains.sh
+bash -n scripts/gcp/job.sh scripts/gcp/vm-startup.sh scripts/gcp/test/test-job-chains.sh
+python3 -m py_compile scripts/bench-aggregate-closeout.py

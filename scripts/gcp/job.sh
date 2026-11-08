@@ -400,7 +400,11 @@ case "$JOB" in
       case "$line" in ''|'#'*) continue ;; esac
       name=${line%% *}; cmd=${line#* }
       case "$name" in *[!a-z0-9-]*|'') fail_job "heavy: bad step name '$name' (a-z, 0-9, -)"; exit 1 ;; esac
-      run "h-$name" bash -c 'cd "$SRC" && { eval "$1"; } > "$RESULTS/$2.txt" 2>&1; echo $? > "$RESULTS/$2.exit"; true' _ "$cmd" "$name"
+      if head -1 "$SRC/heavy.steps" | grep -qx '# gate-exits'; then
+        run "h-$name" bash -c 'cd "$SRC" || exit; bash -euo pipefail -c "$1" > "$RESULTS/$2.txt" 2>&1; rc=$?; echo "$rc" > "$RESULTS/$2.exit"; exit "$rc"' _ "$cmd" "$name"
+      else
+        run "h-$name" bash -c 'cd "$SRC" && { eval "$1"; } > "$RESULTS/$2.txt" 2>&1; echo $? > "$RESULTS/$2.exit"; true' _ "$cmd" "$name"
+      fi
     done < "$SRC/heavy.steps" ;;
   sqlfuzz)
     # verification-plan item 33 (spikes/sqlfuzz): the fuzzer's tests, `prove` on three seeds, long clean control campaigns.

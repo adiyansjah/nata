@@ -1,0 +1,7 @@
+# gate-exits
+# SF100 on n4a-highcpu-32 (frozen), c3d-highcpu-30 (report only). 4h; 300GB.
+prepare mkdir -p "$WORK/closeout/source" "$WORK/closeout/tmp" && cd "$SRC" && sha256sum -c .aggregate-closeout-source.sha256 && tar -xf .aggregate-closeout-source.tar -C "$WORK/closeout/source"
+build cd "$WORK/closeout/source" && CARGO_TARGET_DIR="$WORK/closeout/target" CARGO_INCREMENTAL=0 cargo build --locked --release -j 4 -p nata && cp "$WORK/closeout/target/release/nata" "$WORK/closeout/nata" && chmod a-w "$WORK/closeout/nata"
+self-test python3 scripts/bench-aggregate-closeout.py --self-test
+fixtures TMPDIR="$WORK/closeout/tmp" scripts/gen-tpch.sh 100 "$WORK/closeout/sf100"
+scale closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-30 ;; aarch64) closeout_machine=n4a-highcpu-32 ;; *) exit 2 ;; esac && python3 scripts/bench-aggregate-closeout.py --scale 100 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf100" --out "$RESULTS/closeout-sf100-$(date -u +%Y%m%dT%H%M%SZ)"

@@ -2745,3 +2745,178 @@ scripts/gcp/orchestrate.sh run --job heavy --machines c3d-highcpu-8 --run-id per
 scripts/gcp/orchestrate.sh plan --job heavy --machines n4a-highcpu-8 --run-id perf2e-20261108-arm64 --data-gb 80 --max-vm-hours 2
 scripts/gcp/orchestrate.sh run --job heavy --machines n4a-highcpu-8 --run-id perf2e-20261108-arm64 --data-gb 80 --max-vm-hours 2 --approved-usd "$APPROVED_USD_ARM64"
 ```
+
+## Slice 5 closeout matrix (prepared)
+
+2026-11-08, from main `24711f3`. Preparation only: **no GCP execution and no
+settled performance verdict**. Runner: `scripts/bench-aggregate-closeout.py`;
+steps: `bench/aggregate-closeout.steps` and `bench/aggregate-closeout-scale.steps`.
+No dependency/lockfile, engine algorithm, budget, threshold or default changed.
+The two existing registry peak gauges are now included in aggregate reports;
+these are copies of already-maintained counters, not new hot-path instrumentation.
+
+### Frozen cells and rules
+
+Per CPU, **77 cells** (1,540 timed fresh processes: five rounds × four arms):
+
+- SF1 and SF10: full Q1, exact card HC/HAVING, **agg_orderkey and agg_partkey**,
+  each at **1/4/8 threads**, each at **4 GiB / 64 MiB / 256 MiB**: 72 cells.
+  The named SQL comes directly from `spikes/hash-ops/sql`, replacing only the
+  source path. No substitution of HAVING for a named query.
+- SF100: Q1 **8/16/32 threads at 32 GiB**, HC **8 threads at 32 GiB and 4 GiB**:
+  five cells, following the narrowed reference scope. ARM uses exactly
+  **n4a-highcpu-32**. x86 uses **c3d-highcpu-30**, reporting 8/16/30, explicitly
+  **report-only**, without claiming 32-vCPU equivalence or a scaling pass.
+- SF10 Q1 8/1 scaling is derived within the same session: ARM ≥5×, x86 ≥3.5×;
+  ARM SF100 32/8 ≥2.5×. Full Q1 ≤1.5× paired DuckDB; named aggregates ≤2×;
+  actual spill ≤2× **matched-budget/thread DuckDB only when all reference arms
+  complete**. HC must complete and actually spill at SF1/64 MiB,
+  SF10/256 MiB and SF100/4 GiB. The historical 18 failed reference cells are
+  neither rescued nor assumed to fail again: each current matched cell is tested.
+- An additional SF1 HC/8-thread/64-MiB resource control sets `ulimit -n 32`,
+  requires more than 32 spill partitions, and checks completion. Every regular
+  cell uses `ulimit -n 1024`. Registry peak open spill descriptors must stay ≤32;
+  source admission also reduces that cap to the remaining process allowance.
+  Explicit D is 32 GiB at SF1/SF10 and 128 GiB at SF100; no default is changed.
+
+Value gates run before timings against unrestricted same-session DuckDB, then
+against the matched-budget DuckDB if it completes. Full numeric multisets,
+including multiplicities, are canonicalized and compared as **sorted disk files**
+(no million-row Python Counter). Q1 reuses the settled harness's exact numeric
+and <1e-8 decimal AVG gate. All outputs, including timed outputs, use the same
+regular-file sink; complete CSV, no checksum wrapper or consuming-sink shortcut.
+The warm-cache policy, alternating reversed rounds and identical binary twins
+reuse the settled harness primitives. Settle below load 0.5 before each cell;
+retain every arm's load, wall/user/system time, peak RSS, output size, counters,
+logs, min/median/quartiles and primary/twin ratios. No numeric noise cutoff was
+frozen: summaries deliberately remain UNRESOLVED until the parent judges twin
+noise; failed/OOM/incomplete references are **UNASSESSED**, never MET. No samples
+are discarded, rescued with settings changes or substituted across sessions.
+
+Five no-data baseline processes per requested thread count establish the
+independent RSS envelope: **baseline + B + 32 MiB**, including stack RSS (the
+skeleton's stricter whole-process convention). Every successful gate/timed Nata
+process must finish within its deadline, obey peak reservation B, RSS, exact
+registry peak live disk/FD caps and leave no spill files. Failures stop the job.
+Metadata records immutable binary SHA256, source commit, input SHA256/bytes/rows,
+DuckDB version and `lscpu`. These timing checks do not replace the separate
+concurrent-server, cancellation, recursion/fault, stack-sampling, decoded-kernel,
+client or closing-commit deep checks; those remain required before slice closure.
+No engine-only/P4 claim is inferred from worker sums or CLI ratios.
+
+### Decisive diagnostic: skipped, with precise coverage gap
+
+Current-main SF1 HC/8/64 MiB with complete CSV is included in the matrix and
+local SF1 resource smoke. Available same-run counters: aggregate partial/merge
+worker sums, output callback wall time, reservations, total spill bytes/read,
+opens, partition count, recursion depth, peak live spill bytes and descriptors.
+**The decisive attribution arm is SKIPPED**, not claimed measured. Missing:
+actual admitted scan/merge task counts and activity intervals; bytes, frames,
+opens and tickets **by spill level**; exclusive output construction/formatting
+and teardown intervals; timestamped I/O enqueue/start/finish intervals by job
+kind (including cancellation/dropped events). `IoService` queues opaque closures;
+registry opens have no level identity. Reconstructing this needs context through
+pipeline/storage/registry/service boundaries and bounded tracing with loss and
+instrumentation-on/off controls, beyond small debug counters. Propose the shared
+same-run stats/trace record in card 0008 package 0, before W-A/W-B prioritization.
+No env-var tracer or engine optimization was added under this preparation brief.
+
+### Machine sizing, time caps and exact parent commands
+
+Two jobs per CPU separate SF100 generation and its larger VM from the comparable
+8-vCPU sweep. **Data generation is inside the VM-hour cap**, as are setup, clean
+`--locked -j 4` builds, gates, settling and replacements. No automatic extension.
+
+| CPU/job | Machine | Boot/data GB | Estimated VM hours | Hard total VM-hour cap |
+|---|---|---|---|---|
+| x86 SF1/SF10 | c3d-highcpu-8 | 20/150 | 2–4 | 6 |
+| ARM SF1/SF10 | n4a-highcpu-8 | 20/150 | 3–5 | 6 |
+| x86 SF100 report | c3d-highcpu-30 | 20/300 | 1–3 | 4 |
+| ARM SF100 | n4a-highcpu-32 | 20/300 | 1.5–3 | 4 |
+
+Estimated total **x86 3–7 VM-hours**, **ARM 4.5–8 VM-hours**; caps 10 per CPU.
+These are planning estimates, not measured promises. The prior reference scale
+job needed ~54 minutes including generation; Nata's spills/gates and disk-backed
+exact multiset checks need additional allowance. The 1,440 small-sweep processes
+and settling dominate its cap; this is much larger than the old eight-cell job.
+150 GB accommodates clean builds, both generated datasets, spills and full CSV
+plus external-sort overlap. SF100 retains the reference's 300 GB sizing for
+chunked generation/database overlap, ~23 GB compressed lineitem, 128 GiB spill
+quota, CSV/sort overlap and toolchain/build headroom. Exhaustion or cap expiry is
+a failed/unresolved run, not permission to resize, relax a rule or rerun silently.
+
+After committing, prepare a single immutable source archive locally (no cloud):
+
+```sh
+git archive HEAD --format=tar --output=.aggregate-closeout-source.tar
+git rev-parse HEAD > .aggregate-closeout-commit
+sha256sum .aggregate-closeout-source.tar > .aggregate-closeout-source.sha256
+```
+
+Run each pair independently, with its own owner-approved dollar cap from the
+printed plan. The two steps files start with `# gate-exits`: the heavy runner
+now opts into strict shell execution, records the actual exit, and fails the job
+before later steps on any failure. Legacy heavy jobs retain their old behavior.
+Every startup `apt-get` now has `DEBIAN_FRONTEND=noninteractive`; heavy startup
+also installs GNU time. No extra package/crate dependency is introduced.
+
+```sh
+# x86 comparable sweep
+cp bench/aggregate-closeout.steps heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id closeout-x86-small --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id closeout-x86-small --machines c3d-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set to this plan's owner-approved bound}"
+# ARM comparable sweep
+cp bench/aggregate-closeout.steps heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id closeout-arm-small --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id closeout-arm-small --machines n4a-highcpu-8 --max-vm-hours 6 --data-gb 150 --approved-usd "${CLOSEOUT_APPROVED_USD:?set to this plan's owner-approved bound}"
+# x86 scale, report-only
+cp bench/aggregate-closeout-scale.steps heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id closeout-x86-scale --machines c3d-highcpu-30 --max-vm-hours 4 --data-gb 300
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id closeout-x86-scale --machines c3d-highcpu-30 --max-vm-hours 4 --data-gb 300 --approved-usd "${CLOSEOUT_APPROVED_USD:?set to this plan's owner-approved bound}"
+# ARM frozen scale
+cp bench/aggregate-closeout-scale.steps heavy.steps
+bash scripts/gcp/orchestrate.sh plan --job heavy --run-id closeout-arm-scale --machines n4a-highcpu-32 --max-vm-hours 4 --data-gb 300
+bash scripts/gcp/orchestrate.sh run --job heavy --run-id closeout-arm-scale --machines n4a-highcpu-32 --max-vm-hours 4 --data-gb 300 --approved-usd "${CLOSEOUT_APPROVED_USD:?set to this plan's owner-approved bound}"
+```
+
+All commands above are **instructions for the parent; none was executed here**.
+Source archive/identity files and `heavy.steps` are local shipping inputs, never
+committed. Use a fresh run ID for any separately authorized rerun. No machine
+fallback silently changes the frozen CPU class.
+
+### Local validation (unsettled)
+
+[Evidence](raw/20261108-slice5-closeout-prepared/): SF0.1 runs every small cell
+shape (36 cells, 144 primary/twin process samples) and every SF100 scaling shape
+(five cells, 20 samples, including 16/32 requested threads). SF1 adds the actual
+HC/8/64-MiB spill control under `ulimit -n 32` (four samples). Every process
+completed, value gates matched, and reservation/RSS/disk/descriptor/cleanup
+checks passed. All runs are explicitly **UNSETTLED / UNRESOLVED**; these are
+harness smokes, not portable performance, large-scale completion or scaling passes.
+The smoke binary is main `24711f3` plus this commit's two exported registry peak
+gauges; its immutable SHA256 and input identities are in each metadata record.
+
+Reproduce the small smoke with a read-only binary and generated SF0.1 data:
+
+```sh
+python3 scripts/bench-aggregate-closeout.py --smoke --scale 1 --commit "$ENGINE_COMMIT" --binary "$IMMUTABLE_NATA" --data "$SF01_DATA" --out "$FRESH_SMALL_OUT"
+python3 scripts/bench-aggregate-closeout.py --smoke --scale 100 --commit "$ENGINE_COMMIT" --binary "$IMMUTABLE_NATA" --data "$SF01_DATA" --out "$FRESH_SCALE_OUT"
+python3 scripts/bench-aggregate-closeout.py --smoke --scale 1 --resource-only --fd-limit 32 --commit "$ENGINE_COMMIT" --binary "$IMMUTABLE_NATA" --data "$SF1_DATA" --out "$FRESH_LOWFD_OUT"
+```
+
+Checks passed: `cargo test --locked -j 4 -p nata-exec` and `-p nata`, workspace
+fmt, workspace/all-target clippy with warnings denied, **65/65 normal and 65/65
+forced-spill aggregate gates**, both harness inert self-tests, shell syntax,
+Python compile and job-chain tests. All local Cargo work used the shared heavy
+lock and `-j 4`, one invocation at a time. The new inert test exercises all 36
+cells with fake engines (255 invocations), numeric normalization/multiplicity,
+failed-reference exclusion and a reservation-breach negative control. The strict
+heavy-step negative control confirms `false; echo ...` cannot be masked and the
+following step never executes.
+
+The first forced-spill gate used tmpfs `/tmp` and hit ENOSPC (64/65); the retained
+passing rerun uses disk `TMPDIR`. An exploratory process limit of 16 rejected
+spill admission (insufficient scan/socket headroom); the planned low-limit test
+uses 32, below the measured 256 spill partitions, without changing admission.
+Stale build caches were removed when free disk fell below 20 GB. Neither failed
+trial is a performance pass. No new Cargo.lock entry; no push or merge.

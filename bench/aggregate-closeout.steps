@@ -1,0 +1,10 @@
+# gate-exits
+# SF1/SF10 on c3d-highcpu-8 or n4a-highcpu-8. 6h cap; 150GB data.
+prepare mkdir -p "$WORK/closeout/source" "$WORK/closeout/tmp" && cd "$SRC" && sha256sum -c .aggregate-closeout-source.sha256 && tar -xf .aggregate-closeout-source.tar -C "$WORK/closeout/source"
+build cd "$WORK/closeout/source" && CARGO_TARGET_DIR="$WORK/closeout/target" CARGO_INCREMENTAL=0 cargo build --locked --release -j 4 -p nata -p nata-check && cp "$WORK/closeout/target/release/nata" "$WORK/closeout/nata" && chmod a-w "$WORK/closeout/nata"
+self-test python3 scripts/bench-aggregate-closeout.py --self-test && python3 scripts/bench-aggregate-perf1-heavy.py self-test --work "$WORK/closeout/self-test"
+fixtures-one TMPDIR="$WORK/closeout/tmp" scripts/gen-tpch.sh 1 "$WORK/closeout/sf1"
+fixtures-ten TMPDIR="$WORK/closeout/tmp" scripts/gen-tpch.sh 10 "$WORK/closeout/sf10"
+sf-one closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-8 ;; aarch64) closeout_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && python3 scripts/bench-aggregate-closeout.py --scale 1 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf1" --out "$RESULTS/closeout-sf1-$(date -u +%Y%m%dT%H%M%SZ)"
+sf-ten closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-8 ;; aarch64) closeout_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && python3 scripts/bench-aggregate-closeout.py --scale 10 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf10" --out "$RESULTS/closeout-sf10-$(date -u +%Y%m%dT%H%M%SZ)"
+low-fd closeout_machine=$(uname -m) && case "$closeout_machine" in x86_64) closeout_machine=c3d-highcpu-8 ;; aarch64) closeout_machine=n4a-highcpu-8 ;; *) exit 2 ;; esac && python3 scripts/bench-aggregate-closeout.py --scale 1 --resource-only --fd-limit 32 --machine "$closeout_machine" --binary "$WORK/closeout/nata" --commit "$(cat "$SRC/.aggregate-closeout-commit")" --data "$WORK/closeout/sf1" --out "$RESULTS/closeout-lowfd-$(date -u +%Y%m%dT%H%M%SZ)"

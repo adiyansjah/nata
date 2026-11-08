@@ -1,0 +1,53 @@
+[
+  {
+    "variant": "main",
+    "exit": 0,
+    "seconds": 5.91508721903665,
+    "load": [
+      0.94921875,
+      2.0849609375,
+      2.14892578125
+    ],
+    "rss_bytes": 34299904,
+    "user_seconds": 4.82,
+    "system_seconds": 1.51,
+    "output_bytes": 39926992,
+    "counters": {
+      "partial_ns": 1071015494,
+      "merge_ns": 997218686,
+      "partial_groups": 1493483,
+      "largest_partial": 12537,
+      "rehashes": 28832,
+      "reservation_calls": 14051,
+      "reservation_releases": 13843,
+      "memory_lock_wait_ns": 1333690,
+      "peak_reservation": 67108864,
+      "spill_bytes_written": 287609072,
+      "spill_bytes_read": 287609072,
+      "partitions_spilled": 256,
+      "recursion_depth": 0,
+      "spill_files_opened": 58838,
+      "sink_calls": 46789,
+      "output_ns": 855016718,
+      "spill_peak_bytes": 287609072,
+      "spill_peak_open": 1
+    },
+    "result_rows": 1273748
+  },
+  {
+    "variant": "duckdb",
+    "exit": 0,
+    "seconds": 1.3595702910097316,
+    "load": [
+      1.03369140625,
+      2.08349609375,
+      2.14794921875
+    ],
+    "rss_bytes": 196460544,
+    "user_seconds": 1.99,
+    "system_seconds": 0.45,
+    "output_bytes": 39926992,
+    "counters": {},
+    "result_rows": 1273748
+  }
+]

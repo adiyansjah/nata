@@ -147,11 +147,13 @@ pub struct AggregateStats {
     pub partitions_spilled: usize,
     pub recursion_depth: u8,
     pub spill_files_opened: u64,
+    pub spill_peak_bytes: u64,
+    pub spill_peak_open: usize,
 }
 impl AggregateStats {
     pub fn line(&self) -> String {
         format!(
-            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={} spill_bytes_written={} spill_bytes_read={} partitions_spilled={} recursion_depth={} spill_files_opened={} sink_calls={} output_ns={}",
+            "aggregate: partial_ns={} merge_ns={} partial_groups={} largest_partial={} rehashes={} reservation_calls={} reservation_releases={} memory_lock_wait_ns={} peak_reservation={} spill_bytes_written={} spill_bytes_read={} partitions_spilled={} recursion_depth={} spill_files_opened={} sink_calls={} output_ns={} spill_peak_bytes={} spill_peak_open={}",
             self.partial_nanos,
             self.merge_nanos,
             self.partial_groups,
@@ -167,7 +169,9 @@ impl AggregateStats {
             self.recursion_depth,
             self.spill_files_opened,
             self.sink_calls,
-            self.output_nanos
+            self.output_nanos,
+            self.spill_peak_bytes,
+            self.spill_peak_open
         )
     }
 }

@@ -1,0 +1,47 @@
+[
+  {
+    "query": "q1",
+    "threads": 8,
+    "budget": 34359738368,
+    "target_latency_ratio": null,
+    "verdict": "UNRESOLVED",
+    "arms": {},
+    "twin_ratios": {}
+  },
+  {
+    "query": "q1",
+    "threads": 16,
+    "budget": 34359738368,
+    "target_latency_ratio": null,
+    "verdict": "UNRESOLVED",
+    "arms": {},
+    "twin_ratios": {}
+  },
+  {
+    "query": "q1",
+    "threads": 32,
+    "budget": 34359738368,
+    "target_latency_ratio": null,
+    "verdict": "UNRESOLVED",
+    "arms": {},
+    "twin_ratios": {}
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "budget": 34359738368,
+    "target_latency_ratio": null,
+    "verdict": "UNRESOLVED",
+    "arms": {},
+    "twin_ratios": {}
+  },
+  {
+    "query": "high_cardinality_tpch",
+    "threads": 8,
+    "budget": 4294967296,
+    "target_latency_ratio": null,
+    "verdict": "UNRESOLVED",
+    "arms": {},
+    "twin_ratios": {}
+  }
+]

@@ -954,6 +954,8 @@ pub(crate) fn execute(
     metrics.spill_bytes_written = spill.bytes_written;
     metrics.spill_bytes_read = spill.bytes_read;
     metrics.spill_files_opened = spill.opened;
+    metrics.spill_peak_bytes = spill.peak_bytes;
+    metrics.spill_peak_open = spill.peak_open;
     metrics.partitions_spilled = spill.partitions;
     let memory = manager.snapshot();
     metrics.reservation_calls = memory.requests;
